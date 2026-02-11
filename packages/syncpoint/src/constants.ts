@@ -1,5 +1,5 @@
-import { homedir } from "node:os";
 import { join } from "node:path";
+import { getHomeDir } from "./utils/paths.js";
 
 export const APP_NAME = "syncpoint";
 export const APP_DIR = `.${APP_NAME}`;
@@ -15,7 +15,7 @@ export const SCRIPTS_DIR = "scripts";
 export const LOGS_DIR = "logs";
 
 export function getAppDir(): string {
-  return join(homedir(), APP_DIR);
+  return join(getHomeDir(), APP_DIR);
 }
 
 export function getSubDir(sub: string): string {

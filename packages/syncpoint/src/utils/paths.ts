@@ -2,12 +2,16 @@ import { mkdir, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
+export function getHomeDir(): string {
+  return process.env.SYNCPOINT_HOME || homedir();
+}
+
 /**
  * Expand ~ to the user's home directory.
  */
 export function expandTilde(p: string): string {
-  if (p === "~") return homedir();
-  if (p.startsWith("~/")) return join(homedir(), p.slice(2));
+  if (p === "~") return getHomeDir();
+  if (p.startsWith("~/")) return join(getHomeDir(), p.slice(2));
   return p;
 }
 
@@ -15,7 +19,7 @@ export function expandTilde(p: string): string {
  * Contract the home directory prefix back to ~.
  */
 export function contractTilde(p: string): string {
-  const home = homedir();
+  const home = getHomeDir();
   if (p === home) return "~";
   if (p.startsWith(home + "/")) return "~" + p.slice(home.length);
   return p;

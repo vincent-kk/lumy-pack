@@ -47,6 +47,9 @@
     "publish:npm": "pnpm publish --access public --no-git-checks",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:e2e": "vitest run src/__tests__/e2e/",
+    "test:docker": "vitest run src/__tests__/docker/",
+    "test:all": "vitest run && pnpm test:e2e && pnpm test:docker",
     "version:major": "pnpm version major",
     "version:minor": "pnpm version minor",
     "version:patch": "pnpm version patch"
@@ -67,6 +70,7 @@
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@types/react": "^18.0.0",
-    "@types/tar": "^6.1.13"
+    "@types/tar": "^6.1.13",
+    "ink-testing-library": "^4.0.0"
   }
 }
