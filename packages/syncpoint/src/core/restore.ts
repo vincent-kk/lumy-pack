@@ -1,4 +1,4 @@
-import { copyFile, readdir, stat } from "node:fs/promises";
+import { copyFile, lstat, readdir, stat } from "node:fs/promises";
 import { join, dirname } from "node:path";
 
 import {
@@ -53,7 +53,7 @@ export async function getBackupList(
         fileCount = meta.summary.fileCount;
       }
     } catch {
-      // Skip metadata reading errors
+      logger.info(`Could not read metadata from: ${entry.name}`);
     }
 
     backups.push({
@@ -233,6 +233,18 @@ export async function restoreBackup(
 
       // Ensure destination directory exists
       await ensureDir(dirname(destPath));
+
+      // Check if destination is a symlink (prevent symlink attacks)
+      try {
+        const destStat = await lstat(destPath);
+        if (destStat.isSymbolicLink()) {
+          logger.warn(`Skipping symlink target: ${action.path}`);
+          skippedFiles.push(action.path);
+          continue;
+        }
+      } catch (err: unknown) {
+        if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+      }
 
       await copyFile(extractedPath, destPath);
       restoredFiles.push(action.path);

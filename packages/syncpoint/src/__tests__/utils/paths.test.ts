@@ -148,8 +148,8 @@ describe("utils/paths", () => {
       await mkdir(sandbox.home, { recursive: true });
     });
 
-    afterEach(() => {
-      sandbox.cleanup();
+    afterEach(async () => {
+      await sandbox.cleanup();
     });
 
     it("ensureDir creates nested directories", async () => {

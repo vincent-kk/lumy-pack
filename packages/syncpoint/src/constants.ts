@@ -18,6 +18,10 @@ export function getAppDir(): string {
   return join(getHomeDir(), APP_DIR);
 }
 
-export function getSubDir(sub: string): string {
+export const APP_VERSION = "0.0.1";
+
+export type SubDirName = "backups" | "templates" | "scripts" | "logs";
+
+export function getSubDir(sub: SubDirName): string {
   return join(getAppDir(), sub);
 }

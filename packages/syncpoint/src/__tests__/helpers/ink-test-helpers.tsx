@@ -1,9 +1,4 @@
-import React from "react";
 import { render } from "ink-testing-library";
-
-export function renderInk(component: React.ReactElement) {
-  return render(component);
-}
 
 export async function waitForText(
   instance: ReturnType<typeof render>,

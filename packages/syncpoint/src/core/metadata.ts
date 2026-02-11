@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFile, lstat } from "node:fs/promises";
 
 import { validateMetadata } from "../schemas/metadata.schema.js";
+import { APP_VERSION } from "../constants.js";
 import { contractTilde } from "../utils/paths.js";
 import { getHostname, getSystemInfo } from "../utils/system.js";
 import type {
@@ -9,8 +10,6 @@ import type {
   FileEntry,
   SyncpointConfig,
 } from "../utils/types.js";
-
-const TOOL_VERSION = "0.0.1";
 const METADATA_VERSION = "1.0.0";
 
 /**
@@ -24,7 +23,7 @@ export function createMetadata(
 
   return {
     version: METADATA_VERSION,
-    toolVersion: TOOL_VERSION,
+    toolVersion: APP_VERSION,
     createdAt: new Date().toISOString(),
     hostname: getHostname(),
     system: getSystemInfo(),

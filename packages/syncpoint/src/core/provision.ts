@@ -3,7 +3,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import YAML from "yaml";
 
-import { TEMPLATES_DIR, REMOTE_SCRIPT_PATTERN, getSubDir } from "../constants.js";
+import { TEMPLATES_DIR, getSubDir } from "../constants.js";
 import { validateTemplate } from "../schemas/template.schema.js";
 import { fileExists } from "../utils/paths.js";
 import { logger } from "../utils/logger.js";
@@ -13,6 +13,25 @@ import type {
   TemplateConfig,
   TemplateStep,
 } from "../utils/types.js";
+
+const REMOTE_SCRIPT_PATTERNS = [
+  /curl\s.*\|\s*(ba)?sh/,
+  /wget\s.*\|\s*(ba)?sh/,
+  /curl\s.*\|\s*python/,
+  /wget\s.*\|\s*python/,
+];
+
+function containsRemoteScriptPattern(command: string): boolean {
+  return REMOTE_SCRIPT_PATTERNS.some(p => p.test(command));
+}
+
+function sanitizeErrorOutput(output: string): string {
+  return output
+    .replace(/\/Users\/[^\s/]+/g, '/Users/***')
+    .replace(/\/home\/[^\s/]+/g, '/home/***')
+    .replace(/(password|token|key|secret)[=:]\s*\S+/gi, '$1=***')
+    .slice(0, 500);
+}
 
 /**
  * Load and validate a template from a YAML file.
@@ -112,7 +131,10 @@ function execAsync(
  * Evaluate a skip_if condition.
  * Returns true if the command exits with code 0 (meaning: skip this step).
  */
-export async function evaluateSkipIf(command: string): Promise<boolean> {
+export async function evaluateSkipIf(command: string, stepName: string): Promise<boolean> {
+  if (containsRemoteScriptPattern(command)) {
+    throw new Error(`Blocked dangerous remote script pattern in skip_if: ${stepName}`);
+  }
   try {
     await execAsync(command);
     return true; // exit 0 → condition met → skip
@@ -129,14 +151,14 @@ export async function executeStep(
 ): Promise<StepResult> {
   const startTime = Date.now();
 
-  // Check for remote script warning
-  if (REMOTE_SCRIPT_PATTERN.test(step.command)) {
-    logger.warn(`Remote script execution detected in step "${step.name}"`);
+  // Block dangerous remote script patterns
+  if (containsRemoteScriptPattern(step.command)) {
+    throw new Error(`Blocked dangerous remote script pattern in command: ${step.name}`);
   }
 
   // Evaluate skip_if
   if (step.skip_if) {
-    const shouldSkip = await evaluateSkipIf(step.skip_if);
+    const shouldSkip = await evaluateSkipIf(step.skip_if, step.name);
     if (shouldSkip) {
       return {
         name: step.name,
@@ -167,7 +189,7 @@ export async function executeStep(
       name: step.name,
       status: "failed",
       duration: Date.now() - startTime,
-      error: errorOutput,
+      error: sanitizeErrorOutput(errorOutput),
     };
   }
 }
@@ -188,7 +210,7 @@ export async function* runProvision(
       // In dry-run mode, show what would happen
       let status: StepResult["status"] = "pending";
       if (step.skip_if) {
-        const shouldSkip = await evaluateSkipIf(step.skip_if);
+        const shouldSkip = await evaluateSkipIf(step.skip_if, step.name);
         if (shouldSkip) status = "skipped";
       }
       yield {

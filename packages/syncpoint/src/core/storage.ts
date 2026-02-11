@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, normalize } from "node:path";
 import * as tar from "tar";
 
 /**
@@ -59,6 +59,14 @@ export async function extractArchive(
   await tar.extract({
     file: archivePath,
     cwd: destDir,
+    preservePaths: false,
+    filter: (path: string, entry: any) => {
+      const normalizedPath = normalize(path);
+      if (normalizedPath.includes('..')) return false;
+      if (normalizedPath.startsWith('/')) return false;
+      if (entry.type === 'SymbolicLink' || entry.type === 'Link') return false;
+      return true;
+    },
   });
 }
 
@@ -70,6 +78,10 @@ export async function readFileFromArchive(
   archivePath: string,
   filename: string,
 ): Promise<Buffer | null> {
+  if (filename.includes('..') || filename.startsWith('/')) {
+    throw new Error(`Invalid filename: ${filename}`);
+  }
+
   const tmpDir = await mkdtemp(join(tmpdir(), "syncpoint-read-"));
 
   try {

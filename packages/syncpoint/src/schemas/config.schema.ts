@@ -1,10 +1,5 @@
-import Ajv from "ajv";
-import addFormats from "ajv-formats";
-
+import { ajv } from "./ajv.js";
 import type { SyncpointConfig } from "../utils/types.js";
-
-const ajv = new Ajv({ allErrors: true });
-addFormats(ajv);
 
 const configSchema = {
   type: "object",

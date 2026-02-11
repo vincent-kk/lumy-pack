@@ -43,6 +43,11 @@ describe("formatBytes", () => {
     expect(formatBytes(1024 * 1024 * 1024 * 1024)).toBe("1.0 TB");
     expect(formatBytes(1024 * 1024 * 1024 * 1024 * 1.5)).toBe("1.5 TB");
   });
+
+  it("returns '0 B' for negative values", () => {
+    expect(formatBytes(-1)).toBe("0 B");
+    expect(formatBytes(-1024)).toBe("0 B");
+  });
 });
 
 describe("formatDate", () => {
@@ -83,6 +88,10 @@ describe("formatRelativeTime", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2024-01-01T12:00:00"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("returns seconds for times less than 60 seconds ago", () => {

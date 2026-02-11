@@ -8,9 +8,11 @@ import React, { useEffect, useState } from 'react';
 
 import { Confirm } from '../components/Confirm.js';
 import { Table } from '../components/Table.js';
+import { getSubDir } from '../constants.js';
 import { listTemplates } from '../core/provision.js';
 import { getBackupList } from '../core/restore.js';
 import { formatBytes, formatDate } from '../utils/format.js';
+import { isInsideDir } from '../utils/paths.js';
 import type { BackupInfo, TemplateConfig } from '../utils/types.js';
 
 type Phase =
@@ -173,6 +175,9 @@ const ListView: React.FC<ListViewProps> = ({ type, deleteIndex }) => {
   const handleDeleteConfirm = (yes: boolean) => {
     if (yes && deleteTarget) {
       try {
+        if (!isInsideDir(deleteTarget.path, getSubDir("backups"))) {
+          throw new Error(`Refusing to delete file outside backups directory: ${deleteTarget.path}`);
+        }
         unlinkSync(deleteTarget.path);
         setPhase('done');
         setTimeout(() => exit(), 100);

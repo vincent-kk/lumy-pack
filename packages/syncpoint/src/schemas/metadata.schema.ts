@@ -1,10 +1,5 @@
-import Ajv from "ajv";
-import addFormats from "ajv-formats";
-
+import { ajv } from "./ajv.js";
 import type { BackupMetadata } from "../utils/types.js";
-
-const ajv = new Ajv({ allErrors: true });
-addFormats(ajv);
 
 const metadataSchema = {
   type: "object",

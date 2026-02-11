@@ -299,6 +299,26 @@ describe("metadata", () => {
       }
     });
 
+    it("computes hash for empty file", async () => {
+      const sandbox = createSandbox();
+      sandbox.apply();
+
+      try {
+        const testFile = join(sandbox.root, "empty.txt");
+        await writeFile(testFile, "", "utf-8");
+
+        const hash = await computeFileHash(testFile);
+
+        expect(hash).toMatch(/^sha256:[a-f0-9]{64}$/);
+        // SHA-256 of empty string
+        expect(hash).toBe(
+          "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        );
+      } finally {
+        await sandbox.cleanup();
+      }
+    });
+
     it("computes known SHA-256 hash correctly", async () => {
       const sandbox = createSandbox();
       sandbox.apply();

@@ -11,6 +11,7 @@ import { Confirm } from '../components/Confirm.js';
 import { Table } from '../components/Table.js';
 import { APP_NAME, LOGS_DIR, getSubDir } from '../constants.js';
 import { getBackupList } from '../core/restore.js';
+import { isInsideDir } from '../utils/paths.js';
 import {
   formatBytes,
   formatDate,
@@ -209,9 +210,11 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
     }
 
     try {
+      const backupsDir = getSubDir('backups');
       if (cleanupAction === 'keep-recent-5') {
         const toDelete = backups.slice(5);
         for (const b of toDelete) {
+          if (!isInsideDir(b.path, backupsDir)) throw new Error(`Refusing to delete file outside backups directory: ${b.path}`);
           unlinkSync(b.path);
         }
       } else if (cleanupAction === 'older-than-30') {
@@ -219,6 +222,7 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
         cutoff.setDate(cutoff.getDate() - 30);
         const toDelete = backups.filter((b) => b.createdAt < cutoff);
         for (const b of toDelete) {
+          if (!isInsideDir(b.path, backupsDir)) throw new Error(`Refusing to delete file outside backups directory: ${b.path}`);
           unlinkSync(b.path);
         }
       } else if (cleanupAction === 'delete-logs') {
@@ -226,13 +230,16 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
         try {
           const entries = readdirSync(logsDir);
           for (const entry of entries) {
-            unlinkSync(join(logsDir, entry));
+            const logPath = join(logsDir, entry);
+            if (!isInsideDir(logPath, logsDir)) throw new Error(`Refusing to delete file outside logs directory: ${logPath}`);
+            unlinkSync(logPath);
           }
         } catch {
           // ignore
         }
       } else if (cleanupAction === 'select-specific') {
         for (const b of selectedForDeletion) {
+          if (!isInsideDir(b.path, backupsDir)) throw new Error(`Refusing to delete file outside backups directory: ${b.path}`);
           unlinkSync(b.path);
         }
       }

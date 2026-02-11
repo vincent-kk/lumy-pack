@@ -1,9 +1,20 @@
 import { mkdir, stat } from "node:fs/promises";
 import { homedir } from "node:os";
-import { join, resolve } from "node:path";
+import { join, normalize, resolve } from "node:path";
 
 export function getHomeDir(): string {
-  return process.env.SYNCPOINT_HOME || homedir();
+  const envHome = process.env.SYNCPOINT_HOME;
+  if (envHome) {
+    const normalized = normalize(envHome);
+    if (normalized.includes('..')) {
+      throw new Error(`SYNCPOINT_HOME contains path traversal: ${envHome}`);
+    }
+    if (!resolve(normalized).startsWith('/')) {
+      throw new Error(`SYNCPOINT_HOME must be an absolute path: ${envHome}`);
+    }
+    return normalized;
+  }
+  return homedir();
 }
 
 /**
@@ -49,4 +60,10 @@ export async function fileExists(filePath: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export function isInsideDir(filePath: string, dir: string): boolean {
+  const resolvedFile = resolve(filePath);
+  const resolvedDir = resolve(dir);
+  return resolvedFile.startsWith(resolvedDir + "/") || resolvedFile === resolvedDir;
 }

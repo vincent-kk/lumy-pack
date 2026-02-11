@@ -16,6 +16,17 @@ import { readAsset } from "../utils/assets.js";
 import { ensureDir, fileExists } from "../utils/paths.js";
 import type { SyncpointConfig } from "../utils/types.js";
 
+function stripDangerousKeys(obj: unknown): unknown {
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(stripDangerousKeys);
+  const cleaned: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    if (['__proto__', 'constructor', 'prototype'].includes(key)) continue;
+    cleaned[key] = stripDangerousKeys(value);
+  }
+  return cleaned;
+}
+
 /**
  * Get the path to the config.yml file.
  */
@@ -37,7 +48,7 @@ export async function loadConfig(): Promise<SyncpointConfig> {
   }
 
   const raw = await readFile(configPath, "utf-8");
-  const data = YAML.parse(raw) as unknown;
+  const data = stripDangerousKeys(YAML.parse(raw));
 
   const result = validateConfig(data);
   if (!result.valid) {

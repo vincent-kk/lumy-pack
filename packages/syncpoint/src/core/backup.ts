@@ -108,7 +108,7 @@ async function collectScripts(): Promise<FileEntry[]> {
       }
     }
   } catch {
-    // Silently skip if scripts dir is unreadable
+    logger.info("Skipping unreadable scripts directory");
   }
 
   return entries;

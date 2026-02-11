@@ -17,15 +17,7 @@ describe.skipIf(!DOCKER_AVAILABLE)("Docker Provision Tests", () => {
     expect(output.trim()).toBe("hello");
   });
 
-  it("should warn about missing test Dockerfile", () => {
-    // This is a placeholder test - full Docker integration tests require
-    // the Dockerfile.test to be present and the image to be built
-    console.warn(
-      "Full Docker provision tests require docker/Dockerfile.test and built image",
-    );
-    console.warn("Run: docker build -t syncpoint-test -f docker/Dockerfile.test .");
-    expect(true).toBe(true);
-  });
+  it.todo("should run full provision lifecycle in Docker container (requires docker/Dockerfile.test)");
 });
 
 describe.skipIf(DOCKER_AVAILABLE)("Docker Unavailable Tests", () => {
