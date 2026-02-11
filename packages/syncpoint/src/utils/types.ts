@@ -49,6 +49,7 @@ export interface TemplateConfig {
   name: string;
   description: string;
   backup?: string;
+  sudo?: boolean;
   steps: TemplateStep[];
 }
 

@@ -10,69 +10,43 @@ import type {
 } from "../utils/types.js";
 import { loadTemplate, listTemplates } from "../core/provision.js";
 import { runProvision } from "../core/provision.js";
+import { ensureSudo } from "../utils/sudo.js";
 import { StepRunner } from "../components/StepRunner.js";
 
-type Phase = "loading" | "running" | "done" | "error";
+type Phase = "running" | "done" | "error";
 
 interface ProvisionViewProps {
-  templateName: string;
+  template: TemplateConfig;
+  templatePath: string;
   options: ProvisionOptions;
 }
 
 const ProvisionView: React.FC<ProvisionViewProps> = ({
-  templateName,
+  template,
+  templatePath,
   options,
 }) => {
   const { exit } = useApp();
-  const [phase, setPhase] = useState<Phase>("loading");
-  const [template, setTemplate] = useState<TemplateConfig | null>(null);
-  const [, setTemplatePath] = useState<string>("");
-  const [steps, setSteps] = useState<StepResult[]>([]);
+  const [phase, setPhase] = useState<Phase>(options.dryRun ? "done" : "running");
+  const [steps, setSteps] = useState<StepResult[]>(
+    template.steps.map((s) => ({
+      name: s.name,
+      status: "pending" as const,
+      output: s.description,
+    })),
+  );
   const [currentStep, setCurrentStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  // Load template
   useEffect(() => {
+    if (options.dryRun) {
+      setTimeout(() => exit(), 100);
+      return;
+    }
+
     (async () => {
       try {
-        // Find template by name
-        const templates = await listTemplates();
-        const match = templates.find(
-          (t) =>
-            t.name === templateName ||
-            t.name === `${templateName}.yml` ||
-            t.config.name === templateName,
-        );
-
-        if (!match) {
-          setError(`Template not found: ${templateName}`);
-          setPhase("error");
-          exit();
-          return;
-        }
-
-        const tmpl = await loadTemplate(match.path);
-        setTemplate(tmpl);
-        setTemplatePath(match.path);
-
-        // Initialize step states
-        const initialSteps: StepResult[] = tmpl.steps.map((s) => ({
-          name: s.name,
-          status: "pending" as const,
-          output: s.description,
-        }));
-        setSteps(initialSteps);
-
-        if (options.dryRun) {
-          setPhase("done");
-          setTimeout(() => exit(), 100);
-          return;
-        }
-
-        // Phase 2: Run provision
-        setPhase("running");
-
-        const generator = runProvision(match.path, options);
+        const generator = runProvision(templatePath, options);
         let stepIdx = 0;
 
         for await (const result of generator) {
@@ -116,21 +90,24 @@ const ProvisionView: React.FC<ProvisionViewProps> = ({
   return (
     <Box flexDirection="column">
       {/* Template header */}
-      {template && (
-        <Box flexDirection="column" marginBottom={1}>
-          <Text bold>▸ {template.name}</Text>
-          {template.description && (
-            <Text color="gray">{"  "}{template.description}</Text>
-          )}
-        </Box>
-      )}
+      <Box flexDirection="column" marginBottom={1}>
+        <Text bold>▸ {template.name}</Text>
+        {template.description && (
+          <Text color="gray">{"  "}{template.description}</Text>
+        )}
+      </Box>
 
       {/* Dry-run notice */}
-      {options.dryRun && phase === "done" && template && (
+      {options.dryRun && phase === "done" && (
         <Box flexDirection="column">
           <Text color="yellow">
             (dry-run) Showing execution plan only
           </Text>
+          {template.sudo && (
+            <Text color="yellow">
+              {"  "}⚠ This template requires sudo privileges (will prompt on actual run)
+            </Text>
+          )}
           <Box flexDirection="column" marginTop={1}>
             {template.steps.map((step, idx) => (
               <Box key={idx} flexDirection="column" marginBottom={1}>
@@ -157,17 +134,16 @@ const ProvisionView: React.FC<ProvisionViewProps> = ({
       )}
 
       {/* Step execution */}
-      {(phase === "running" || (phase === "done" && !options.dryRun)) &&
-        template && (
-          <StepRunner
-            steps={steps}
-            currentStep={currentStep}
-            total={template.steps.length}
-          />
-        )}
+      {(phase === "running" || (phase === "done" && !options.dryRun)) && (
+        <StepRunner
+          steps={steps}
+          currentStep={currentStep}
+          total={template.steps.length}
+        />
+      )}
 
       {/* Summary */}
-      {phase === "done" && !options.dryRun && template && (
+      {phase === "done" && !options.dryRun && (
         <Box flexDirection="column" marginTop={1}>
           <Text color="gray">{"  "}────────────────────</Text>
           <Text>
@@ -200,12 +176,35 @@ export function registerProvisionCommand(program: Command): void {
     .option("--skip-restore", "Skip automatic restore after template completion", false)
     .action(
       async (
-        template: string,
+        templateName: string,
         opts: { dryRun: boolean; skipRestore: boolean },
       ) => {
+        // Pre-Ink phase: resolve template and handle sudo
+        const templates = await listTemplates();
+        const match = templates.find(
+          (t) =>
+            t.name === templateName ||
+            t.name === `${templateName}.yml` ||
+            t.config.name === templateName,
+        );
+
+        if (!match) {
+          console.error(`Template not found: ${templateName}`);
+          process.exit(1);
+        }
+
+        const tmpl = await loadTemplate(match.path);
+
+        // Handle sudo requirement (skip in dry-run)
+        if (tmpl.sudo && !opts.dryRun) {
+          ensureSudo(tmpl.name);
+        }
+
+        // Ink phase: render the TUI
         const { waitUntilExit } = render(
           <ProvisionView
-            templateName={template}
+            template={tmpl}
+            templatePath={match.path}
             options={{
               dryRun: opts.dryRun,
               skipRestore: opts.skipRestore,

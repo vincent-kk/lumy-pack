@@ -13,6 +13,7 @@ const templateSchema = {
     name: { type: "string", minLength: 1 },
     description: { type: "string" },
     backup: { type: "string" },
+    sudo: { type: "boolean" },
     steps: {
       type: "array",
       minItems: 1,
