@@ -22,6 +22,7 @@
     "changeset:publish": "pnpm build:all && changeset publish",
     "publish:all": "pnpm -r --no-private run publish:npm",
     "sort:packages": "npx sort-package-json '**/package.json'",
+    "syncpoint": "pnpm -C packages/syncpoint",
     "clean": "pnpm -r exec rm -rf dist .tsbuildinfo",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,mjs,json,md}\""
   },
