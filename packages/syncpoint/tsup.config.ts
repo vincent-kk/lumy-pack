@@ -13,6 +13,7 @@ export default defineConfig([
     platform: "node",
     clean: true,
     dts: false,
+    shims: true,
     loader: { ".tsx": "tsx" },
   },
   {
