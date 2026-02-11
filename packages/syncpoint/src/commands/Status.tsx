@@ -13,7 +13,7 @@ import { formatBytes, formatDate, formatRelativeTime } from "../utils/format.js"
 import { Table } from "../components/Table.js";
 import { Confirm } from "../components/Confirm.js";
 
-type Phase = "loading" | "display" | "cleanup" | "confirming" | "done" | "error";
+type Phase = "loading" | "display" | "cleanup" | "select-delete" | "confirming" | "done" | "error";
 
 interface StatusViewProps {
   cleanup: boolean;
@@ -54,6 +54,7 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
   const [cleanupAction, setCleanupAction] = useState<string | null>(null);
   const [cleanupMessage, setCleanupMessage] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [selectedForDeletion, setSelectedForDeletion] = useState<BackupInfo[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -86,10 +87,18 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
         setPhase("error");
-        exit();
+        setTimeout(() => exit(), 100);
       }
     })();
   }, []);
+
+  const handleDisplayAction = (item: SelectItem) => {
+    if (item.value === "cleanup") {
+      setPhase("cleanup");
+    } else if (item.value === "exit") {
+      setTimeout(() => exit(), 100);
+    }
+  };
 
   const handleCleanupSelect = (item: SelectItem) => {
     const action = item.value;
@@ -98,6 +107,13 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
       setTimeout(() => exit(), 100);
       return;
     }
+
+    if (action === "select-specific") {
+      setSelectedForDeletion([]);
+      setPhase("select-delete");
+      return;
+    }
+
     setCleanupAction(action);
 
     if (action === "keep-recent-5") {
@@ -151,6 +167,10 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
         } catch {
           // ignore
         }
+      } else if (cleanupAction === "select-specific") {
+        for (const b of selectedForDeletion) {
+          unlinkSync(b.path);
+        }
       }
 
       setPhase("done");
@@ -158,7 +178,26 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setPhase("error");
-      exit();
+      setTimeout(() => exit(), 100);
+    }
+  };
+
+  const handleSelectBackup = (item: SelectItem) => {
+    if (item.value === "done") {
+      if (selectedForDeletion.length === 0) {
+        setPhase("cleanup");
+        return;
+      }
+      setCleanupAction("select-specific");
+      setCleanupMessage(
+        `Delete ${selectedForDeletion.length} selected backup(s). ${formatBytes(selectedForDeletion.reduce((s, b) => s + b.size, 0))} freed`,
+      );
+      setPhase("confirming");
+      return;
+    }
+    const backup = backups.find((b) => b.path === item.value);
+    if (backup) {
+      setSelectedForDeletion((prev) => [...prev, backup]);
     }
   };
 
@@ -239,7 +278,21 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
   );
 
   if (phase === "display") {
-    return statusDisplay;
+    return (
+      <Box flexDirection="column">
+        {statusDisplay}
+        <Box flexDirection="column" marginTop={1}>
+          <Text bold>▸ Actions</Text>
+          <SelectInput
+            items={[
+              { label: "Cleanup", value: "cleanup" },
+              { label: "Exit", value: "exit" },
+            ]}
+            onSelect={handleDisplayAction}
+          />
+        </Box>
+      </Box>
+    );
   }
 
   // Cleanup mode
@@ -259,6 +312,10 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
         value: "older-than-30",
       },
       {
+        label: "Select specific backups to delete",
+        value: "select-specific",
+      },
+      {
         label: `Delete all logs               ${formatBytes(status.logs.totalSize)} freed`,
         value: "delete-logs",
       },
@@ -276,6 +333,40 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
           <SelectInput
             items={cleanupItems}
             onSelect={handleCleanupSelect}
+          />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (phase === "select-delete") {
+    const remaining = backups.filter(
+      (b) => !selectedForDeletion.some((s) => s.path === b.path),
+    );
+    const selectItems: SelectItem[] = [
+      ...remaining.map((b) => ({
+        label: `${b.filename.replace(".tar.gz", "")}  ${formatBytes(b.size)}  ${formatDate(b.createdAt)}`,
+        value: b.path,
+      })),
+      {
+        label: `Done (${selectedForDeletion.length} selected)`,
+        value: "done",
+      },
+    ];
+
+    return (
+      <Box flexDirection="column">
+        {statusDisplay}
+        <Box flexDirection="column" marginTop={1}>
+          <Text bold>▸ Select backups to delete</Text>
+          {selectedForDeletion.length > 0 && (
+            <Text color="yellow">
+              {"  "}{selectedForDeletion.length} backup(s) selected ({formatBytes(selectedForDeletion.reduce((s, b) => s + b.size, 0))})
+            </Text>
+          )}
+          <SelectInput
+            items={selectItems}
+            onSelect={handleSelectBackup}
           />
         </Box>
       </Box>

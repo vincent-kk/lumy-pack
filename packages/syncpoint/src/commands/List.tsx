@@ -12,7 +12,7 @@ import { formatBytes, formatDate } from "../utils/format.js";
 import { Table } from "../components/Table.js";
 import { Confirm } from "../components/Confirm.js";
 
-type Phase = "loading" | "display" | "detail" | "deleting" | "done" | "error";
+type Phase = "loading" | "display" | "detail" | "backup-detail" | "deleting" | "done" | "error";
 
 interface ListViewProps {
   type?: string;
@@ -53,45 +53,6 @@ const ListBackups: React.FC<{ backups: BackupInfo[] }> = ({ backups }) => {
   );
 };
 
-const ListTemplates: React.FC<{
-  templates: TemplateInfo[];
-  onSelect?: (path: string) => void;
-}> = ({ templates, onSelect }) => {
-  if (templates.length === 0) {
-    return <Text color="gray">No templates found.</Text>;
-  }
-
-  const items: SelectItem[] = templates.map((t) => ({
-    label: `${t.config.name} — ${t.config.description ?? t.name}`,
-    value: t.path,
-  }));
-
-  if (onSelect) {
-    return (
-      <Box flexDirection="column">
-        <Text bold>▸ Templates</Text>
-        <SelectInput
-          items={items}
-          onSelect={(item) => onSelect(item.value)}
-        />
-      </Box>
-    );
-  }
-
-  return (
-    <Box flexDirection="column">
-      <Text bold>▸ Templates</Text>
-      {templates.map((t, idx) => (
-        <Text key={idx}>
-          {"  "}{idx + 1}. {t.config.name}
-          {t.config.description && (
-            <Text color="gray"> — {t.config.description}</Text>
-          )}
-        </Text>
-      ))}
-    </Box>
-  );
-};
 
 const TemplateDetail: React.FC<{ template: TemplateInfo }> = ({
   template,
@@ -128,6 +89,7 @@ const ListView: React.FC<ListViewProps> = ({ type, deleteIndex }) => {
   const [templates, setTemplates] = useState<TemplateInfo[]>([]);
   const [selectedTemplate, setSelectedTemplate] =
     useState<TemplateInfo | null>(null);
+  const [selectedBackup, setSelectedBackup] = useState<BackupInfo | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{
     name: string;
     path: string;
@@ -157,7 +119,7 @@ const ListView: React.FC<ListViewProps> = ({ type, deleteIndex }) => {
           if (idx < 0 || idx >= list.length) {
             setError(`Invalid index: ${deleteIndex}`);
             setPhase("error");
-            exit();
+            setTimeout(() => exit(), 100);
             return;
           }
           setDeleteTarget({
@@ -172,10 +134,19 @@ const ListView: React.FC<ListViewProps> = ({ type, deleteIndex }) => {
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
         setPhase("error");
-        exit();
+        setTimeout(() => exit(), 100);
       }
     })();
   }, []);
+
+  // Schedule exit for read-only detail views (after user selected an item)
+  useEffect(() => {
+    if (phase === "detail" || phase === "backup-detail") {
+      const timer = setTimeout(() => exit(), 100);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [phase, exit]);
 
   const handleTemplateSelect = (path: string) => {
     const tmpl = templates.find((t) => t.path === path);
@@ -184,6 +155,7 @@ const ListView: React.FC<ListViewProps> = ({ type, deleteIndex }) => {
       setPhase("detail");
     }
   };
+
 
   const handleDeleteConfirm = (yes: boolean) => {
     if (yes && deleteTarget) {
@@ -238,19 +210,105 @@ const ListView: React.FC<ListViewProps> = ({ type, deleteIndex }) => {
     return <TemplateDetail template={selectedTemplate} />;
   }
 
+  if (phase === "backup-detail" && selectedBackup) {
+    return (
+      <Box flexDirection="column">
+        <Text bold>▸ {selectedBackup.filename.replace(".tar.gz", "")}</Text>
+        <Text>{"  "}Date: {formatDate(selectedBackup.createdAt)}</Text>
+        <Text>{"  "}Size: {formatBytes(selectedBackup.size)}</Text>
+        {selectedBackup.hostname && (
+          <Text>{"  "}Hostname: {selectedBackup.hostname}</Text>
+        )}
+        {selectedBackup.fileCount != null && (
+          <Text>{"  "}Files: {selectedBackup.fileCount}</Text>
+        )}
+      </Box>
+    );
+  }
+
   const showBackups = !type || type === "backups";
   const showTemplates = !type || type === "templates";
+
+  // Build a single unified action menu
+  const actionItems: SelectItem[] = [];
+
+  if (showBackups) {
+    for (const b of backups) {
+      actionItems.push({
+        label: `View: ${b.filename.replace(".tar.gz", "")}  ${formatBytes(b.size)}  ${formatDate(b.createdAt)}`,
+        value: b.path,
+      });
+    }
+    for (const b of backups) {
+      actionItems.push({
+        label: `Delete: ${b.filename.replace(".tar.gz", "")}`,
+        value: `delete:${b.path}`,
+      });
+    }
+  }
+
+  if (showTemplates) {
+    for (const t of templates) {
+      actionItems.push({
+        label: `Template: ${t.config.name} — ${t.config.description ?? t.name}`,
+        value: `template:${t.path}`,
+      });
+    }
+  }
+
+  actionItems.push({ label: "Exit", value: "__exit__" });
+
+  const handleAction = (item: { label: string; value: string }) => {
+    if (item.value === "__exit__") {
+      setTimeout(() => exit(), 100);
+      return;
+    }
+    if (item.value.startsWith("delete:")) {
+      const path = item.value.slice(7);
+      const backup = backups.find((b) => b.path === path);
+      if (backup) {
+        setDeleteTarget({ name: backup.filename, path: backup.path });
+        setPhase("deleting");
+      }
+      return;
+    }
+    if (item.value.startsWith("template:")) {
+      const path = item.value.slice(9);
+      handleTemplateSelect(path);
+      return;
+    }
+    // View backup detail
+    const backup = backups.find((b) => b.path === item.value);
+    if (backup) {
+      setSelectedBackup(backup);
+      setPhase("backup-detail");
+    }
+  };
 
   return (
     <Box flexDirection="column">
       {showBackups && <ListBackups backups={backups} />}
       {showBackups && showTemplates && <Text>{""}</Text>}
-      {showTemplates && (
-        <ListTemplates
-          templates={templates}
-          onSelect={type === "templates" ? handleTemplateSelect : undefined}
-        />
+      {showTemplates && !showBackups && (
+        <Text bold>▸ Templates</Text>
       )}
+      {showTemplates && showBackups && templates.length > 0 && (
+        <Box flexDirection="column">
+          <Text bold>▸ Templates</Text>
+          {templates.map((t, idx) => (
+            <Text key={idx}>
+              {"  "}{idx + 1}. {t.config.name}
+              {t.config.description && (
+                <Text color="gray"> — {t.config.description}</Text>
+              )}
+            </Text>
+          ))}
+        </Box>
+      )}
+      <Box flexDirection="column" marginTop={1}>
+        <Text bold>▸ Actions</Text>
+        <SelectInput items={actionItems} onSelect={handleAction} />
+      </Box>
     </Box>
   );
 };
