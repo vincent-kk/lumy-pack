@@ -16,7 +16,7 @@ export default defineConfig([
     loader: { ".tsx": "tsx" },
   },
   {
-    entry: { cli: "src/cli.tsx" },
+    entry: { cli: "src/cli.ts" },
     format: ["esm"],
     outExtension() {
       return { js: ".mjs" };
