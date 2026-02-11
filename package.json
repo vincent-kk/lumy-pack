@@ -1,0 +1,47 @@
+{
+  "name": "lumy-pack",
+  "version": "0.0.0",
+  "private": true,
+  "description": "lumy-pack monorepo toolbox",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vincent-kk/lumy-pack.git",
+    "owner": "vincent-kk"
+  },
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build:all": "pnpm -r run build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "typecheck": "tsc -b",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "pnpm build:all && changeset publish",
+    "publish:all": "pnpm -r --no-private run publish:npm",
+    "sort:packages": "npx sort-package-json '**/package.json'",
+    "clean": "pnpm -r exec rm -rf dist .tsbuildinfo",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,mjs,json,md}\""
+  },
+  "devDependencies": {
+    "@changesets/changelog-github": "^0.5.1",
+    "@changesets/cli": "^2.29.4",
+    "@eslint/js": "^9.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.34.0",
+    "@typescript-eslint/parser": "^8.14.0",
+    "eslint": "^9.0.0",
+    "eslint-import-resolver-typescript": "^4.4.3",
+    "eslint-plugin-import": "^2.31.0",
+    "prettier": "^3.5.3",
+    "tsup": "^8.4.0",
+    "tsx": "^4.20.2",
+    "typescript": "^5.7.2",
+    "vitest": "^3.2.4"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
