@@ -14,6 +14,7 @@ import {
   LOGS_DIR,
   CONFIG_FILENAME,
 } from "../constants.js";
+import { readAsset } from "../utils/assets.js";
 import { ensureDir, fileExists } from "../utils/paths.js";
 import { initDefaultConfig } from "../core/config.js";
 
@@ -71,6 +72,17 @@ const InitView: React.FC = () => {
         await initDefaultConfig();
         completed.push({ name: `Created ${CONFIG_FILENAME} (defaults)`, done: true });
         setSteps([...completed]);
+
+        // Create example template
+        const exampleTemplatePath = join(getSubDir(TEMPLATES_DIR), "example.yml");
+        if (!(await fileExists(exampleTemplatePath))) {
+          const { writeFile } = await import("node:fs/promises");
+          const exampleYaml = readAsset("template.example.yml");
+          await writeFile(exampleTemplatePath, exampleYaml, "utf-8");
+          completed.push({ name: `Created templates/example.yml`, done: true });
+          setSteps([...completed]);
+        }
+
         setComplete(true);
 
         // Allow time for final render before exit

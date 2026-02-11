@@ -3,9 +3,7 @@ import { join } from "node:path";
 import YAML from "yaml";
 
 import {
-  APP_NAME,
   CONFIG_FILENAME,
-  DEFAULT_FILENAME_PATTERN,
   getAppDir,
   getSubDir,
   BACKUPS_DIR,
@@ -14,6 +12,7 @@ import {
   LOGS_DIR,
 } from "../constants.js";
 import { validateConfig } from "../schemas/config.schema.js";
+import { readAsset } from "../utils/assets.js";
 import { ensureDir, fileExists } from "../utils/paths.js";
 import type { SyncpointConfig } from "../utils/types.js";
 
@@ -101,30 +100,7 @@ export async function initDefaultConfig(): Promise<{
   const configPath = getConfigPath();
   const configExists = await fileExists(configPath);
   if (!configExists) {
-    const defaultConfig: SyncpointConfig = {
-      backup: {
-        targets: [
-          "~/.zshrc",
-          "~/.zprofile",
-          "~/.gitconfig",
-          "~/.gitignore_global",
-          "~/.ssh/config",
-          "~/.config/starship.toml",
-        ],
-        exclude: ["**/*.swp", "**/.DS_Store"],
-        filename: DEFAULT_FILENAME_PATTERN,
-      },
-      scripts: {
-        includeInBackup: true,
-      },
-    };
-
-    const yamlContent = [
-      `# ~/.${APP_NAME}/config.yml`,
-      "",
-      YAML.stringify(defaultConfig, { indent: 2 }),
-    ].join("\n");
-
+    const yamlContent = readAsset("config.default.yml");
     await writeFile(configPath, yamlContent, "utf-8");
     created.push(configPath);
   } else {

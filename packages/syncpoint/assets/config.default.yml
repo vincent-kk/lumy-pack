@@ -1,0 +1,29 @@
+# ──────────────────────────────────────────
+# Syncpoint Configuration
+# ──────────────────────────────────────────
+
+backup:
+  # (Required) List of files/directories to backup. Supports ~ expansion and glob patterns.
+  targets:
+    - ~/.zshrc
+    - ~/.zprofile
+    - ~/.gitconfig
+    - ~/.gitignore_global
+    - ~/.ssh/config
+    - ~/.config/starship.toml
+
+  # (Required) List of glob patterns to exclude from backup.
+  exclude:
+    - "**/*.swp"
+    - "**/.DS_Store"
+
+  # (Required) Backup archive filename pattern.
+  # Available variables: {hostname}, {datetime}
+  filename: "{hostname}_{datetime}"
+
+  # (Optional) Backup archive destination path. Default: ~/.syncpoint/backups/
+  # destination: /path/to/custom/backups
+
+scripts:
+  # (Optional) Whether to include scripts/ directory in backup. Default: true
+  includeInBackup: true
