@@ -13,9 +13,10 @@ export default defineConfig([
     platform: "node",
     clean: true,
     dts: false,
+    loader: { ".tsx": "tsx" },
   },
   {
-    entry: { cli: "src/cli.ts" },
+    entry: { cli: "src/cli.tsx" },
     format: ["esm"],
     outExtension() {
       return { js: ".mjs" };
@@ -27,5 +28,6 @@ export default defineConfig([
     clean: false,
     dts: false,
     banner: { js: "#!/usr/bin/env node" },
+    loader: { ".tsx": "tsx" },
   },
 ]);

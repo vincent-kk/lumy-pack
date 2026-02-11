@@ -2,7 +2,12 @@
   "name": "@lumy-pack/syncpoint",
   "version": "0.0.1",
   "description": "CLI tool for project synchronization and scaffolding",
-  "keywords": ["cli", "sync", "syncpoint", "scaffolding"],
+  "keywords": [
+    "cli",
+    "sync",
+    "syncpoint",
+    "scaffolding"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/vincent-kk/lumy-pack.git",
@@ -27,7 +32,10 @@
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "bin": "./dist/cli.mjs",
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsup && pnpm build:types",
     "build:types": "tsc -p ./tsconfig.declarations.json",
@@ -43,10 +51,21 @@
     "version:patch": "pnpm version patch"
   },
   "dependencies": {
+    "ajv": "^8.0.0",
+    "ajv-formats": "^3.0.0",
     "commander": "^12.1.0",
-    "picocolors": "^1.1.1"
+    "fast-glob": "^3.0.0",
+    "ink": "^5.0.0",
+    "ink-select-input": "^6.0.0",
+    "ink-spinner": "^5.0.0",
+    "picocolors": "^1.1.1",
+    "react": "^18.0.0",
+    "tar": "^7.0.0",
+    "yaml": "^2.0.0"
   },
   "devDependencies": {
-    "@types/node": "^20.11.0"
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.0.0",
+    "@types/tar": "^6.1.13"
   }
 }
