@@ -1,0 +1,265 @@
+import { writeFile, mkdir } from "node:fs/promises";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { createBackup, scanTargets } from "../../core/backup.js";
+import { createInitializedSandbox, type Sandbox } from "../helpers/sandbox.js";
+import { makeConfig } from "../helpers/fixtures.js";
+import { readFileFromArchive } from "../../core/storage.js";
+import { METADATA_FILENAME } from "../../constants.js";
+import { fileExists } from "../../utils/paths.js";
+
+vi.mock("../../utils/logger.js", () => ({
+  logger: {
+    info: vi.fn(),
+    success: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+describe("core/backup", () => {
+  let sandbox: Sandbox;
+
+  beforeEach(async () => {
+    sandbox = await createInitializedSandbox();
+  });
+
+  afterEach(async () => {
+    await sandbox.cleanup();
+  });
+
+  describe("scanTargets", () => {
+    it("finds files matching literal targets", async () => {
+      // Create real test files
+      await writeFile(join(sandbox.home, ".zshrc"), "export PATH=...", "utf-8");
+      await writeFile(join(sandbox.home, ".gitconfig"), "[user]\nname=test", "utf-8");
+
+      const config = makeConfig({
+        backup: {
+          targets: ["~/.zshrc", "~/.gitconfig"],
+          exclude: [],
+          filename: "test",
+        },
+      });
+
+      const { found, missing } = await scanTargets(config);
+
+      expect(found).toHaveLength(2);
+      expect(found.map((f) => f.path)).toContain("~/.zshrc");
+      expect(found.map((f) => f.path)).toContain("~/.gitconfig");
+      expect(missing).toHaveLength(0);
+    });
+
+    it("finds files matching glob patterns", async () => {
+      // Create multiple files matching pattern
+      await mkdir(join(sandbox.home, ".config"), { recursive: true });
+      await writeFile(join(sandbox.home, ".config", "app1.conf"), "config1", "utf-8");
+      await writeFile(join(sandbox.home, ".config", "app2.conf"), "config2", "utf-8");
+      await writeFile(join(sandbox.home, ".config", "readme.txt"), "readme", "utf-8");
+
+      const config = makeConfig({
+        backup: {
+          targets: ["~/.config/*.conf"],
+          exclude: [],
+          filename: "test",
+        },
+      });
+
+      const { found, missing } = await scanTargets(config);
+
+      expect(found).toHaveLength(2);
+      expect(found.map((f) => f.path)).toContain("~/.config/app1.conf");
+      expect(found.map((f) => f.path)).toContain("~/.config/app2.conf");
+      expect(missing).toHaveLength(0);
+    });
+
+    it("reports missing files in result", async () => {
+      const config = makeConfig({
+        backup: {
+          targets: ["~/.nonexistent", "~/.missing.conf"],
+          exclude: [],
+          filename: "test",
+        },
+      });
+
+      const { found, missing } = await scanTargets(config);
+
+      expect(found).toHaveLength(0);
+      expect(missing).toHaveLength(2);
+      expect(missing).toContain("~/.nonexistent");
+      expect(missing).toContain("~/.missing.conf");
+    });
+
+    it("excludes files matching exclude patterns", async () => {
+      await mkdir(join(sandbox.home, ".vim"), { recursive: true });
+      await writeFile(join(sandbox.home, ".vim", "config.vim"), "config", "utf-8");
+      await writeFile(join(sandbox.home, ".vim", "temp.swp"), "swap", "utf-8");
+
+      const config = makeConfig({
+        backup: {
+          targets: ["~/.vim/*"],
+          exclude: ["**/*.swp"],
+          filename: "test",
+        },
+      });
+
+      const { found, missing } = await scanTargets(config);
+
+      expect(found).toHaveLength(1);
+      expect(found[0].path).toContain("config.vim");
+      expect(found.map((f) => f.path)).not.toContain("temp.swp");
+    });
+
+    it("warns about sensitive file names", async () => {
+      const { logger } = await import("../../utils/logger.js");
+      await writeFile(join(sandbox.home, "id_rsa"), "privatekey", "utf-8");
+
+      const config = makeConfig({
+        backup: {
+          targets: ["~/id_rsa"],
+          exclude: [],
+          filename: "test",
+        },
+      });
+
+      await scanTargets(config);
+
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("Sensitive file detected"));
+    });
+  });
+
+  describe("createBackup", () => {
+    it("creates tar.gz archive at expected path", async () => {
+      await writeFile(join(sandbox.home, ".zshrc"), "export PATH=...", "utf-8");
+
+      const config = makeConfig({
+        backup: {
+          targets: ["~/.zshrc"],
+          exclude: [],
+          filename: "test_{datetime}",
+        },
+      });
+
+      const result = await createBackup(config);
+
+      expect(result.archivePath).toMatch(/\.tar\.gz$/);
+      expect(await fileExists(result.archivePath)).toBe(true);
+    });
+
+    it("archive contains _metadata.json", async () => {
+      await writeFile(join(sandbox.home, ".zshrc"), "export PATH=...", "utf-8");
+
+      const config = makeConfig({
+        backup: {
+          targets: ["~/.zshrc"],
+          exclude: [],
+          filename: "test",
+        },
+      });
+
+      const result = await createBackup(config);
+
+      const metaBuf = await readFileFromArchive(result.archivePath, METADATA_FILENAME);
+      expect(metaBuf).toBeDefined();
+
+      const metadata = JSON.parse(metaBuf!.toString("utf-8"));
+      expect(metadata.version).toBe("1.0.0");
+      expect(metadata.files).toHaveLength(1);
+    });
+
+    it("archive contains all target files", async () => {
+      await writeFile(join(sandbox.home, ".zshrc"), "zshrc content", "utf-8");
+      await writeFile(join(sandbox.home, ".gitconfig"), "git config", "utf-8");
+
+      const config = makeConfig({
+        backup: {
+          targets: ["~/.zshrc", "~/.gitconfig"],
+          exclude: [],
+          filename: "test",
+        },
+      });
+
+      const result = await createBackup(config);
+
+      const zshrcBuf = await readFileFromArchive(result.archivePath, ".zshrc");
+      const gitconfigBuf = await readFileFromArchive(result.archivePath, ".gitconfig");
+
+      expect(zshrcBuf?.toString("utf-8")).toBe("zshrc content");
+      expect(gitconfigBuf?.toString("utf-8")).toBe("git config");
+    });
+
+    it("returns correct archivePath and metadata", async () => {
+      await writeFile(join(sandbox.home, ".zshrc"), "export PATH=...", "utf-8");
+
+      const config = makeConfig({
+        backup: {
+          targets: ["~/.zshrc"],
+          exclude: [],
+          filename: "test",
+        },
+      });
+
+      const result = await createBackup(config);
+
+      expect(result.archivePath).toBeDefined();
+      expect(result.metadata).toBeDefined();
+      expect(result.metadata.files).toHaveLength(1);
+      expect(result.metadata.summary.fileCount).toBe(1);
+    });
+
+    it("dry-run returns result without creating archive file", async () => {
+      await writeFile(join(sandbox.home, ".zshrc"), "export PATH=...", "utf-8");
+
+      const config = makeConfig({
+        backup: {
+          targets: ["~/.zshrc"],
+          exclude: [],
+          filename: "test",
+        },
+      });
+
+      const result = await createBackup(config, { dryRun: true });
+
+      expect(result.archivePath).toBeDefined();
+      expect(result.metadata).toBeDefined();
+      expect(await fileExists(result.archivePath)).toBe(false);
+    });
+
+    it("uses custom destination from config", async () => {
+      await writeFile(join(sandbox.home, ".zshrc"), "export PATH=...", "utf-8");
+      const customDest = join(sandbox.home, "custom-backups");
+      await mkdir(customDest, { recursive: true });
+
+      const config = makeConfig({
+        backup: {
+          targets: ["~/.zshrc"],
+          exclude: [],
+          filename: "test",
+          destination: customDest,
+        },
+      });
+
+      const result = await createBackup(config);
+
+      expect(result.archivePath).toContain("custom-backups");
+      expect(await fileExists(result.archivePath)).toBe(true);
+    });
+
+    it("appends tag to filename", async () => {
+      await writeFile(join(sandbox.home, ".zshrc"), "export PATH=...", "utf-8");
+
+      const config = makeConfig({
+        backup: {
+          targets: ["~/.zshrc"],
+          exclude: [],
+          filename: "test",
+        },
+      });
+
+      const result = await createBackup(config, { tag: "mytag" });
+
+      expect(result.archivePath).toContain("mytag");
+    });
+  });
+});
