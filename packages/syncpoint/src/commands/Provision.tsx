@@ -45,7 +45,7 @@ const ProvisionView: React.FC<ProvisionViewProps> = ({
         );
 
         if (!match) {
-          setError(`템플릿을 찾을 수 없습니다: ${templateName}`);
+          setError(`Template not found: ${templateName}`);
           setPhase("error");
           exit();
           return;
@@ -129,7 +129,7 @@ const ProvisionView: React.FC<ProvisionViewProps> = ({
       {options.dryRun && phase === "done" && template && (
         <Box flexDirection="column">
           <Text color="yellow">
-            (dry-run) 실행 계획만 표시합니다
+            (dry-run) Showing execution plan only
           </Text>
           <Box flexDirection="column" marginTop={1}>
             {template.steps.map((step, idx) => (
@@ -147,7 +147,7 @@ const ProvisionView: React.FC<ProvisionViewProps> = ({
                 )}
                 {step.skip_if && (
                   <Text color="blue">
-                    {"            "}건너뜀 조건: {step.skip_if}
+                    {"            "}Skip condition: {step.skip_if}
                   </Text>
                 )}
               </Box>
@@ -171,18 +171,18 @@ const ProvisionView: React.FC<ProvisionViewProps> = ({
         <Box flexDirection="column" marginTop={1}>
           <Text color="gray">{"  "}────────────────────</Text>
           <Text>
-            {"  "}결과: <Text color="green">{successCount} 성공</Text> ·{" "}
-            <Text color="blue">{skippedCount} 건너뜀</Text> ·{" "}
-            <Text color="red">{failedCount} 실패</Text>
+            {"  "}Result: <Text color="green">{successCount} succeeded</Text> ·{" "}
+            <Text color="blue">{skippedCount} skipped</Text> ·{" "}
+            <Text color="red">{failedCount} failed</Text>
           </Text>
 
           {template.backup && !options.skipRestore && (
             <Box flexDirection="column" marginTop={1}>
               <Text bold>
-                ▸ 설정파일 복원을 진행합니다...
+                ▸ Proceeding with config file restore...
               </Text>
               <Text color="gray">
-                {"  "}백업 연동: {template.backup}
+                {"  "}Backup link: {template.backup}
               </Text>
             </Box>
           )}
@@ -195,9 +195,9 @@ const ProvisionView: React.FC<ProvisionViewProps> = ({
 export function registerProvisionCommand(program: Command): void {
   program
     .command("provision <template>")
-    .description("템플릿 기반 머신 프로비저닝 실행")
-    .option("--dry-run", "실행 없이 계획만 표시", false)
-    .option("--skip-restore", "템플릿 완료 후 자동 복원 건너뛰기", false)
+    .description("Run template-based machine provisioning")
+    .option("--dry-run", "Show plan without execution", false)
+    .option("--skip-restore", "Skip automatic restore after template completion", false)
     .action(
       async (
         template: string,

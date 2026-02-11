@@ -40,8 +40,8 @@ export function formatDatetime(date: Date): string {
 }
 
 /**
- * Format a relative time string in Korean.
- * e.g. "2시간 전", "37일 전"
+ * Format a relative time string.
+ * e.g. "2 hours ago", "37 days ago"
  */
 export function formatRelativeTime(date: Date): string {
   const now = Date.now();
@@ -51,10 +51,10 @@ export function formatRelativeTime(date: Date): string {
   const diffHour = Math.floor(diffMin / 60);
   const diffDay = Math.floor(diffHour / 24);
 
-  if (diffSec < 60) return `${diffSec}초 전`;
-  if (diffMin < 60) return `${diffMin}분 전`;
-  if (diffHour < 24) return `${diffHour}시간 전`;
-  return `${diffDay}일 전`;
+  if (diffSec < 60) return `${diffSec}s ago`;
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHour < 24) return `${diffHour}h ago`;
+  return `${diffDay}d ago`;
 }
 
 /**

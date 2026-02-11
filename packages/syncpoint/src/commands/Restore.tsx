@@ -55,7 +55,7 @@ const RestoreView: React.FC<RestoreViewProps> = ({ filename, options }) => {
         setBackups(list);
 
         if (list.length === 0) {
-          setError("사용 가능한 백업이 없습니다.");
+          setError("No backups available.");
           setPhase("error");
           exit();
           return;
@@ -69,7 +69,7 @@ const RestoreView: React.FC<RestoreViewProps> = ({ filename, options }) => {
               b.filename.startsWith(filename),
           );
           if (!match) {
-            setError(`백업을 찾을 수 없습니다: ${filename}`);
+            setError(`Backup not found: ${filename}`);
             setPhase("error");
             exit();
             return;
@@ -166,13 +166,13 @@ const RestoreView: React.FC<RestoreViewProps> = ({ filename, options }) => {
     <Box flexDirection="column">
       {/* Phase: Loading */}
       {phase === "loading" && (
-        <Text>▸ 백업 목록 불러오는 중...</Text>
+        <Text>▸ Loading backup list...</Text>
       )}
 
       {/* Phase: Selecting */}
       {phase === "selecting" && (
         <Box flexDirection="column">
-          <Text bold>▸ 백업 선택</Text>
+          <Text bold>▸ Select backup</Text>
           <SelectInput items={selectItems} onSelect={handleSelect} />
         </Box>
       )}
@@ -185,25 +185,24 @@ const RestoreView: React.FC<RestoreViewProps> = ({ filename, options }) => {
         <Box flexDirection="column">
           <Box flexDirection="column" marginBottom={1}>
             <Text bold>
-              ▸ 메타데이터 ({plan.metadata.config.filename ?? ""})
+              ▸ Metadata ({plan.metadata.config.filename ?? ""})
             </Text>
-            <Text>{"  "}호스트: {plan.metadata.hostname}</Text>
-            <Text>{"  "}생성:  {plan.metadata.createdAt}</Text>
+            <Text>{"  "}Host: {plan.metadata.hostname}</Text>
+            <Text>{"  "}Created: {plan.metadata.createdAt}</Text>
             <Text>
-              {"  "}파일:  {plan.metadata.summary.fileCount}개 (
+              {"  "}Files: {plan.metadata.summary.fileCount} (
               {formatBytes(plan.metadata.summary.totalSize)})
             </Text>
 
             {isRemoteBackup && (
               <Text color="yellow">
-                {"  "}⚠ 이 백업은 다른 머신({plan.metadata.hostname})에서
-                생성되었습니다
+                {"  "}⚠ This backup was created on a different machine ({plan.metadata.hostname})
               </Text>
             )}
           </Box>
 
           <Box flexDirection="column" marginBottom={1}>
-            <Text bold>▸ 복원 계획:</Text>
+            <Text bold>▸ Restore plan:</Text>
             {plan.actions.map((action, idx) => {
               let icon: string;
               let color: string;
@@ -211,19 +210,19 @@ const RestoreView: React.FC<RestoreViewProps> = ({ filename, options }) => {
 
               switch (action.action) {
                 case "overwrite":
-                  icon = "덮어쓰기";
+                  icon = "Overwrite";
                   color = "yellow";
                   label = `(${formatBytes(action.currentSize ?? 0)} → ${formatBytes(action.backupSize ?? 0)}, ${action.reason})`;
                   break;
                 case "skip":
-                  icon = "건너뜀";
+                  icon = "Skip";
                   color = "gray";
                   label = `(${action.reason})`;
                   break;
                 case "create":
-                  icon = "새로 생성";
+                  icon = "Create";
                   color = "green";
-                  label = "(현재 없음)";
+                  label = "(not present)";
                   break;
               }
 
@@ -242,7 +241,7 @@ const RestoreView: React.FC<RestoreViewProps> = ({ filename, options }) => {
 
           {options.dryRun && phase === "done" && (
             <Text color="yellow">
-              (dry-run) 실제 복원은 수행되지 않았습니다
+              (dry-run) No actual restore was performed
             </Text>
           )}
         </Box>
@@ -251,7 +250,7 @@ const RestoreView: React.FC<RestoreViewProps> = ({ filename, options }) => {
       {/* Phase: Safety backup + confirm */}
       {phase === "confirming" && (
         <Box flexDirection="column">
-          <Confirm message="복원을 진행할까요?" onConfirm={handleConfirm} />
+          <Confirm message="Proceed with restore?" onConfirm={handleConfirm} />
         </Box>
       )}
 
@@ -260,10 +259,10 @@ const RestoreView: React.FC<RestoreViewProps> = ({ filename, options }) => {
         <Box flexDirection="column">
           {safetyDone && (
             <Text>
-              <Text color="green">✓</Text> 현재 파일을 safety 백업 완료
+              <Text color="green">✓</Text> Safety backup of current files complete
             </Text>
           )}
-          <Text>▸ 복원 중...</Text>
+          <Text>▸ Restoring...</Text>
         </Box>
       )}
 
@@ -272,21 +271,21 @@ const RestoreView: React.FC<RestoreViewProps> = ({ filename, options }) => {
         <Box flexDirection="column" marginTop={1}>
           {safetyDone && (
             <Text>
-              <Text color="green">✓</Text> 현재 파일을 safety 백업 완료
+              <Text color="green">✓</Text> Safety backup of current files complete
             </Text>
           )}
           <Text color="green" bold>
-            ✓ 복원 완료
+            ✓ Restore complete
           </Text>
           <Text>
-            {"  "}복원됨: {result.restoredFiles.length}개 파일
+            {"  "}Restored: {result.restoredFiles.length} files
           </Text>
           <Text>
-            {"  "}건너뜀: {result.skippedFiles.length}개 파일
+            {"  "}Skipped: {result.skippedFiles.length} files
           </Text>
           {result.safetyBackupPath && (
             <Text>
-              {"  "}Safety 백업: {contractTilde(result.safetyBackupPath)}
+              {"  "}Safety backup: {contractTilde(result.safetyBackupPath)}
             </Text>
           )}
         </Box>
@@ -298,8 +297,8 @@ const RestoreView: React.FC<RestoreViewProps> = ({ filename, options }) => {
 export function registerRestoreCommand(program: Command): void {
   program
     .command("restore [filename]")
-    .description("백업에서 설정파일 복원")
-    .option("--dry-run", "실제 복원 없이 변경 예정 사항만 표시", false)
+    .description("Restore config files from a backup")
+    .option("--dry-run", "Show planned changes without actual restore", false)
     .action(async (filename: string | undefined, opts: { dryRun: boolean }) => {
       const { waitUntilExit } = render(
         <RestoreView

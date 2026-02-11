@@ -35,15 +35,15 @@ const StepStatusText: React.FC<{ step: StepResult }> = ({ step }) => {
     case "success":
       return (
         <Text color="green">
-          완료{step.duration != null ? ` (${Math.round(step.duration / 1000)}s)` : ""}
+          Done{step.duration != null ? ` (${Math.round(step.duration / 1000)}s)` : ""}
         </Text>
       );
     case "running":
-      return <Text color="yellow">실행 중...</Text>;
+      return <Text color="yellow">Running...</Text>;
     case "skipped":
-      return <Text color="blue">건너뜀 (이미 설치됨)</Text>;
+      return <Text color="blue">Skipped (already installed)</Text>;
     case "failed":
-      return <Text color="red">실패{step.error ? `: ${step.error}` : ""}</Text>;
+      return <Text color="red">Failed{step.error ? `: ${step.error}` : ""}</Text>;
     case "pending":
     default:
       return null;

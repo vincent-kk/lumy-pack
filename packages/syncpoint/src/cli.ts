@@ -12,7 +12,7 @@ const program = new Command();
 program
   .name("syncpoint")
   .description(
-    "Personal Environment Manager — 설정파일 백업·복원과 머신 프로비저닝 CLI",
+    "Personal Environment Manager — Config backup/restore and machine provisioning CLI",
   )
   .version(VERSION);
 

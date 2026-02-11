@@ -78,7 +78,7 @@ const BackupView: React.FC<BackupViewProps> = ({ options }) => {
   if (phase === "error" || error) {
     return (
       <Box flexDirection="column">
-        <Text color="red">✗ 백업 실패: {error}</Text>
+        <Text color="red">✗ Backup failed: {error}</Text>
       </Box>
     );
   }
@@ -86,7 +86,7 @@ const BackupView: React.FC<BackupViewProps> = ({ options }) => {
   return (
     <Box flexDirection="column">
       {/* Scan results */}
-      <Text bold>▸ 백업 대상 스캔 중...</Text>
+      <Text bold>▸ Scanning backup targets...</Text>
       {foundFiles.map((file, idx) => (
         <Text key={idx}>
           {"  "}
@@ -101,17 +101,17 @@ const BackupView: React.FC<BackupViewProps> = ({ options }) => {
         <Text key={idx}>
           {"  "}
           <Text color="yellow">⚠</Text> {file}
-          <Text color="gray">{"    "}파일 없음, 건너뜀</Text>
+          <Text color="gray">{"    "}File not found, skipped</Text>
         </Text>
       ))}
 
       {options.dryRun && phase === "done" && (
         <Box flexDirection="column" marginTop={1}>
           <Text color="yellow">
-            (dry-run) 실제 백업은 생성되지 않았습니다
+            (dry-run) No actual backup was created
           </Text>
           <Text>
-            대상 파일: {foundFiles.length}개 (
+            Target files: {foundFiles.length} (
             {formatBytes(foundFiles.reduce((sum, f) => sum + f.size, 0))})
           </Text>
         </Box>
@@ -120,7 +120,7 @@ const BackupView: React.FC<BackupViewProps> = ({ options }) => {
       {/* Compression progress */}
       {phase === "compressing" && (
         <Box flexDirection="column" marginTop={1}>
-          <Text>▸ 압축 중...</Text>
+          <Text>▸ Compressing...</Text>
           <Text>{"  "}<ProgressBar percent={progress} /></Text>
         </Box>
       )}
@@ -129,17 +129,17 @@ const BackupView: React.FC<BackupViewProps> = ({ options }) => {
       {phase === "done" && result && !options.dryRun && (
         <Box flexDirection="column" marginTop={1}>
           <Text color="green" bold>
-            ✓ 백업 완료
+            ✓ Backup complete
           </Text>
           <Text>
-            {"  "}파일: {result.metadata.config.filename}
+            {"  "}File: {result.metadata.config.filename}
           </Text>
           <Text>
-            {"  "}크기: {formatBytes(result.metadata.summary.totalSize)} (
-            {result.metadata.summary.fileCount}개 파일 + metadata)
+            {"  "}Size: {formatBytes(result.metadata.summary.totalSize)} (
+            {result.metadata.summary.fileCount} files + metadata)
           </Text>
           <Text>
-            {"  "}위치: {contractTilde(result.archivePath)}
+            {"  "}Path: {contractTilde(result.archivePath)}
           </Text>
         </Box>
       )}
@@ -150,9 +150,9 @@ const BackupView: React.FC<BackupViewProps> = ({ options }) => {
 export function registerBackupCommand(program: Command): void {
   program
     .command("backup")
-    .description("설정파일 백업 생성")
-    .option("--dry-run", "실제 압축 없이 대상 파일 목록만 표시", false)
-    .option("--tag <name>", "백업 파일명에 태그 추가")
+    .description("Create a config file backup")
+    .option("--dry-run", "Show target file list without actual compression", false)
+    .option("--tag <name>", "Add a tag to the backup filename")
     .action(async (opts: { dryRun: boolean; tag?: string }) => {
       const { waitUntilExit } = render(
         <BackupView options={{ dryRun: opts.dryRun, tag: opts.tag }} />,

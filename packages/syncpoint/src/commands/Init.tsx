@@ -35,7 +35,7 @@ const InitView: React.FC = () => {
 
         // Check if already initialized
         if (await fileExists(join(appDir, CONFIG_FILENAME))) {
-          setError(`이미 초기화되어 있습니다: ${appDir}`);
+          setError(`Already initialized: ${appDir}`);
           exit();
           return;
         }
@@ -64,12 +64,12 @@ const InitView: React.FC = () => {
 
         for (const dir of dirs) {
           await ensureDir(dir.name);
-          completed.push({ name: `${dir.label} 생성`, done: true });
+          completed.push({ name: `Created ${dir.label}`, done: true });
           setSteps([...completed]);
         }
 
         await initDefaultConfig();
-        completed.push({ name: `${CONFIG_FILENAME} 생성 (기본값)`, done: true });
+        completed.push({ name: `Created ${CONFIG_FILENAME} (defaults)`, done: true });
         setSteps([...completed]);
         setComplete(true);
 
@@ -100,15 +100,15 @@ const InitView: React.FC = () => {
 
       {complete && (
         <Box flexDirection="column" marginTop={1}>
-          <Text bold>초기화 완료! 다음 단계:</Text>
+          <Text bold>Initialization complete! Next steps:</Text>
           <Text>
-            {"  "}1. config.yml을 편집하여 백업 대상을 지정하세요
+            {"  "}1. Edit config.yml to specify backup targets
           </Text>
           <Text>
             {"     "}→ ~/.{APP_NAME}/{CONFIG_FILENAME}
           </Text>
           <Text>
-            {"  "}2. {APP_NAME} backup 으로 첫 번째 스냅샷을 만드세요
+            {"  "}2. Run {APP_NAME} backup to create your first snapshot
           </Text>
         </Box>
       )}
@@ -119,7 +119,7 @@ const InitView: React.FC = () => {
 export function registerInitCommand(program: Command): void {
   program
     .command("init")
-    .description(`~/.${APP_NAME}/ 구조 생성 및 기본 설정 초기화`)
+    .description(`Initialize ~/.${APP_NAME}/ directory structure and default config`)
     .action(async () => {
       const { waitUntilExit } = render(<InitView />);
       await waitUntilExit();

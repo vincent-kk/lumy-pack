@@ -103,18 +103,18 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
     if (action === "keep-recent-5") {
       const toDelete = backups.slice(5);
       setCleanupMessage(
-        `최근 5개 백업만 유지합니다. ${toDelete.length}개 삭제, ${formatBytes(toDelete.reduce((s, b) => s + b.size, 0))} 확보`,
+        `Keep only the 5 most recent backups. ${toDelete.length} to delete, ${formatBytes(toDelete.reduce((s, b) => s + b.size, 0))} freed`,
       );
     } else if (action === "older-than-30") {
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - 30);
       const toDelete = backups.filter((b) => b.createdAt < cutoff);
       setCleanupMessage(
-        `30일 이전 백업을 제거합니다. ${toDelete.length}개 삭제, ${formatBytes(toDelete.reduce((s, b) => s + b.size, 0))} 확보`,
+        `Remove backups older than 30 days. ${toDelete.length} to delete, ${formatBytes(toDelete.reduce((s, b) => s + b.size, 0))} freed`,
       );
     } else if (action === "delete-logs") {
       setCleanupMessage(
-        `로그 전체를 삭제합니다. ${formatBytes(status?.logs.totalSize ?? 0)} 확보`,
+        `Delete all logs. ${formatBytes(status?.logs.totalSize ?? 0)} freed`,
       );
     }
 
@@ -171,7 +171,7 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
   }
 
   if (phase === "loading") {
-    return <Text>불러오는 중...</Text>;
+    return <Text>Loading...</Text>;
   }
 
   if (!status) return null;
@@ -191,45 +191,45 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
   const statusDisplay = (
     <Box flexDirection="column">
       <Text bold>
-        ▸ {APP_NAME} 상태 — ~/.{APP_NAME}/
+        ▸ {APP_NAME} status — ~/.{APP_NAME}/
       </Text>
       <Box marginLeft={2} marginTop={1}>
         <Table
-          headers={["항목", "개수", "크기"]}
+          headers={["Directory", "Count", "Size"]}
           rows={[
             [
               "backups/",
-              `${status.backups.count}개`,
+              `${status.backups.count}`,
               formatBytes(status.backups.totalSize),
             ],
             [
               "templates/",
-              `${status.templates.count}개`,
+              `${status.templates.count}`,
               formatBytes(status.templates.totalSize),
             ],
             [
               "scripts/",
-              `${status.scripts.count}개`,
+              `${status.scripts.count}`,
               formatBytes(status.scripts.totalSize),
             ],
             [
               "logs/",
-              `${status.logs.count}개`,
+              `${status.logs.count}`,
               formatBytes(status.logs.totalSize),
             ],
-            ["합계", `${totalCount}개`, formatBytes(totalSize)],
+            ["Total", `${totalCount}`, formatBytes(totalSize)],
           ]}
         />
       </Box>
       {status.lastBackup && (
         <Box marginTop={1} marginLeft={2} flexDirection="column">
           <Text>
-            최근 백업: {formatDate(status.lastBackup)} (
+            Latest backup: {formatDate(status.lastBackup)} (
             {formatRelativeTime(status.lastBackup)})
           </Text>
           {status.oldestBackup && (
             <Text>
-              가장 오래된 백업: {formatDate(status.oldestBackup)} (
+              Oldest backup: {formatDate(status.oldestBackup)} (
               {formatRelativeTime(status.oldestBackup)})
             </Text>
           )}
@@ -251,19 +251,19 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
 
     const cleanupItems: SelectItem[] = [
       {
-        label: `최근 5개 백업만 유지       ${keepRecent5.length}개 삭제, ${formatBytes(keepRecent5.reduce((s, b) => s + b.size, 0))} 확보`,
+        label: `Keep only 5 recent backups  ${keepRecent5.length} to delete, ${formatBytes(keepRecent5.reduce((s, b) => s + b.size, 0))} freed`,
         value: "keep-recent-5",
       },
       {
-        label: `30일 이전 백업 제거         ${olderThan30.length}개 삭제, ${formatBytes(olderThan30.reduce((s, b) => s + b.size, 0))} 확보`,
+        label: `Remove backups older than 30d ${olderThan30.length} to delete, ${formatBytes(olderThan30.reduce((s, b) => s + b.size, 0))} freed`,
         value: "older-than-30",
       },
       {
-        label: `로그 전체 삭제              ${formatBytes(status.logs.totalSize)} 확보`,
+        label: `Delete all logs               ${formatBytes(status.logs.totalSize)} freed`,
         value: "delete-logs",
       },
       {
-        label: "취소",
+        label: "Cancel",
         value: "cancel",
       },
     ];
@@ -272,7 +272,7 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
       <Box flexDirection="column">
         {statusDisplay}
         <Box flexDirection="column" marginTop={1}>
-          <Text bold>▸ 정리 옵션</Text>
+          <Text bold>▸ Cleanup options</Text>
           <SelectInput
             items={cleanupItems}
             onSelect={handleCleanupSelect}
@@ -287,7 +287,7 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
       <Box flexDirection="column">
         <Text>{cleanupMessage}</Text>
         <Confirm
-          message="진행할까요?"
+          message="Proceed?"
           onConfirm={handleConfirm}
           defaultYes={false}
         />
@@ -298,7 +298,7 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
   if (phase === "done") {
     return (
       <Box flexDirection="column">
-        <Text color="green">✓ 정리 완료</Text>
+        <Text color="green">✓ Cleanup complete</Text>
       </Box>
     );
   }
@@ -309,8 +309,8 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
 export function registerStatusCommand(program: Command): void {
   program
     .command("status")
-    .description(`~/.${APP_NAME}/ 전체 상태 요약`)
-    .option("--cleanup", "인터랙티브 정리 모드", false)
+    .description(`Show ~/.${APP_NAME}/ status summary`)
+    .option("--cleanup", "Interactive cleanup mode", false)
     .action(async (opts: { cleanup: boolean }) => {
       const { waitUntilExit } = render(
         <StatusView cleanup={opts.cleanup} />,
