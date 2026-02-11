@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { validateTemplate } from "../../schemas/template.schema.js";
-import { makeTemplate } from "../../helpers/fixtures.js";
+import { makeTemplate } from "../helpers/fixtures.js";
 
 describe("validateTemplate", () => {
   it("validates a complete valid template", () => {

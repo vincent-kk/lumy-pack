@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { validateMetadata } from "../../schemas/metadata.schema.js";
-import { makeMetadata, makeFileEntry } from "../../helpers/fixtures.js";
+import { makeMetadata, makeFileEntry } from "../helpers/fixtures.js";
 
 describe("validateMetadata", () => {
   it("validates a complete valid metadata object", () => {
