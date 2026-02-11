@@ -1,0 +1,52 @@
+{
+  "name": "@lumy-pack/syncpoint",
+  "version": "0.0.1",
+  "description": "CLI tool for project synchronization and scaffolding",
+  "keywords": ["cli", "sync", "syncpoint", "scaffolding"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vincent-kk/lumy-pack.git",
+    "directory": "packages/syncpoint"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Vincent K. Kelvin",
+    "email": "lunox273@gmail.com"
+  },
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "source": "./src/index.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "bin": "./dist/cli.mjs",
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsup && pnpm build:types",
+    "build:types": "tsc -p ./tsconfig.declarations.json",
+    "build:publish:npm": "pnpm build && pnpm publish:npm",
+    "dev": "tsx src/cli.ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint \"src/**/*.ts\"",
+    "publish:npm": "pnpm publish --access public --no-git-checks",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "version:major": "pnpm version major",
+    "version:minor": "pnpm version minor",
+    "version:patch": "pnpm version patch"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0"
+  }
+}
