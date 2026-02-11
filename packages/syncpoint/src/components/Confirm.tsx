@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Text, useInput } from "ink";
+import { Text, useInput } from 'ink';
+import React, { useState } from 'react';
 
 interface ConfirmProps {
   message: string;
@@ -16,10 +16,10 @@ export const Confirm: React.FC<ConfirmProps> = ({
 
   useInput((input, key) => {
     if (answered) return;
-    if (input === "y" || input === "Y") {
+    if (input === 'y' || input === 'Y') {
       setAnswered(true);
       onConfirm(true);
-    } else if (input === "n" || input === "N") {
+    } else if (input === 'n' || input === 'N') {
       setAnswered(true);
       onConfirm(false);
     } else if (key.return) {
@@ -28,11 +28,17 @@ export const Confirm: React.FC<ConfirmProps> = ({
     }
   });
 
-  const hint = defaultYes ? "[Y/n]" : "[y/N]";
+  const yText = defaultYes ? <Text bold>Y</Text> : <Text dimColor>y</Text>;
+  const nText = defaultYes ? <Text dimColor>n</Text> : <Text bold>N</Text>;
+
   return (
     <Text>
-      {message}{" "}
-      <Text color="gray">{hint}</Text>
+      <Text color="cyan">? </Text>
+      {message} <Text color="gray">[</Text>
+      {yText}
+      <Text color="gray">/</Text>
+      {nText}
+      <Text color="gray">]</Text>
     </Text>
   );
 };
