@@ -12,7 +12,6 @@ export function makeConfig(overrides?: Partial<SyncpointConfig>): SyncpointConfi
       includeInBackup: true,
       ...overrides?.scripts,
     },
-    ...overrides,
   } as SyncpointConfig;
 }
 
