@@ -43,7 +43,7 @@ export async function invokeClaudeCode(
 
   try {
     return await new Promise((resolve, reject) => {
-      const args = ['--edit'];
+      const args = ['--edit', '--model', 'sonnet'];
       if (options?.sessionId) {
         args.push('--session', options.sessionId);
       }

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { lstat, readFile } from 'node:fs/promises';
 
-import { APP_VERSION } from '../constants.js';
+import { VERSION } from '../version.js';
 import { validateMetadata } from '../schemas/metadata.schema.js';
 import { contractTilde } from '../utils/paths.js';
 import { getHostname, getSystemInfo } from '../utils/system.js';
@@ -24,7 +24,7 @@ export function createMetadata(
 
   return {
     version: METADATA_VERSION,
-    toolVersion: APP_VERSION,
+    toolVersion: VERSION,
     createdAt: new Date().toISOString(),
     hostname: getHostname(),
     system: getSystemInfo(),

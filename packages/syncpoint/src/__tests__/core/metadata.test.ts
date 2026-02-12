@@ -8,6 +8,7 @@ import {
   parseMetadata,
 } from '../../core/metadata.js';
 import type { FileEntry, SyncpointConfig } from '../../utils/types.js';
+import { VERSION } from '../../version.js';
 import { createSandbox } from '../helpers/sandbox.js';
 
 describe('metadata', () => {
@@ -34,7 +35,7 @@ describe('metadata', () => {
       const metadata = createMetadata(files, config);
 
       expect(metadata.version).toBe('1.0.0');
-      expect(metadata.toolVersion).toBe('0.0.1');
+      expect(metadata.toolVersion).toBe(VERSION);
     });
 
     it('includes hostname and system info', () => {
@@ -153,7 +154,7 @@ describe('metadata', () => {
     it('parses valid JSON string to BackupMetadata', () => {
       const validJson = JSON.stringify({
         version: '1.0.0',
-        toolVersion: '0.0.1',
+        toolVersion: VERSION,
         createdAt: '2024-01-01T00:00:00.000Z',
         hostname: 'testhost',
         system: {
@@ -174,14 +175,14 @@ describe('metadata', () => {
       const metadata = parseMetadata(validJson);
 
       expect(metadata.version).toBe('1.0.0');
-      expect(metadata.toolVersion).toBe('0.0.1');
+      expect(metadata.toolVersion).toBe(VERSION);
       expect(metadata.hostname).toBe('testhost');
     });
 
     it('parses Buffer input to BackupMetadata', () => {
       const validJson = JSON.stringify({
         version: '1.0.0',
-        toolVersion: '0.0.1',
+        toolVersion: VERSION,
         createdAt: '2024-01-01T00:00:00.000Z',
         hostname: 'testhost',
         system: {
@@ -224,7 +225,7 @@ describe('metadata', () => {
     it('throws on invalid metadata field types', () => {
       const wrongTypes = JSON.stringify({
         version: '1.0.0',
-        toolVersion: '0.0.1',
+        toolVersion: VERSION,
         createdAt: '2024-01-01T00:00:00.000Z',
         hostname: 'testhost',
         system: {

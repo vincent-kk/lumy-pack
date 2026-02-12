@@ -4,6 +4,7 @@ import type {
   SyncpointConfig,
   TemplateConfig,
 } from '../../utils/types.js';
+import { VERSION } from '../../version.js';
 
 export function makeConfig(
   overrides?: Partial<SyncpointConfig>,
@@ -38,7 +39,7 @@ export function makeMetadata(
 ): BackupMetadata {
   return {
     version: '1.0.0',
-    toolVersion: '0.0.1',
+    toolVersion: VERSION,
     createdAt: new Date().toISOString(),
     hostname: 'test-host',
     system: { platform: 'darwin', release: '24.0.0', arch: 'arm64' },

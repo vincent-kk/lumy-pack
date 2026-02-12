@@ -38,10 +38,10 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsup && pnpm build:types",
+    "build": "node scripts/inject-version.js && tsup && pnpm build:types",
     "build:types": "tsc -p ./tsconfig.declarations.json",
     "build:publish:npm": "pnpm build && pnpm publish:npm",
-    "dev": "tsx src/cli.ts",
+    "dev": "node scripts/inject-version.js && tsx src/cli.ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint \"src/**/*.ts\"",
     "publish:npm": "pnpm publish --access public --no-git-checks",

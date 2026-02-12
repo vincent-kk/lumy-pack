@@ -8,7 +8,7 @@ import { registerProvisionCommand } from './commands/Provision.js';
 import { registerRestoreCommand } from './commands/Restore.js';
 import { registerStatusCommand } from './commands/Status.js';
 import { registerWizardCommand } from './commands/Wizard.js';
-import { APP_VERSION } from './constants.js';
+import { VERSION } from './version.js';
 
 const program = new Command();
 program
@@ -16,7 +16,7 @@ program
   .description(
     'Personal Environment Manager — Config backup/restore and machine provisioning CLI',
   )
-  .version(APP_VERSION);
+  .version(VERSION);
 
 registerInitCommand(program);
 registerWizardCommand(program);
