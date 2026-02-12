@@ -502,6 +502,10 @@ export function registerListCommand(program: Command): void {
     .option('--delete <n>', 'Delete item #n')
     .action(async (type: string | undefined, opts: { delete?: string }) => {
       const deleteIndex = opts.delete ? parseInt(opts.delete, 10) : undefined;
+      if (deleteIndex !== undefined && isNaN(deleteIndex)) {
+        console.error(`Invalid delete index: ${opts.delete}`);
+        process.exit(1);
+      }
       const { waitUntilExit } = render(
         <ListView type={type} deleteIndex={deleteIndex} />,
       );

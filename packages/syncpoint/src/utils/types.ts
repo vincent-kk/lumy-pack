@@ -47,7 +47,7 @@ export interface FileEntry {
 
 export interface TemplateConfig {
   name: string;
-  description: string;
+  description?: string;
   backup?: string;
   sudo?: boolean;
   steps: TemplateStep[];

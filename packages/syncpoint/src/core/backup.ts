@@ -252,7 +252,7 @@ export async function createBackup(
   // 1-3. Scan targets
   const { found, missing } = await scanTargets(config);
 
-  // --verbose 플래그가 있을 때만 누락 파일 경고 출력
+  // Only show missing file warnings when --verbose flag is set
   if (options.verbose && missing.length > 0) {
     for (const m of missing) {
       logger.warn(`File not found, skipping: ${m}`);
@@ -261,7 +261,7 @@ export async function createBackup(
 
   // 4. Include scripts if configured
   let allFiles = [...found];
-  if (config.scripts.includeInBackup) {
+  if (config.scripts?.includeInBackup) {
     const scripts = await collectScripts();
     allFiles = [...allFiles, ...scripts];
   }

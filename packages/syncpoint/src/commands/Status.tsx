@@ -241,7 +241,13 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
           for (const entry of entries) {
             const logPath = join(logsDir, entry);
             if (!isInsideDir(logPath, logsDir)) throw new Error(`Refusing to delete file outside logs directory: ${logPath}`);
-            unlinkSync(logPath);
+            try {
+              if (statSync(logPath).isFile()) {
+                unlinkSync(logPath);
+              }
+            } catch {
+              // skip inaccessible entries
+            }
           }
         } catch {
           // ignore

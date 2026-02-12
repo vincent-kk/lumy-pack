@@ -164,7 +164,7 @@ export async function scanHomeDirectory(options?: {
       if (uncategorizedFiles.length > 0) {
         categories.push({
           category: 'Other Files',
-          files: uncategorizedFiles.sort().slice(0, maxFiles - totalFiles),
+          files: uncategorizedFiles.sort(),
         });
       }
     } catch {

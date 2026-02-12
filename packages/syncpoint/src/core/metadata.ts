@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { lstat, readFile } from 'node:fs/promises';
+import { lstat, readFile, readlink } from 'node:fs/promises';
 
 import { validateMetadata } from '../schemas/metadata.schema.js';
 import { contractTilde } from '../utils/paths.js';
@@ -90,8 +90,8 @@ export async function collectFileInfo(
   // For symlinks, use lstat size; for regular files compute hash
   let hash: string;
   if (lstats.isSymbolicLink()) {
-    // Hash the link target path rather than the content
-    hash = `sha256:${createHash('sha256').update(absolutePath).digest('hex')}`;
+    const linkTarget = await readlink(absolutePath);
+    hash = `sha256:${createHash('sha256').update(linkTarget).digest('hex')}`;
   } else {
     hash = await computeFileHash(absolutePath);
   }

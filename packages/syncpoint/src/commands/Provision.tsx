@@ -10,6 +10,7 @@ import type {
 } from "../utils/types.js";
 import { loadTemplate, listTemplates } from "../core/provision.js";
 import { runProvision } from "../core/provision.js";
+import { getBackupList, restoreBackup } from "../core/restore.js";
 import { ensureSudo } from "../utils/sudo.js";
 import { resolveTargetPath, fileExists } from "../utils/paths.js";
 import { StepRunner } from "../components/StepRunner.js";
@@ -63,6 +64,21 @@ const ProvisionView: React.FC<ProvisionViewProps> = ({
             result.status === "failed"
           ) {
             stepIdx++;
+          }
+        }
+
+        // Trigger restore if template has backup link
+        if (template.backup && !options.skipRestore) {
+          try {
+            const backups = await getBackupList();
+            const match = backups.find(
+              (b) => b.filename.includes(template.backup!)
+            );
+            if (match) {
+              await restoreBackup(match.path);
+            }
+          } catch {
+            // Restore failure is non-fatal after provisioning
           }
         }
 

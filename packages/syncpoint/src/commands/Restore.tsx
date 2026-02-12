@@ -51,7 +51,8 @@ const RestoreView: React.FC<RestoreViewProps> = ({ filename, options }) => {
   useEffect(() => {
     (async () => {
       try {
-        const list = await getBackupList();
+        const config = await loadConfig();
+        const list = await getBackupList(config);
         setBackups(list);
 
         if (list.length === 0) {

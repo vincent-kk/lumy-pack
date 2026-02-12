@@ -1,7 +1,4 @@
 import { spawn } from 'node:child_process';
-import { unlink, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 
 export interface ClaudeCodeResult {
   success: boolean;
@@ -37,12 +34,7 @@ export async function invokeClaudeCode(
 ): Promise<ClaudeCodeResult> {
   const timeout = options?.timeout ?? 120000; // 2 minutes default
 
-  // Write prompt to temporary file
-  const promptFile = join(tmpdir(), `syncpoint-prompt-${Date.now()}.txt`);
-  await writeFile(promptFile, prompt, 'utf-8');
-
-  try {
-    return await new Promise((resolve, reject) => {
+  return await new Promise((resolve, reject) => {
       const args = ['--permission-mode', 'acceptEdits', '--model', 'sonnet'];
       if (options?.sessionId) {
         args.push('--session', options.sessionId);
@@ -95,14 +87,6 @@ export async function invokeClaudeCode(
         reject(err);
       });
     });
-  } finally {
-    // Clean up temporary file
-    try {
-      await unlink(promptFile);
-    } catch {
-      // Ignore cleanup errors
-    }
-  }
 }
 
 /**

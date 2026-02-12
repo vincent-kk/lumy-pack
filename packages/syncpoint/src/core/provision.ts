@@ -185,8 +185,10 @@ export async function executeStep(step: TemplateStep): Promise<StepResult> {
       output: output || undefined,
     };
   } catch (err: unknown) {
-    const error = err as Error & { stdout?: string; stderr?: string };
-    const errorOutput = [error.stdout, error.stderr, error.message]
+    const error = err instanceof Error ? err : new Error(String(err));
+    const stdout = (err as { stdout?: string })?.stdout ?? '';
+    const stderr = (err as { stderr?: string })?.stderr ?? '';
+    const errorOutput = [stdout, stderr, error.message]
       .filter(Boolean)
       .join('\n')
       .trim();

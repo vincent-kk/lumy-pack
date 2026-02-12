@@ -132,13 +132,10 @@ const WizardView: React.FC<WizardViewProps> = ({ printMode }) => {
 
         // Check if config already exists
         if (await fileExists(configPath)) {
-          setMessage(
-            `Config already exists: ${configPath}\nWould you like to backup and overwrite? (Backup will be saved as config.yml.bak)`,
-          );
-          // In a real implementation, we'd wait for user confirmation here
-          // For now, we'll proceed with backup
-          await rename(configPath, `${configPath}.bak`);
-          setMessage(`Backed up existing config to config.yml.bak`);
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const bakPath = `${configPath}.${timestamp}.bak`;
+          await rename(configPath, bakPath);
+          setMessage(`Backed up existing config to ${bakPath}`);
         }
 
         // Phase 1: Scan home directory
@@ -364,8 +361,10 @@ export function registerWizardCommand(program: Command): void {
     try {
       // Backup existing config
       if (await fileExists(configPath)) {
-        console.log(`📋 Backing up existing config to ${configPath}.bak`);
-        await rename(configPath, `${configPath}.bak`);
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const bakPath = `${configPath}.${timestamp}.bak`;
+        console.log(`📋 Backing up existing config to ${bakPath}`);
+        await rename(configPath, bakPath);
       }
 
       // Check if Claude Code is available

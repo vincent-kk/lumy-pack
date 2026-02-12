@@ -68,11 +68,11 @@ export async function extractArchive(
     file: archivePath,
     cwd: destDir,
     preservePaths: false,
-    filter: (path: string, entry: any) => {
+    filter: (path, entry) => {
       const normalizedPath = normalize(path);
       if (normalizedPath.includes('..')) return false;
       if (normalizedPath.startsWith('/')) return false;
-      if (entry.type === 'SymbolicLink' || entry.type === 'Link') return false;
+      if ('type' in entry && (entry.type === 'SymbolicLink' || entry.type === 'Link')) return false;
       return true;
     },
   });

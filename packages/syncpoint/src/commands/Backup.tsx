@@ -34,6 +34,8 @@ const BackupView: React.FC<BackupViewProps> = ({ options }) => {
 
   useEffect(() => {
     (async () => {
+      let progressInterval: ReturnType<typeof setInterval> | undefined;
+
       try {
         // Phase 1: Load config and scan
         const cfg = await loadConfig();
@@ -54,7 +56,7 @@ const BackupView: React.FC<BackupViewProps> = ({ options }) => {
         setPhase('compressing');
 
         // Simulate progress updates (actual compression is atomic)
-        const progressInterval = setInterval(() => {
+        progressInterval = setInterval(() => {
           setProgress((prev) => {
             if (prev >= 90) return prev;
             return prev + 10;
@@ -69,9 +71,10 @@ const BackupView: React.FC<BackupViewProps> = ({ options }) => {
 
         setTimeout(() => exit(), 100);
       } catch (err) {
+        if (progressInterval) clearInterval(progressInterval);
         setError(err instanceof Error ? err.message : String(err));
         setPhase('error');
-        exit();
+        setTimeout(() => exit(), 100);
       }
     })();
   }, []);
@@ -134,7 +137,7 @@ const BackupView: React.FC<BackupViewProps> = ({ options }) => {
             ✓ Backup complete
           </Text>
           <Text>
-            {'  '}File: {result.metadata.config.filename}
+            {'  '}File: {result.archivePath.split('/').pop()}
           </Text>
           <Text>
             {'  '}Size: {formatBytes(result.metadata.summary.totalSize)} (
