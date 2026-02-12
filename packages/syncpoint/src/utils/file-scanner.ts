@@ -1,7 +1,7 @@
 import { glob } from "fast-glob";
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { stat } from "node:fs/promises";
+import { getHomeDir } from "./paths.js";
 
 export interface FileCategory {
   category: string;
@@ -51,7 +51,7 @@ export async function scanHomeDirectory(options?: {
   maxDepth?: number;
   ignorePatterns?: string[];
 }): Promise<FileStructure> {
-  const homeDir = homedir();
+  const homeDir = getHomeDir();
   const maxDepth = options?.maxDepth ?? 5;
   const ignorePatterns = options?.ignorePatterns ?? [
     "**/node_modules/**",
@@ -75,7 +75,8 @@ export async function scanHomeDirectory(options?: {
 
   // Scan each category
   for (const [, category] of Object.entries(FILE_CATEGORIES)) {
-    const patterns = category.patterns.map((p) => join(homeDir, p));
+    // Use relative patterns for glob with cwd
+    const patterns = category.patterns;
 
     try {
       const files = await glob(patterns, {
