@@ -1,0 +1,43 @@
+# ──────────────────────────────────────────
+# Syncpoint Configuration
+# ──────────────────────────────────────────
+
+backup:
+  # (Required) List of files/directories to backup.
+  # Supports three pattern types:
+  #   - Literal paths: ~/.zshrc, /usr/local/bin/tool
+  #   - Glob patterns: ~/.config/*.conf, **/*.yml
+  #   - Regex patterns: /\.conf$/, /\/temp\// (scans ~/ with depth limit 5)
+  targets:
+    - ~/.zshrc
+    - ~/.zprofile
+    - ~/.gitconfig
+    - ~/.gitignore_global
+    - ~/.ssh/config
+    - ~/.config/starship.toml
+    # Example regex: /\.toml$/ (finds all .toml files in home directory)
+
+  # (Required) List of patterns to exclude from backup.
+  # Supports glob and regex patterns. Applied to all target types.
+  # Examples:
+  #   - Glob: "**/*.swp", "**/.DS_Store", "**/node_modules/**"
+  #   - Regex: "/\\.bak$/", "/\\.tmp$/", "/\\.(cache|log)$/"
+  exclude:
+    - "**/*.swp"
+    - "**/.DS_Store"
+    - "**/.Trash/**"
+    - "**/Library/**"
+    - "**/.cache/**"
+    - "**/node_modules/**"
+    # Example regex: "/\\.bak$/" (excludes all .bak files)
+
+  # (Required) Backup archive filename pattern.
+  # Available variables: {hostname}, {datetime}
+  filename: "{hostname}_{datetime}"
+
+  # (Optional) Backup archive destination path. Default: ~/.syncpoint/backups/
+  # destination: /path/to/custom/backups
+
+scripts:
+  # (Optional) Whether to include scripts/ directory in backup. Default: true
+  includeInBackup: true

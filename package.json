@@ -22,6 +22,7 @@
     "changeset:publish": "pnpm build:all && changeset publish",
     "publish:all": "pnpm -r --no-private run publish:npm",
     "sort:packages": "npx sort-package-json '**/package.json'",
+    "syncpoint": "pnpm -C packages/syncpoint",
     "clean": "pnpm -r exec rm -rf dist .tsbuildinfo",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,mjs,json,md}\""
   },
@@ -33,6 +34,7 @@
     "@typescript-eslint/parser": "^8.14.0",
     "eslint": "^9.0.0",
     "eslint-import-resolver-typescript": "^4.4.3",
+    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "eslint-plugin-import": "^2.31.0",
     "prettier": "^3.5.3",
     "tsup": "^8.4.0",

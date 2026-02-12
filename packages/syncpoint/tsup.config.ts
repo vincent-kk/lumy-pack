@@ -13,6 +13,8 @@ export default defineConfig([
     platform: "node",
     clean: true,
     dts: false,
+    shims: true,
+    loader: { ".tsx": "tsx" },
   },
   {
     entry: { cli: "src/cli.ts" },
@@ -27,5 +29,6 @@ export default defineConfig([
     clean: false,
     dts: false,
     banner: { js: "#!/usr/bin/env node" },
+    loader: { ".tsx": "tsx" },
   },
 ]);

@@ -1,0 +1,29 @@
+FROM node:20-slim
+
+# Install essential tools for testing
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    sudo \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create test user with sudo privileges
+RUN useradd -m -s /bin/bash testuser \
+    && echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Set working directory
+WORKDIR /app
+
+# Copy package contents
+COPY packages/syncpoint/ ./
+
+# Install dependencies (ignore scripts to prevent build errors in container)
+RUN npm install --ignore-scripts 2>/dev/null || true
+
+# Switch to test user
+USER testuser
+ENV HOME=/home/testuser
+ENV SYNCPOINT_HOME=/home/testuser
+
+# Set entrypoint to CLI
+ENTRYPOINT ["node", "dist/cli.mjs"]
