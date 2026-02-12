@@ -1,6 +1,6 @@
 import { glob } from "fast-glob";
 import { homedir } from "node:os";
-import { join, basename, dirname, relative } from "node:path";
+import { join } from "node:path";
 import { stat } from "node:fs/promises";
 
 export interface FileCategory {
@@ -74,7 +74,7 @@ export async function scanHomeDirectory(options?: {
   let totalFiles = 0;
 
   // Scan each category
-  for (const [key, category] of Object.entries(FILE_CATEGORIES)) {
+  for (const [, category] of Object.entries(FILE_CATEGORIES)) {
     const patterns = category.patterns.map((p) => join(homeDir, p));
 
     try {

@@ -4,16 +4,13 @@ import Spinner from "ink-spinner";
 import { Command } from "commander";
 import { render } from "ink";
 import { join } from "node:path";
-import { readFile, writeFile, rename } from "node:fs/promises";
+import { writeFile, rename } from "node:fs/promises";
 
 import { getAppDir, CONFIG_FILENAME } from "../constants.js";
 import { readAsset } from "../utils/assets.js";
 import { fileExists } from "../utils/paths.js";
 import { validateConfig } from "../schemas/config.schema.js";
-import {
-  scanHomeDirectory,
-  fileStructureToJSON,
-} from "../utils/file-scanner.js";
+import { scanHomeDirectory } from "../utils/file-scanner.js";
 import { generateConfigWizardPrompt } from "../prompts/wizard-config.js";
 import {
   isClaudeCodeAvailable,
