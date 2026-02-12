@@ -105,6 +105,7 @@ export interface StepResult {
 export interface BackupOptions {
   dryRun?: boolean;
   tag?: string;
+  verbose?: boolean;
 }
 
 export interface RestoreOptions {

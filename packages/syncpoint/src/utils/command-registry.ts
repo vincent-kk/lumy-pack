@@ -50,6 +50,7 @@ export const COMMANDS: Record<string, CommandInfo> = {
     options: [
       { flag: '--dry-run', description: 'Preview files to be backed up without creating archive' },
       { flag: '--tag <name>', description: 'Add custom tag to backup filename' },
+      { flag: '-v, --verbose', description: 'Show detailed output including missing files' },
     ],
     examples: [
       'npx @lumy-pack/syncpoint backup',

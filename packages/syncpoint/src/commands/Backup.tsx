@@ -158,9 +158,9 @@ export function registerBackupCommand(program: Command): void {
     cmd.option(opt.flag, opt.description);
   });
 
-  cmd.action(async (opts: { dryRun: boolean; tag?: string }) => {
+  cmd.action(async (opts: { dryRun: boolean; tag?: string; verbose?: boolean }) => {
     const { waitUntilExit } = render(
-      <BackupView options={{ dryRun: opts.dryRun, tag: opts.tag }} />,
+      <BackupView options={{ dryRun: opts.dryRun, tag: opts.tag, verbose: opts.verbose }} />,
     );
     await waitUntilExit();
   });
