@@ -12,7 +12,6 @@
   "importOrder": [
     "^(node:(.*)$)",
     "<THIRD_PARTY_MODULES>",
-    "^(\\@aileron)/(.*)$",
     "^(\\@)/(.*)$",
     "^([../])",
     "^([./])"
