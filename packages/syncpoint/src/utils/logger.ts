@@ -6,7 +6,7 @@ import pc from 'picocolors';
 import { LOGS_DIR, getAppDir } from '../constants.js';
 
 // ANSI escape code stripper
-const ANSI_RE = /\x1b\[[0-9;]*m/g;
+const ANSI_RE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g');
 function stripAnsi(str: string): string {
   return str.replace(ANSI_RE, '');
 }

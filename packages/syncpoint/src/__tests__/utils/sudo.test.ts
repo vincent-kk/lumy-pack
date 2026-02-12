@@ -35,15 +35,14 @@ describe('utils/sudo', () => {
   describe('ensureSudo', () => {
     let consoleLogSpy: ReturnType<typeof vi.spyOn>;
     let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let processExitSpy: any;
+    let processExitSpy: any; // process.exit has special 'never' return type incompatible with vi.spyOn
 
     beforeEach(() => {
       consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      processExitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+      processExitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
         throw new Error('process.exit called');
-      });
+      }) as () => never);
     });
 
     afterEach(() => {
