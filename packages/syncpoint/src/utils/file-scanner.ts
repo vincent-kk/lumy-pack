@@ -36,6 +36,10 @@ const FILE_CATEGORIES = {
     name: 'Editor Configuration',
     patterns: ['.vimrc', '.vim/**', '.emacs', '.emacs.d/**'],
   },
+  terminal: {
+    name: 'Terminal & Multiplexer',
+    patterns: ['.tmux.conf', '.tmux/**', '.screenrc', '.alacritty.yml'],
+  },
   appConfigs: {
     name: 'Application Configs',
     patterns: [
@@ -48,7 +52,7 @@ const FILE_CATEGORIES = {
   },
   dotfiles: {
     name: 'Other Dotfiles',
-    patterns: ['.*rc', '.*profile'],
+    patterns: ['.*rc', '.*profile', '.*.conf'],
   },
 };
 
@@ -57,10 +61,12 @@ const FILE_CATEGORIES = {
  */
 export async function scanHomeDirectory(options?: {
   maxDepth?: number;
+  maxFiles?: number;
   ignorePatterns?: string[];
 }): Promise<FileStructure> {
   const homeDir = getHomeDir();
-  const maxDepth = options?.maxDepth ?? 5;
+  const maxDepth = options?.maxDepth ?? 3;
+  const maxFiles = options?.maxFiles ?? 500;
   const ignorePatterns = options?.ignorePatterns ?? [
     '**/node_modules/**',
     '**/.git/**',
@@ -76,14 +82,17 @@ export async function scanHomeDirectory(options?: {
     '**/.cache/**',
     '**/.npm/**',
     '**/.yarn/**',
+    '**/.vscode-server/**',
+    '**/.*_history',
+    '**/.local/share/**',
   ];
 
   const categories: FileCategory[] = [];
+  const categorizedFiles = new Set<string>();
   let totalFiles = 0;
 
-  // Scan each category
+  // Step 1: Scan defined categories
   for (const [, category] of Object.entries(FILE_CATEGORIES)) {
-    // Use relative patterns for glob with cwd
     const patterns = category.patterns;
 
     try {
@@ -96,15 +105,14 @@ export async function scanHomeDirectory(options?: {
         cwd: homeDir,
       });
 
-      // Filter out files that don't exist or can't be accessed
       const validFiles: string[] = [];
       for (const file of files) {
         try {
           const fullPath = join(homeDir, file);
           await stat(fullPath);
           validFiles.push(file);
+          categorizedFiles.add(file);
         } catch {
-          // Skip files that can't be accessed
           continue;
         }
       }
@@ -116,9 +124,49 @@ export async function scanHomeDirectory(options?: {
         });
         totalFiles += validFiles.length;
       }
-    } catch (error) {
-      // Skip categories that fail to scan
+    } catch {
       continue;
+    }
+  }
+
+  // Step 2: Full scan for remaining files
+  if (totalFiles < maxFiles) {
+    try {
+      const allFiles = await glob(['**/*', '**/.*'], {
+        ignore: ignorePatterns,
+        dot: true,
+        onlyFiles: true,
+        deep: maxDepth,
+        absolute: false,
+        cwd: homeDir,
+      });
+
+      const uncategorizedFiles: string[] = [];
+      for (const file of allFiles) {
+        // Skip if already categorized
+        if (categorizedFiles.has(file)) continue;
+
+        // Limit total files
+        if (totalFiles >= maxFiles) break;
+
+        try {
+          const fullPath = join(homeDir, file);
+          await stat(fullPath);
+          uncategorizedFiles.push(file);
+          totalFiles++;
+        } catch {
+          continue;
+        }
+      }
+
+      if (uncategorizedFiles.length > 0) {
+        categories.push({
+          category: 'Other Files',
+          files: uncategorizedFiles.sort().slice(0, maxFiles - totalFiles),
+        });
+      }
+    } catch {
+      // Full scan failed, continue with categorized files only
     }
   }
 
