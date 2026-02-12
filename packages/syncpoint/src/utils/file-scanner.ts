@@ -1,4 +1,4 @@
-import { glob } from "fast-glob";
+import glob from "fast-glob";
 import { join } from "node:path";
 import { stat } from "node:fs/promises";
 import { getHomeDir } from "./paths.js";
