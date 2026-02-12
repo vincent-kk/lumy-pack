@@ -115,6 +115,7 @@ export interface RestoreOptions {
 export interface ProvisionOptions {
   dryRun?: boolean;
   skipRestore?: boolean;
+  file?: string;
 }
 
 // ── Info / Status ──

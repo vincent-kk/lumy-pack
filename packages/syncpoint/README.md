@@ -313,12 +313,12 @@ npx @lumy-pack/syncpoint restore --dry-run
 
 ---
 
-### `syncpoint provision <template> [options]`
+### `syncpoint provision [template] [options]`
 
 Run template-based machine provisioning to install software and configure your system.
 
 **What it does:**
-1. Loads template YAML from `~/.syncpoint/templates/`
+1. Loads template YAML from `~/.syncpoint/templates/` (by name) or from a custom path (with `--file`)
 2. Validates template structure and security
 3. Checks for sudo requirement (prompts if needed)
 4. Executes steps sequentially with real-time progress
@@ -330,21 +330,37 @@ Run template-based machine provisioning to install software and configure your s
 
 | Option | Description |
 |--------|-------------|
+| `-f, --file <path>` | Path to template file (alternative to template name) |
 | `--dry-run` | Show execution plan without running commands |
 | `--skip-restore` | Skip automatic config restore after provisioning |
 
 **Usage:**
 
 ```bash
-# Run provisioning template
+# Run provisioning template by name
 npx @lumy-pack/syncpoint provision my-setup
+
+# Run template from custom path
+npx @lumy-pack/syncpoint provision --file ./my-template.yml
+
+# Use short flag with relative path
+npx @lumy-pack/syncpoint provision -f ~/templates/custom.yaml
 
 # Preview template execution
 npx @lumy-pack/syncpoint provision my-setup --dry-run
 
 # Provision without restoring configs
 npx @lumy-pack/syncpoint provision my-setup --skip-restore
+
+# Combine --file with other options
+npx @lumy-pack/syncpoint provision -f ./template.yml --dry-run --skip-restore
 ```
+
+**Path Resolution:**
+- Supports absolute paths: `/path/to/template.yml`
+- Supports relative paths: `./template.yml`, `../templates/setup.yaml`
+- Supports tilde expansion: `~/templates/custom.yml`
+- Must have `.yml` or `.yaml` extension
 
 **Security:**
 - Blocks dangerous remote script patterns (`curl | bash`, `wget | sh`)
@@ -616,14 +632,20 @@ steps:
 ### Running Templates
 
 ```bash
+# Run template by name (from ~/.syncpoint/templates/)
+npx @lumy-pack/syncpoint provision dev-setup
+
+# Run template from custom path
+npx @lumy-pack/syncpoint provision --file ./my-template.yml
+
 # Preview template execution
 npx @lumy-pack/syncpoint provision dev-setup --dry-run
 
-# Run template
-npx @lumy-pack/syncpoint provision dev-setup
-
 # Run and skip config restore
 npx @lumy-pack/syncpoint provision dev-setup --skip-restore
+
+# Combine custom path with options
+npx @lumy-pack/syncpoint provision -f ~/templates/setup.yaml --dry-run
 ```
 
 ---

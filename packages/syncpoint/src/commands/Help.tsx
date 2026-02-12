@@ -43,7 +43,7 @@ const GeneralHelpView: React.FC<GeneralHelpViewProps> = () => {
           Restore configuration files
         </Text>
         <Text>
-          <Text color="cyan">provision &lt;template&gt;</Text>
+          <Text color="cyan">provision [template]</Text>
           {'    '}
           Run machine provisioning template
         </Text>

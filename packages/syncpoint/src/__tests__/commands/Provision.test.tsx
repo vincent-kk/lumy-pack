@@ -83,6 +83,37 @@ describe("Provision Command", () => {
     expect(skipRestoreOption).toBeDefined();
   });
 
+  it("provision command has file option", async () => {
+    const { registerProvisionCommand } = await import("../../commands/Provision.js");
+    const { Command } = await import("commander");
+    const program = new Command();
+
+    registerProvisionCommand(program);
+
+    const provisionCommand = program.commands.find((cmd) => cmd.name() === "provision");
+    const options = provisionCommand?.options || [];
+    const fileOption = options.find((opt) => opt.long === "--file");
+
+    expect(fileOption).toBeDefined();
+    expect(fileOption?.short).toBe("-f");
+  });
+
+  it("provision command template argument is optional", async () => {
+    const { registerProvisionCommand } = await import("../../commands/Provision.js");
+    const { Command } = await import("commander");
+    const program = new Command();
+
+    registerProvisionCommand(program);
+
+    const provisionCommand = program.commands.find((cmd) => cmd.name() === "provision");
+    const args = provisionCommand?._args || [];
+
+    expect(args.length).toBeGreaterThan(0);
+    const templateArg = args[0];
+    expect(templateArg.name()).toBe("template");
+    expect(templateArg.required).toBe(false);
+  });
+
   it("exposes loadTemplate dependency", () => {
     expect(loadTemplate).toBeDefined();
     expect(typeof loadTemplate).toBe("function");

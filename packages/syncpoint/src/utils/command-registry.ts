@@ -104,10 +104,14 @@ export const COMMANDS: Record<string, CommandInfo> = {
       {
         name: 'template',
         description: 'Template name to execute',
-        required: true,
+        required: false,
       },
     ],
     options: [
+      {
+        flag: '-f, --file <path>',
+        description: 'Path to template file (alternative to template name)',
+      },
       {
         flag: '--dry-run',
         description: 'Show execution plan without running commands',
@@ -121,6 +125,8 @@ export const COMMANDS: Record<string, CommandInfo> = {
       'npx @lumy-pack/syncpoint provision dev-setup',
       'npx @lumy-pack/syncpoint provision dev-setup --dry-run',
       'npx @lumy-pack/syncpoint provision dev-setup --skip-restore',
+      'npx @lumy-pack/syncpoint provision --file ./my-template.yml',
+      'npx @lumy-pack/syncpoint provision -f ~/templates/custom.yaml --dry-run',
     ],
   },
   'create-template': {
