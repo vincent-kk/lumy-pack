@@ -5,6 +5,8 @@ import { registerRestoreCommand } from "./commands/Restore.js";
 import { registerProvisionCommand } from "./commands/Provision.js";
 import { registerListCommand } from "./commands/List.js";
 import { registerStatusCommand } from "./commands/Status.js";
+import { registerWizardCommand } from "./commands/Wizard.js";
+import { registerCreateTemplateCommand } from "./commands/CreateTemplate.js";
 import { APP_VERSION } from "./constants.js";
 
 const program = new Command();
@@ -16,9 +18,11 @@ program
   .version(APP_VERSION);
 
 registerInitCommand(program);
+registerWizardCommand(program);
 registerBackupCommand(program);
 registerRestoreCommand(program);
 registerProvisionCommand(program);
+registerCreateTemplateCommand(program);
 registerListCommand(program);
 registerStatusCommand(program);
 
