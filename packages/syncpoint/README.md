@@ -14,7 +14,7 @@ Syncpoint is a powerful CLI tool for managing your development environment confi
 - 🚀 **Machine Provisioning** — Template-based system setup with YAML-defined installation steps
 - 🛡️ **Security First** — Sensitive file detection, symlink attack prevention, remote script blocking
 - 📊 **Interactive Management** — Browse backups and templates with a beautiful terminal UI
-- 🎯 **Flexible Patterns** — Glob support, tilde expansion, and customizable filename placeholders
+- 🎯 **Flexible Patterns** — Glob/regex support, tilde expansion, and customizable filename placeholders
 
 ## 📦 Installation
 
@@ -282,19 +282,25 @@ Syncpoint uses `~/.syncpoint/config.yml` for configuration.
 ```yaml
 backup:
   # (Required) List of files/directories to backup
-  # Supports ~ expansion and glob patterns
+  # Supports three pattern types:
+  #   - Literal paths: ~/.zshrc, /etc/hosts
+  #   - Glob patterns: ~/.config/*.conf, **/*.toml
+  #   - Regex patterns: /\.conf$/, /\.toml$/ (scans ~/ with depth limit 5)
   targets:
     - ~/.zshrc
     - ~/.zprofile
     - ~/.gitconfig
     - ~/.ssh/config
     - ~/.config/**/*.conf
+    # Example regex: /\.toml$/ finds all .toml files in home directory
 
-  # (Required) Glob patterns to exclude from backup
+  # (Required) Patterns to exclude from backup
+  # Supports glob and regex patterns
   exclude:
     - "**/*.swp"
     - "**/.DS_Store"
     - "**/node_modules"
+    # Example regex: "/\\.bak$/" excludes all .bak files
 
   # (Required) Backup filename pattern
   # Available placeholders: {hostname}, {date}, {time}, {datetime}, {tag}
@@ -319,6 +325,53 @@ scripts:
 | `{time}` | `14-30-00` | Current time (HH-MM-SS) |
 | `{datetime}` | `2024-01-15_14-30-00` | Combined date and time |
 | `{tag}` | `before-upgrade` | Custom tag from `--tag` option |
+
+### Pattern Types
+
+Syncpoint supports three types of patterns for `targets` and `exclude` fields:
+
+#### Literal Paths
+
+Direct file or directory paths. Tilde (`~`) is automatically expanded to home directory.
+
+**Examples:**
+- `~/.zshrc` — Specific file in home directory
+- `/etc/hosts` — Absolute path
+- `~/.ssh/config` — Nested file
+
+#### Glob Patterns
+
+Wildcard patterns for matching multiple files. Uses standard glob syntax.
+
+**Examples:**
+- `*.conf` — All .conf files in current directory
+- `~/.config/*.yml` — All .yml files in ~/.config/
+- `**/*.toml` — All .toml files recursively
+- `~/.config/**/*.conf` — All .conf files under ~/.config/ recursively
+
+**Glob metacharacters:** `*` (any), `?` (single), `{a,b}` (alternatives)
+
+#### Regex Patterns
+
+Regular expressions for advanced pattern matching. Must be enclosed in forward slashes (`/pattern/`).
+
+**Format:** `/pattern/` (e.g., `/\.conf$/`)
+
+**Examples:**
+- `/\.conf$/` — Files ending with .conf
+- `/\.toml$/` — Files ending with .toml
+- `/\.(bak|tmp)$/` — Files ending with .bak or .tmp
+- `/^\.config\//` — Files starting with .config/
+
+**Limitations:**
+- Regex targets scan home directory (`~/`) only
+- Maximum depth: 5 levels for performance
+- No unescaped forward slashes in pattern body
+
+**When to use regex:**
+- Complex extension matching: `/\.(conf|toml|yaml)$/`
+- Pattern-based exclusions: `/\.(bak|tmp|cache)$/`
+- Path prefix/suffix matching
 
 ### Example Configuration
 
