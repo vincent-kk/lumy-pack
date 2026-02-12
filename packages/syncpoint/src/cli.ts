@@ -2,6 +2,7 @@ import { Command } from 'commander';
 
 import { registerBackupCommand } from './commands/Backup.js';
 import { registerCreateTemplateCommand } from './commands/CreateTemplate.js';
+import { registerHelpCommand } from './commands/Help.js';
 import { registerInitCommand } from './commands/Init.js';
 import { registerListCommand } from './commands/List.js';
 import { registerProvisionCommand } from './commands/Provision.js';
@@ -26,6 +27,7 @@ registerProvisionCommand(program);
 registerCreateTemplateCommand(program);
 registerListCommand(program);
 registerStatusCommand(program);
+registerHelpCommand(program);
 
 program.parseAsync(process.argv).catch((error: Error) => {
   console.error('Fatal error:', error.message);

@@ -37,13 +37,57 @@ pnpm add -g @lumy-pack/syncpoint
 
 ## 🚀 Quick Start
 
+### Option A: 🧙 AI-Powered Setup (Recommended)
+
+The fastest and easiest way to get started. AI automatically generates your configuration file.
+
+**Requirements:** [Claude Code CLI](https://claude.ai/code) installed (or use `--print` mode)
+
 1. **Initialize syncpoint**
 
    ```bash
    npx @lumy-pack/syncpoint init
    ```
 
-   This creates `~/.syncpoint/` with default configuration and directory structure.
+2. **Run AI wizard to generate config**
+
+   ```bash
+   npx @lumy-pack/syncpoint wizard
+   ```
+
+   The wizard will automatically:
+   - Scan your home directory for backup targets
+   - Generate an optimized config.yml via AI
+   - Validate and auto-correct (up to 3 retry attempts)
+
+3. **Create your first backup**
+
+   ```bash
+   npx @lumy-pack/syncpoint backup
+   ```
+
+4. **Restore on another machine**
+
+   ```bash
+   npx @lumy-pack/syncpoint restore
+   ```
+
+**Tip:** If you don't have Claude Code, use `--print` to get the prompt for any LLM:
+```bash
+npx @lumy-pack/syncpoint wizard --print
+```
+
+---
+
+### Option B: 📝 Manual Setup
+
+If you prefer to manually edit your configuration file, use this approach.
+
+1. **Initialize syncpoint**
+
+   ```bash
+   npx @lumy-pack/syncpoint init
+   ```
 
 2. **Edit your configuration**
 
@@ -71,6 +115,20 @@ pnpm add -g @lumy-pack/syncpoint
    ```bash
    npx @lumy-pack/syncpoint restore
    ```
+
+---
+
+### 🎯 Bonus: Create Provisioning Templates
+
+To automate new machine setup:
+
+```bash
+# Generate template with AI wizard
+npx @lumy-pack/syncpoint create-template my-dev-setup
+
+# Run provisioning
+npx @lumy-pack/syncpoint provision my-dev-setup
+```
 
 ## 📖 Commands
 
