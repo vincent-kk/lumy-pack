@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -11,7 +11,6 @@ import {
   restoreBackup,
 } from '../../core/restore.js';
 import { fileExists } from '../../utils/paths.js';
-import type { SyncpointConfig } from '../../utils/types.js';
 import { type Sandbox, createInitializedSandbox } from '../helpers/sandbox.js';
 
 vi.mock('../../utils/logger.js', () => ({
@@ -252,15 +251,15 @@ describe('Backup-Restore Integration Tests', () => {
     const config = await loadConfig();
 
     // Create multiple backups with delay to ensure different timestamps
-    const backup1 = await createBackup(config, { tag: 'first' });
+    await createBackup(config, { tag: 'first' });
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     await writeFile(zshrcPath, 'modified content', 'utf-8');
-    const backup2 = await createBackup(config, { tag: 'second' });
+    await createBackup(config, { tag: 'second' });
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     await writeFile(zshrcPath, 'another modification', 'utf-8');
-    const backup3 = await createBackup(config, { tag: 'third' });
+    await createBackup(config, { tag: 'third' });
 
     // Get backup list
     const backupList = await getBackupList(config);

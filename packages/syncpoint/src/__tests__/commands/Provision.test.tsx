@@ -106,7 +106,7 @@ describe("Provision Command", () => {
     registerProvisionCommand(program);
 
     const provisionCommand = program.commands.find((cmd) => cmd.name() === "provision");
-    const args = provisionCommand?._args || [];
+    const args = provisionCommand?.registeredArguments || [];
 
     expect(args.length).toBeGreaterThan(0);
     const templateArg = args[0];

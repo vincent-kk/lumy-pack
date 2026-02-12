@@ -125,7 +125,7 @@ describe('core/backup', () => {
         },
       });
 
-      const { found, missing } = await scanTargets(config);
+      const { found } = await scanTargets(config);
 
       expect(found).toHaveLength(1);
       expect(found[0].path).toContain('config.vim');

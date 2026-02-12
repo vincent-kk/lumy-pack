@@ -72,7 +72,11 @@ export async function extractArchive(
       const normalizedPath = normalize(path);
       if (normalizedPath.includes('..')) return false;
       if (normalizedPath.startsWith('/')) return false;
-      if ('type' in entry && (entry.type === 'SymbolicLink' || entry.type === 'Link')) return false;
+      if (
+        'type' in entry &&
+        (entry.type === 'SymbolicLink' || entry.type === 'Link')
+      )
+        return false;
       return true;
     },
   });

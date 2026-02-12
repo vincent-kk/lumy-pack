@@ -1,4 +1,5 @@
 import type { TemplateConfig } from '../utils/types.js';
+
 import { ajv } from './ajv.js';
 
 const templateSchema = {

@@ -1,4 +1,5 @@
 import type { SyncpointConfig } from '../utils/types.js';
+
 import { ajv } from './ajv.js';
 
 const configSchema = {

@@ -134,7 +134,7 @@ describe('CLI E2E Tests', () => {
     const testHome = mkdtempSync(join(tmpdir(), 'syncpoint-e2e-'));
     try {
       // Run status - it should handle non-initialized directory gracefully
-      const { output, exitCode } = runCliWithCode('status', {
+      const { output } = runCliWithCode('status', {
         SYNCPOINT_HOME: testHome,
       });
 

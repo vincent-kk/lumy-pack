@@ -1,4 +1,3 @@
-import React from "react";
 import { render } from "ink-testing-library";
 import { describe, it, expect, vi } from "vitest";
 import { Confirm } from "../../components/Confirm.js";

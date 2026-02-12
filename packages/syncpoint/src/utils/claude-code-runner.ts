@@ -35,58 +35,58 @@ export async function invokeClaudeCode(
   const timeout = options?.timeout ?? 120000; // 2 minutes default
 
   return await new Promise((resolve, reject) => {
-      const args = ['--permission-mode', 'acceptEdits', '--model', 'sonnet'];
-      if (options?.sessionId) {
-        args.push('--session', options.sessionId);
-      }
+    const args = ['--permission-mode', 'acceptEdits', '--model', 'sonnet'];
+    if (options?.sessionId) {
+      args.push('--session', options.sessionId);
+    }
 
-      const child = spawn('claude', args, {
-        stdio: ['pipe', 'pipe', 'pipe'],
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      child.stdout.on('data', (data) => {
-        stdout += data.toString();
-      });
-
-      child.stderr.on('data', (data) => {
-        stderr += data.toString();
-      });
-
-      // Send prompt via stdin
-      child.stdin.write(prompt);
-      child.stdin.end();
-
-      const timer = setTimeout(() => {
-        child.kill();
-        reject(new Error(`Claude Code invocation timeout after ${timeout}ms`));
-      }, timeout);
-
-      child.on('close', (code) => {
-        clearTimeout(timer);
-
-        if (code === 0) {
-          resolve({
-            success: true,
-            output: stdout,
-            sessionId: options?.sessionId,
-          });
-        } else {
-          resolve({
-            success: false,
-            output: stdout,
-            error: stderr || `Process exited with code ${code}`,
-          });
-        }
-      });
-
-      child.on('error', (err) => {
-        clearTimeout(timer);
-        reject(err);
-      });
+    const child = spawn('claude', args, {
+      stdio: ['pipe', 'pipe', 'pipe'],
     });
+
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    child.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    // Send prompt via stdin
+    child.stdin.write(prompt);
+    child.stdin.end();
+
+    const timer = setTimeout(() => {
+      child.kill();
+      reject(new Error(`Claude Code invocation timeout after ${timeout}ms`));
+    }, timeout);
+
+    child.on('close', (code) => {
+      clearTimeout(timer);
+
+      if (code === 0) {
+        resolve({
+          success: true,
+          output: stdout,
+          sessionId: options?.sessionId,
+        });
+      } else {
+        resolve({
+          success: false,
+          output: stdout,
+          error: stderr || `Process exited with code ${code}`,
+        });
+      }
+    });
+
+    child.on('error', (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+  });
 }
 
 /**

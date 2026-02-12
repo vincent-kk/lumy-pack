@@ -30,7 +30,7 @@ vi.mock('node:child_process', () => ({
   exec: vi.fn(
     (
       cmd: string,
-      opts: unknown,
+      _opts: unknown,
       cb: (err: Error | null, stdout: string, stderr: string) => void,
     ) => {
       if (cmd.includes('echo')) {

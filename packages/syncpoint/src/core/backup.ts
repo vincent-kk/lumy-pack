@@ -31,6 +31,7 @@ import type {
   FileEntry,
   SyncpointConfig,
 } from '../utils/types.js';
+
 import { collectFileInfo, createMetadata } from './metadata.js';
 import { createArchive } from './storage.js';
 

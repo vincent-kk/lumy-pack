@@ -35,14 +35,15 @@ describe('utils/sudo', () => {
   describe('ensureSudo', () => {
     let consoleLogSpy: ReturnType<typeof vi.spyOn>;
     let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
-    let processExitSpy: ReturnType<typeof vi.spyOn>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let processExitSpy: any;
 
     beforeEach(() => {
       consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      processExitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
+      processExitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
         throw new Error('process.exit called');
-      }) as unknown as (code?: number) => never);
+      });
     });
 
     afterEach(() => {
