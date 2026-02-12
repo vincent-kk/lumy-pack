@@ -1,4 +1,4 @@
-import { rename, writeFile } from 'node:fs/promises';
+import { copyFile, readFile, rename, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { Command } from 'commander';
@@ -13,6 +13,7 @@ import { validateConfig } from '../schemas/config.schema.js';
 import { readAsset } from '../utils/assets.js';
 import {
   invokeClaudeCode,
+  invokeClaudeCodeInteractive,
   isClaudeCodeAvailable,
   resumeClaudeCodeSession,
 } from '../utils/claude-code-runner.js';
@@ -41,6 +42,79 @@ interface WizardViewProps {
 }
 
 const MAX_RETRIES = 3;
+
+/**
+ * Restore config.yml from backup file
+ */
+async function restoreBackup(configPath: string): Promise<void> {
+  const bakPath = `${configPath}.bak`;
+  if (await fileExists(bakPath)) {
+    await copyFile(bakPath, configPath);
+    // Keep .bak as safety net - don't delete it
+  }
+}
+
+/**
+ * Phase 1: Scan home directory and generate prompt
+ */
+async function runScanPhase(): Promise<{
+  fileStructure: ReturnType<typeof scanHomeDirectory> extends Promise<infer T>
+    ? T
+    : never;
+  prompt: string;
+}> {
+  const fileStructure = await scanHomeDirectory();
+  const defaultConfig = readAsset('config.default.yml');
+  const prompt = generateConfigWizardPrompt({
+    fileStructure,
+    defaultConfig,
+  });
+
+  return { fileStructure, prompt };
+}
+
+/**
+ * Phase 2: Interactive Claude Code execution
+ */
+async function runInteractivePhase(prompt: string): Promise<void> {
+  console.log('\n🤖 Launching Claude Code in interactive mode...');
+  console.log(
+    'Claude Code will start the conversation automatically. Just respond to the questions!\n',
+  );
+
+  await invokeClaudeCodeInteractive(prompt);
+}
+
+/**
+ * Phase 3: Validation after interactive session
+ */
+async function runValidationPhase(configPath: string): Promise<void> {
+  try {
+    if (!(await fileExists(configPath))) {
+      await restoreBackup(configPath);
+      console.log('⚠️  Config file was not created. Restored backup.');
+      return;
+    }
+
+    const content = await readFile(configPath, 'utf-8');
+    const parsed = parseYAML<SyncpointConfig>(content);
+    const validation = validateConfig(parsed);
+
+    if (!validation.valid) {
+      await restoreBackup(configPath);
+      console.log(
+        `❌ Validation failed:\n${formatValidationErrors(validation.errors || [])}`,
+      );
+      console.log('Restored previous config from backup.');
+      return;
+    }
+
+    console.log('✅ Config wizard complete! Your config.yml has been created.');
+  } catch (err) {
+    await restoreBackup(configPath);
+    throw err;
+  }
+}
 
 const WizardView: React.FC<WizardViewProps> = ({ printMode }) => {
   const { exit } = useApp();
@@ -118,78 +192,96 @@ const WizardView: React.FC<WizardViewProps> = ({ printMode }) => {
     let currentAttempt = 1;
     let currentSessionId = sessionId;
 
-    while (currentAttempt <= MAX_RETRIES) {
-      try {
-        // Invoke LLM
-        setPhase('llm-invoke');
-        setMessage(
-          `Generating config... (Attempt ${currentAttempt}/${MAX_RETRIES})`,
-        );
-
-        const result = currentSessionId
-          ? await resumeClaudeCodeSession(currentSessionId, currentPrompt)
-          : await invokeClaudeCode(currentPrompt);
-
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to invoke Claude Code');
-        }
-
-        currentSessionId = result.sessionId;
-        setSessionId(currentSessionId);
-
-        // Phase 3: Parse response
-        setPhase('validating');
-        setMessage('Parsing YAML response...');
-
-        const yamlContent = extractYAML(result.output);
-        if (!yamlContent) {
-          throw new Error('No valid YAML found in LLM response');
-        }
-
-        const parsedConfig = parseYAML<SyncpointConfig>(yamlContent);
-
-        // Phase 4: Validate
-        setMessage('Validating config...');
-        const validation = validateConfig(parsedConfig);
-
-        if (validation.valid) {
-          // Success! Write config
-          setPhase('writing');
-          setMessage('Writing config.yml...');
-          await writeFile(configPath, yamlContent, 'utf-8');
-
-          setPhase('done');
+    try {
+      while (currentAttempt <= MAX_RETRIES) {
+        try {
+          // Invoke LLM
+          setPhase('llm-invoke');
           setMessage(
-            '✓ Config wizard complete! Your config.yml has been created.',
+            `Generating config... (Attempt ${currentAttempt}/${MAX_RETRIES})`,
           );
-          setTimeout(() => exit(), 100);
-          return;
-        }
 
-        // Validation failed
-        if (currentAttempt >= MAX_RETRIES) {
-          throw new Error(
-            `Validation failed after ${MAX_RETRIES} attempts:\n${formatValidationErrors(validation.errors || [])}`,
+          const result = currentSessionId
+            ? await resumeClaudeCodeSession(currentSessionId, currentPrompt)
+            : await invokeClaudeCode(currentPrompt);
+
+          if (!result.success) {
+            throw new Error(result.error || 'Failed to invoke Claude Code');
+          }
+
+          currentSessionId = result.sessionId;
+          setSessionId(currentSessionId);
+
+          // Phase 3: Parse response
+          setPhase('validating');
+          setMessage('Parsing YAML response...');
+
+          const yamlContent = extractYAML(result.output);
+          if (!yamlContent) {
+            throw new Error('No valid YAML found in LLM response');
+          }
+
+          const parsedConfig = parseYAML<SyncpointConfig>(yamlContent);
+
+          // Phase 4: Validate
+          setMessage('Validating config...');
+          const validation = validateConfig(parsedConfig);
+
+          if (validation.valid) {
+            // Success! Write config with atomic pattern
+            setPhase('writing');
+            setMessage('Writing config.yml...');
+
+            // Write to temp file first
+            const tmpPath = `${configPath}.tmp`;
+            await writeFile(tmpPath, yamlContent, 'utf-8');
+
+            // Verify again before atomic rename
+            const verification = validateConfig(parseYAML(yamlContent));
+            if (verification.valid) {
+              await rename(tmpPath, configPath); // Atomic replacement
+            } else {
+              await unlink(tmpPath);
+              throw new Error('Final validation failed');
+            }
+
+            setPhase('done');
+            setMessage(
+              '✓ Config wizard complete! Your config.yml has been created.',
+            );
+            setTimeout(() => exit(), 100);
+            return;
+          }
+
+          // Validation failed
+          if (currentAttempt >= MAX_RETRIES) {
+            throw new Error(
+              `Validation failed after ${MAX_RETRIES} attempts:\n${formatValidationErrors(validation.errors || [])}`,
+            );
+          }
+
+          // Retry with error context
+          setPhase('retry');
+          setMessage(`Validation failed. Retrying with error context...`);
+          currentPrompt = createRetryPrompt(
+            initialPrompt,
+            validation.errors || [],
+            currentAttempt + 1,
           );
+          currentAttempt++;
+          setAttemptNumber(currentAttempt);
+        } catch (err) {
+          if (currentAttempt >= MAX_RETRIES) {
+            throw err;
+          }
+          currentAttempt++;
+          setAttemptNumber(currentAttempt);
         }
-
-        // Retry with error context
-        setPhase('retry');
-        setMessage(`Validation failed. Retrying with error context...`);
-        currentPrompt = createRetryPrompt(
-          initialPrompt,
-          validation.errors || [],
-          currentAttempt + 1,
-        );
-        currentAttempt++;
-        setAttemptNumber(currentAttempt);
-      } catch (err) {
-        if (currentAttempt >= MAX_RETRIES) {
-          throw err;
-        }
-        currentAttempt++;
-        setAttemptNumber(currentAttempt);
       }
+    } catch (err) {
+      // Restore backup on any unrecoverable failure
+      await restoreBackup(configPath);
+      throw err;
     }
   }
 
@@ -259,9 +351,45 @@ export function registerWizardCommand(program: Command): void {
   });
 
   cmd.action(async (opts: { print?: boolean }) => {
-    const { waitUntilExit } = render(
-      <WizardView printMode={opts.print || false} />,
-    );
-    await waitUntilExit();
+    if (opts.print) {
+      // Print mode: use existing Ink UI
+      const { waitUntilExit } = render(<WizardView printMode={true} />);
+      await waitUntilExit();
+      return;
+    }
+
+    // Interactive mode: 3-phase execution
+    const configPath = join(getAppDir(), CONFIG_FILENAME);
+
+    try {
+      // Backup existing config
+      if (await fileExists(configPath)) {
+        console.log(`📋 Backing up existing config to ${configPath}.bak`);
+        await rename(configPath, `${configPath}.bak`);
+      }
+
+      // Check if Claude Code is available
+      if (!(await isClaudeCodeAvailable())) {
+        throw new Error(
+          'Claude Code CLI not found. Please install it or use --print mode.',
+        );
+      }
+
+      // Phase 1: Scan
+      console.log('🔍 Scanning home directory...');
+      const scanResult = await runScanPhase();
+      console.log(
+        `Found ${scanResult.fileStructure.totalFiles} files in ${scanResult.fileStructure.categories.length} categories`,
+      );
+
+      // Phase 2: Interactive
+      await runInteractivePhase(scanResult.prompt);
+
+      // Phase 3: Validate
+      await runValidationPhase(configPath);
+    } catch (err) {
+      console.error('❌ Error:', err instanceof Error ? err.message : err);
+      process.exit(1);
+    }
   });
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   extractAndParseYAML,
+  extractConfigYAML,
   extractYAML,
   parseYAML,
 } from '../../utils/yaml-parser.js';
@@ -64,13 +65,20 @@ list:
       expect(yaml).toBe(response.trim());
     });
 
-    it('accepts plain text as valid YAML string', () => {
-      // Plain text is technically valid YAML (as a string)
+    it('rejects plain text (not structured YAML)', () => {
+      // Plain text is not structured YAML - should return null
       const response = 'This is not YAML at all';
 
       const yaml = extractYAML(response);
 
-      expect(yaml).toBe(response.trim());
+      expect(yaml).toBeNull();
+    });
+
+    it('rejects scalar YAML values', () => {
+      // Scalar values (numbers, strings) are not structured YAML
+      expect(extractYAML('42')).toBeNull();
+      expect(extractYAML('"just a string"')).toBeNull();
+      expect(extractYAML('true')).toBeNull();
     });
 
     it('handles multiline YAML in code blocks', () => {
@@ -129,24 +137,24 @@ value: 123
       expect(parsed).toEqual({ name: 'test', value: 123 });
     });
 
-    it('parses plain text as YAML string', () => {
-      // Plain text is valid YAML (as a string value)
+    it('returns null for plain text (not structured YAML)', () => {
+      // Plain text is not structured YAML - should return null
       const response = 'No YAML here';
 
       const parsed = extractAndParseYAML(response);
 
-      expect(parsed).toBe('No YAML here');
+      expect(parsed).toBeNull();
     });
 
-    it('parses text from code block as YAML string', () => {
-      // Even invalid-looking text can be valid YAML (as a string)
+    it('returns null for scalar YAML in code block', () => {
+      // Scalar values are not structured YAML - should return null
       const response = `\`\`\`yaml
 invalid yaml content {{{
 \`\`\``;
 
       const parsed = extractAndParseYAML(response);
 
-      expect(parsed).toBe('invalid yaml content {{{');
+      expect(parsed).toBeNull();
     });
 
     it('handles complex nested structures', () => {
@@ -168,6 +176,52 @@ scripts:
       expect(parsed).toHaveProperty('scripts');
       // @ts-expect-error - parsed is unknown type
       expect(parsed.backup.targets).toHaveLength(2);
+    });
+  });
+
+  describe('extractConfigYAML', () => {
+    it('extracts valid config YAML with backup key', () => {
+      const response = `\`\`\`yaml
+backup:
+  enabled: true
+  targets:
+    - ~/.zshrc
+\`\`\``;
+
+      const yaml = extractConfigYAML(response);
+
+      expect(yaml).toBeTruthy();
+      expect(yaml).toContain('backup:');
+    });
+
+    it('rejects YAML without backup key', () => {
+      const response = `\`\`\`yaml
+other:
+  key: value
+\`\`\``;
+
+      const yaml = extractConfigYAML(response);
+
+      expect(yaml).toBeNull();
+    });
+
+    it('rejects plain text', () => {
+      const response = 'This is not YAML';
+
+      const yaml = extractConfigYAML(response);
+
+      expect(yaml).toBeNull();
+    });
+
+    it('accepts config YAML without code blocks', () => {
+      const response = `backup:
+  enabled: true
+  targets:
+    - ~/.gitconfig`;
+
+      const yaml = extractConfigYAML(response);
+
+      expect(yaml).toBe(response.trim());
     });
   });
 });

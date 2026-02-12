@@ -120,3 +120,50 @@ export async function resumeClaudeCodeSession(
     timeout: options?.timeout,
   });
 }
+
+/**
+ * Invoke Claude Code in interactive mode
+ * User can directly interact with Claude Code UI
+ * @param prompt - Context prompt with file structure
+ */
+export async function invokeClaudeCodeInteractive(
+  prompt: string,
+): Promise<ClaudeCodeResult> {
+  return await new Promise((resolve, reject) => {
+    // Comprehensive initial message with key instructions
+    const initialMessage = `${prompt}
+
+IMPORTANT INSTRUCTIONS:
+1. After gathering the user's backup preferences through conversation
+2. Use the Write tool to create the file at: ~/.syncpoint/config.yml
+3. The file must be valid YAML following the Syncpoint schema
+4. Include backup.targets array with recommended files based on user responses
+5. Include backup.exclude array with common exclusions
+
+Start by asking the user about their backup priorities for the home directory structure provided above.`;
+
+    const args = [
+      '--permission-mode',
+      'acceptEdits',
+      '--model',
+      'sonnet',
+      initialMessage, // Include full context and instructions in initial message
+    ];
+
+    // ⭐ Key: stdio: 'inherit' allows user to directly interact
+    const child = spawn('claude', args, {
+      stdio: 'inherit', // Share stdin/stdout/stderr with parent process
+    });
+
+    child.on('close', (code) => {
+      resolve({
+        success: code === 0,
+        output: '', // No captured output in interactive mode
+      });
+    });
+
+    child.on('error', (err) => {
+      reject(err);
+    });
+  });
+}
