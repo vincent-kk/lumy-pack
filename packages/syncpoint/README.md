@@ -9,6 +9,7 @@ Syncpoint is a powerful CLI tool for managing your development environment confi
 
 ## ✨ Features
 
+- 🧙 **AI-Powered Wizards** — LLM-assisted config generation and template creation with Claude Code
 - 📦 **Config Backup** — Create compressed archives of your dotfiles and configs with metadata tracking
 - 🔄 **Smart Restore** — Hash-based file comparison with automatic safety backups before overwrite
 - 🚀 **Machine Provisioning** — Template-based system setup with YAML-defined installation steps
@@ -88,6 +89,91 @@ Initialize the syncpoint directory structure and create default configuration.
 ```bash
 npx @lumy-pack/syncpoint init
 ```
+
+---
+
+### `syncpoint wizard [options]`
+
+Interactive LLM-powered wizard to generate personalized `config.yml` based on your home directory.
+
+**What it does:**
+1. Scans your home directory for common configuration files
+2. Categorizes files (shell configs, git, SSH, application configs)
+3. Invokes Claude Code to generate customized backup configuration
+4. Validates generated config with automatic retry on errors (max 3 attempts)
+5. Backs up existing config before overwrite (saved as `config.yml.bak`)
+6. Writes validated configuration to `~/.syncpoint/config.yml`
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `-p, --print` | Print prompt for manual LLM usage instead of invoking Claude Code |
+
+**Usage:**
+
+```bash
+# Interactive wizard (requires Claude Code CLI)
+npx @lumy-pack/syncpoint wizard
+
+# Print prompt for manual use
+npx @lumy-pack/syncpoint wizard --print
+```
+
+**Requirements:**
+- Claude Code CLI must be installed for default mode
+- Use `--print` mode if Claude Code is not available
+
+**Validation:**
+- Automatic AJV schema validation
+- Retry loop with error feedback to LLM
+- Session resume preserves conversation context
+
+---
+
+### `syncpoint create-template [name] [options]`
+
+Interactive LLM-powered wizard to create custom provisioning templates.
+
+**What it does:**
+1. Guides you through defining provisioning requirements
+2. Invokes Claude Code to generate template YAML
+3. Validates template structure with automatic retry (max 3 attempts)
+4. Writes template to `~/.syncpoint/templates/`
+5. Prevents overwriting existing templates
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `-p, --print` | Print prompt for manual LLM usage instead of invoking Claude Code |
+
+**Usage:**
+
+```bash
+# Interactive template creation (requires Claude Code CLI)
+npx @lumy-pack/syncpoint create-template
+
+# Create with specific name
+npx @lumy-pack/syncpoint create-template my-dev-setup
+
+# Print prompt for manual use
+npx @lumy-pack/syncpoint create-template --print
+```
+
+**Template Fields:**
+- `name` (required) — Template name
+- `description` (optional) — Template description
+- `steps` (required) — Array of provisioning steps
+- `backup` (optional) — Backup name to restore after provisioning
+- `sudo` (optional) — Whether sudo privilege is required
+
+**Step Fields:**
+- `name` (required) — Step name
+- `command` (required) — Shell command to execute
+- `description` (optional) — Step description
+- `skip_if` (optional) — Condition to skip step
+- `continue_on_error` (optional) — Continue on failure (default: false)
 
 ---
 
@@ -634,6 +720,69 @@ Syncpoint includes multiple security layers to protect your data and system:
 - **Path Validation** — Prevents operations outside allowed directories
 - **Deletion Restrictions** — Only allows deletion within syncpoint directories
 - **Permission Checks** — Validates file permissions before operations
+
+---
+
+## 🔧 Troubleshooting
+
+### Wizard Commands
+
+**Claude Code CLI not found**
+
+If you see "Claude Code CLI not found" error:
+1. Install Claude Code CLI: Visit [claude.ai/code](https://claude.ai/code) for installation instructions
+2. Or use `--print` mode to get the prompt and use it with your preferred LLM
+3. Verify installation: `claude --version`
+
+**Validation errors after LLM generation**
+
+The wizard automatically retries up to 3 times when validation fails:
+- Each retry includes error feedback to help the LLM correct the issues
+- If all retries fail, check the validation error messages
+- Common issues:
+  - Missing required fields (`backup.targets`, `backup.exclude`, `backup.filename`)
+  - Invalid pattern syntax in targets/exclude arrays
+  - Empty or malformed YAML structure
+
+**Print mode usage**
+
+Use `--print` mode when Claude Code is not available:
+```bash
+# Get the prompt
+npx @lumy-pack/syncpoint wizard --print > prompt.txt
+
+# Copy prompt.txt to your LLM
+# Save the YAML response to ~/.syncpoint/config.yml
+```
+
+**Session context lost**
+
+The wizard preserves session context across retries using Claude Code's session management. If context is lost:
+- The wizard will start a new session on the next retry
+- Manual intervention may be needed after 3 failed attempts
+
+### General Issues
+
+**Permission errors**
+
+If you encounter permission errors:
+- Ensure you have write access to `~/.syncpoint/`
+- Check file permissions: `ls -la ~/.syncpoint/`
+- Run with appropriate permissions (avoid unnecessary sudo)
+
+**Large file warnings**
+
+Files larger than 10MB trigger warnings:
+- Consider excluding large files using `exclude` patterns
+- Review if these files should be in version control instead
+- Compress large files before backing up
+
+**Backup restore conflicts**
+
+If restore shows many "overwrite" actions:
+- Use `--dry-run` to preview changes first
+- Automatic safety backup is created before overwrite
+- Review the safety backup in `~/.syncpoint/backups/` tagged with `_pre-restore_`
 
 ---
 
