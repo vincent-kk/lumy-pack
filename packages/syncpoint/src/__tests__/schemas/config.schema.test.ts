@@ -192,4 +192,139 @@ describe("validateConfig", () => {
     const result = validateConfig(config);
     expect(result.valid).toBe(true);
   });
+
+  describe("pattern validation", () => {
+    describe("valid patterns", () => {
+      it("accepts valid regex patterns in targets", () => {
+        const config = {
+          backup: {
+            targets: ["/\\.zshrc$/", "/\\.conf$/"],
+            exclude: [],
+            filename: "backup.tar.gz",
+          },
+        };
+        const result = validateConfig(config);
+        expect(result.valid).toBe(true);
+      });
+
+      it("accepts valid regex patterns in exclude", () => {
+        const config = {
+          backup: {
+            targets: ["~/.config"],
+            exclude: ["/\\.bak$/", "/\\.tmp$/"],
+            filename: "backup.tar.gz",
+          },
+        };
+        const result = validateConfig(config);
+        expect(result.valid).toBe(true);
+      });
+
+      it("accepts valid glob patterns in targets", () => {
+        const config = {
+          backup: {
+            targets: ["*.conf", "~/.config/*.yml", "**/*.toml"],
+            exclude: [],
+            filename: "backup.tar.gz",
+          },
+        };
+        const result = validateConfig(config);
+        expect(result.valid).toBe(true);
+      });
+
+      it("accepts valid glob patterns in exclude", () => {
+        const config = {
+          backup: {
+            targets: ["~/.config"],
+            exclude: ["**/*.swp", "**/.DS_Store", "**/node_modules/**"],
+            filename: "backup.tar.gz",
+          },
+        };
+        const result = validateConfig(config);
+        expect(result.valid).toBe(true);
+      });
+
+      it("accepts literal paths in targets", () => {
+        const config = {
+          backup: {
+            targets: ["~/.zshrc", "/usr/local/bin", "~/.config/starship.toml"],
+            exclude: [],
+            filename: "backup.tar.gz",
+          },
+        };
+        const result = validateConfig(config);
+        expect(result.valid).toBe(true);
+      });
+
+      it("accepts mixed pattern types", () => {
+        const config = {
+          backup: {
+            targets: [
+              "~/.zshrc",        // literal
+              "~/.config/*.yml", // glob
+              "/\\.conf$/",      // regex
+            ],
+            exclude: [
+              "**/*.swp",        // glob
+              "/\\.bak$/",       // regex
+            ],
+            filename: "backup.tar.gz",
+          },
+        };
+        const result = validateConfig(config);
+        expect(result.valid).toBe(true);
+      });
+    });
+
+    describe("invalid patterns", () => {
+      it("rejects invalid regex patterns in targets", () => {
+        const config = {
+          backup: {
+            targets: ["/[invalid/"],
+            exclude: [],
+            filename: "backup.tar.gz",
+          },
+        };
+        const result = validateConfig(config);
+        expect(result.valid).toBe(false);
+        expect(result.errors).toBeDefined();
+      });
+
+      it("rejects invalid regex patterns in exclude", () => {
+        const config = {
+          backup: {
+            targets: ["~/.config"],
+            exclude: ["/(unclosed/"],
+            filename: "backup.tar.gz",
+          },
+        };
+        const result = validateConfig(config);
+        expect(result.valid).toBe(false);
+        expect(result.errors).toBeDefined();
+      });
+
+      it("rejects malformed regex patterns", () => {
+        const config = {
+          backup: {
+            targets: ["/[a-z/"],
+            exclude: [],
+            filename: "backup.tar.gz",
+          },
+        };
+        const result = validateConfig(config);
+        expect(result.valid).toBe(false);
+      });
+
+      it("rejects multiple invalid patterns", () => {
+        const config = {
+          backup: {
+            targets: ["/[invalid1/", "~/.zshrc", "/[invalid2/"],
+            exclude: [],
+            filename: "backup.tar.gz",
+          },
+        };
+        const result = validateConfig(config);
+        expect(result.valid).toBe(false);
+      });
+    });
+  });
 });

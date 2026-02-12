@@ -127,6 +127,150 @@ describe("core/backup", () => {
 
       expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("Sensitive file detected"));
     });
+
+    describe("literal path exclude (bug fix)", () => {
+      it("excludes literal paths matching glob patterns", async () => {
+        await writeFile(join(sandbox.home, ".zshrc"), "config", "utf-8");
+        await writeFile(join(sandbox.home, ".zshrc.bak"), "backup", "utf-8");
+
+        const config = makeConfig({
+          backup: {
+            targets: ["~/.zshrc", "~/.zshrc.bak"],
+            exclude: ["**/*.bak"],
+            filename: "test",
+          },
+        });
+
+        const { found } = await scanTargets(config);
+
+        expect(found).toHaveLength(1);
+        expect(found[0].path).toBe("~/.zshrc");
+        expect(found.map((f) => f.path)).not.toContain("~/.zshrc.bak");
+      });
+
+      it("excludes literal paths matching regex patterns", async () => {
+        await writeFile(join(sandbox.home, "file.tmp"), "temp", "utf-8");
+        await writeFile(join(sandbox.home, "file.txt"), "text", "utf-8");
+
+        const config = makeConfig({
+          backup: {
+            targets: ["~/file.tmp", "~/file.txt"],
+            exclude: ["/\\.tmp$/"],
+            filename: "test",
+          },
+        });
+
+        const { found } = await scanTargets(config);
+
+        expect(found).toHaveLength(1);
+        expect(found[0].path).toBe("~/file.txt");
+        expect(found.map((f) => f.path)).not.toContain("~/file.tmp");
+      });
+
+      it("excludes literal paths matching multiple pattern types", async () => {
+        await writeFile(join(sandbox.home, "file.log"), "log", "utf-8");
+        await writeFile(join(sandbox.home, "file.bak"), "backup", "utf-8");
+        await writeFile(join(sandbox.home, "file.txt"), "text", "utf-8");
+
+        const config = makeConfig({
+          backup: {
+            targets: ["~/file.log", "~/file.bak", "~/file.txt"],
+            exclude: ["**/*.log", "/\\.bak$/"],
+            filename: "test",
+          },
+        });
+
+        const { found } = await scanTargets(config);
+
+        expect(found).toHaveLength(1);
+        expect(found[0].path).toBe("~/file.txt");
+      });
+    });
+
+    describe("regex target patterns", () => {
+      it("finds files matching regex patterns", async () => {
+        await mkdir(join(sandbox.home, ".config"), { recursive: true });
+        await writeFile(join(sandbox.home, ".config", "app1.conf"), "config1", "utf-8");
+        await writeFile(join(sandbox.home, ".config", "app2.conf"), "config2", "utf-8");
+        await writeFile(join(sandbox.home, ".config", "readme.txt"), "text", "utf-8");
+
+        const config = makeConfig({
+          backup: {
+            targets: ["/\\.conf$/"],
+            exclude: [],
+            filename: "test",
+          },
+        });
+
+        const { found } = await scanTargets(config);
+
+        expect(found.length).toBeGreaterThan(0);
+        expect(found.every((f) => f.path.endsWith(".conf"))).toBe(true);
+      });
+
+      it("excludes files from regex targets", async () => {
+        await mkdir(join(sandbox.home, ".config"), { recursive: true });
+        await writeFile(join(sandbox.home, ".config", "app.conf"), "config", "utf-8");
+        await writeFile(join(sandbox.home, ".config", "app.conf.bak"), "backup", "utf-8");
+
+        const config = makeConfig({
+          backup: {
+            targets: ["/\\.conf/"],
+            exclude: ["**/*.bak"],
+            filename: "test",
+          },
+        });
+
+        const { found } = await scanTargets(config);
+
+        expect(found.some((f) => f.path.includes("app.conf") && !f.path.includes(".bak"))).toBe(true);
+        expect(found.some((f) => f.path.includes(".bak"))).toBe(false);
+      });
+
+      it("handles invalid regex patterns gracefully", async () => {
+        const { logger } = await import("../../utils/logger.js");
+
+        const config = makeConfig({
+          backup: {
+            targets: ["/[invalid/"],
+            exclude: [],
+            filename: "test",
+          },
+        });
+
+        const { found } = await scanTargets(config);
+
+        expect(found).toHaveLength(0);
+        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("Invalid regex pattern"));
+      });
+    });
+
+    describe("mixed pattern types", () => {
+      it("handles glob, regex, and literal patterns together", async () => {
+        await mkdir(join(sandbox.home, ".config"), { recursive: true });
+        await writeFile(join(sandbox.home, ".zshrc"), "zsh config", "utf-8");
+        await writeFile(join(sandbox.home, ".config", "app1.conf"), "config1", "utf-8");
+        await writeFile(join(sandbox.home, ".config", "app2.yml"), "config2", "utf-8");
+
+        const config = makeConfig({
+          backup: {
+            targets: [
+              "~/.zshrc",        // literal
+              "~/.config/*.yml", // glob
+              "/\\.conf$/",      // regex
+            ],
+            exclude: [],
+            filename: "test",
+          },
+        });
+
+        const { found } = await scanTargets(config);
+
+        expect(found.some((f) => f.path === "~/.zshrc")).toBe(true);
+        expect(found.some((f) => f.path.includes("app2.yml"))).toBe(true);
+        expect(found.some((f) => f.path.includes("app1.conf"))).toBe(true);
+      });
+    });
   });
 
   describe("createBackup", () => {

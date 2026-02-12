@@ -15,6 +15,11 @@ import { generateFilename } from "../utils/format.js";
 import { logger } from "../utils/logger.js";
 import { collectFileInfo, createMetadata } from "./metadata.js";
 import { createArchive } from "./storage.js";
+import {
+  detectPatternType,
+  parseRegexPattern,
+  createExcludeMatcher,
+} from "../utils/pattern.js";
 import type {
   BackupOptions,
   BackupResult,
@@ -38,6 +43,13 @@ function isSensitiveFile(filePath: string): boolean {
 /**
  * Scan config targets, resolve globs, filter excludes.
  * Returns found FileEntry[] and missing path strings.
+ *
+ * Supports three pattern types:
+ * - Regex: /pattern/ format (e.g., /\.conf$/)
+ * - Glob: *.ext, **\/pattern (e.g., ~/.config/*.yml)
+ * - Literal: Direct file paths (e.g., ~/.zshrc)
+ *
+ * Exclude patterns are applied consistently across all target types.
  */
 export async function scanTargets(
   config: SyncpointConfig,
@@ -45,26 +57,72 @@ export async function scanTargets(
   const found: FileEntry[] = [];
   const missing: string[] = [];
 
+  // Create exclude matcher once for efficiency
+  const isExcluded = createExcludeMatcher(config.backup.exclude);
+
   for (const target of config.backup.targets) {
     const expanded = expandTilde(target);
+    const patternType = detectPatternType(expanded);
 
-    // Check if this is a glob pattern
-    if (expanded.includes("*") || expanded.includes("?") || expanded.includes("{")) {
+    if (patternType === "regex") {
+      // Regex pattern: scan home directory and filter by regex
+      try {
+        const regex = parseRegexPattern(expanded);
+        const homeDir = expandTilde("~/");
+
+        // Ensure homeDir ends with / for proper glob pattern
+        const homeDirNormalized = homeDir.endsWith("/") ? homeDir : `${homeDir}/`;
+
+        const allFiles = await fg(`${homeDirNormalized}**`, {
+          dot: true,
+          absolute: true,
+          onlyFiles: true,
+          deep: 5, // Limit depth for performance
+        });
+
+        for (const match of allFiles) {
+          if (regex.test(match) && !isExcluded(match)) {
+            const entry = await collectFileInfo(match, match);
+            found.push(entry);
+          }
+        }
+      } catch (error) {
+        logger.warn(
+          `Invalid regex pattern "${target}": ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    } else if (patternType === "glob") {
+      // Glob pattern: use fast-glob with glob-only excludes
+      const globExcludes = config.backup.exclude.filter(
+        (p) => detectPatternType(p) === "glob",
+      );
+
       const matches = await fg(expanded, {
         dot: true,
         absolute: true,
-        ignore: config.backup.exclude,
+        ignore: globExcludes,
         onlyFiles: true,
       });
+
+      // Apply non-glob excludes (regex, literal) as post-filter
       for (const match of matches) {
-        const entry = await collectFileInfo(match, match);
-        found.push(entry);
+        if (!isExcluded(match)) {
+          const entry = await collectFileInfo(match, match);
+          found.push(entry);
+        }
       }
     } else {
+      // Literal path: direct file check with exclude filter
       const absPath = resolveTargetPath(target);
       const exists = await fileExists(absPath);
+
       if (!exists) {
         missing.push(target);
+        continue;
+      }
+
+      // Apply exclude patterns to literal paths
+      if (isExcluded(absPath)) {
         continue;
       }
 

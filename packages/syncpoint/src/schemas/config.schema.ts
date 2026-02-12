@@ -11,11 +11,11 @@ const configSchema = {
       properties: {
         targets: {
           type: "array",
-          items: { type: "string" },
+          items: { type: "string", validPattern: true },
         },
         exclude: {
           type: "array",
-          items: { type: "string" },
+          items: { type: "string", validPattern: true },
         },
         filename: {
           type: "string",
