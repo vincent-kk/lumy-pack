@@ -3,14 +3,14 @@
  */
 export function formatValidationErrors(errors: string[]): string {
   if (errors.length === 0) {
-    return "No validation errors.";
+    return 'No validation errors.';
   }
 
   const formattedErrors = errors.map((error, index) => {
     return `${index + 1}. ${error}`;
   });
 
-  return `Validation failed with ${errors.length} error(s):\n\n${formattedErrors.join("\n")}`;
+  return `Validation failed with ${errors.length} error(s):\n\n${formattedErrors.join('\n')}`;
 }
 
 /**
@@ -55,7 +55,10 @@ export function formatErrorForDisplay(error: string | Error): string {
 /**
  * Create user-friendly error messages
  */
-export function createUserFriendlyError(context: string, error: unknown): string {
+export function createUserFriendlyError(
+  context: string,
+  error: unknown,
+): string {
   const errorMessage = formatErrorForDisplay(
     error instanceof Error ? error : new Error(String(error)),
   );

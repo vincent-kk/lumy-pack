@@ -1,18 +1,19 @@
-import { exec } from "node:child_process";
-import { readFile, readdir } from "node:fs/promises";
-import { join } from "node:path";
-import YAML from "yaml";
+import { exec } from 'node:child_process';
+import { readFile, readdir } from 'node:fs/promises';
+import { join } from 'node:path';
 
-import { TEMPLATES_DIR, getSubDir } from "../constants.js";
-import { validateTemplate } from "../schemas/template.schema.js";
-import { fileExists } from "../utils/paths.js";
-import { logger } from "../utils/logger.js";
+import YAML from 'yaml';
+
+import { TEMPLATES_DIR, getSubDir } from '../constants.js';
+import { validateTemplate } from '../schemas/template.schema.js';
+import { logger } from '../utils/logger.js';
+import { fileExists } from '../utils/paths.js';
 import type {
   ProvisionOptions,
   StepResult,
   TemplateConfig,
   TemplateStep,
-} from "../utils/types.js";
+} from '../utils/types.js';
 
 const REMOTE_SCRIPT_PATTERNS = [
   /curl\s.*\|\s*(ba)?sh/,
@@ -22,7 +23,7 @@ const REMOTE_SCRIPT_PATTERNS = [
 ];
 
 function containsRemoteScriptPattern(command: string): boolean {
-  return REMOTE_SCRIPT_PATTERNS.some(p => p.test(command));
+  return REMOTE_SCRIPT_PATTERNS.some((p) => p.test(command));
 }
 
 function sanitizeErrorOutput(output: string): string {
@@ -44,13 +45,13 @@ export async function loadTemplate(
     throw new Error(`Template not found: ${templatePath}`);
   }
 
-  const raw = await readFile(templatePath, "utf-8");
+  const raw = await readFile(templatePath, 'utf-8');
   const data = YAML.parse(raw) as unknown;
 
   const result = validateTemplate(data);
   if (!result.valid) {
     throw new Error(
-      `Invalid template ${templatePath}:\n${(result.errors ?? []).join("\n")}`,
+      `Invalid template ${templatePath}:\n${(result.errors ?? []).join('\n')}`,
     );
   }
 
@@ -77,7 +78,7 @@ export async function listTemplates(): Promise<
   for (const entry of entries) {
     if (
       !entry.isFile() ||
-      (!entry.name.endsWith(".yml") && !entry.name.endsWith(".yaml"))
+      (!entry.name.endsWith('.yml') && !entry.name.endsWith('.yaml'))
     ) {
       continue;
     }
@@ -86,7 +87,7 @@ export async function listTemplates(): Promise<
     try {
       const config = await loadTemplate(fullPath);
       templates.push({
-        name: entry.name.replace(/\.ya?ml$/, ""),
+        name: entry.name.replace(/\.ya?ml$/, ''),
         path: fullPath,
         config,
       });
@@ -107,19 +108,19 @@ function execAsync(
   return new Promise((resolve, reject) => {
     exec(
       command,
-      { shell: "/bin/bash", timeout: 300_000 },
+      { shell: '/bin/bash', timeout: 300_000 },
       (error, stdout, stderr) => {
         if (error) {
           reject(
             Object.assign(error, {
-              stdout: stdout?.toString() ?? "",
-              stderr: stderr?.toString() ?? "",
+              stdout: stdout?.toString() ?? '',
+              stderr: stderr?.toString() ?? '',
             }),
           );
         } else {
           resolve({
-            stdout: stdout?.toString() ?? "",
-            stderr: stderr?.toString() ?? "",
+            stdout: stdout?.toString() ?? '',
+            stderr: stderr?.toString() ?? '',
           });
         }
       },
@@ -131,9 +132,14 @@ function execAsync(
  * Evaluate a skip_if condition.
  * Returns true if the command exits with code 0 (meaning: skip this step).
  */
-export async function evaluateSkipIf(command: string, stepName: string): Promise<boolean> {
+export async function evaluateSkipIf(
+  command: string,
+  stepName: string,
+): Promise<boolean> {
   if (containsRemoteScriptPattern(command)) {
-    throw new Error(`Blocked dangerous remote script pattern in skip_if: ${stepName}`);
+    throw new Error(
+      `Blocked dangerous remote script pattern in skip_if: ${stepName}`,
+    );
   }
   try {
     await execAsync(command);
@@ -146,14 +152,14 @@ export async function evaluateSkipIf(command: string, stepName: string): Promise
 /**
  * Execute a single provisioning step.
  */
-export async function executeStep(
-  step: TemplateStep,
-): Promise<StepResult> {
+export async function executeStep(step: TemplateStep): Promise<StepResult> {
   const startTime = Date.now();
 
   // Block dangerous remote script patterns
   if (containsRemoteScriptPattern(step.command)) {
-    throw new Error(`Blocked dangerous remote script pattern in command: ${step.name}`);
+    throw new Error(
+      `Blocked dangerous remote script pattern in command: ${step.name}`,
+    );
   }
 
   // Evaluate skip_if
@@ -162,7 +168,7 @@ export async function executeStep(
     if (shouldSkip) {
       return {
         name: step.name,
-        status: "skipped",
+        status: 'skipped',
         duration: Date.now() - startTime,
       };
     }
@@ -171,10 +177,10 @@ export async function executeStep(
   // Execute the command
   try {
     const { stdout, stderr } = await execAsync(step.command);
-    const output = [stdout, stderr].filter(Boolean).join("\n").trim();
+    const output = [stdout, stderr].filter(Boolean).join('\n').trim();
     return {
       name: step.name,
-      status: "success",
+      status: 'success',
       duration: Date.now() - startTime,
       output: output || undefined,
     };
@@ -182,12 +188,12 @@ export async function executeStep(
     const error = err as Error & { stdout?: string; stderr?: string };
     const errorOutput = [error.stdout, error.stderr, error.message]
       .filter(Boolean)
-      .join("\n")
+      .join('\n')
       .trim();
 
     return {
       name: step.name,
-      status: "failed",
+      status: 'failed',
       duration: Date.now() - startTime,
       error: sanitizeErrorOutput(errorOutput),
     };
@@ -208,10 +214,10 @@ export async function* runProvision(
   for (const step of template.steps) {
     if (options.dryRun) {
       // In dry-run mode, show what would happen
-      let status: StepResult["status"] = "pending";
+      let status: StepResult['status'] = 'pending';
       if (step.skip_if) {
         const shouldSkip = await evaluateSkipIf(step.skip_if, step.name);
-        if (shouldSkip) status = "skipped";
+        if (shouldSkip) status = 'skipped';
       }
       yield {
         name: step.name,
@@ -223,17 +229,15 @@ export async function* runProvision(
     // Yield "running" status
     yield {
       name: step.name,
-      status: "running",
+      status: 'running',
     };
 
     const result = await executeStep(step);
     yield result;
 
     // Stop if step failed and continue_on_error is not set
-    if (result.status === "failed" && !step.continue_on_error) {
-      logger.error(
-        `Step "${step.name}" failed. Stopping provisioning.`,
-      );
+    if (result.status === 'failed' && !step.continue_on_error) {
+      logger.error(`Step "${step.name}" failed. Stopping provisioning.`);
       return;
     }
   }

@@ -1,7 +1,7 @@
-import { spawn } from "node:child_process";
-import { writeFile, unlink } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { spawn } from 'node:child_process';
+import { unlink, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 export interface ClaudeCodeResult {
   success: boolean;
@@ -15,11 +15,11 @@ export interface ClaudeCodeResult {
  */
 export async function isClaudeCodeAvailable(): Promise<boolean> {
   return new Promise((resolve) => {
-    const child = spawn("which", ["claude"], { shell: true });
-    child.on("close", (code) => {
+    const child = spawn('which', ['claude'], { shell: true });
+    child.on('close', (code) => {
       resolve(code === 0);
     });
-    child.on("error", () => {
+    child.on('error', () => {
       resolve(false);
     });
   });
@@ -39,27 +39,27 @@ export async function invokeClaudeCode(
 
   // Write prompt to temporary file
   const promptFile = join(tmpdir(), `syncpoint-prompt-${Date.now()}.txt`);
-  await writeFile(promptFile, prompt, "utf-8");
+  await writeFile(promptFile, prompt, 'utf-8');
 
   try {
     return await new Promise((resolve, reject) => {
-      const args = ["--edit"];
+      const args = ['--edit'];
       if (options?.sessionId) {
-        args.push("--session", options.sessionId);
+        args.push('--session', options.sessionId);
       }
 
-      const child = spawn("claude", args, {
-        stdio: ["pipe", "pipe", "pipe"],
+      const child = spawn('claude', args, {
+        stdio: ['pipe', 'pipe', 'pipe'],
       });
 
-      let stdout = "";
-      let stderr = "";
+      let stdout = '';
+      let stderr = '';
 
-      child.stdout.on("data", (data) => {
+      child.stdout.on('data', (data) => {
         stdout += data.toString();
       });
 
-      child.stderr.on("data", (data) => {
+      child.stderr.on('data', (data) => {
         stderr += data.toString();
       });
 
@@ -72,7 +72,7 @@ export async function invokeClaudeCode(
         reject(new Error(`Claude Code invocation timeout after ${timeout}ms`));
       }, timeout);
 
-      child.on("close", (code) => {
+      child.on('close', (code) => {
         clearTimeout(timer);
 
         if (code === 0) {
@@ -90,7 +90,7 @@ export async function invokeClaudeCode(
         }
       });
 
-      child.on("error", (err) => {
+      child.on('error', (err) => {
         clearTimeout(timer);
         reject(err);
       });

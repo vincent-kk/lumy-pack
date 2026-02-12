@@ -1,16 +1,17 @@
-import { createHash } from "node:crypto";
-import { readFile, lstat } from "node:fs/promises";
+import { createHash } from 'node:crypto';
+import { lstat, readFile } from 'node:fs/promises';
 
-import { validateMetadata } from "../schemas/metadata.schema.js";
-import { APP_VERSION } from "../constants.js";
-import { contractTilde } from "../utils/paths.js";
-import { getHostname, getSystemInfo } from "../utils/system.js";
+import { APP_VERSION } from '../constants.js';
+import { validateMetadata } from '../schemas/metadata.schema.js';
+import { contractTilde } from '../utils/paths.js';
+import { getHostname, getSystemInfo } from '../utils/system.js';
 import type {
   BackupMetadata,
   FileEntry,
   SyncpointConfig,
-} from "../utils/types.js";
-const METADATA_VERSION = "1.0.0";
+} from '../utils/types.js';
+
+const METADATA_VERSION = '1.0.0';
 
 /**
  * Create a full metadata object for a backup.
@@ -43,14 +44,12 @@ export function createMetadata(
  * Parse and validate metadata from a buffer or string.
  */
 export function parseMetadata(data: Buffer | string): BackupMetadata {
-  const str = typeof data === "string" ? data : data.toString("utf-8");
+  const str = typeof data === 'string' ? data : data.toString('utf-8');
   const parsed = JSON.parse(str) as unknown;
 
   const result = validateMetadata(parsed);
   if (!result.valid) {
-    throw new Error(
-      `Invalid metadata:\n${(result.errors ?? []).join("\n")}`,
-    );
+    throw new Error(`Invalid metadata:\n${(result.errors ?? []).join('\n')}`);
   }
 
   return parsed as BackupMetadata;
@@ -62,7 +61,7 @@ export function parseMetadata(data: Buffer | string): BackupMetadata {
  */
 export async function computeFileHash(filePath: string): Promise<string> {
   const content = await readFile(filePath);
-  const hash = createHash("sha256").update(content).digest("hex");
+  const hash = createHash('sha256').update(content).digest('hex');
   return `sha256:${hash}`;
 }
 
@@ -79,16 +78,16 @@ export async function collectFileInfo(
 
   let type: string | undefined;
   if (lstats.isSymbolicLink()) {
-    type = "symlink";
+    type = 'symlink';
   } else if (lstats.isDirectory()) {
-    type = "directory";
+    type = 'directory';
   }
 
   // For symlinks, use lstat size; for regular files compute hash
   let hash: string;
   if (lstats.isSymbolicLink()) {
     // Hash the link target path rather than the content
-    hash = `sha256:${createHash("sha256").update(absolutePath).digest("hex")}`;
+    hash = `sha256:${createHash('sha256').update(absolutePath).digest('hex')}`;
   } else {
     hash = await computeFileHash(absolutePath);
   }

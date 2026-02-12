@@ -1,9 +1,9 @@
-import micromatch from "micromatch";
+import micromatch from 'micromatch';
 
 /**
  * Pattern type classification for targets and excludes.
  */
-export type PatternType = "literal" | "glob" | "regex";
+export type PatternType = 'literal' | 'glob' | 'regex';
 
 /**
  * Detect the type of a pattern string.
@@ -23,7 +23,7 @@ export type PatternType = "literal" | "glob" | "regex";
  */
 export function detectPatternType(pattern: string): PatternType {
   // Check for regex pattern: /.../ format
-  if (pattern.startsWith("/") && pattern.endsWith("/") && pattern.length > 2) {
+  if (pattern.startsWith('/') && pattern.endsWith('/') && pattern.length > 2) {
     const inner = pattern.slice(1, -1);
 
     // If the inner content has no unescaped forward slashes, treat as regex
@@ -31,17 +31,17 @@ export function detectPatternType(pattern: string): PatternType {
     const hasUnescapedSlash = /(?<!\\)\//.test(inner);
 
     if (!hasUnescapedSlash) {
-      return "regex";
+      return 'regex';
     }
   }
 
   // Check for glob pattern
-  if (pattern.includes("*") || pattern.includes("?") || pattern.includes("{")) {
-    return "glob";
+  if (pattern.includes('*') || pattern.includes('?') || pattern.includes('{')) {
+    return 'glob';
   }
 
   // Default to literal
-  return "literal";
+  return 'literal';
 }
 
 /**
@@ -50,8 +50,10 @@ export function detectPatternType(pattern: string): PatternType {
  * @throws {Error} If the pattern is invalid regex syntax
  */
 export function parseRegexPattern(pattern: string): RegExp {
-  if (!pattern.startsWith("/") || !pattern.endsWith("/")) {
-    throw new Error(`Invalid regex pattern format: ${pattern}. Must be enclosed in slashes like /pattern/`);
+  if (!pattern.startsWith('/') || !pattern.endsWith('/')) {
+    throw new Error(
+      `Invalid regex pattern format: ${pattern}. Must be enclosed in slashes like /pattern/`,
+    );
   }
 
   const regexBody = pattern.slice(1, -1);
@@ -59,7 +61,9 @@ export function parseRegexPattern(pattern: string): RegExp {
   try {
     return new RegExp(regexBody);
   } catch (error) {
-    throw new Error(`Invalid regex pattern: ${pattern}. ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Invalid regex pattern: ${pattern}. ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 
@@ -87,14 +91,14 @@ export function createExcludeMatcher(
   for (const pattern of excludePatterns) {
     const type = detectPatternType(pattern);
 
-    if (type === "regex") {
+    if (type === 'regex') {
       try {
         regexPatterns.push(parseRegexPattern(pattern));
       } catch {
         // Skip invalid regex patterns (they should be caught by validation earlier)
         console.warn(`Skipping invalid regex pattern: ${pattern}`);
       }
-    } else if (type === "glob") {
+    } else if (type === 'glob') {
       globPatterns.push(pattern);
     } else {
       literalPatterns.add(pattern);
@@ -109,10 +113,13 @@ export function createExcludeMatcher(
     }
 
     // Check glob patterns with proper options for absolute paths
-    if (globPatterns.length > 0 && micromatch.isMatch(filePath, globPatterns, {
-      dot: true,        // Match dotfiles
-      matchBase: false, // Don't use basename matching, match full path
-    })) {
+    if (
+      globPatterns.length > 0 &&
+      micromatch.isMatch(filePath, globPatterns, {
+        dot: true, // Match dotfiles
+        matchBase: false, // Don't use basename matching, match full path
+      })
+    ) {
       return true;
     }
 
@@ -136,13 +143,13 @@ export function createExcludeMatcher(
  * @returns true if valid, false otherwise
  */
 export function isValidPattern(pattern: string): boolean {
-  if (typeof pattern !== "string" || pattern.length === 0) {
+  if (typeof pattern !== 'string' || pattern.length === 0) {
     return false;
   }
 
   const type = detectPatternType(pattern);
 
-  if (type === "regex") {
+  if (type === 'regex') {
     try {
       parseRegexPattern(pattern);
       return true;

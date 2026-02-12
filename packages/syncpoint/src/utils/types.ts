@@ -81,7 +81,7 @@ export interface RestorePlan {
 
 export interface RestoreAction {
   path: string;
-  action: "overwrite" | "skip" | "create";
+  action: 'overwrite' | 'skip' | 'create';
   currentSize?: number;
   backupSize?: number;
   reason: string;
@@ -94,7 +94,7 @@ export interface ProvisionResult {
 
 export interface StepResult {
   name: string;
-  status: "success" | "skipped" | "failed" | "running" | "pending";
+  status: 'success' | 'skipped' | 'failed' | 'running' | 'pending';
   duration?: number;
   error?: string;
   output?: string;
@@ -137,7 +137,7 @@ export interface StatusInfo {
 }
 
 export interface CleanupPolicy {
-  type: "keep-recent" | "older-than" | "select";
+  type: 'keep-recent' | 'older-than' | 'select';
   count?: number;
   days?: number;
   indices?: number[];

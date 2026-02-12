@@ -1,14 +1,16 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { join } from "node:path";
-import { mkdir, writeFile, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
 import {
-  scanHomeDirectory,
   fileStructureToJSON,
   getRecommendedTargets,
-} from "../../utils/file-scanner.js";
+  scanHomeDirectory,
+} from '../../utils/file-scanner.js';
 
-describe("utils/file-scanner", () => {
+describe('utils/file-scanner', () => {
   let testDir: string;
   const originalHome = process.env.HOME;
 
@@ -29,13 +31,13 @@ describe("utils/file-scanner", () => {
     delete process.env.SYNCPOINT_HOME;
   });
 
-  describe("scanHomeDirectory", () => {
-    it("scans and categorizes common config files", async () => {
+  describe('scanHomeDirectory', () => {
+    it('scans and categorizes common config files', async () => {
       // Create test files
-      await writeFile(join(testDir, ".zshrc"), "# zsh config", "utf-8");
-      await writeFile(join(testDir, ".gitconfig"), "[user]", "utf-8");
-      await mkdir(join(testDir, ".ssh"), { recursive: true });
-      await writeFile(join(testDir, ".ssh/config"), "Host *", "utf-8");
+      await writeFile(join(testDir, '.zshrc'), '# zsh config', 'utf-8');
+      await writeFile(join(testDir, '.gitconfig'), '[user]', 'utf-8');
+      await mkdir(join(testDir, '.ssh'), { recursive: true });
+      await writeFile(join(testDir, '.ssh/config'), 'Host *', 'utf-8');
 
       const result = await scanHomeDirectory({ maxDepth: 2 });
 
@@ -45,53 +47,53 @@ describe("utils/file-scanner", () => {
 
       // Check that shell configs are found
       const shellCategory = result.categories.find((c) =>
-        c.category.includes("Shell"),
+        c.category.includes('Shell'),
       );
       expect(shellCategory).toBeDefined();
-      expect(shellCategory?.files).toContain(".zshrc");
+      expect(shellCategory?.files).toContain('.zshrc');
 
       // Check that git configs are found
       const gitCategory = result.categories.find((c) =>
-        c.category.includes("Git"),
+        c.category.includes('Git'),
       );
       expect(gitCategory).toBeDefined();
-      expect(gitCategory?.files).toContain(".gitconfig");
+      expect(gitCategory?.files).toContain('.gitconfig');
 
       // Check that SSH configs are found
       const sshCategory = result.categories.find((c) =>
-        c.category.includes("SSH"),
+        c.category.includes('SSH'),
       );
       expect(sshCategory).toBeDefined();
-      expect(sshCategory?.files).toContain(".ssh/config");
+      expect(sshCategory?.files).toContain('.ssh/config');
     });
 
-    it("respects maxDepth option", async () => {
+    it('respects maxDepth option', async () => {
       // Create nested directory structure
-      await mkdir(join(testDir, "a/b/c/d/e"), { recursive: true });
-      await writeFile(join(testDir, "a/b/c/d/e/.zshrc"), "deep", "utf-8");
+      await mkdir(join(testDir, 'a/b/c/d/e'), { recursive: true });
+      await writeFile(join(testDir, 'a/b/c/d/e/.zshrc'), 'deep', 'utf-8');
 
       const result = await scanHomeDirectory({ maxDepth: 3 });
 
       // File at depth 5 should not be found with maxDepth 3
       const allFiles = result.categories.flatMap((c) => c.files);
-      expect(allFiles).not.toContain("a/b/c/d/e/.zshrc");
+      expect(allFiles).not.toContain('a/b/c/d/e/.zshrc');
     });
 
-    it("excludes ignored patterns", async () => {
-      await mkdir(join(testDir, "node_modules"), { recursive: true });
+    it('excludes ignored patterns', async () => {
+      await mkdir(join(testDir, 'node_modules'), { recursive: true });
       await writeFile(
-        join(testDir, "node_modules/.zshrc"),
-        "should be ignored",
-        "utf-8",
+        join(testDir, 'node_modules/.zshrc'),
+        'should be ignored',
+        'utf-8',
       );
 
       const result = await scanHomeDirectory();
 
       const allFiles = result.categories.flatMap((c) => c.files);
-      expect(allFiles).not.toContain("node_modules/.zshrc");
+      expect(allFiles).not.toContain('node_modules/.zshrc');
     });
 
-    it("handles empty home directory", async () => {
+    it('handles empty home directory', async () => {
       const result = await scanHomeDirectory();
 
       expect(result.homeDir).toBe(testDir);
@@ -100,14 +102,14 @@ describe("utils/file-scanner", () => {
     });
   });
 
-  describe("fileStructureToJSON", () => {
-    it("converts file structure to JSON string", () => {
+  describe('fileStructureToJSON', () => {
+    it('converts file structure to JSON string', () => {
       const structure = {
-        homeDir: "/home/user",
+        homeDir: '/home/user',
         categories: [
           {
-            category: "Shell Configuration",
-            files: [".zshrc", ".bashrc"],
+            category: 'Shell Configuration',
+            files: ['.zshrc', '.bashrc'],
           },
         ],
         totalFiles: 2,
@@ -115,20 +117,20 @@ describe("utils/file-scanner", () => {
 
       const json = fileStructureToJSON(structure);
 
-      expect(json).toBeTypeOf("string");
+      expect(json).toBeTypeOf('string');
       const parsed = JSON.parse(json);
       expect(parsed).toEqual(structure);
     });
   });
 
-  describe("getRecommendedTargets", () => {
-    it("returns targets with tilde prefix", () => {
+  describe('getRecommendedTargets', () => {
+    it('returns targets with tilde prefix', () => {
       const structure = {
-        homeDir: "/home/user",
+        homeDir: '/home/user',
         categories: [
           {
-            category: "Shell Configuration",
-            files: [".zshrc", ".config/starship.toml"],
+            category: 'Shell Configuration',
+            files: ['.zshrc', '.config/starship.toml'],
           },
         ],
         totalFiles: 2,
@@ -136,12 +138,12 @@ describe("utils/file-scanner", () => {
 
       const targets = getRecommendedTargets(structure);
 
-      expect(targets).toEqual(["~/.zshrc", "~/.config/starship.toml"]);
+      expect(targets).toEqual(['~/.zshrc', '~/.config/starship.toml']);
     });
 
-    it("handles empty categories", () => {
+    it('handles empty categories', () => {
       const structure = {
-        homeDir: "/home/user",
+        homeDir: '/home/user',
         categories: [],
         totalFiles: 0,
       };

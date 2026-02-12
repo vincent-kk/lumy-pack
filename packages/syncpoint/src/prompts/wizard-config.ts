@@ -1,4 +1,4 @@
-import type { FileStructure } from "../utils/file-scanner.js";
+import type { FileStructure } from '../utils/file-scanner.js';
 
 export interface ConfigPromptVariables {
   fileStructure: FileStructure;

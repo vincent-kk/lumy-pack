@@ -14,9 +14,13 @@ export type {
   ProvisionOptions,
   BackupInfo,
   StatusInfo,
-} from "./utils/types.js";
+} from './utils/types.js';
 
-export { loadConfig, saveConfig, initDefaultConfig } from "./core/config.js";
-export { createBackup, scanTargets } from "./core/backup.js";
-export { restoreBackup, getBackupList, getRestorePlan } from "./core/restore.js";
-export { runProvision, loadTemplate, listTemplates } from "./core/provision.js";
+export { loadConfig, saveConfig, initDefaultConfig } from './core/config.js';
+export { createBackup, scanTargets } from './core/backup.js';
+export {
+  restoreBackup,
+  getBackupList,
+  getRestorePlan,
+} from './core/restore.js';
+export { runProvision, loadTemplate, listTemplates } from './core/provision.js';

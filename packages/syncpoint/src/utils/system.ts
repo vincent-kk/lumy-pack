@@ -1,4 +1,4 @@
-import { hostname as osHostname, platform, release, arch } from "node:os";
+import { arch, hostname as osHostname, platform, release } from 'node:os';
 
 /**
  * Get the machine hostname.
@@ -29,9 +29,9 @@ export function getSystemInfo(): {
 export function formatHostname(name?: string): string {
   const raw = name ?? getHostname();
   return raw
-    .replace(/\s+/g, "-")
-    .replace(/\./g, "-")
-    .replace(/[^a-zA-Z0-9\-]/g, "")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+    .replace(/\s+/g, '-')
+    .replace(/\./g, '-')
+    .replace(/[^a-zA-Z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
 }

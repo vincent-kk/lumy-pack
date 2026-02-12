@@ -1,63 +1,63 @@
-import { ajv } from "./ajv.js";
-import type { BackupMetadata } from "../utils/types.js";
+import type { BackupMetadata } from '../utils/types.js';
+import { ajv } from './ajv.js';
 
 const metadataSchema = {
-  type: "object",
+  type: 'object',
   required: [
-    "version",
-    "toolVersion",
-    "createdAt",
-    "hostname",
-    "system",
-    "config",
-    "files",
-    "summary",
+    'version',
+    'toolVersion',
+    'createdAt',
+    'hostname',
+    'system',
+    'config',
+    'files',
+    'summary',
   ],
   properties: {
-    version: { type: "string" },
-    toolVersion: { type: "string" },
-    createdAt: { type: "string" },
-    hostname: { type: "string" },
+    version: { type: 'string' },
+    toolVersion: { type: 'string' },
+    createdAt: { type: 'string' },
+    hostname: { type: 'string' },
     system: {
-      type: "object",
-      required: ["platform", "release", "arch"],
+      type: 'object',
+      required: ['platform', 'release', 'arch'],
       properties: {
-        platform: { type: "string" },
-        release: { type: "string" },
-        arch: { type: "string" },
+        platform: { type: 'string' },
+        release: { type: 'string' },
+        arch: { type: 'string' },
       },
       additionalProperties: false,
     },
     config: {
-      type: "object",
-      required: ["filename"],
+      type: 'object',
+      required: ['filename'],
       properties: {
-        filename: { type: "string" },
-        destination: { type: "string" },
+        filename: { type: 'string' },
+        destination: { type: 'string' },
       },
       additionalProperties: false,
     },
     files: {
-      type: "array",
+      type: 'array',
       items: {
-        type: "object",
-        required: ["path", "absolutePath", "size", "hash"],
+        type: 'object',
+        required: ['path', 'absolutePath', 'size', 'hash'],
         properties: {
-          path: { type: "string" },
-          absolutePath: { type: "string" },
-          size: { type: "number", minimum: 0 },
-          hash: { type: "string" },
-          type: { type: "string" },
+          path: { type: 'string' },
+          absolutePath: { type: 'string' },
+          size: { type: 'number', minimum: 0 },
+          hash: { type: 'string' },
+          type: { type: 'string' },
         },
         additionalProperties: false,
       },
     },
     summary: {
-      type: "object",
-      required: ["fileCount", "totalSize"],
+      type: 'object',
+      required: ['fileCount', 'totalSize'],
       properties: {
-        fileCount: { type: "integer", minimum: 0 },
-        totalSize: { type: "number", minimum: 0 },
+        fileCount: { type: 'integer', minimum: 0 },
+        totalSize: { type: 'number', minimum: 0 },
       },
       additionalProperties: false,
     },
@@ -74,7 +74,7 @@ export function validateMetadata(data: unknown): {
   const valid = validate(data);
   if (valid) return { valid: true };
   const errors = validate.errors?.map(
-    (e) => `${e.instancePath || "/"} ${e.message ?? "unknown error"}`,
+    (e) => `${e.instancePath || '/'} ${e.message ?? 'unknown error'}`,
   );
   return { valid: false, errors };
 }

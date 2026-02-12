@@ -1,7 +1,9 @@
-import glob from "fast-glob";
-import { join } from "node:path";
-import { stat } from "node:fs/promises";
-import { getHomeDir } from "./paths.js";
+import { stat } from 'node:fs/promises';
+import { join } from 'node:path';
+
+import glob from 'fast-glob';
+
+import { getHomeDir } from './paths.js';
 
 export interface FileCategory {
   category: string;
@@ -19,28 +21,34 @@ export interface FileStructure {
  */
 const FILE_CATEGORIES = {
   shell: {
-    name: "Shell Configuration",
-    patterns: [".zshrc", ".bashrc", ".bash_profile", ".profile", ".zprofile"],
+    name: 'Shell Configuration',
+    patterns: ['.zshrc', '.bashrc', '.bash_profile', '.profile', '.zprofile'],
   },
   git: {
-    name: "Git Configuration",
-    patterns: [".gitconfig", ".gitignore_global", ".git-credentials"],
+    name: 'Git Configuration',
+    patterns: ['.gitconfig', '.gitignore_global', '.git-credentials'],
   },
   ssh: {
-    name: "SSH Configuration",
-    patterns: [".ssh/config", ".ssh/known_hosts"],
+    name: 'SSH Configuration',
+    patterns: ['.ssh/config', '.ssh/known_hosts'],
   },
   editors: {
-    name: "Editor Configuration",
-    patterns: [".vimrc", ".vim/**", ".emacs", ".emacs.d/**"],
+    name: 'Editor Configuration',
+    patterns: ['.vimrc', '.vim/**', '.emacs', '.emacs.d/**'],
   },
   appConfigs: {
-    name: "Application Configs",
-    patterns: [".config/**/*.conf", ".config/**/*.toml", ".config/**/*.yml", ".config/**/*.yaml", ".config/**/*.json"],
+    name: 'Application Configs',
+    patterns: [
+      '.config/**/*.conf',
+      '.config/**/*.toml',
+      '.config/**/*.yml',
+      '.config/**/*.yaml',
+      '.config/**/*.json',
+    ],
   },
   dotfiles: {
-    name: "Other Dotfiles",
-    patterns: [".*rc", ".*profile"],
+    name: 'Other Dotfiles',
+    patterns: ['.*rc', '.*profile'],
   },
 };
 
@@ -54,20 +62,20 @@ export async function scanHomeDirectory(options?: {
   const homeDir = getHomeDir();
   const maxDepth = options?.maxDepth ?? 5;
   const ignorePatterns = options?.ignorePatterns ?? [
-    "**/node_modules/**",
-    "**/.git/**",
-    "**/Library/**",
-    "**/Downloads/**",
-    "**/Desktop/**",
-    "**/Documents/**",
-    "**/Pictures/**",
-    "**/Music/**",
-    "**/Videos/**",
-    "**/Movies/**",
-    "**/.Trash/**",
-    "**/.cache/**",
-    "**/.npm/**",
-    "**/.yarn/**",
+    '**/node_modules/**',
+    '**/.git/**',
+    '**/Library/**',
+    '**/Downloads/**',
+    '**/Desktop/**',
+    '**/Documents/**',
+    '**/Pictures/**',
+    '**/Music/**',
+    '**/Videos/**',
+    '**/Movies/**',
+    '**/.Trash/**',
+    '**/.cache/**',
+    '**/.npm/**',
+    '**/.yarn/**',
   ];
 
   const categories: FileCategory[] = [];

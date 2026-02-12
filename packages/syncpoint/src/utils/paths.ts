@@ -1,6 +1,6 @@
-import { mkdir, stat } from "node:fs/promises";
-import { homedir } from "node:os";
-import { join, normalize, resolve } from "node:path";
+import { mkdir, stat } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import { join, normalize, resolve } from 'node:path';
 
 export function getHomeDir(): string {
   const envHome = process.env.SYNCPOINT_HOME;
@@ -21,8 +21,8 @@ export function getHomeDir(): string {
  * Expand ~ to the user's home directory.
  */
 export function expandTilde(p: string): string {
-  if (p === "~") return getHomeDir();
-  if (p.startsWith("~/")) return join(getHomeDir(), p.slice(2));
+  if (p === '~') return getHomeDir();
+  if (p.startsWith('~/')) return join(getHomeDir(), p.slice(2));
   return p;
 }
 
@@ -31,8 +31,8 @@ export function expandTilde(p: string): string {
  */
 export function contractTilde(p: string): string {
   const home = getHomeDir();
-  if (p === home) return "~";
-  if (p.startsWith(home + "/")) return "~" + p.slice(home.length);
+  if (p === home) return '~';
+  if (p.startsWith(home + '/')) return '~' + p.slice(home.length);
   return p;
 }
 
@@ -65,5 +65,7 @@ export async function fileExists(filePath: string): Promise<boolean> {
 export function isInsideDir(filePath: string, dir: string): boolean {
   const resolvedFile = resolve(filePath);
   const resolvedDir = resolve(dir);
-  return resolvedFile.startsWith(resolvedDir + "/") || resolvedFile === resolvedDir;
+  return (
+    resolvedFile.startsWith(resolvedDir + '/') || resolvedFile === resolvedDir
+  );
 }

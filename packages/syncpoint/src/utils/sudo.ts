@@ -1,5 +1,6 @@
-import { execSync } from "node:child_process";
-import pc from "picocolors";
+import { execSync } from 'node:child_process';
+
+import pc from 'picocolors';
 
 /**
  * Check whether sudo credentials are already cached.
@@ -7,7 +8,7 @@ import pc from "picocolors";
  */
 export function isSudoCached(): boolean {
   try {
-    execSync("sudo -n true", { stdio: "ignore" });
+    execSync('sudo -n true', { stdio: 'ignore' });
     return true;
   } catch {
     return false;
@@ -28,18 +29,18 @@ export function ensureSudo(templateName: string): void {
   if (isSudoCached()) return;
 
   console.log(
-    `\n${pc.yellow("⚠")} Template ${pc.bold(templateName)} requires ${pc.bold("sudo")} privileges.`,
+    `\n${pc.yellow('⚠')} Template ${pc.bold(templateName)} requires ${pc.bold('sudo')} privileges.`,
   );
   console.log(
-    pc.gray("  Some provisioning steps need elevated permissions to execute."),
+    pc.gray('  Some provisioning steps need elevated permissions to execute.'),
   );
-  console.log(pc.gray("  You will be prompted for your password.\n"));
+  console.log(pc.gray('  You will be prompted for your password.\n'));
 
   try {
-    execSync("sudo -v", { stdio: "inherit", timeout: 60_000 });
+    execSync('sudo -v', { stdio: 'inherit', timeout: 60_000 });
   } catch {
     console.error(
-      `\n${pc.red("✗")} Sudo authentication failed or was cancelled. Aborting.`,
+      `\n${pc.red('✗')} Sudo authentication failed or was cancelled. Aborting.`,
     );
     process.exit(1);
   }

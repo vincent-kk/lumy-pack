@@ -1,7 +1,7 @@
-import { mkdir, rm, writeFile } from "node:fs/promises";
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { mkdtempSync } from 'node:fs';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 export interface Sandbox {
   root: string;
@@ -17,13 +17,13 @@ export interface Sandbox {
 }
 
 export function createSandbox(): Sandbox {
-  const root = mkdtempSync(join(tmpdir(), "syncpoint-test-"));
-  const home = join(root, "home");
-  const appDir = join(home, ".syncpoint");
-  const backupsDir = join(appDir, "backups");
-  const templatesDir = join(appDir, "templates");
-  const scriptsDir = join(appDir, "scripts");
-  const logsDir = join(appDir, "logs");
+  const root = mkdtempSync(join(tmpdir(), 'syncpoint-test-'));
+  const home = join(root, 'home');
+  const appDir = join(home, '.syncpoint');
+  const backupsDir = join(appDir, 'backups');
+  const templatesDir = join(appDir, 'templates');
+  const scriptsDir = join(appDir, 'scripts');
+  const logsDir = join(appDir, 'logs');
 
   const originalHome = process.env.SYNCPOINT_HOME;
 
@@ -64,15 +64,15 @@ export async function createInitializedSandbox(): Promise<Sandbox> {
   await mkdir(sandbox.scriptsDir, { recursive: true });
   await mkdir(sandbox.logsDir, { recursive: true });
   const defaultConfig = [
-    "backup:",
-    "  targets:",
+    'backup:',
+    '  targets:',
     '    - "~/.zshrc"',
-    "  exclude:",
+    '  exclude:',
     '    - "**/*.swp"',
     '  filename: "{hostname}_{datetime}"',
-    "scripts:",
-    "  includeInBackup: true",
-  ].join("\n");
-  await writeFile(join(sandbox.appDir, "config.yml"), defaultConfig, "utf-8");
+    'scripts:',
+    '  includeInBackup: true',
+  ].join('\n');
+  await writeFile(join(sandbox.appDir, 'config.yml'), defaultConfig, 'utf-8');
   return sandbox;
 }

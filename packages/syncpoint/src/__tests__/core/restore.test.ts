@@ -1,14 +1,19 @@
-import { writeFile, readFile } from "node:fs/promises";
-import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
-import { createBackup } from "../../core/backup.js";
-import { getBackupList, getRestorePlan, restoreBackup } from "../../core/restore.js";
-import { createInitializedSandbox, type Sandbox } from "../helpers/sandbox.js";
-import { makeConfig } from "../helpers/fixtures.js";
-import { fileExists } from "../../utils/paths.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock("../../utils/logger.js", () => ({
+import { createBackup } from '../../core/backup.js';
+import {
+  getBackupList,
+  getRestorePlan,
+  restoreBackup,
+} from '../../core/restore.js';
+import { fileExists } from '../../utils/paths.js';
+import { makeConfig } from '../helpers/fixtures.js';
+import { type Sandbox, createInitializedSandbox } from '../helpers/sandbox.js';
+
+vi.mock('../../utils/logger.js', () => ({
   logger: {
     info: vi.fn(),
     success: vi.fn(),
@@ -17,7 +22,7 @@ vi.mock("../../utils/logger.js", () => ({
   },
 }));
 
-describe("core/restore", () => {
+describe('core/restore', () => {
   let sandbox: Sandbox;
 
   beforeEach(async () => {
@@ -28,23 +33,23 @@ describe("core/restore", () => {
     await sandbox.cleanup();
   });
 
-  describe("getBackupList", () => {
-    it("returns empty array when no .tar.gz files", async () => {
+  describe('getBackupList', () => {
+    it('returns empty array when no .tar.gz files', async () => {
       const config = makeConfig();
       const list = await getBackupList(config);
 
       expect(list).toEqual([]);
     });
 
-    it("lists .tar.gz files with metadata", async () => {
+    it('lists .tar.gz files with metadata', async () => {
       // Create a real backup
-      await writeFile(join(sandbox.home, ".zshrc"), "export PATH=...", "utf-8");
+      await writeFile(join(sandbox.home, '.zshrc'), 'export PATH=...', 'utf-8');
 
       const config = makeConfig({
         backup: {
-          targets: ["~/.zshrc"],
+          targets: ['~/.zshrc'],
           exclude: [],
-          filename: "test",
+          filename: 'test',
         },
       });
 
@@ -60,15 +65,15 @@ describe("core/restore", () => {
       expect(list[0].fileCount).toBe(1);
     });
 
-    it("uses custom destination from config", async () => {
-      await writeFile(join(sandbox.home, ".zshrc"), "export PATH=...", "utf-8");
-      const customDest = join(sandbox.home, "custom-backups");
+    it('uses custom destination from config', async () => {
+      await writeFile(join(sandbox.home, '.zshrc'), 'export PATH=...', 'utf-8');
+      const customDest = join(sandbox.home, 'custom-backups');
 
       const config = makeConfig({
         backup: {
-          targets: ["~/.zshrc"],
+          targets: ['~/.zshrc'],
           exclude: [],
-          filename: "test",
+          filename: 'test',
           destination: customDest,
         },
       });
@@ -78,47 +83,47 @@ describe("core/restore", () => {
       const list = await getBackupList(config);
 
       expect(list).toHaveLength(1);
-      expect(list[0].path).toContain("custom-backups");
+      expect(list[0].path).toContain('custom-backups');
     });
   });
 
-  describe("getRestorePlan", () => {
+  describe('getRestorePlan', () => {
     it('creates plan with "create" for missing files', async () => {
       // Create backup with a file
-      await writeFile(join(sandbox.home, ".zshrc"), "export PATH=...", "utf-8");
+      await writeFile(join(sandbox.home, '.zshrc'), 'export PATH=...', 'utf-8');
 
       const config = makeConfig({
         backup: {
-          targets: ["~/.zshrc"],
+          targets: ['~/.zshrc'],
           exclude: [],
-          filename: "test",
+          filename: 'test',
         },
       });
 
       const { archivePath } = await createBackup(config);
 
       // Remove the file to simulate missing
-      await import("node:fs/promises").then((fs) =>
-        fs.rm(join(sandbox.home, ".zshrc"), { force: true })
+      await import('node:fs/promises').then((fs) =>
+        fs.rm(join(sandbox.home, '.zshrc'), { force: true }),
       );
 
       const plan = await getRestorePlan(archivePath);
 
       expect(plan.actions).toHaveLength(1);
-      expect(plan.actions[0].action).toBe("create");
-      expect(plan.actions[0].path).toBe("~/.zshrc");
-      expect(plan.actions[0].reason).toContain("does not exist");
+      expect(plan.actions[0].action).toBe('create');
+      expect(plan.actions[0].path).toBe('~/.zshrc');
+      expect(plan.actions[0].reason).toContain('does not exist');
     });
 
     it('creates plan with "skip" for identical files', async () => {
       // Create backup
-      await writeFile(join(sandbox.home, ".zshrc"), "export PATH=...", "utf-8");
+      await writeFile(join(sandbox.home, '.zshrc'), 'export PATH=...', 'utf-8');
 
       const config = makeConfig({
         backup: {
-          targets: ["~/.zshrc"],
+          targets: ['~/.zshrc'],
           exclude: [],
-          filename: "test",
+          filename: 'test',
         },
       });
 
@@ -128,117 +133,141 @@ describe("core/restore", () => {
       const plan = await getRestorePlan(archivePath);
 
       expect(plan.actions).toHaveLength(1);
-      expect(plan.actions[0].action).toBe("skip");
-      expect(plan.actions[0].path).toBe("~/.zshrc");
-      expect(plan.actions[0].reason).toContain("identical");
+      expect(plan.actions[0].action).toBe('skip');
+      expect(plan.actions[0].path).toBe('~/.zshrc');
+      expect(plan.actions[0].reason).toContain('identical');
     });
 
     it('creates plan with "overwrite" for modified files', async () => {
       // Create backup
-      await writeFile(join(sandbox.home, ".zshrc"), "export PATH=...", "utf-8");
+      await writeFile(join(sandbox.home, '.zshrc'), 'export PATH=...', 'utf-8');
 
       const config = makeConfig({
         backup: {
-          targets: ["~/.zshrc"],
+          targets: ['~/.zshrc'],
           exclude: [],
-          filename: "test",
+          filename: 'test',
         },
       });
 
       const { archivePath } = await createBackup(config);
 
       // Modify the file
-      await writeFile(join(sandbox.home, ".zshrc"), "export PATH=modified", "utf-8");
+      await writeFile(
+        join(sandbox.home, '.zshrc'),
+        'export PATH=modified',
+        'utf-8',
+      );
 
       const plan = await getRestorePlan(archivePath);
 
       expect(plan.actions).toHaveLength(1);
-      expect(plan.actions[0].action).toBe("overwrite");
-      expect(plan.actions[0].path).toBe("~/.zshrc");
-      expect(plan.actions[0].reason).toContain("modified");
+      expect(plan.actions[0].action).toBe('overwrite');
+      expect(plan.actions[0].path).toBe('~/.zshrc');
+      expect(plan.actions[0].reason).toContain('modified');
     });
   });
 
-  describe("restoreBackup", () => {
-    it("restores files to correct locations", async () => {
+  describe('restoreBackup', () => {
+    it('restores files to correct locations', async () => {
       // Create backup
-      await writeFile(join(sandbox.home, ".zshrc"), "original content", "utf-8");
+      await writeFile(
+        join(sandbox.home, '.zshrc'),
+        'original content',
+        'utf-8',
+      );
 
       const config = makeConfig({
         backup: {
-          targets: ["~/.zshrc"],
+          targets: ['~/.zshrc'],
           exclude: [],
-          filename: "test",
+          filename: 'test',
         },
       });
 
       const { archivePath } = await createBackup(config);
 
       // Remove the file
-      await import("node:fs/promises").then((fs) =>
-        fs.rm(join(sandbox.home, ".zshrc"), { force: true })
+      await import('node:fs/promises').then((fs) =>
+        fs.rm(join(sandbox.home, '.zshrc'), { force: true }),
       );
 
       // Restore
       const result = await restoreBackup(archivePath);
 
-      expect(result.restoredFiles).toContain("~/.zshrc");
-      expect(await fileExists(join(sandbox.home, ".zshrc"))).toBe(true);
+      expect(result.restoredFiles).toContain('~/.zshrc');
+      expect(await fileExists(join(sandbox.home, '.zshrc'))).toBe(true);
 
-      const content = await readFile(join(sandbox.home, ".zshrc"), "utf-8");
-      expect(content).toBe("original content");
+      const content = await readFile(join(sandbox.home, '.zshrc'), 'utf-8');
+      expect(content).toBe('original content');
     });
 
-    it("creates safety backup before overwriting", async () => {
+    it('creates safety backup before overwriting', async () => {
       // Create backup
-      await writeFile(join(sandbox.home, ".zshrc"), "original content", "utf-8");
+      await writeFile(
+        join(sandbox.home, '.zshrc'),
+        'original content',
+        'utf-8',
+      );
 
       const config = makeConfig({
         backup: {
-          targets: ["~/.zshrc"],
+          targets: ['~/.zshrc'],
           exclude: [],
-          filename: "test",
+          filename: 'test',
         },
       });
 
       const { archivePath } = await createBackup(config);
 
       // Modify the file
-      await writeFile(join(sandbox.home, ".zshrc"), "modified content", "utf-8");
+      await writeFile(
+        join(sandbox.home, '.zshrc'),
+        'modified content',
+        'utf-8',
+      );
 
       // Restore
       const result = await restoreBackup(archivePath);
 
       expect(result.safetyBackupPath).toBeDefined();
       expect(await fileExists(result.safetyBackupPath!)).toBe(true);
-      expect(result.safetyBackupPath).toContain("_pre-restore_");
+      expect(result.safetyBackupPath).toContain('_pre-restore_');
     });
 
-    it("dry-run returns plan without modifying files", async () => {
+    it('dry-run returns plan without modifying files', async () => {
       // Create backup
-      await writeFile(join(sandbox.home, ".zshrc"), "original content", "utf-8");
+      await writeFile(
+        join(sandbox.home, '.zshrc'),
+        'original content',
+        'utf-8',
+      );
 
       const config = makeConfig({
         backup: {
-          targets: ["~/.zshrc"],
+          targets: ['~/.zshrc'],
           exclude: [],
-          filename: "test",
+          filename: 'test',
         },
       });
 
       const { archivePath } = await createBackup(config);
 
       // Modify the file
-      await writeFile(join(sandbox.home, ".zshrc"), "modified content", "utf-8");
+      await writeFile(
+        join(sandbox.home, '.zshrc'),
+        'modified content',
+        'utf-8',
+      );
 
       // Dry-run restore
       const result = await restoreBackup(archivePath, { dryRun: true });
 
-      expect(result.restoredFiles).toContain("~/.zshrc");
+      expect(result.restoredFiles).toContain('~/.zshrc');
 
       // File should still have modified content
-      const content = await readFile(join(sandbox.home, ".zshrc"), "utf-8");
-      expect(content).toBe("modified content");
+      const content = await readFile(join(sandbox.home, '.zshrc'), 'utf-8');
+      expect(content).toBe('modified content');
     });
   });
 });

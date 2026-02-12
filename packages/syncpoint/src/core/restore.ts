@@ -1,16 +1,10 @@
-import { copyFile, lstat, readdir, stat } from "node:fs/promises";
-import { join, dirname } from "node:path";
+import { copyFile, lstat, readdir, stat } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 
-import {
-  BACKUPS_DIR,
-  METADATA_FILENAME,
-  getSubDir,
-} from "../constants.js";
-import { ensureDir, fileExists, resolveTargetPath } from "../utils/paths.js";
-import { formatDatetime } from "../utils/format.js";
-import { logger } from "../utils/logger.js";
-import { computeFileHash, parseMetadata } from "./metadata.js";
-import { createArchive, extractArchive, readFileFromArchive } from "./storage.js";
+import { BACKUPS_DIR, METADATA_FILENAME, getSubDir } from '../constants.js';
+import { formatDatetime } from '../utils/format.js';
+import { logger } from '../utils/logger.js';
+import { ensureDir, fileExists, resolveTargetPath } from '../utils/paths.js';
 import type {
   BackupInfo,
   RestoreAction,
@@ -18,7 +12,13 @@ import type {
   RestorePlan,
   RestoreResult,
   SyncpointConfig,
-} from "../utils/types.js";
+} from '../utils/types.js';
+import { computeFileHash, parseMetadata } from './metadata.js';
+import {
+  createArchive,
+  extractArchive,
+  readFileFromArchive,
+} from './storage.js';
 
 /**
  * List all backup archives in the backup directory, sorted by date desc.
@@ -37,7 +37,7 @@ export async function getBackupList(
   const backups: BackupInfo[] = [];
 
   for (const entry of entries) {
-    if (!entry.isFile() || !entry.name.endsWith(".tar.gz")) continue;
+    if (!entry.isFile() || !entry.name.endsWith('.tar.gz')) continue;
 
     const fullPath = join(backupDir, entry.name);
     const fileStat = await stat(fullPath);
@@ -95,9 +95,9 @@ export async function getRestorePlan(
     if (!exists) {
       actions.push({
         path: file.path,
-        action: "create",
+        action: 'create',
         backupSize: file.size,
-        reason: "File does not exist on this machine",
+        reason: 'File does not exist on this machine',
       });
       continue;
     }
@@ -109,18 +109,18 @@ export async function getRestorePlan(
     if (currentHash === file.hash) {
       actions.push({
         path: file.path,
-        action: "skip",
+        action: 'skip',
         currentSize: currentStat.size,
         backupSize: file.size,
-        reason: "File is identical (same hash)",
+        reason: 'File is identical (same hash)',
       });
     } else {
       actions.push({
         path: file.path,
-        action: "overwrite",
+        action: 'overwrite',
         currentSize: currentStat.size,
         backupSize: file.size,
-        reason: "File has been modified",
+        reason: 'File has been modified',
       });
     }
   }
@@ -132,9 +132,7 @@ export async function getRestorePlan(
  * Create a safety backup of the given file paths before restoring.
  * Returns the path to the safety backup archive.
  */
-export async function createSafetyBackup(
-  filePaths: string[],
-): Promise<string> {
+export async function createSafetyBackup(filePaths: string[]): Promise<string> {
   const now = new Date();
   const filename = `_pre-restore_${formatDatetime(now)}.tar.gz`;
   const backupDir = getSubDir(BACKUPS_DIR);
@@ -148,12 +146,12 @@ export async function createSafetyBackup(
     const exists = await fileExists(absPath);
     if (!exists) continue;
 
-    const archiveName = fp.startsWith("~/") ? fp.slice(2) : fp;
+    const archiveName = fp.startsWith('~/') ? fp.slice(2) : fp;
     files.push({ name: archiveName, sourcePath: absPath });
   }
 
   if (files.length === 0) {
-    logger.info("No existing files to safety-backup.");
+    logger.info('No existing files to safety-backup.');
     return archivePath;
   }
 
@@ -182,7 +180,7 @@ export async function restoreBackup(
 
   // Determine which files will be overwritten
   const overwritePaths = plan.actions
-    .filter((a) => a.action === "overwrite")
+    .filter((a) => a.action === 'overwrite')
     .map((a) => a.path);
 
   // Create safety backup if there are files to overwrite
@@ -194,31 +192,31 @@ export async function restoreBackup(
   if (options.dryRun) {
     return {
       restoredFiles: plan.actions
-        .filter((a) => a.action !== "skip")
+        .filter((a) => a.action !== 'skip')
         .map((a) => a.path),
       skippedFiles: plan.actions
-        .filter((a) => a.action === "skip")
+        .filter((a) => a.action === 'skip')
         .map((a) => a.path),
       safetyBackupPath,
     };
   }
 
   // Extract archive to temp, then copy files to their destinations
-  const { mkdtemp, rm } = await import("node:fs/promises");
-  const { tmpdir } = await import("node:os");
+  const { mkdtemp, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
 
-  const tmpDir = await mkdtemp(join(tmpdir(), "syncpoint-restore-"));
+  const tmpDir = await mkdtemp(join(tmpdir(), 'syncpoint-restore-'));
 
   try {
     await extractArchive(archivePath, tmpDir);
 
     for (const action of plan.actions) {
-      if (action.action === "skip") {
+      if (action.action === 'skip') {
         skippedFiles.push(action.path);
         continue;
       }
 
-      const archiveName = action.path.startsWith("~/")
+      const archiveName = action.path.startsWith('~/')
         ? action.path.slice(2)
         : action.path;
       const extractedPath = join(tmpDir, archiveName);

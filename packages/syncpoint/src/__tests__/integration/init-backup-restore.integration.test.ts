@@ -1,13 +1,19 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { createSandbox, type Sandbox } from "../helpers/sandbox.js";
-import { writeFile, readFile } from "node:fs/promises";
-import { join } from "node:path";
-import { initDefaultConfig, loadConfig, saveConfig } from "../../core/config.js";
-import { createBackup } from "../../core/backup.js";
-import { restoreBackup } from "../../core/restore.js";
-import { fileExists } from "../../utils/paths.js";
+import { readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
-vi.mock("../../utils/logger.js", () => ({
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createBackup } from '../../core/backup.js';
+import {
+  initDefaultConfig,
+  loadConfig,
+  saveConfig,
+} from '../../core/config.js';
+import { restoreBackup } from '../../core/restore.js';
+import { fileExists } from '../../utils/paths.js';
+import { type Sandbox, createSandbox } from '../helpers/sandbox.js';
+
+vi.mock('../../utils/logger.js', () => ({
   logger: {
     info: vi.fn(),
     success: vi.fn(),
@@ -16,7 +22,7 @@ vi.mock("../../utils/logger.js", () => ({
   },
 }));
 
-describe("Init-Backup-Restore Lifecycle Integration Tests", () => {
+describe('Init-Backup-Restore Lifecycle Integration Tests', () => {
   let sandbox: Sandbox;
 
   beforeEach(() => {
@@ -28,7 +34,7 @@ describe("Init-Backup-Restore Lifecycle Integration Tests", () => {
     await sandbox.cleanup();
   });
 
-  it("should create all required directory structure on init", async () => {
+  it('should create all required directory structure on init', async () => {
     // Run init
     const result = await initDefaultConfig();
 
@@ -43,7 +49,7 @@ describe("Init-Backup-Restore Lifecycle Integration Tests", () => {
     expect(await fileExists(sandbox.logsDir)).toBe(true);
 
     // Verify config file exists
-    const configPath = join(sandbox.appDir, "config.yml");
+    const configPath = join(sandbox.appDir, 'config.yml');
     expect(await fileExists(configPath)).toBe(true);
 
     // Verify config is valid
@@ -54,18 +60,19 @@ describe("Init-Backup-Restore Lifecycle Integration Tests", () => {
     expect(config.scripts.includeInBackup).toBeDefined();
   });
 
-  it("should complete full init→backup→restore lifecycle", async () => {
+  it('should complete full init→backup→restore lifecycle', async () => {
     // 1. Init
     await initDefaultConfig();
 
     // 2. Create test dotfiles
-    let zshrcPath = join(sandbox.home, ".zshrc");
+    let zshrcPath = join(sandbox.home, '.zshrc');
     const zshrcContent = "export PATH=$PATH:/usr/local/bin\nalias ll='ls -la'";
-    await writeFile(zshrcPath, zshrcContent, "utf-8");
+    await writeFile(zshrcPath, zshrcContent, 'utf-8');
 
-    let gitconfigPath = join(sandbox.home, ".gitconfig");
-    const gitconfigContent = "[user]\nname = Test User\nemail = test@example.com";
-    await writeFile(gitconfigPath, gitconfigContent, "utf-8");
+    let gitconfigPath = join(sandbox.home, '.gitconfig');
+    const gitconfigContent =
+      '[user]\nname = Test User\nemail = test@example.com';
+    await writeFile(gitconfigPath, gitconfigContent, 'utf-8');
 
     // 3. Load config
     const config = await loadConfig();
@@ -77,11 +84,11 @@ describe("Init-Backup-Restore Lifecycle Integration Tests", () => {
     expect(backupResult.metadata.files.length).toBeGreaterThan(0);
 
     // Copy archive to temp location before cleanup
-    const { copyFile } = await import("node:fs/promises");
-    const { tmpdir } = await import("node:os");
-    const { mkdtempSync } = await import("node:fs");
-    const tempDir = mkdtempSync(join(tmpdir(), "backup-test-"));
-    const tempArchivePath = join(tempDir, "backup.tar.gz");
+    const { copyFile } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { mkdtempSync } = await import('node:fs');
+    const tempDir = mkdtempSync(join(tmpdir(), 'backup-test-'));
+    const tempArchivePath = join(tempDir, 'backup.tar.gz');
     await copyFile(backupResult.archivePath, tempArchivePath);
 
     // 5. Simulate file loss - delete dotfiles
@@ -91,8 +98,8 @@ describe("Init-Backup-Restore Lifecycle Integration Tests", () => {
     await initDefaultConfig();
 
     // Update paths to new sandbox
-    zshrcPath = join(sandbox.home, ".zshrc");
-    gitconfigPath = join(sandbox.home, ".gitconfig");
+    zshrcPath = join(sandbox.home, '.zshrc');
+    gitconfigPath = join(sandbox.home, '.gitconfig');
 
     // Verify files don't exist
     expect(await fileExists(zshrcPath)).toBe(false);
@@ -106,18 +113,18 @@ describe("Init-Backup-Restore Lifecycle Integration Tests", () => {
     expect(await fileExists(zshrcPath)).toBe(true);
     expect(await fileExists(gitconfigPath)).toBe(true);
 
-    const restoredZshrc = await readFile(zshrcPath, "utf-8");
-    const restoredGitconfig = await readFile(gitconfigPath, "utf-8");
+    const restoredZshrc = await readFile(zshrcPath, 'utf-8');
+    const restoredGitconfig = await readFile(gitconfigPath, 'utf-8');
 
     expect(restoredZshrc).toBe(zshrcContent);
     expect(restoredGitconfig).toBe(gitconfigContent);
 
     // Cleanup temp dir
-    const { rm } = await import("node:fs/promises");
+    const { rm } = await import('node:fs/promises');
     await rm(tempDir, { recursive: true, force: true });
   });
 
-  it("should support config round-trip (init→load→save→load)", async () => {
+  it('should support config round-trip (init→load→save→load)', async () => {
     // 1. Init with defaults
     await initDefaultConfig();
 
@@ -136,9 +143,9 @@ describe("Init-Backup-Restore Lifecycle Integration Tests", () => {
       ...config1,
       backup: {
         ...config1.backup,
-        targets: ["~/.zshrc", "~/.bashrc", "~/.custom"],
-        exclude: ["**/*.log", "**/*.tmp"],
-        filename: "custom_{hostname}_{datetime}",
+        targets: ['~/.zshrc', '~/.bashrc', '~/.custom'],
+        exclude: ['**/*.log', '**/*.tmp'],
+        filename: 'custom_{hostname}_{datetime}',
       },
       scripts: {
         includeInBackup: false,
@@ -152,18 +159,18 @@ describe("Init-Backup-Restore Lifecycle Integration Tests", () => {
     const config2 = await loadConfig();
     expect(config2.backup.targets).toEqual(modifiedConfig.backup.targets);
     expect(config2.backup.exclude).toEqual(modifiedConfig.backup.exclude);
-    expect(config2.backup.filename).toBe("custom_{hostname}_{datetime}");
+    expect(config2.backup.filename).toBe('custom_{hostname}_{datetime}');
     expect(config2.scripts.includeInBackup).toBe(false);
 
     // 6. Verify file was actually written
-    const configPath = join(sandbox.appDir, "config.yml");
-    const configContent = await readFile(configPath, "utf-8");
-    expect(configContent).toContain("custom_{hostname}_{datetime}");
-    expect(configContent).toContain(".custom");
-    expect(configContent).toContain("**/*.log");
+    const configPath = join(sandbox.appDir, 'config.yml');
+    const configContent = await readFile(configPath, 'utf-8');
+    expect(configContent).toContain('custom_{hostname}_{datetime}');
+    expect(configContent).toContain('.custom');
+    expect(configContent).toContain('**/*.log');
   });
 
-  it("should not overwrite existing files on re-init", async () => {
+  it('should not overwrite existing files on re-init', async () => {
     // 1. First init
     const result1 = await initDefaultConfig();
     expect(result1.created.length).toBeGreaterThan(0);
@@ -171,7 +178,7 @@ describe("Init-Backup-Restore Lifecycle Integration Tests", () => {
 
     // 2. Modify config
     const config = await loadConfig();
-    config.backup.targets.push("~/.customrc");
+    config.backup.targets.push('~/.customrc');
     await saveConfig(config);
 
     // 3. Second init
@@ -181,6 +188,6 @@ describe("Init-Backup-Restore Lifecycle Integration Tests", () => {
 
     // 4. Verify config wasn't overwritten
     const reloadedConfig = await loadConfig();
-    expect(reloadedConfig.backup.targets).toContain("~/.customrc");
+    expect(reloadedConfig.backup.targets).toContain('~/.customrc');
   });
 });

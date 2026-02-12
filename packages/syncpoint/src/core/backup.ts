@@ -1,6 +1,7 @@
-import { readdir } from "node:fs/promises";
-import { join, basename } from "node:path";
-import fg from "fast-glob";
+import { readdir } from 'node:fs/promises';
+import { basename, join } from 'node:path';
+
+import fg from 'fast-glob';
 
 import {
   BACKUPS_DIR,
@@ -9,23 +10,28 @@ import {
   SCRIPTS_DIR,
   SENSITIVE_PATTERNS,
   getSubDir,
-} from "../constants.js";
-import { expandTilde, resolveTargetPath, ensureDir, fileExists } from "../utils/paths.js";
-import { generateFilename } from "../utils/format.js";
-import { logger } from "../utils/logger.js";
-import { collectFileInfo, createMetadata } from "./metadata.js";
-import { createArchive } from "./storage.js";
+} from '../constants.js';
+import { generateFilename } from '../utils/format.js';
+import { logger } from '../utils/logger.js';
 import {
+  ensureDir,
+  expandTilde,
+  fileExists,
+  resolveTargetPath,
+} from '../utils/paths.js';
+import {
+  createExcludeMatcher,
   detectPatternType,
   parseRegexPattern,
-  createExcludeMatcher,
-} from "../utils/pattern.js";
+} from '../utils/pattern.js';
 import type {
   BackupOptions,
   BackupResult,
   FileEntry,
   SyncpointConfig,
-} from "../utils/types.js";
+} from '../utils/types.js';
+import { collectFileInfo, createMetadata } from './metadata.js';
+import { createArchive } from './storage.js';
 
 /**
  * Check if a filename matches any sensitive patterns.
@@ -33,7 +39,7 @@ import type {
 function isSensitiveFile(filePath: string): boolean {
   const name = basename(filePath);
   return SENSITIVE_PATTERNS.some((pattern) => {
-    if (pattern.startsWith("*")) {
+    if (pattern.startsWith('*')) {
       return name.endsWith(pattern.slice(1));
     }
     return name === pattern || filePath.includes(pattern);
@@ -64,14 +70,16 @@ export async function scanTargets(
     const expanded = expandTilde(target);
     const patternType = detectPatternType(expanded);
 
-    if (patternType === "regex") {
+    if (patternType === 'regex') {
       // Regex pattern: scan home directory and filter by regex
       try {
         const regex = parseRegexPattern(expanded);
-        const homeDir = expandTilde("~/");
+        const homeDir = expandTilde('~/');
 
         // Ensure homeDir ends with / for proper glob pattern
-        const homeDirNormalized = homeDir.endsWith("/") ? homeDir : `${homeDir}/`;
+        const homeDirNormalized = homeDir.endsWith('/')
+          ? homeDir
+          : `${homeDir}/`;
 
         const allFiles = await fg(`${homeDirNormalized}**`, {
           dot: true,
@@ -91,10 +99,10 @@ export async function scanTargets(
           `Invalid regex pattern "${target}": ${error instanceof Error ? error.message : String(error)}`,
         );
       }
-    } else if (patternType === "glob") {
+    } else if (patternType === 'glob') {
       // Glob pattern: use fast-glob with glob-only excludes
       const globExcludes = config.backup.exclude.filter(
-        (p) => detectPatternType(p) === "glob",
+        (p) => detectPatternType(p) === 'glob',
       );
 
       const matches = await fg(expanded, {
@@ -159,14 +167,14 @@ async function collectScripts(): Promise<FileEntry[]> {
   try {
     const files = await readdir(scriptsDir, { withFileTypes: true });
     for (const file of files) {
-      if (file.isFile() && file.name.endsWith(".sh")) {
+      if (file.isFile() && file.name.endsWith('.sh')) {
         const absPath = join(scriptsDir, file.name);
         const entry = await collectFileInfo(absPath, absPath);
         entries.push(entry);
       }
     }
   } catch {
-    logger.info("Skipping unreadable scripts directory");
+    logger.info('Skipping unreadable scripts directory');
   }
 
   return entries;
@@ -202,7 +210,7 @@ export async function createBackup(
   }
 
   if (allFiles.length === 0) {
-    throw new Error("No files found to backup.");
+    throw new Error('No files found to backup.');
   }
 
   // 5. Create metadata
@@ -241,7 +249,7 @@ export async function createBackup(
   // Add all target files, using their logical path as archive name
   for (const file of allFiles) {
     archiveFiles.push({
-      name: file.path.startsWith("~/") ? file.path.slice(2) : file.path,
+      name: file.path.startsWith('~/') ? file.path.slice(2) : file.path,
       sourcePath: file.absolutePath,
     });
   }

@@ -1,18 +1,23 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join, normalize } from "node:path";
-import * as tar from "tar";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, normalize } from 'node:path';
+
+import * as tar from 'tar';
 
 /**
  * Create a tar.gz archive from a list of file descriptors.
  * For in-memory content (like _metadata.json), writes temp files first.
  */
 export async function createArchive(
-  files: Array<{ name: string; content?: Buffer | string; sourcePath?: string }>,
+  files: Array<{
+    name: string;
+    content?: Buffer | string;
+    sourcePath?: string;
+  }>,
   outputPath: string,
 ): Promise<void> {
   // Create a temp directory to stage files
-  const tmpDir = await mkdtemp(join(tmpdir(), "syncpoint-"));
+  const tmpDir = await mkdtemp(join(tmpdir(), 'syncpoint-'));
 
   try {
     const fileNames: string[] = [];
@@ -20,7 +25,10 @@ export async function createArchive(
     for (const file of files) {
       const targetPath = join(tmpDir, file.name);
       // Ensure parent directories exist
-      const parentDir = join(tmpDir, file.name.split("/").slice(0, -1).join("/"));
+      const parentDir = join(
+        tmpDir,
+        file.name.split('/').slice(0, -1).join('/'),
+      );
       if (parentDir !== tmpDir) {
         await mkdir(parentDir, { recursive: true });
       }
@@ -82,7 +90,7 @@ export async function readFileFromArchive(
     throw new Error(`Invalid filename: ${filename}`);
   }
 
-  const tmpDir = await mkdtemp(join(tmpdir(), "syncpoint-read-"));
+  const tmpDir = await mkdtemp(join(tmpdir(), 'syncpoint-read-'));
 
   try {
     await tar.extract({
@@ -90,7 +98,7 @@ export async function readFileFromArchive(
       cwd: tmpDir,
       filter: (path) => {
         // Normalize — tar entries may have ./ prefix
-        const normalized = path.replace(/^\.\//, "");
+        const normalized = path.replace(/^\.\//, '');
         return normalized === filename;
       },
     });

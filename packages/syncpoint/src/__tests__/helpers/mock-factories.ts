@@ -1,7 +1,7 @@
-import { vi } from "vitest";
+import { vi } from 'vitest';
 
 export function mockExecSync(impl?: (...args: unknown[]) => unknown) {
-  return vi.fn(impl ?? (() => Buffer.from("")));
+  return vi.fn(impl ?? (() => Buffer.from('')));
 }
 
 export function mockLogger() {

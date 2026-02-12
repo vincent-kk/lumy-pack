@@ -1,37 +1,37 @@
-import { ajv } from "./ajv.js";
-import type { SyncpointConfig } from "../utils/types.js";
+import type { SyncpointConfig } from '../utils/types.js';
+import { ajv } from './ajv.js';
 
 const configSchema = {
-  type: "object",
-  required: ["backup"],
+  type: 'object',
+  required: ['backup'],
   properties: {
     backup: {
-      type: "object",
-      required: ["targets", "exclude", "filename"],
+      type: 'object',
+      required: ['targets', 'exclude', 'filename'],
       properties: {
         targets: {
-          type: "array",
-          items: { type: "string", validPattern: true },
+          type: 'array',
+          items: { type: 'string', validPattern: true },
         },
         exclude: {
-          type: "array",
-          items: { type: "string", validPattern: true },
+          type: 'array',
+          items: { type: 'string', validPattern: true },
         },
         filename: {
-          type: "string",
+          type: 'string',
           minLength: 1,
         },
         destination: {
-          type: "string",
+          type: 'string',
         },
       },
       additionalProperties: false,
     },
     scripts: {
-      type: "object",
+      type: 'object',
       properties: {
         includeInBackup: {
-          type: "boolean",
+          type: 'boolean',
         },
       },
       additionalProperties: false,
@@ -49,7 +49,7 @@ export function validateConfig(data: unknown): {
   const valid = validate(data);
   if (valid) return { valid: true };
   const errors = validate.errors?.map(
-    (e) => `${e.instancePath || "/"} ${e.message ?? "unknown error"}`,
+    (e) => `${e.instancePath || '/'} ${e.message ?? 'unknown error'}`,
   );
   return { valid: false, errors };
 }

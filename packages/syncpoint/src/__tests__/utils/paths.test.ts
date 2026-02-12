@@ -1,24 +1,24 @@
-import { homedir } from "node:os";
-import { join } from "node:path";
-import { writeFile } from "node:fs/promises";
+import { writeFile } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 
 import {
-  getHomeDir,
-  expandTilde,
   contractTilde,
-  resolveTargetPath,
   ensureDir,
+  expandTilde,
   fileExists,
-} from "../../utils/paths.js";
-import { createSandbox } from "../helpers/sandbox.js";
+  getHomeDir,
+  resolveTargetPath,
+} from '../../utils/paths.js';
+import { createSandbox } from '../helpers/sandbox.js';
 
-describe("utils/paths", () => {
-  describe("getHomeDir", () => {
-    it("returns SYNCPOINT_HOME when set", () => {
+describe('utils/paths', () => {
+  describe('getHomeDir', () => {
+    it('returns SYNCPOINT_HOME when set', () => {
       const originalHome = process.env.SYNCPOINT_HOME;
       try {
-        process.env.SYNCPOINT_HOME = "/custom/home";
-        expect(getHomeDir()).toBe("/custom/home");
+        process.env.SYNCPOINT_HOME = '/custom/home';
+        expect(getHomeDir()).toBe('/custom/home');
       } finally {
         if (originalHome !== undefined) {
           process.env.SYNCPOINT_HOME = originalHome;
@@ -28,7 +28,7 @@ describe("utils/paths", () => {
       }
     });
 
-    it("returns os.homedir() when SYNCPOINT_HOME is unset", () => {
+    it('returns os.homedir() when SYNCPOINT_HOME is unset', () => {
       const originalHome = process.env.SYNCPOINT_HOME;
       try {
         delete process.env.SYNCPOINT_HOME;
@@ -41,12 +41,12 @@ describe("utils/paths", () => {
     });
   });
 
-  describe("expandTilde", () => {
+  describe('expandTilde', () => {
     it('expands "~" to sandbox home', () => {
       const originalHome = process.env.SYNCPOINT_HOME;
       try {
-        process.env.SYNCPOINT_HOME = "/sandbox/home";
-        expect(expandTilde("~")).toBe("/sandbox/home");
+        process.env.SYNCPOINT_HOME = '/sandbox/home';
+        expect(expandTilde('~')).toBe('/sandbox/home');
       } finally {
         if (originalHome !== undefined) {
           process.env.SYNCPOINT_HOME = originalHome;
@@ -59,8 +59,8 @@ describe("utils/paths", () => {
     it('expands "~/path" to sandbox home + path', () => {
       const originalHome = process.env.SYNCPOINT_HOME;
       try {
-        process.env.SYNCPOINT_HOME = "/sandbox/home";
-        expect(expandTilde("~/path")).toBe("/sandbox/home/path");
+        process.env.SYNCPOINT_HOME = '/sandbox/home';
+        expect(expandTilde('~/path')).toBe('/sandbox/home/path');
       } finally {
         if (originalHome !== undefined) {
           process.env.SYNCPOINT_HOME = originalHome;
@@ -70,21 +70,21 @@ describe("utils/paths", () => {
       }
     });
 
-    it("leaves absolute paths unchanged", () => {
-      expect(expandTilde("/absolute")).toBe("/absolute");
+    it('leaves absolute paths unchanged', () => {
+      expect(expandTilde('/absolute')).toBe('/absolute');
     });
 
-    it("leaves relative paths unchanged", () => {
-      expect(expandTilde("relative")).toBe("relative");
+    it('leaves relative paths unchanged', () => {
+      expect(expandTilde('relative')).toBe('relative');
     });
   });
 
-  describe("contractTilde", () => {
+  describe('contractTilde', () => {
     it('returns "~" for sandbox home', () => {
       const originalHome = process.env.SYNCPOINT_HOME;
       try {
-        process.env.SYNCPOINT_HOME = "/sandbox/home";
-        expect(contractTilde("/sandbox/home")).toBe("~");
+        process.env.SYNCPOINT_HOME = '/sandbox/home';
+        expect(contractTilde('/sandbox/home')).toBe('~');
       } finally {
         if (originalHome !== undefined) {
           process.env.SYNCPOINT_HOME = originalHome;
@@ -97,8 +97,8 @@ describe("utils/paths", () => {
     it('returns "~/sub" for sandbox home + path', () => {
       const originalHome = process.env.SYNCPOINT_HOME;
       try {
-        process.env.SYNCPOINT_HOME = "/sandbox/home";
-        expect(contractTilde("/sandbox/home/sub")).toBe("~/sub");
+        process.env.SYNCPOINT_HOME = '/sandbox/home';
+        expect(contractTilde('/sandbox/home/sub')).toBe('~/sub');
       } finally {
         if (originalHome !== undefined) {
           process.env.SYNCPOINT_HOME = originalHome;
@@ -108,11 +108,11 @@ describe("utils/paths", () => {
       }
     });
 
-    it("leaves other paths unchanged", () => {
+    it('leaves other paths unchanged', () => {
       const originalHome = process.env.SYNCPOINT_HOME;
       try {
-        process.env.SYNCPOINT_HOME = "/sandbox/home";
-        expect(contractTilde("/other/path")).toBe("/other/path");
+        process.env.SYNCPOINT_HOME = '/sandbox/home';
+        expect(contractTilde('/other/path')).toBe('/other/path');
       } finally {
         if (originalHome !== undefined) {
           process.env.SYNCPOINT_HOME = originalHome;
@@ -123,12 +123,12 @@ describe("utils/paths", () => {
     });
   });
 
-  describe("resolveTargetPath", () => {
-    it("returns resolved absolute path for ~/file", () => {
+  describe('resolveTargetPath', () => {
+    it('returns resolved absolute path for ~/file', () => {
       const originalHome = process.env.SYNCPOINT_HOME;
       try {
-        process.env.SYNCPOINT_HOME = "/sandbox/home";
-        expect(resolveTargetPath("~/file")).toBe("/sandbox/home/file");
+        process.env.SYNCPOINT_HOME = '/sandbox/home';
+        expect(resolveTargetPath('~/file')).toBe('/sandbox/home/file');
       } finally {
         if (originalHome !== undefined) {
           process.env.SYNCPOINT_HOME = originalHome;
@@ -139,12 +139,12 @@ describe("utils/paths", () => {
     });
   });
 
-  describe("ensureDir and fileExists with sandbox", () => {
+  describe('ensureDir and fileExists with sandbox', () => {
     const sandbox = createSandbox();
 
     beforeEach(async () => {
       sandbox.apply();
-      const { mkdir } = await import("node:fs/promises");
+      const { mkdir } = await import('node:fs/promises');
       await mkdir(sandbox.home, { recursive: true });
     });
 
@@ -152,27 +152,27 @@ describe("utils/paths", () => {
       await sandbox.cleanup();
     });
 
-    it("ensureDir creates nested directories", async () => {
-      const nestedDir = join(sandbox.home, "a", "b", "c");
+    it('ensureDir creates nested directories', async () => {
+      const nestedDir = join(sandbox.home, 'a', 'b', 'c');
       await ensureDir(nestedDir);
       expect(await fileExists(nestedDir)).toBe(true);
     });
 
-    it("ensureDir is idempotent", async () => {
-      const dir = join(sandbox.home, "testdir");
+    it('ensureDir is idempotent', async () => {
+      const dir = join(sandbox.home, 'testdir');
       await ensureDir(dir);
       await ensureDir(dir); // Second call should not throw
       expect(await fileExists(dir)).toBe(true);
     });
 
-    it("fileExists returns true for existing file", async () => {
-      const file = join(sandbox.home, "existing.txt");
-      await writeFile(file, "content");
+    it('fileExists returns true for existing file', async () => {
+      const file = join(sandbox.home, 'existing.txt');
+      await writeFile(file, 'content');
       expect(await fileExists(file)).toBe(true);
     });
 
-    it("fileExists returns false for missing file", async () => {
-      const file = join(sandbox.home, "nonexistent.txt");
+    it('fileExists returns false for missing file', async () => {
+      const file = join(sandbox.home, 'nonexistent.txt');
       expect(await fileExists(file)).toBe(false);
     });
   });

@@ -1,4 +1,4 @@
-import YAML from "yaml";
+import YAML from 'yaml';
 
 /**
  * Extract YAML content from LLM response

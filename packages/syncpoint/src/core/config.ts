@@ -1,20 +1,21 @@
-import { readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
-import YAML from "yaml";
+import { readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
+import YAML from 'yaml';
 
 import {
+  BACKUPS_DIR,
   CONFIG_FILENAME,
+  LOGS_DIR,
+  SCRIPTS_DIR,
+  TEMPLATES_DIR,
   getAppDir,
   getSubDir,
-  BACKUPS_DIR,
-  TEMPLATES_DIR,
-  SCRIPTS_DIR,
-  LOGS_DIR,
-} from "../constants.js";
-import { validateConfig } from "../schemas/config.schema.js";
-import { readAsset } from "../utils/assets.js";
-import { ensureDir, fileExists } from "../utils/paths.js";
-import type { SyncpointConfig } from "../utils/types.js";
+} from '../constants.js';
+import { validateConfig } from '../schemas/config.schema.js';
+import { readAsset } from '../utils/assets.js';
+import { ensureDir, fileExists } from '../utils/paths.js';
+import type { SyncpointConfig } from '../utils/types.js';
 
 function stripDangerousKeys(obj: unknown): unknown {
   if (obj === null || typeof obj !== 'object') return obj;
@@ -47,14 +48,12 @@ export async function loadConfig(): Promise<SyncpointConfig> {
     );
   }
 
-  const raw = await readFile(configPath, "utf-8");
+  const raw = await readFile(configPath, 'utf-8');
   const data = stripDangerousKeys(YAML.parse(raw));
 
   const result = validateConfig(data);
   if (!result.valid) {
-    throw new Error(
-      `Invalid config:\n${(result.errors ?? []).join("\n")}`,
-    );
+    throw new Error(`Invalid config:\n${(result.errors ?? []).join('\n')}`);
   }
 
   return data as SyncpointConfig;
@@ -66,15 +65,13 @@ export async function loadConfig(): Promise<SyncpointConfig> {
 export async function saveConfig(config: SyncpointConfig): Promise<void> {
   const result = validateConfig(config);
   if (!result.valid) {
-    throw new Error(
-      `Invalid config:\n${(result.errors ?? []).join("\n")}`,
-    );
+    throw new Error(`Invalid config:\n${(result.errors ?? []).join('\n')}`);
   }
 
   const configPath = getConfigPath();
   await ensureDir(getAppDir());
   const yamlStr = YAML.stringify(config, { indent: 2 });
-  await writeFile(configPath, yamlStr, "utf-8");
+  await writeFile(configPath, yamlStr, 'utf-8');
 }
 
 /**
@@ -111,8 +108,8 @@ export async function initDefaultConfig(): Promise<{
   const configPath = getConfigPath();
   const configExists = await fileExists(configPath);
   if (!configExists) {
-    const yamlContent = readAsset("config.default.yml");
-    await writeFile(configPath, yamlContent, "utf-8");
+    const yamlContent = readAsset('config.default.yml');
+    await writeFile(configPath, yamlContent, 'utf-8');
     created.push(configPath);
   } else {
     skipped.push(configPath);
