@@ -9,10 +9,11 @@ import React, { useEffect, useState } from 'react';
 import { Confirm } from '../components/Confirm.js';
 import { Table } from '../components/Table.js';
 import { getSubDir } from '../constants.js';
+import { loadConfig } from '../core/config.js';
 import { listTemplates } from '../core/provision.js';
 import { getBackupList } from '../core/restore.js';
 import { formatBytes, formatDate } from '../utils/format.js';
-import { isInsideDir } from '../utils/paths.js';
+import { isInsideDir, resolveTargetPath } from '../utils/paths.js';
 import type { BackupInfo, TemplateConfig } from '../utils/types.js';
 
 type Phase =
@@ -87,6 +88,7 @@ const ListView: React.FC<ListViewProps> = ({ type, deleteIndex }) => {
     path: string;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [backupDir, setBackupDir] = useState<string>(getSubDir('backups'));
 
   // Unified ESC key handling for all phases
   useInput((_input, key) => {
@@ -116,11 +118,19 @@ const ListView: React.FC<ListViewProps> = ({ type, deleteIndex }) => {
   useEffect(() => {
     (async () => {
       try {
+        const config = await loadConfig();
+
+        // Set backup directory from config
+        const backupDirectory = config.backup.destination
+          ? resolveTargetPath(config.backup.destination)
+          : getSubDir('backups');
+        setBackupDir(backupDirectory);
+
         const showBackups = !type || type === 'backups';
         const showTemplates = !type || type === 'templates';
 
         if (showBackups) {
-          const list = await getBackupList();
+          const list = await getBackupList(config);
           setBackups(list);
         }
 
@@ -131,7 +141,7 @@ const ListView: React.FC<ListViewProps> = ({ type, deleteIndex }) => {
 
         // Handle --delete option
         if (deleteIndex != null && type === 'backups') {
-          const list = await getBackupList();
+          const list = await getBackupList(config);
           const idx = deleteIndex - 1;
           if (idx < 0 || idx >= list.length) {
             setError(`Invalid index: ${deleteIndex}`);
@@ -175,7 +185,7 @@ const ListView: React.FC<ListViewProps> = ({ type, deleteIndex }) => {
   const handleDeleteConfirm = (yes: boolean) => {
     if (yes && deleteTarget) {
       try {
-        if (!isInsideDir(deleteTarget.path, getSubDir("backups"))) {
+        if (!isInsideDir(deleteTarget.path, backupDir)) {
           throw new Error(`Refusing to delete file outside backups directory: ${deleteTarget.path}`);
         }
         unlinkSync(deleteTarget.path);

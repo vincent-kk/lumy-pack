@@ -10,8 +10,9 @@ import React, { useEffect, useState } from 'react';
 import { Confirm } from '../components/Confirm.js';
 import { Table } from '../components/Table.js';
 import { APP_NAME, LOGS_DIR, getSubDir } from '../constants.js';
+import { loadConfig } from '../core/config.js';
 import { getBackupList } from '../core/restore.js';
-import { isInsideDir } from '../utils/paths.js';
+import { isInsideDir, resolveTargetPath } from '../utils/paths.js';
 import {
   formatBytes,
   formatDate,
@@ -106,6 +107,7 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
   const [selectedForDeletion, setSelectedForDeletion] = useState<BackupInfo[]>(
     [],
   );
+  const [backupDir, setBackupDir] = useState<string>(getSubDir('backups'));
 
   // ESC key handling for navigation
   useInput((_input, key) => {
@@ -123,12 +125,20 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
   useEffect(() => {
     (async () => {
       try {
-        const backupStats = getDirStats(getSubDir('backups'));
+        const config = await loadConfig();
+
+        // Set backup directory from config
+        const backupDirectory = config.backup.destination
+          ? resolveTargetPath(config.backup.destination)
+          : getSubDir('backups');
+        setBackupDir(backupDirectory);
+
+        const backupStats = getDirStats(backupDirectory);
         const templateStats = getDirStats(getSubDir('templates'));
         const scriptStats = getDirStats(getSubDir('scripts'));
         const logStats = getDirStats(getSubDir('logs'));
 
-        const backupList = await getBackupList();
+        const backupList = await getBackupList(config);
         setBackups(backupList);
 
         const lastBackup =
@@ -210,11 +220,10 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
     }
 
     try {
-      const backupsDir = getSubDir('backups');
       if (cleanupAction === 'keep-recent-5') {
         const toDelete = backups.slice(5);
         for (const b of toDelete) {
-          if (!isInsideDir(b.path, backupsDir)) throw new Error(`Refusing to delete file outside backups directory: ${b.path}`);
+          if (!isInsideDir(b.path, backupDir)) throw new Error(`Refusing to delete file outside backups directory: ${b.path}`);
           unlinkSync(b.path);
         }
       } else if (cleanupAction === 'older-than-30') {
@@ -222,7 +231,7 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
         cutoff.setDate(cutoff.getDate() - 30);
         const toDelete = backups.filter((b) => b.createdAt < cutoff);
         for (const b of toDelete) {
-          if (!isInsideDir(b.path, backupsDir)) throw new Error(`Refusing to delete file outside backups directory: ${b.path}`);
+          if (!isInsideDir(b.path, backupDir)) throw new Error(`Refusing to delete file outside backups directory: ${b.path}`);
           unlinkSync(b.path);
         }
       } else if (cleanupAction === 'delete-logs') {
@@ -239,7 +248,7 @@ const StatusView: React.FC<StatusViewProps> = ({ cleanup }) => {
         }
       } else if (cleanupAction === 'select-specific') {
         for (const b of selectedForDeletion) {
-          if (!isInsideDir(b.path, backupsDir)) throw new Error(`Refusing to delete file outside backups directory: ${b.path}`);
+          if (!isInsideDir(b.path, backupDir)) throw new Error(`Refusing to delete file outside backups directory: ${b.path}`);
           unlinkSync(b.path);
         }
       }
