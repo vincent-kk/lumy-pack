@@ -1,7 +1,6 @@
 import { createHash } from 'node:crypto';
 import { lstat, readFile } from 'node:fs/promises';
 
-import { VERSION } from '../version.js';
 import { validateMetadata } from '../schemas/metadata.schema.js';
 import { contractTilde } from '../utils/paths.js';
 import { getHostname, getSystemInfo } from '../utils/system.js';
@@ -10,6 +9,7 @@ import type {
   FileEntry,
   SyncpointConfig,
 } from '../utils/types.js';
+import { VERSION } from '../version.js';
 
 const METADATA_VERSION = '1.0.0';
 

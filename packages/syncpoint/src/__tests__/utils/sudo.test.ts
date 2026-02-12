@@ -1,5 +1,7 @@
 import { execSync } from 'node:child_process';
 
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { ensureSudo, isSudoCached } from '../../utils/sudo.js';
 
 vi.mock('node:child_process', () => ({

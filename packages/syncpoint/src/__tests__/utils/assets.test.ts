@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 import { getAssetPath, readAsset } from '../../utils/assets.js';
 
 describe('utils/assets', () => {

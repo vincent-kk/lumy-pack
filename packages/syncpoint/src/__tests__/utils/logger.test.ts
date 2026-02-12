@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { logger } from '../../utils/logger.js';
 import { createSandbox } from '../helpers/sandbox.js';
 

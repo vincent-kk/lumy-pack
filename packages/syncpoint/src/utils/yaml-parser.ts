@@ -4,7 +4,9 @@ import YAML from 'yaml';
  * Check if parsed YAML is a structured object (not a scalar string/number)
  */
 function isStructuredYAML(parsed: unknown): boolean {
-  return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed);
+  return (
+    parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
+  );
 }
 
 /**
