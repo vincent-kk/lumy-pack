@@ -87,6 +87,16 @@ export async function scanTargets(
           absolute: true,
           onlyFiles: true,
           deep: 5, // Limit depth for performance
+          suppressErrors: true,
+          ignore: [
+            '**/.Trash/**',
+            '**/Library/**',
+            '**/.cache/**',
+            '**/node_modules/**',
+            ...config.backup.exclude.filter(
+              (p) => detectPatternType(p) === 'glob',
+            ),
+          ],
         });
 
         for (const match of allFiles) {
@@ -109,8 +119,15 @@ export async function scanTargets(
       const matches = await fg(expanded, {
         dot: true,
         absolute: true,
-        ignore: globExcludes,
+        ignore: [
+          '**/.Trash/**',
+          '**/Library/**',
+          '**/.cache/**',
+          '**/node_modules/**',
+          ...globExcludes,
+        ],
         onlyFiles: true,
+        suppressErrors: true,
       });
 
       // Apply non-glob excludes (regex, literal) as post-filter
@@ -143,8 +160,15 @@ export async function scanTargets(
         const matches = await fg(dirGlob, {
           dot: true,
           absolute: true,
-          ignore: globExcludes,
+          ignore: [
+            '**/.Trash/**',
+            '**/Library/**',
+            '**/.cache/**',
+            '**/node_modules/**',
+            ...globExcludes,
+          ],
           onlyFiles: true, // Only include files, not subdirectories
+          suppressErrors: true,
         });
 
         // Apply non-glob excludes as post-filter

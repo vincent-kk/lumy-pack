@@ -25,6 +25,10 @@ backup:
   exclude:
     - "**/*.swp"
     - "**/.DS_Store"
+    - "**/.Trash/**"
+    - "**/Library/**"
+    - "**/.cache/**"
+    - "**/node_modules/**"
     # Example regex: "/\\.bak$/" (excludes all .bak files)
 
   # (Required) Backup archive filename pattern.

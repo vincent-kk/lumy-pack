@@ -103,6 +103,7 @@ export async function scanHomeDirectory(options?: {
         deep: maxDepth,
         absolute: false,
         cwd: homeDir,
+        suppressErrors: true,
       });
 
       const validFiles: string[] = [];
@@ -139,6 +140,7 @@ export async function scanHomeDirectory(options?: {
         deep: maxDepth,
         absolute: false,
         cwd: homeDir,
+        suppressErrors: true,
       });
 
       const uncategorizedFiles: string[] = [];
