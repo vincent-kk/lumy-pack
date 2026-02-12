@@ -62,6 +62,19 @@ export async function fileExists(filePath: string): Promise<boolean> {
   }
 }
 
+/**
+ * Check if a path is a directory.
+ * Returns false if path doesn't exist or is not a directory.
+ */
+export async function isDirectory(filePath: string): Promise<boolean> {
+  try {
+    const stats = await stat(filePath);
+    return stats.isDirectory();
+  } catch {
+    return false;
+  }
+}
+
 export function isInsideDir(filePath: string, dir: string): boolean {
   const resolvedFile = resolve(filePath);
   const resolvedDir = resolve(dir);

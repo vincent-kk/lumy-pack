@@ -328,6 +328,120 @@ describe('core/backup', () => {
         expect(found.some((f) => f.path.includes('app1.conf'))).toBe(true);
       });
     });
+
+    describe('directory targets', () => {
+      it('recursively scans directory when directory path is provided', async () => {
+        // Create directory structure
+        await mkdir(join(sandbox.home, '.testdir', 'sub'), { recursive: true });
+        await writeFile(
+          join(sandbox.home, '.testdir', 'file1.txt'),
+          'content1',
+          'utf-8',
+        );
+        await writeFile(
+          join(sandbox.home, '.testdir', 'file2.txt'),
+          'content2',
+          'utf-8',
+        );
+        await writeFile(
+          join(sandbox.home, '.testdir', 'sub', 'file3.txt'),
+          'content3',
+          'utf-8',
+        );
+
+        const config = makeConfig({
+          backup: {
+            targets: ['~/.testdir/'],
+            exclude: [],
+            filename: 'test',
+          },
+        });
+
+        const { found, missing } = await scanTargets(config);
+
+        expect(missing).toHaveLength(0);
+        expect(found).toHaveLength(3);
+        expect(found.some((f) => f.path.includes('file1.txt'))).toBe(true);
+        expect(found.some((f) => f.path.includes('file2.txt'))).toBe(true);
+        expect(found.some((f) => f.path.includes('file3.txt'))).toBe(true);
+      });
+
+      it('applies exclude patterns to directory contents', async () => {
+        await mkdir(join(sandbox.home, '.testdir'), { recursive: true });
+        await writeFile(
+          join(sandbox.home, '.testdir', 'keep.txt'),
+          'keep',
+          'utf-8',
+        );
+        await writeFile(
+          join(sandbox.home, '.testdir', 'exclude.log'),
+          'exclude',
+          'utf-8',
+        );
+
+        const config = makeConfig({
+          backup: {
+            targets: ['~/.testdir/'],
+            exclude: ['**/*.log'],
+            filename: 'test',
+          },
+        });
+
+        const { found } = await scanTargets(config);
+
+        expect(found).toHaveLength(1);
+        expect(found[0].path).toContain('keep.txt');
+        expect(found.some((f) => f.path.includes('.log'))).toBe(false);
+      });
+
+      it('handles empty directory with warning', async () => {
+        const { logger } = await import('../../utils/logger.js');
+        await mkdir(join(sandbox.home, '.emptydir'), { recursive: true });
+
+        const config = makeConfig({
+          backup: {
+            targets: ['~/.emptydir/'],
+            exclude: [],
+            filename: 'test',
+          },
+        });
+
+        const { found } = await scanTargets(config);
+
+        expect(found).toHaveLength(0);
+        expect(logger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('Directory is empty or fully excluded'),
+        );
+      });
+
+      it('handles mixed file and directory targets', async () => {
+        await mkdir(join(sandbox.home, '.testdir'), { recursive: true });
+        await writeFile(
+          join(sandbox.home, '.testdir', 'dir-file.txt'),
+          'dir-content',
+          'utf-8',
+        );
+        await writeFile(
+          join(sandbox.home, '.standalone'),
+          'standalone-content',
+          'utf-8',
+        );
+
+        const config = makeConfig({
+          backup: {
+            targets: ['~/.testdir/', '~/.standalone'],
+            exclude: [],
+            filename: 'test',
+          },
+        });
+
+        const { found } = await scanTargets(config);
+
+        expect(found).toHaveLength(2);
+        expect(found.some((f) => f.path.includes('dir-file.txt'))).toBe(true);
+        expect(found.some((f) => f.path === '~/.standalone')).toBe(true);
+      });
+    });
   });
 
   describe('createBackup', () => {

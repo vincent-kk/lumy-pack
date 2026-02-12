@@ -17,6 +17,7 @@ import {
   ensureDir,
   expandTilde,
   fileExists,
+  isDirectory,
   resolveTargetPath,
 } from '../utils/paths.js';
 import {
@@ -120,7 +121,7 @@ export async function scanTargets(
         }
       }
     } else {
-      // Literal path: direct file check with exclude filter
+      // Literal path: check if directory or file
       const absPath = resolveTargetPath(target);
       const exists = await fileExists(absPath);
 
@@ -129,26 +130,55 @@ export async function scanTargets(
         continue;
       }
 
-      // Apply exclude patterns to literal paths
-      if (isExcluded(absPath)) {
-        continue;
-      }
+      // Check if target is a directory
+      const isDir = await isDirectory(absPath);
 
-      const entry = await collectFileInfo(absPath, absPath);
-
-      // Warn about large files
-      if (entry.size > LARGE_FILE_THRESHOLD) {
-        logger.warn(
-          `Large file (>${Math.round(LARGE_FILE_THRESHOLD / 1024 / 1024)}MB): ${target}`,
+      if (isDir) {
+        // Convert directory to glob pattern and process recursively
+        const dirGlob = `${expanded}/**/*`;
+        const globExcludes = config.backup.exclude.filter(
+          (p) => detectPatternType(p) === 'glob',
         );
-      }
 
-      // Warn about sensitive files
-      if (isSensitiveFile(absPath)) {
-        logger.warn(`Sensitive file detected: ${target}`);
-      }
+        const matches = await fg(dirGlob, {
+          dot: true,
+          absolute: true,
+          ignore: globExcludes,
+          onlyFiles: true, // Only include files, not subdirectories
+        });
 
-      found.push(entry);
+        // Apply non-glob excludes as post-filter
+        for (const match of matches) {
+          if (!isExcluded(match)) {
+            const entry = await collectFileInfo(match, match);
+            found.push(entry);
+          }
+        }
+
+        // Warn if directory is empty
+        if (matches.length === 0) {
+          logger.warn(`Directory is empty or fully excluded: ${target}`);
+        }
+      } else {
+        // Original file processing logic
+        if (isExcluded(absPath)) {
+          continue;
+        }
+
+        const entry = await collectFileInfo(absPath, absPath);
+
+        if (entry.size > LARGE_FILE_THRESHOLD) {
+          logger.warn(
+            `Large file (>${Math.round(LARGE_FILE_THRESHOLD / 1024 / 1024)}MB): ${target}`,
+          );
+        }
+
+        if (isSensitiveFile(absPath)) {
+          logger.warn(`Sensitive file detected: ${target}`);
+        }
+
+        found.push(entry);
+      }
     }
   }
 

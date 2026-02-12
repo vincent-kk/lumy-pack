@@ -81,6 +81,10 @@ export async function collectFileInfo(
     type = 'symlink';
   } else if (lstats.isDirectory()) {
     type = 'directory';
+    throw new Error(
+      `Cannot collect file info for directory: ${logicalPath}. ` +
+        `Directories should be converted to glob patterns before calling collectFileInfo().`,
+    );
   }
 
   // For symlinks, use lstat size; for regular files compute hash

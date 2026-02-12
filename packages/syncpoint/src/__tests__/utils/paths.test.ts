@@ -8,6 +8,7 @@ import {
   expandTilde,
   fileExists,
   getHomeDir,
+  isDirectory,
   resolveTargetPath,
 } from '../../utils/paths.js';
 import { createSandbox } from '../helpers/sandbox.js';
@@ -174,6 +175,23 @@ describe('utils/paths', () => {
     it('fileExists returns false for missing file', async () => {
       const file = join(sandbox.home, 'nonexistent.txt');
       expect(await fileExists(file)).toBe(false);
+    });
+
+    it('isDirectory returns true for existing directory', async () => {
+      const dir = join(sandbox.home, 'testdir');
+      await ensureDir(dir);
+      expect(await isDirectory(dir)).toBe(true);
+    });
+
+    it('isDirectory returns false for file', async () => {
+      const file = join(sandbox.home, 'testfile.txt');
+      await writeFile(file, 'content');
+      expect(await isDirectory(file)).toBe(false);
+    });
+
+    it('isDirectory returns false for nonexistent path', async () => {
+      const path = join(sandbox.home, 'nonexistent');
+      expect(await isDirectory(path)).toBe(false);
     });
   });
 });
