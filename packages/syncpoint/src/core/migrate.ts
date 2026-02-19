@@ -86,14 +86,20 @@ export function diffConfigFields(userData: unknown): DiffResult {
   const schemaKeys = new Set(schemaPaths.map(pathKey));
   const userKeys = new Set(userPaths.map(pathKey));
 
+  const isEditorDirective = (p: string[]) =>
+    p.length === 1 && p[0] === 'yaml-language-server';
+
   return {
     // Fields present in template with defaults AND valid in schema, but missing from user
     added: templatePaths.filter((p) => {
+      if (isEditorDirective(p)) return false;
       const key = pathKey(p);
       return schemaKeys.has(key) && !userKeys.has(key);
     }),
     // Fields in user but not in schema (truly deprecated)
-    removed: userPaths.filter((p) => !schemaKeys.has(pathKey(p))),
+    removed: userPaths.filter(
+      (p) => !isEditorDirective(p) && !schemaKeys.has(pathKey(p)),
+    ),
     // Fields in user AND in schema (preserve user values)
     existing: userPaths.filter((p) => schemaKeys.has(pathKey(p))),
   };
