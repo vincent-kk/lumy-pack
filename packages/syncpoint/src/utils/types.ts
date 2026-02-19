@@ -101,6 +101,16 @@ export interface StepResult {
   output?: string;
 }
 
+// ── Migrate ──
+
+export interface MigrateResult {
+  added: string[];
+  deprecated: string[];
+  preserved: string[];
+  backupPath: string;
+  migrated: boolean;
+}
+
 // ── Options ──
 
 export interface BackupOptions {

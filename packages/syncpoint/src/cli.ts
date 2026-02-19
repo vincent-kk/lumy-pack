@@ -5,6 +5,7 @@ import { registerCreateTemplateCommand } from './commands/CreateTemplate.js';
 import { registerHelpCommand } from './commands/Help.js';
 import { registerInitCommand } from './commands/Init.js';
 import { registerListCommand } from './commands/List.js';
+import { registerMigrateCommand } from './commands/Migrate.js';
 import { registerProvisionCommand } from './commands/Provision.js';
 import { registerRestoreCommand } from './commands/Restore.js';
 import { registerStatusCommand } from './commands/Status.js';
@@ -26,6 +27,7 @@ registerRestoreCommand(program);
 registerProvisionCommand(program);
 registerCreateTemplateCommand(program);
 registerListCommand(program);
+registerMigrateCommand(program);
 registerStatusCommand(program);
 registerHelpCommand(program);
 

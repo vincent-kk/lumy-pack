@@ -183,6 +183,21 @@ export const COMMANDS: Record<string, CommandInfo> = {
       'npx @lumy-pack/syncpoint status --cleanup',
     ],
   },
+  migrate: {
+    name: 'migrate',
+    description: 'Migrate config.yml to match the current schema',
+    usage: 'npx @lumy-pack/syncpoint migrate [options]',
+    options: [
+      {
+        flag: '--dry-run',
+        description: 'Preview changes without writing',
+      },
+    ],
+    examples: [
+      'npx @lumy-pack/syncpoint migrate',
+      'npx @lumy-pack/syncpoint migrate --dry-run',
+    ],
+  },
   help: {
     name: 'help',
     description: 'Display help information',
