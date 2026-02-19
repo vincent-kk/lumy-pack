@@ -38,21 +38,21 @@
     "README.md"
   ],
   "scripts": {
-    "build": "node scripts/inject-version.js && tsup && pnpm build:types",
-    "build:publish:npm": "pnpm build && pnpm publish:npm",
+    "build": "node scripts/inject-version.js && tsup && yarn build:types",
+    "build:publish:npm": "yarn build && yarn publish:npm",
     "build:types": "tsc -p ./tsconfig.declarations.json",
     "dev": "node scripts/inject-version.js && tsx src/cli.ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint \"src/**/*.ts\"",
-    "publish:npm": "pnpm publish --access public --no-git-checks",
+    "publish:npm": "yarn npm publish --access public",
     "test": "vitest",
-    "test:all": "vitest run && pnpm test:e2e && pnpm test:docker",
+    "test:all": "vitest run && yarn test:e2e && yarn test:docker",
     "test:docker": "vitest run --config vitest.e2e.config.ts src/__tests__/docker/",
     "test:e2e": "vitest run --config vitest.e2e.config.ts src/__tests__/e2e/",
     "test:run": "vitest run",
-    "version:major": "pnpm version major",
-    "version:minor": "pnpm version minor",
-    "version:patch": "pnpm version patch"
+    "version:major": "yarn version major",
+    "version:minor": "yarn version minor",
+    "version:patch": "yarn version patch"
   },
   "dependencies": {
     "ajv": "^8.0.0",

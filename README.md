@@ -32,16 +32,16 @@ Each package provides individual `README.md` documentation with detailed usage i
 dir=your-lumy-pack && git clone https://github.com/vincent-kk/lumy-pack.git "$dir" && cd "$dir"
 
 # Install dependencies
-nvm use && pnpm install && pnpm build:all
+nvm use && yarn install && yarn build:all
 
-# Use pnpm workspaces
-pnpm --filter <package-name> <command>
+# Use yarn workspaces
+yarn workspace <package-name> <command>
 
 # Run tests
-pnpm --filter <package-name> test
+yarn workspace <package-name> test
 
 # Build
-pnpm --filter <package-name> build
+yarn workspace <package-name> build
 ```
 
 ---
@@ -70,17 +70,17 @@ This project uses [Changesets](https://github.com/changesets/changesets) for ver
 When you make changes to any package, create a changeset to document your changes:
 
 ```bash
-pnpm changeset
+yarn changeset
 ```
 
 ### Releasing
 
 ```bash
 # Update package versions based on changesets
-pnpm changeset:version
+yarn changeset:version
 
 # Publish packages to npm
-pnpm changeset:publish
+yarn changeset:publish
 ```
 
 ### Changeset Guidelines
@@ -93,14 +93,14 @@ pnpm changeset:publish
 
 ## Scripts
 
-- `pnpm build:all` — Build all packages
-- `pnpm test` — Run tests across all packages
-- `pnpm lint` — Check code style
-- `pnpm typecheck` — Verify TypeScript types
-- `pnpm changeset` — Create a new changeset
-- `pnpm changeset:version` — Update versions based on changesets
-- `pnpm changeset:publish` — Publish packages to npm
-- `pnpm tag:packages <commit>` — Create Git tags for all packages based on their versions
+- `yarn build:all` — Build all packages
+- `yarn test` — Run tests across all packages
+- `yarn lint` — Check code style
+- `yarn typecheck` — Verify TypeScript types
+- `yarn changeset` — Create a new changeset
+- `yarn changeset:version` — Update versions based on changesets
+- `yarn changeset:publish` — Publish packages to npm
+- `yarn tag:packages <commit>` — Create Git tags for all packages based on their versions
 
 ---
 

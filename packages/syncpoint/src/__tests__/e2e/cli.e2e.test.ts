@@ -48,7 +48,7 @@ describe('CLI E2E Tests', () => {
   beforeAll(() => {
     if (!existsSync(CLI_PATH)) {
       throw new Error(
-        `CLI not built. Run 'pnpm build' first. Expected: ${CLI_PATH}`,
+        `CLI not built. Run 'yarn build' first. Expected: ${CLI_PATH}`,
       );
     }
   });

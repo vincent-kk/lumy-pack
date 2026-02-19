@@ -31,8 +31,8 @@ Or install globally if you prefer:
 # Using npm
 npm install -g @lumy-pack/syncpoint
 
-# Using pnpm
-pnpm add -g @lumy-pack/syncpoint
+# Using yarn
+yarn global add @lumy-pack/syncpoint
 ```
 
 ## 🚀 Quick Start
@@ -872,23 +872,23 @@ If restore shows many "overwrite" actions:
 
 ```bash
 # Install dependencies
-pnpm install
+yarn install
 
 # Development mode
-pnpm dev
+yarn dev
 
 # Build
-pnpm build
+yarn build
 
 # Run tests
-pnpm test
+yarn test
 
 # Run all tests (unit + integration + e2e + docker)
-pnpm test:all
+yarn test:all
 
 # Lint and format
-pnpm lint
-pnpm format
+yarn lint
+yarn format
 ```
 
 ### Technology Stack

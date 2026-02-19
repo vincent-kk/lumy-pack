@@ -1,5 +1,4 @@
 node_modules/
-.pnpm-store/
 dist/
 *.tsbuildinfo
 coverage/
@@ -14,3 +13,11 @@ Thumbs.db
 *.log
 npm-debug.log*
 .omc/
+
+# Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions

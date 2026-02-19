@@ -10,18 +10,21 @@
   },
   "license": "MIT",
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "build:all": "pnpm -r run build",
+    "build:all": "yarn workspaces foreach -A run build",
     "changeset": "changeset",
-    "changeset:publish": "pnpm build:all && changeset publish",
+    "changeset:publish": "yarn build:all && changeset publish",
     "changeset:version": "changeset version",
-    "clean": "pnpm -r exec rm -rf dist .tsbuildinfo",
+    "clean": "yarn workspaces foreach -A exec rm -rf dist .tsbuildinfo",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,mjs,json,md}\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "publish:all": "pnpm -r --no-private run publish:npm",
+    "publish:all": "yarn workspaces foreach -A --no-private run publish:npm",
     "sort:packages": "npx sort-package-json '**/package.json'",
-    "syncpoint": "pnpm -C packages/syncpoint",
+    "syncpoint": "yarn workspace @lumy-pack/syncpoint",
     "tag:packages": "./scripts/tag-packages.sh",
     "test": "vitest",
     "test:run": "vitest run",
@@ -43,7 +46,7 @@
     "typescript": "^5.7.2",
     "vitest": "^3.2.4"
   },
-  "packageManager": "pnpm@9.15.4",
+  "packageManager": "yarn@4.12.0",
   "engines": {
     "node": ">=20.0.0"
   }
