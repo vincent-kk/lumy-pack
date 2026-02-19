@@ -1,0 +1,121 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Syncpoint Backup Metadata",
+  "description": "Metadata stored inside backup archives as _metadata.json",
+  "type": "object",
+  "required": [
+    "version",
+    "toolVersion",
+    "createdAt",
+    "hostname",
+    "system",
+    "config",
+    "files",
+    "summary"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Metadata schema version."
+    },
+    "toolVersion": {
+      "type": "string",
+      "description": "Syncpoint tool version used to create the backup."
+    },
+    "createdAt": {
+      "type": "string",
+      "description": "ISO 8601 timestamp of backup creation."
+    },
+    "hostname": {
+      "type": "string",
+      "description": "Hostname of the machine where the backup was created."
+    },
+    "system": {
+      "type": "object",
+      "description": "System information at backup time.",
+      "required": ["platform", "release", "arch"],
+      "properties": {
+        "platform": {
+          "type": "string",
+          "description": "Operating system platform (e.g. darwin, linux)."
+        },
+        "release": {
+          "type": "string",
+          "description": "OS kernel release version."
+        },
+        "arch": {
+          "type": "string",
+          "description": "CPU architecture (e.g. arm64, x64)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "config": {
+      "type": "object",
+      "description": "Backup configuration snapshot.",
+      "required": ["filename"],
+      "properties": {
+        "filename": {
+          "type": "string",
+          "description": "Filename pattern used for the backup."
+        },
+        "destination": {
+          "type": "string",
+          "description": "Custom destination path, if configured."
+        }
+      },
+      "additionalProperties": false
+    },
+    "files": {
+      "type": "array",
+      "description": "List of files included in the backup.",
+      "items": {
+        "type": "object",
+        "required": ["path", "absolutePath", "size", "hash"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Display path (e.g. ~/.zshrc)."
+          },
+          "absolutePath": {
+            "type": "string",
+            "description": "Full filesystem path."
+          },
+          "size": {
+            "type": "number",
+            "description": "File size in bytes.",
+            "minimum": 0
+          },
+          "hash": {
+            "type": "string",
+            "description": "SHA-256 hash of file contents."
+          },
+          "type": {
+            "type": "string",
+            "description": "File type (e.g. symlink, directory)."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "summary": {
+      "type": "object",
+      "description": "Backup summary statistics.",
+      "required": ["fileCount", "totalSize"],
+      "properties": {
+        "fileCount": {
+          "type": "integer",
+          "description": "Total number of files in the backup.",
+          "minimum": 0
+        },
+        "totalSize": {
+          "type": "number",
+          "description": "Total size of all files in bytes.",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

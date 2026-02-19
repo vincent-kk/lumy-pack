@@ -1,48 +1,7 @@
 import type { SyncpointConfig } from '../utils/types.js';
 
+import configSchema from '../../assets/schemas/config.schema.json';
 import { ajv } from './ajv.js';
-
-const configSchema = {
-  type: 'object',
-  required: ['backup'],
-  properties: {
-    backup: {
-      type: 'object',
-      required: ['targets', 'exclude', 'filename'],
-      properties: {
-        targets: {
-          type: 'array',
-          items: { type: 'string', validPattern: true },
-        },
-        exclude: {
-          type: 'array',
-          items: { type: 'string', validPattern: true },
-        },
-        filename: {
-          type: 'string',
-          minLength: 1,
-        },
-        destination: {
-          type: 'string',
-        },
-        includeSensitiveFiles: {
-          type: 'boolean',
-        },
-      },
-      additionalProperties: false,
-    },
-    scripts: {
-      type: 'object',
-      properties: {
-        includeInBackup: {
-          type: 'boolean',
-        },
-      },
-      additionalProperties: false,
-    },
-  },
-  additionalProperties: false,
-};
 
 const validate = ajv.compile<SyncpointConfig>(configSchema);
 

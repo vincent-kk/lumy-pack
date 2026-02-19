@@ -1,34 +1,7 @@
 import type { TemplateConfig } from '../utils/types.js';
 
+import templateSchema from '../../assets/schemas/template.schema.json';
 import { ajv } from './ajv.js';
-
-const templateSchema = {
-  type: 'object',
-  required: ['name', 'steps'],
-  properties: {
-    name: { type: 'string', minLength: 1 },
-    description: { type: 'string' },
-    backup: { type: 'string' },
-    sudo: { type: 'boolean' },
-    steps: {
-      type: 'array',
-      minItems: 1,
-      items: {
-        type: 'object',
-        required: ['name', 'command'],
-        properties: {
-          name: { type: 'string', minLength: 1 },
-          description: { type: 'string' },
-          command: { type: 'string', minLength: 1 },
-          skip_if: { type: 'string' },
-          continue_on_error: { type: 'boolean' },
-        },
-        additionalProperties: false,
-      },
-    },
-  },
-  additionalProperties: false,
-};
 
 const validate = ajv.compile<TemplateConfig>(templateSchema);
 

@@ -1,70 +1,7 @@
 import type { BackupMetadata } from '../utils/types.js';
 
+import metadataSchema from '../../assets/schemas/metadata.schema.json';
 import { ajv } from './ajv.js';
-
-const metadataSchema = {
-  type: 'object',
-  required: [
-    'version',
-    'toolVersion',
-    'createdAt',
-    'hostname',
-    'system',
-    'config',
-    'files',
-    'summary',
-  ],
-  properties: {
-    version: { type: 'string' },
-    toolVersion: { type: 'string' },
-    createdAt: { type: 'string' },
-    hostname: { type: 'string' },
-    system: {
-      type: 'object',
-      required: ['platform', 'release', 'arch'],
-      properties: {
-        platform: { type: 'string' },
-        release: { type: 'string' },
-        arch: { type: 'string' },
-      },
-      additionalProperties: false,
-    },
-    config: {
-      type: 'object',
-      required: ['filename'],
-      properties: {
-        filename: { type: 'string' },
-        destination: { type: 'string' },
-      },
-      additionalProperties: false,
-    },
-    files: {
-      type: 'array',
-      items: {
-        type: 'object',
-        required: ['path', 'absolutePath', 'size', 'hash'],
-        properties: {
-          path: { type: 'string' },
-          absolutePath: { type: 'string' },
-          size: { type: 'number', minimum: 0 },
-          hash: { type: 'string' },
-          type: { type: 'string' },
-        },
-        additionalProperties: false,
-      },
-    },
-    summary: {
-      type: 'object',
-      required: ['fileCount', 'totalSize'],
-      properties: {
-        fileCount: { type: 'integer', minimum: 0 },
-        totalSize: { type: 'number', minimum: 0 },
-      },
-      additionalProperties: false,
-    },
-  },
-  additionalProperties: false,
-};
 
 const validate = ajv.compile<BackupMetadata>(metadataSchema);
 

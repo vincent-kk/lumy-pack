@@ -1,3 +1,4 @@
+yaml-language-server: $schema=https://cdn.jsdelivr.net/npm/@lumy-pack/syncpoint/assets/schemas/config.schema.json
 # ──────────────────────────────────────────
 # Syncpoint Configuration
 # ──────────────────────────────────────────
@@ -23,12 +24,12 @@ backup:
   #   - Glob: "**/*.swp", "**/.DS_Store", "**/node_modules/**"
   #   - Regex: "/\\.bak$/", "/\\.tmp$/", "/\\.(cache|log)$/"
   exclude:
-    - "**/*.swp"
-    - "**/.DS_Store"
-    - "**/.Trash/**"
-    - "**/Library/**"
-    - "**/.cache/**"
-    - "**/node_modules/**"
+    - '**/*.swp'
+    - '**/.DS_Store'
+    - '**/.Trash/**'
+    - '**/Library/**'
+    - '**/.cache/**'
+    - '**/node_modules/**'
     # Example regex: "/\\.bak$/" (excludes all .bak files)
 
   # (Optional) Include sensitive files (SSH keys, certificates, etc.) in backup.
@@ -40,7 +41,7 @@ backup:
 
   # (Required) Backup archive filename pattern.
   # Available variables: {hostname}, {datetime}
-  filename: "{hostname}_{datetime}"
+  filename: '{hostname}_{datetime}'
 
   # (Optional) Backup archive destination path. Default: ~/.syncpoint/backups/
   # destination: /path/to/custom/backups

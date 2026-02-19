@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Syncpoint Config",
+  "description": "Configuration for syncpoint backup tool",
+  "type": "object",
+  "required": ["backup"],
+  "properties": {
+    "backup": {
+      "type": "object",
+      "description": "Backup configuration",
+      "required": ["targets", "exclude", "filename"],
+      "properties": {
+        "targets": {
+          "type": "array",
+          "description": "List of files/directories to backup. Supports literal paths (e.g. ~/.zshrc), glob patterns (e.g. ~/.config/*.conf), and regex patterns (e.g. /\\.conf$/).",
+          "items": { "type": "string", "validPattern": true }
+        },
+        "exclude": {
+          "type": "array",
+          "description": "List of patterns to exclude from backup. Supports glob (e.g. **/*.swp) and regex (e.g. /\\.bak$/) patterns.",
+          "items": { "type": "string", "validPattern": true }
+        },
+        "filename": {
+          "type": "string",
+          "description": "Backup archive filename pattern. Available variables: {hostname}, {datetime}.",
+          "minLength": 1
+        },
+        "destination": {
+          "type": "string",
+          "description": "Backup archive destination path. Default: ~/.syncpoint/backups/"
+        },
+        "includeSensitiveFiles": {
+          "type": "boolean",
+          "description": "Include sensitive files (SSH keys, certificates, etc.) in backup. When false (default), files matching sensitive patterns (id_rsa, id_ed25519, *.pem, *.key) are automatically excluded."
+        }
+      },
+      "additionalProperties": false
+    },
+    "scripts": {
+      "type": "object",
+      "description": "Scripts configuration",
+      "properties": {
+        "includeInBackup": {
+          "type": "boolean",
+          "description": "Whether to include scripts/ directory in backup. Default: true."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
