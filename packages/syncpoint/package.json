@@ -1,6 +1,6 @@
 {
   "name": "@lumy-pack/syncpoint",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "CLI tool for project synchronization and scaffolding",
   "keywords": [
     "cli",
