@@ -132,7 +132,7 @@ describe('core/backup', () => {
       expect(found.map((f) => f.path)).not.toContain('temp.swp');
     });
 
-    it('warns about sensitive file names', async () => {
+    it('excludes sensitive files by default', async () => {
       const { logger } = await import('../../utils/logger.js');
       await writeFile(join(sandbox.home, 'id_rsa'), 'privatekey', 'utf-8');
 
@@ -144,11 +144,68 @@ describe('core/backup', () => {
         },
       });
 
-      await scanTargets(config);
+      const { found } = await scanTargets(config);
 
+      expect(found).toHaveLength(0);
       expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Sensitive file detected'),
+        expect.stringContaining('Sensitive file excluded'),
       );
+    });
+
+    it('includes sensitive files when includeSensitiveFiles is true', async () => {
+      await writeFile(join(sandbox.home, 'id_rsa'), 'privatekey', 'utf-8');
+
+      const config = makeConfig({
+        backup: {
+          targets: ['~/id_rsa'],
+          exclude: [],
+          filename: 'test',
+          includeSensitiveFiles: true,
+        },
+      });
+
+      const { found } = await scanTargets(config);
+
+      expect(found).toHaveLength(1);
+      expect(found[0].path).toBe('~/id_rsa');
+    });
+
+    it('excludes sensitive files from glob targets', async () => {
+      await mkdir(join(sandbox.home, '.ssh'), { recursive: true });
+      await writeFile(join(sandbox.home, '.ssh', 'config'), 'Host *', 'utf-8');
+      await writeFile(join(sandbox.home, '.ssh', 'id_rsa'), 'privatekey', 'utf-8');
+
+      const config = makeConfig({
+        backup: {
+          targets: ['~/.ssh/*'],
+          exclude: [],
+          filename: 'test',
+        },
+      });
+
+      const { found } = await scanTargets(config);
+
+      expect(found.some((f) => f.path.includes('config'))).toBe(true);
+      expect(found.some((f) => f.path.includes('id_rsa'))).toBe(false);
+    });
+
+    it('excludes sensitive files from directory targets', async () => {
+      await mkdir(join(sandbox.home, '.ssh'), { recursive: true });
+      await writeFile(join(sandbox.home, '.ssh', 'config'), 'Host *', 'utf-8');
+      await writeFile(join(sandbox.home, '.ssh', 'id_ed25519'), 'privatekey', 'utf-8');
+
+      const config = makeConfig({
+        backup: {
+          targets: ['~/.ssh/'],
+          exclude: [],
+          filename: 'test',
+        },
+      });
+
+      const { found } = await scanTargets(config);
+
+      expect(found.some((f) => f.path.includes('config'))).toBe(true);
+      expect(found.some((f) => f.path.includes('id_ed25519'))).toBe(false);
     });
 
     describe('literal path exclude (bug fix)', () => {

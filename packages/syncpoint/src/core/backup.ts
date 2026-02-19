@@ -102,6 +102,10 @@ export async function scanTargets(
 
         for (const match of allFiles) {
           if (regex.test(match) && !isExcluded(match)) {
+            if (!config.backup.includeSensitiveFiles && isSensitiveFile(match)) {
+              logger.warn(`Sensitive file excluded: ${match}`);
+              continue;
+            }
             const entry = await collectFileInfo(match, match);
             found.push(entry);
           }
@@ -134,6 +138,10 @@ export async function scanTargets(
       // Apply non-glob excludes (regex, literal) as post-filter
       for (const match of matches) {
         if (!isExcluded(match)) {
+          if (!config.backup.includeSensitiveFiles && isSensitiveFile(match)) {
+            logger.warn(`Sensitive file excluded: ${match}`);
+            continue;
+          }
           const entry = await collectFileInfo(match, match);
           found.push(entry);
         }
@@ -175,6 +183,10 @@ export async function scanTargets(
         // Apply non-glob excludes as post-filter
         for (const match of matches) {
           if (!isExcluded(match)) {
+            if (!config.backup.includeSensitiveFiles && isSensitiveFile(match)) {
+              logger.warn(`Sensitive file excluded: ${match}`);
+              continue;
+            }
             const entry = await collectFileInfo(match, match);
             found.push(entry);
           }
@@ -190,16 +202,17 @@ export async function scanTargets(
           continue;
         }
 
+        if (!config.backup.includeSensitiveFiles && isSensitiveFile(absPath)) {
+          logger.warn(`Sensitive file excluded: ${target}`);
+          continue;
+        }
+
         const entry = await collectFileInfo(absPath, absPath);
 
         if (entry.size > LARGE_FILE_THRESHOLD) {
           logger.warn(
             `Large file (>${Math.round(LARGE_FILE_THRESHOLD / 1024 / 1024)}MB): ${target}`,
           );
-        }
-
-        if (isSensitiveFile(absPath)) {
-          logger.warn(`Sensitive file detected: ${target}`);
         }
 
         found.push(entry);

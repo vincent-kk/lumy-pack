@@ -25,6 +25,9 @@ const configSchema = {
         destination: {
           type: 'string',
         },
+        includeSensitiveFiles: {
+          type: 'boolean',
+        },
       },
       additionalProperties: false,
     },

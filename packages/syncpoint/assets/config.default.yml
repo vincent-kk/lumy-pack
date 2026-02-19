@@ -31,6 +31,13 @@ backup:
     - "**/node_modules/**"
     # Example regex: "/\\.bak$/" (excludes all .bak files)
 
+  # (Optional) Include sensitive files (SSH keys, certificates, etc.) in backup.
+  # When false (default), files matching sensitive patterns (id_rsa, id_ed25519,
+  # *.pem, *.key) are automatically excluded with a warning.
+  # Set to true for a complete snapshot including all credentials.
+  # WARNING: Enable only if you trust your backup storage security.
+  includeSensitiveFiles: false
+
   # (Required) Backup archive filename pattern.
   # Available variables: {hostname}, {datetime}
   filename: "{hostname}_{datetime}"

@@ -6,6 +6,7 @@ export interface SyncpointConfig {
     exclude: string[];
     filename: string;
     destination?: string;
+    includeSensitiveFiles?: boolean;
   };
   scripts: {
     includeInBackup: boolean;
