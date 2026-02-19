@@ -1,8 +1,6 @@
 // ── Config ──
 
 export interface SyncpointConfig {
-  /** Editor directive for schema association; ignored at runtime. */
-  'yaml-language-server'?: string;
   backup: {
     targets: string[];
     exclude: string[];
