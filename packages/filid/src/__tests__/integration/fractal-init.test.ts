@@ -42,18 +42,20 @@ describe('fractal-init pipeline', () => {
     const result = classifyNode({
       dirName: 'auth',
       hasClaudeMd: true,
+      hasSpecMd: false,
       isInsideFractal: true,
     });
 
-    expect(result.type).toBe('fractal');
+    expect(result).toBe('fractal');
   });
 
   it('should validate CLAUDE.md within line limit', () => {
     const validContent = Array.from({ length: 50 }, (_, i) => `Line ${i + 1}`).join('\n');
     const validation = validateClaudeMd(validContent);
 
+    // valid=true because line-limit is not violated (warnings don't block)
     expect(validation.valid).toBe(true);
-    expect(validation.violations).toHaveLength(0);
+    expect(validation.violations.every(v => v.severity !== 'error')).toBe(true);
   });
 
   it('should reject CLAUDE.md exceeding 100 lines', () => {
