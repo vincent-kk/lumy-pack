@@ -20,6 +20,10 @@ Promote stable `test.ts` files to parameterized `spec.ts` files satisfying the
 FCA-AI 3+12 rule (max 3 basic + 12 complex = 15 total). Executes discovery,
 eligibility, analysis, generation, validation, and migration in one pass.
 
+> **Detail Reference**: For detailed workflow steps, MCP tool examples,
+> and output format templates, read the `reference.md` file in this
+> skill's directory (same location as this SKILL.md).
+
 ## When to Use This Skill
 
 - When `test.ts` files have been stable for 90+ days with no recent failures

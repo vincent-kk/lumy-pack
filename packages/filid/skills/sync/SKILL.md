@@ -19,6 +19,10 @@ Synchronize CLAUDE.md and SPEC.md with accumulated code changes collected
 by PostToolUse hooks during development. Execute at PR time to batch-apply
 all pending documentation updates in a single, validated pass.
 
+> **Detail Reference**: For detailed workflow steps, MCP tool examples,
+> and output format templates, read the `reference.md` file in this
+> skill's directory (same location as this SKILL.md).
+
 ## When to Use This Skill
 
 - Before opening or merging a PR that includes code changes affecting module structure

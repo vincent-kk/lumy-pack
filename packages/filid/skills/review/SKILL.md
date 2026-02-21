@@ -18,6 +18,10 @@ complexity: complex
 Execute the FCA-AI 6-stage PR verification pipeline. Validate structure,
 documents, tests, metrics, and dependencies, then emit a consolidated verdict.
 
+> **Detail Reference**: For detailed workflow steps, MCP tool examples,
+> and output format templates, read the `reference.md` file in this
+> skill's directory (same location as this SKILL.md).
+
 ## When to Use This Skill
 
 - Before merging any PR that modifies FCA-AI module structure or documents

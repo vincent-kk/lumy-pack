@@ -21,6 +21,10 @@ Scan the project for FCA-AI rule violations across CLAUDE.md documents,
 organ directory boundaries, and test file structure. Produces a prioritised
 violation report and, with `--fix`, applies automatic remediation.
 
+> **Detail Reference**: For detailed workflow steps, MCP tool examples,
+> and output format templates, read the `reference.md` file in this
+> skill's directory (same location as this SKILL.md).
+
 ## When to Use This Skill
 
 - Auditing the project before opening a pull request

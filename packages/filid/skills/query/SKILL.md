@@ -22,6 +22,10 @@ Answer a targeted question about the FCA-AI project by navigating the
 fractal hierarchy, loading the minimal CLAUDE.md chain, and responding
 within a strict 3-Prompt Limit.
 
+> **Detail Reference**: For detailed workflow steps, MCP tool examples,
+> and output format templates, read the `reference.md` file in this
+> skill's directory (same location as this SKILL.md).
+
 ## When to Use This Skill
 
 - Looking up boundary rules for a specific module before making a change

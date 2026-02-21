@@ -9,5 +9,6 @@
   "license": "MIT",
   "keywords": ["claude-code", "plugin", "fca-ai", "fractal", "context"],
   "skills": "./skills/",
+  "agents": "./agents/",
   "mcpServers": "./.mcp.json"
 }

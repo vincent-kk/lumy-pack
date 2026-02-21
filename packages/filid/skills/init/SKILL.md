@@ -21,6 +21,10 @@ Initialize the FCA-AI fractal context architecture in a project. Scans the
 directory tree, classifies every directory by node type, generates missing
 CLAUDE.md files for fractal nodes, and produces a validation report.
 
+> **Detail Reference**: For detailed workflow steps, MCP tool examples,
+> and output format templates, read the `reference.md` file in this
+> skill's directory (same location as this SKILL.md).
+
 ## When to Use This Skill
 
 - Starting a new project that will follow FCA-AI conventions
