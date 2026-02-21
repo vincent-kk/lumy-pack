@@ -1041,6 +1041,7 @@ __metadata:
     "@vitest/coverage-v8": "npm:^3.2.4"
     esbuild: "npm:^0.24.0"
     fast-glob: "npm:^3.0.0"
+    typescript: "npm:^5.7.2"
     yaml: "npm:^2.0.0"
     zod: "npm:^3.23.8"
   languageName: unknown
