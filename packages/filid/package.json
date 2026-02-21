@@ -1,0 +1,67 @@
+{
+  "name": "@lumy-pack/filid",
+  "version": "1.0.0",
+  "description": "FCA-AI rule enforcement plugin for Claude Code agent workflows",
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "fca-ai",
+    "fractal",
+    "context-architecture"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vincent-kk/lumy-pack.git",
+    "directory": "packages/filid"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Vincent K. Kelvin",
+    "email": "lunox273@gmail.com"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "agents",
+    "bridge",
+    "hooks",
+    "skills",
+    "scripts",
+    ".claude-plugin",
+    ".mcp.json",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node src/mcp/build-mcp-server.mjs",
+    "build:mcp": "node src/mcp/build-mcp-server.mjs",
+    "dev": "tsc --watch",
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "fast-glob": "^3.0.0",
+    "typescript": "^5.7.2",
+    "yaml": "^2.0.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "esbuild": "^0.24.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

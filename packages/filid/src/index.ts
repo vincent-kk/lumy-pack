@@ -1,0 +1,49 @@
+/**
+ * @lumy-pack/filid
+ *
+ * FCA-AI (Fractal Context Architecture for AI Agents) rule
+ * enforcement plugin for Claude Code agent workflows.
+ */
+
+// Type exports
+export type * from './types/index.js';
+
+// Core modules
+export { validateClaudeMd, validateSpecMd } from './core/document-validator.js';
+export { classifyNode, isOrganDirectory, ORGAN_DIR_NAMES } from './core/organ-classifier.js';
+export { buildFractalTree, findNode, getAncestors, getDescendants } from './core/fractal-tree.js';
+export { buildDAG, topologicalSort, detectCycles, getDirectDependencies } from './core/dependency-graph.js';
+export { ChangeQueue } from './core/change-queue.js';
+
+// Metrics
+export { countTestCases } from './metrics/test-counter.js';
+export { check312Rule } from './metrics/three-plus-twelve.js';
+export { decide } from './metrics/decision-tree.js';
+export { checkPromotionEligibility } from './metrics/promotion-tracker.js';
+
+// Compression
+export { compactReversible, restoreFromCompacted } from './compress/reversible-compactor.js';
+export { summarizeLossy } from './compress/lossy-summarizer.js';
+
+// AST analysis
+export { parseSource, parseFile } from './ast/parser.js';
+export { extractDependencies } from './ast/dependency-extractor.js';
+export { calculateLCOM4, extractClassInfo } from './ast/lcom4.js';
+export { calculateCC } from './ast/cyclomatic-complexity.js';
+export { computeTreeDiff } from './ast/tree-diff.js';
+
+// Hooks
+export { validatePreToolUse } from './hooks/pre-tool-validator.js';
+export { guardOrganWrite } from './hooks/organ-guard.js';
+export { trackChange } from './hooks/change-tracker.js';
+export { enforceAgentRole } from './hooks/agent-enforcer.js';
+export { injectContext } from './hooks/context-injector.js';
+
+// MCP tool handlers
+export { handleAstAnalyze } from './mcp/tools/ast-analyze.js';
+export { handleFractalNavigate } from './mcp/tools/fractal-navigate.js';
+export { handleDocCompress } from './mcp/tools/doc-compress.js';
+export { handleTestMetrics } from './mcp/tools/test-metrics.js';
+
+// MCP server
+export { createServer, startServer } from './mcp/server.js';
