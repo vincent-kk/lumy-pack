@@ -9,19 +9,25 @@
 
 ## Overview
 
-**Lumy Pack** is a monorepo toolbox that brings together various **CLI tools**, **developer utilities**, and **automation scripts** built with TypeScript.
-It serves as a collection of practical, everyday tools — from environment management to project scaffolding — designed to streamline repetitive workflows and simplify complex tasks for developers.
+**Lumy Pack** is a monorepo that mixes different kinds of tools: **npm packages** (CLI and libraries) and **Claude plugins** (agent workflows and rules). Everything is built with TypeScript. The repo is a single place for practical, everyday tools — from environment management to Claude Code extensions — to streamline workflows and simplify tasks for developers.
 
 ---
 
 ## Monorepo Structure
 
-This repository consists of several packages with independent version management and deployment capabilities.
-Each package provides individual `README.md` documentation with detailed usage instructions, dependency information, and example code.
+This repository hosts multiple packages with independent versioning and distribution:
 
-### `syncpoint`
+- **npm modules** — published to the npm registry and consumed as dependencies or CLIs.
+- **Claude plugins** — installed and used inside [Claude Code](https://claude.ai/code) (or compatible hosts) to extend agent behavior.
 
-- **[`@lumy-pack/syncpoint`](./packages/syncpoint/README.md)** — CLI tool for personal environment synchronization, backup/restore, and machine provisioning
+Each package has its own `README.md` with usage, dependencies, and examples.
+
+### Packages
+
+| Package | Type | Description |
+|--------|------|-------------|
+| **[`@lumy-pack/syncpoint`](./packages/syncpoint/README.md)** | npm module | CLI for personal environment sync, backup/restore, and machine provisioning. Published to npm. |
+| **[`filid`](./packages/filid/)** | Claude plugin | FCA-AI rule enforcement and fractal context for Claude Code agent workflows. Install as a Claude plugin. |
 
 ---
 
