@@ -31,7 +31,7 @@
   "files": [
     "dist",
     "agents",
-    "bridge",
+    "libs",
     "hooks",
     "skills",
     "scripts",
@@ -40,8 +40,8 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && node src/mcp/build-mcp-server.mjs",
-    "build:mcp": "node src/mcp/build-mcp-server.mjs",
+    "build": "tsc -p tsconfig.build.json && node build-plugin.mjs",
+    "build:plugin": "node build-plugin.mjs",
     "dev": "tsc --watch",
     "lint": "eslint \"src/**/*.ts\"",
     "test": "vitest",
