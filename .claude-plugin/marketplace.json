@@ -1,0 +1,8 @@
+{
+  "name": "lumy-pack",
+  "displayName": "Lumy Pack — Developer Tool Plugins",
+  "description": "AI-powered developer tool plugins for environment management, backup/restore, and machine provisioning",
+  "author": "Vincent K. Kelvin",
+  "repository": "https://github.com/vincent-kk/lumy-pack",
+  "plugins": []
+}
