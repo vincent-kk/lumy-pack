@@ -1,17 +1,7 @@
 ---
 name: query
-description: >
-  Interactive FCA-AI context query with enforced 3-Prompt Limit. Use this
-  skill when you need to ask a targeted question about a specific module,
-  boundary rule, or architectural decision within an FCA-AI project without
-  loading the entire codebase into context. It provides fractal tree
-  navigation to locate the relevant module, CLAUDE.md chain loading from
-  leaf to root, automatic context compression when the chain exceeds working
-  memory limits, and strict 3-prompt budget enforcement to prevent unbounded
-  context exploration. Typical scenarios: "What are the boundaries for the
-  payments module?", "Which module owns the retry logic?", "What does the
-  auth fractal forbid?". Triggers: /filid:query <question>, explicit context
-  lookup requests for a specific module or rule.
+user_invocable: true
+description: Query FCA-AI context — module/rule lookup within 3-Prompt Limit
 version: 1.0.0
 complexity: simple
 ---

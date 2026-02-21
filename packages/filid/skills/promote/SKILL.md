@@ -1,15 +1,7 @@
 ---
 name: promote
-description: >
-  Use this skill when you need to promote stable test.ts files to parameterized
-  spec.ts files that comply with the FCA-AI 3+12 rule. It provides automated
-  candidate discovery, stability eligibility checking, test pattern analysis,
-  parameterized spec generation, and safe migration with original file cleanup.
-  Typical scenarios: converting long-lived ad-hoc test.ts files into structured
-  spec.ts at the end of a feature's stabilization period, consolidating duplicate
-  test patterns before a release, or reducing test suite maintenance overhead.
-  Triggers: `/filid:promote`, `/filid:promote [path]`, `/filid:promote --days=N`,
-  or when test.ts files have been stable for 90+ days with no recorded failures.
+user_invocable: true
+description: Promote stable test.ts files to 3+12 rule-compliant spec.ts
 version: 1.0.0
 complexity: medium
 ---

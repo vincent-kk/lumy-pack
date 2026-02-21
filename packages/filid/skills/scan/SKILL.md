@@ -1,16 +1,7 @@
 ---
 name: scan
-description: >
-  Scan a project for FCA-AI rule violations and produce a structured
-  violation report. Use this skill when auditing an existing FCA-AI project
-  for compliance, verifying that recent changes have not introduced rule
-  violations, or preparing a codebase for a review or promote workflow.
-  It provides CLAUDE.md validation (100-line limit, 3-tier boundary
-  sections), organ directory guard checks (no CLAUDE.md permitted),
-  and test file 3+12 rule enforcement (max 15 test cases per spec file).
-  Typical scenarios: pre-PR compliance gate, post-refactor health check,
-  periodic governance audit. With --fix, auto-corrects violations where
-  possible. Triggers: /filid:scan, /filid:scan [path], /filid:scan --fix.
+user_invocable: true
+description: Scan for FCA-AI rule violations and generate report, --fix for auto-remediation
 version: 1.0.0
 complexity: medium
 ---

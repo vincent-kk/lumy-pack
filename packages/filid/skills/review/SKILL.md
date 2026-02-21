@@ -1,14 +1,7 @@
 ---
 name: review
-description: >
-  Use this skill when you need to execute a comprehensive 6-stage PR verification
-  pipeline against FCA-AI architecture rules before merging. It provides automated
-  structure validation, document compliance checking, test rule enforcement, metric
-  analysis, dependency cycle detection, and a consolidated pass/fail verdict with
-  actionable recommendations. Typical scenarios: pre-merge PR gate, validating a
-  post-refactor branch, or confirming a new module meets FCA-AI standards before
-  release. Triggers: `/filid:review`, `/filid:review --stage=N`,
-  `/filid:review --verbose`, or whenever an FCA-AI compliance gate is required.
+user_invocable: true
+description: 6-stage FCA-AI PR verification — structure, docs, tests, metrics, dependencies
 version: 1.0.0
 complexity: complex
 ---

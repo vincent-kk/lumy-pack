@@ -1,16 +1,7 @@
 ---
 name: init
-description: >
-  Initialize FCA-AI fractal context architecture in a project directory.
-  Use this skill when setting up a new project for FCA-AI compliance or
-  when onboarding an existing codebase into the fractal context system.
-  It provides automated directory classification into fractal, organ, and
-  pure-function node types; CLAUDE.md generation with 3-tier boundary
-  sections (Always do / Ask first / Never do); and SPEC.md scaffolding
-  for modules requiring formal specifications. Typical scenarios: first-time
-  project setup, adding FCA-AI governance to a legacy codebase, regenerating
-  missing context documents after a major refactor. Triggers: /filid:init,
-  /filid:init [path], explicit request to initialize FCA-AI structure.
+user_invocable: true
+description: Initialize FCA-AI project — directory classification, CLAUDE.md/SPEC.md generation
 version: 1.0.0
 complexity: medium
 ---

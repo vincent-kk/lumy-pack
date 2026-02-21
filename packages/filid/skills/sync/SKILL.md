@@ -1,14 +1,7 @@
 ---
 name: sync
-description: >
-  Use this skill when you need to synchronize CLAUDE.md and SPEC.md documentation
-  with accumulated code changes at PR time. It provides batch document updating by
-  draining the ChangeQueue, identifying affected fractal modules, and applying precise
-  structural updates without append-only growth. Typical scenarios: finalizing a PR
-  before merge, reconciling doc drift after a multi-file refactor, or ensuring FCA-AI
-  document compliance before running /filid:review. Triggers: `/filid:sync`,
-  `/filid:sync --dry-run`, or when the change queue contains unprocessed records
-  from PostToolUse hooks.
+user_invocable: true
+description: Batch-sync code changes to CLAUDE.md/SPEC.md at PR time
 version: 1.0.0
 complexity: medium
 ---
