@@ -89,6 +89,7 @@ const ListView: React.FC<ListViewProps> = ({ type, deleteIndex }) => {
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [backupDir, setBackupDir] = useState<string>(getSubDir('backups'));
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Unified ESC key handling for all phases
   useInput((_input, key) => {
@@ -102,6 +103,7 @@ const ListView: React.FC<ListViewProps> = ({ type, deleteIndex }) => {
       case 'template-list':
         setSelectedBackup(null);
         setSelectedTemplate(null);
+        setSuccessMessage(null);
         setPhase('main-menu');
         break;
       case 'backup-detail':
@@ -182,6 +184,16 @@ const ListView: React.FC<ListViewProps> = ({ type, deleteIndex }) => {
     setPhase('template-list');
   };
 
+  const reloadBackups = async () => {
+    try {
+      const config = await loadConfig();
+      const list = await getBackupList(config);
+      setBackups(list);
+    } catch {
+      // Silently continue with current state
+    }
+  };
+
   const handleDeleteConfirm = (yes: boolean) => {
     if (yes && deleteTarget) {
       try {
@@ -189,8 +201,14 @@ const ListView: React.FC<ListViewProps> = ({ type, deleteIndex }) => {
           throw new Error(`Refusing to delete file outside backups directory: ${deleteTarget.path}`);
         }
         unlinkSync(deleteTarget.path);
-        setPhase('done');
-        setTimeout(() => exit(), 100);
+        const deletedName = deleteTarget.name;
+        setBackups((prev) => prev.filter((b) => b.path !== deleteTarget.path));
+        setDeleteTarget(null);
+        setSelectedBackup(null);
+        setSuccessMessage(`✓ ${deletedName} deleted`);
+        setPhase('backup-list');
+        // Also reload from filesystem to ensure consistency
+        void reloadBackups();
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
         setPhase('error');
@@ -301,6 +319,11 @@ const ListView: React.FC<ListViewProps> = ({ type, deleteIndex }) => {
 
     return (
       <Box flexDirection="column">
+        {successMessage && (
+          <Box marginBottom={1}>
+            <Text color="green">{successMessage}</Text>
+          </Box>
+        )}
         <Text bold>▸ Backups</Text>
         <Box marginTop={1}>
           {backups.length === 0 ? (
