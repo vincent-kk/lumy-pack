@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, Box } from "ink";
+import { Text, Box, Static } from "ink";
 import Spinner from "ink-spinner";
 
 import type { StepResult } from "../utils/types.js";
@@ -50,34 +50,83 @@ const StepStatusText: React.FC<{ step: StepResult }> = ({ step }) => {
   }
 };
 
+interface StepItemViewProps {
+  step: StepResult;
+  index: number;
+  total: number;
+  isLast: boolean;
+}
+
+const StepItemView: React.FC<StepItemViewProps> = ({
+  step,
+  index,
+  total,
+  isLast,
+}) => (
+  <Box flexDirection="column" marginBottom={isLast ? 0 : 1}>
+    <Text>
+      {"  "}
+      <StepIcon status={step.status} />
+      <Text>
+        {" "}
+        <Text bold>
+          Step {index + 1}/{total}
+        </Text>
+        {"  "}
+        {step.name}
+      </Text>
+    </Text>
+    {step.output && step.status !== "pending" && (
+      <Text color="gray">{"            "}{step.output}</Text>
+    )}
+    <Text>
+      {"            "}
+      <StepStatusText step={step} />
+    </Text>
+  </Box>
+);
+
+type IndexedStep = StepResult & { idx: number };
+
 export const StepRunner: React.FC<StepRunnerProps> = ({
   steps,
   total,
 }) => {
+  const completedSteps: IndexedStep[] = [];
+  const activeSteps: IndexedStep[] = [];
+
+  steps.forEach((step, idx) => {
+    const indexed = { ...step, idx };
+    if (step.status === "success" || step.status === "failed" || step.status === "skipped") {
+      completedSteps.push(indexed);
+    } else {
+      activeSteps.push(indexed);
+    }
+  });
+
+  const lastIdx = steps.length - 1;
+
   return (
     <Box flexDirection="column">
-      {steps.map((step, idx) => (
-        <Box key={idx} flexDirection="column" marginBottom={idx < steps.length - 1 ? 1 : 0}>
-          <Text>
-            {"  "}
-            <StepIcon status={step.status} />
-            <Text>
-              {" "}
-              <Text bold>
-                Step {idx + 1}/{total}
-              </Text>
-              {"  "}
-              {step.name}
-            </Text>
-          </Text>
-          {step.output && step.status !== "pending" && (
-            <Text color="gray">{"            "}{step.output}</Text>
-          )}
-          <Text>
-            {"            "}
-            <StepStatusText step={step} />
-          </Text>
-        </Box>
+      <Static items={completedSteps}>
+        {(item) => (
+          <StepItemView
+            key={item.idx}
+            step={item}
+            index={item.idx}
+            total={total}
+            isLast={item.idx === lastIdx && activeSteps.length === 0}
+          />
+        )}
+      </Static>
+      {activeSteps.map((item) => (
+        <StepItemView
+          key={item.idx}
+          step={item}
+          index={item.idx}
+          total={total}
+          isLast={item.idx === lastIdx}
+        />
       ))}
     </Box>
   );

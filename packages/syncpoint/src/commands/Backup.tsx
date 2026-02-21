@@ -1,7 +1,7 @@
 import { Command } from 'commander';
-import { Box, Text, useApp } from 'ink';
+import { Box, Static, Text, useApp } from 'ink';
 import { render } from 'ink';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { ProgressBar } from '../components/ProgressBar.js';
 import { createBackup, scanTargets } from '../core/backup.js';
@@ -18,6 +18,11 @@ import type {
 
 type Phase = 'scanning' | 'compressing' | 'done' | 'error';
 
+type StaticFileItem =
+  | { id: string; type: 'header' }
+  | { id: string; type: 'found'; file: FileEntry }
+  | { id: string; type: 'missing'; path: string };
+
 interface BackupViewProps {
   options: BackupOptions;
 }
@@ -31,6 +36,25 @@ const BackupView: React.FC<BackupViewProps> = ({ options }) => {
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<BackupResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const staticItems = useMemo<StaticFileItem[]>(() => {
+    if (foundFiles.length === 0 && missingFiles.length === 0) return [];
+    const seen = new Set<string>();
+    const deduped: StaticFileItem[] = [
+      { id: 'scan-header', type: 'header' as const },
+    ];
+    for (const f of foundFiles) {
+      if (seen.has(f.absolutePath)) continue;
+      seen.add(f.absolutePath);
+      deduped.push({ id: `found-${f.absolutePath}`, type: 'found' as const, file: f });
+    }
+    for (const p of missingFiles) {
+      if (seen.has(p)) continue;
+      seen.add(p);
+      deduped.push({ id: `missing-${p}`, type: 'missing' as const, path: p });
+    }
+    return deduped;
+  }, [foundFiles, missingFiles]);
 
   useEffect(() => {
     (async () => {
@@ -89,25 +113,37 @@ const BackupView: React.FC<BackupViewProps> = ({ options }) => {
 
   return (
     <Box flexDirection="column">
-      {/* Scan results */}
-      <Text bold>▸ Scanning backup targets...</Text>
-      {foundFiles.map((file, idx) => (
-        <Text key={idx}>
-          {'  '}
-          <Text color="green">✓</Text> {contractTilde(file.absolutePath)}
-          <Text color="gray">
-            {'    '}
-            {formatBytes(file.size).padStart(10)}
-          </Text>
-        </Text>
-      ))}
-      {missingFiles.map((file, idx) => (
-        <Text key={idx}>
-          {'  '}
-          <Text color="yellow">⚠</Text> {file}
-          <Text color="gray">{'    '}File not found, skipped</Text>
-        </Text>
-      ))}
+      {/* Scan results (static — rendered once, excluded from re-renders) */}
+      <Static items={staticItems}>
+        {(item) => {
+          if (item.type === 'header') {
+            return (
+              <Text key={item.id} bold>
+                ▸ Scanning backup targets...
+              </Text>
+            );
+          }
+          if (item.type === 'found') {
+            return (
+              <Text key={item.id}>
+                {'  '}
+                <Text color="green">✓</Text> {contractTilde(item.file.absolutePath)}
+                <Text color="gray">
+                  {'    '}
+                  {formatBytes(item.file.size).padStart(10)}
+                </Text>
+              </Text>
+            );
+          }
+          return (
+            <Text key={item.id}>
+              {'  '}
+              <Text color="yellow">⚠</Text> {item.path}
+              <Text color="gray">{'    '}File not found, skipped</Text>
+            </Text>
+          );
+        }}
+      </Static>
 
       {options.dryRun && phase === 'done' && (
         <Box flexDirection="column" marginTop={1}>
