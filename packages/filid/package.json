@@ -1,6 +1,6 @@
 {
   "name": "@lumy-pack/filid",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "FCA-AI rule enforcement plugin for Claude Code agent workflows",
   "keywords": [
     "claude-code",
