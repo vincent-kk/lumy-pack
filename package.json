@@ -25,6 +25,7 @@
     "publish:all": "yarn workspaces foreach -A --no-private run publish:npm",
     "sort:packages": "npx sort-package-json '**/package.json'",
     "syncpoint": "yarn workspace @lumy-pack/syncpoint",
+    "filid": "yarn workspace @lumy-pack/filid",
     "tag:packages": "./scripts/tag-packages.sh",
     "test": "vitest",
     "test:run": "vitest run",

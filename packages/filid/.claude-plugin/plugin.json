@@ -1,0 +1,14 @@
+{
+  "name": "filid",
+  "version": "1.0.0",
+  "description": "FCA-AI rule enforcement for Claude Code agent workflows",
+  "author": {
+    "name": "Vincent K. Kelvin"
+  },
+  "repository": "https://github.com/vincent-kk/lumy-pack",
+  "license": "MIT",
+  "keywords": ["claude-code", "plugin", "fca-ai", "fractal", "context"],
+  "skills": "./skills/",
+  "agents": "./agents/",
+  "mcpServers": "./.mcp.json"
+}
