@@ -1,31 +1,91 @@
 ---
 name: promote
-description: "Promote stable test.ts files to parameterized spec.ts"
+description: >
+  Use this skill when you need to promote stable test.ts files to parameterized
+  spec.ts files that comply with the FCA-AI 3+12 rule. It provides automated
+  candidate discovery, stability eligibility checking, test pattern analysis,
+  parameterized spec generation, and safe migration with original file cleanup.
+  Typical scenarios: converting long-lived ad-hoc test.ts files into structured
+  spec.ts at the end of a feature's stabilization period, consolidating duplicate
+  test patterns before a release, or reducing test suite maintenance overhead.
+  Triggers: `/filid:promote`, `/filid:promote [path]`, `/filid:promote --days=N`,
+  or when test.ts files have been stable for 90+ days with no recorded failures.
+version: 1.0.0
+complexity: medium
 ---
 
-# /promote — Test Promotion
+# promote — Test Promotion
 
-Identify and promote stable test.ts files to parameterized spec.ts files.
+Promote stable `test.ts` files to parameterized `spec.ts` files satisfying the
+FCA-AI 3+12 rule (max 3 basic + 12 complex = 15 total). Executes discovery,
+eligibility, analysis, generation, validation, and migration in one pass.
 
-## What This Skill Does
+## When to Use This Skill
 
-1. **Identify candidates** — test.ts files stable for 90+ days with no failures
-2. **Analyze test cases** — count and categorize basic vs complex tests
-3. **Generate spec.ts** — create parameterized spec from stable test patterns
-4. **Validate** — ensure promoted spec.ts stays within 3+12 rule (max 15 cases)
+- When `test.ts` files have been stable for 90+ days with no recent failures
+- Before a release to consolidate ad-hoc tests into structured specs
+- After a feature stabilizes and its test patterns become predictable
+- When duplicate test cases can be consolidated via parameterization
+- To bring a module into full FCA-AI compliance
 
-## Usage
+## Core Workflow
+
+### Phase 1 — Discovery
+Locate all `test.ts` files and analyze metrics via `test-metrics(action: "count")`.
+See [reference.md Section 1](./reference.md#section-1--discovery-details).
+
+### Phase 2 — Eligibility Check
+Apply stability threshold (default 90 days) and failure history filter.
+See [reference.md Section 2](./reference.md#section-2--eligibility-rules).
+
+### Phase 3 — Pattern Analysis
+Categorize tests as basic/complex, identify duplicates and parameterizable patterns.
+See [reference.md Section 3](./reference.md#section-3--pattern-analysis).
+
+### Phase 4 — Spec Generation
+Build parameterized `spec.ts` enforcing the 3+12 rule (≤15 total cases).
+See [reference.md Section 4](./reference.md#section-4--spec-generation-312-rule).
+
+### Phase 5 — Validation
+Verify generated specs pass `test-metrics(action: "check-312")` before writing.
+See [reference.md Section 5](./reference.md#section-5--validation-and-migration).
+
+### Phase 6 — Migration
+Write validated `spec.ts`, remove original `test.ts`, and emit report.
+See [reference.md Section 5](./reference.md#section-5--validation-and-migration).
+
+## Available MCP Tools
+
+| Tool | Action | Purpose |
+|------|--------|---------|
+| `test-metrics` | `count` | Analyze test case counts, stability, and failure history |
+| `test-metrics` | `check-312` | Validate generated spec.ts against 3+12 rule |
+
+## Options
 
 ```
-/promote [path] [--days=90]
+/filid:promote [path] [--days=90]
 ```
 
-- `path` (optional): Target directory. Defaults to current working directory.
-- `--days`: Minimum stability period in days (default: 90).
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `path` | string | current working directory | Target directory to scan for `test.ts` files |
+| `--days=N` | integer | 90 | Minimum stability period in days |
 
-## Steps
+## Quick Reference
 
-1. Use `test-metrics` tool with action `count` to analyze test files
-2. Check promotion eligibility using stability criteria
-3. For eligible files, generate parameterized spec.ts structure
-4. Validate the new spec against 3+12 rule before writing
+```
+/filid:promote                         # Scan cwd, 90-day threshold
+/filid:promote [path]                  # Scan specific directory
+/filid:promote --days=N                # Custom stability threshold
+/filid:promote [path] --days=N         # Both options combined
+
+Phases:   Discovery → Eligibility → Analysis → Generation → Validate → Migrate
+Agents:   qa-reviewer (analysis), implementer (execution)
+Constants:
+  DEFAULT_STABILITY_DAYS = 90
+  TEST_THRESHOLD         = 15  (max cases per spec.ts)
+  basic  <= 3
+  complex <= 12
+Rule:   Write spec.ts only after check-312 passes; delete test.ts after write succeeds
+```

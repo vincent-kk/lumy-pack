@@ -1,36 +1,94 @@
 ---
 name: query
-description: "Interactive FCA-AI context query with 3-Prompt Limit"
+description: >
+  Interactive FCA-AI context query with enforced 3-Prompt Limit. Use this
+  skill when you need to ask a targeted question about a specific module,
+  boundary rule, or architectural decision within an FCA-AI project without
+  loading the entire codebase into context. It provides fractal tree
+  navigation to locate the relevant module, CLAUDE.md chain loading from
+  leaf to root, automatic context compression when the chain exceeds working
+  memory limits, and strict 3-prompt budget enforcement to prevent unbounded
+  context exploration. Typical scenarios: "What are the boundaries for the
+  payments module?", "Which module owns the retry logic?", "What does the
+  auth fractal forbid?". Triggers: /filid:query <question>, explicit context
+  lookup requests for a specific module or rule.
+version: 1.0.0
+complexity: simple
 ---
 
-# /query — Context Query
+# query — Context Query
 
-Query the FCA-AI context hierarchy interactively.
+Answer a targeted question about the FCA-AI project by navigating the
+fractal hierarchy, loading the minimal CLAUDE.md chain, and responding
+within a strict 3-Prompt Limit.
 
-## What This Skill Does
+## When to Use This Skill
 
-1. **Navigate the fractal tree** to find relevant context for a question
-2. **Load minimal context** — only the CLAUDE.md chain from leaf to root
-3. **Enforce 3-Prompt Limit** — answer within 3 agent interactions maximum
-4. **Compress context** if the chain exceeds working memory limits
+- Looking up boundary rules for a specific module before making a change
+- Identifying which fractal node owns a particular concern or file
+- Checking what a CLAUDE.md says without manually reading the tree
+- Understanding the context chain between a leaf module and the project root
+- Any focused question answerable from CLAUDE.md content alone
 
-## Usage
+## Core Workflow
+
+### Phase 1 — Question Parsing
+Identify target module, relevant paths, and query type from the question.
+See [reference.md Section 1](./reference.md#section-1--question-parsing).
+
+### Phase 2 — Navigation (Prompt 1)
+Locate the target module using `fractal-navigate(action: "tree")`.
+See [reference.md Section 2](./reference.md#section-2--navigation-details).
+
+### Phase 3 — Context Loading
+Load the CLAUDE.md chain from leaf node to project root.
+See [reference.md Section 3](./reference.md#section-3--context-chain-loading).
+
+### Phase 4 — Compression (if needed)
+Apply `doc-compress(mode: "auto")` when chain exceeds context limits.
+See [reference.md Section 4](./reference.md#section-4--compression-strategy).
+
+### Phase 5 — Response (Prompt 2–3 max)
+Generate answer within the 3-Prompt budget.
+See [reference.md Section 5](./reference.md#section-5--3-prompt-limit-protocol).
+
+## Available MCP Tools
+
+| Tool | Action | Purpose |
+|------|--------|---------|
+| `fractal-navigate` | `tree` | Scan project hierarchy to locate the target module |
+| `fractal-navigate` | `classify` | Resolve ambiguous module classification |
+| `doc-compress` | `auto` | Compress CLAUDE.md chain when it exceeds context limits |
+
+## Options
 
 ```
-/query <question>
+/filid:query <question>
 ```
 
-## Steps
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `question` | string | Yes | The question to answer from the FCA-AI context |
 
-1. Parse the question to identify relevant modules and paths
-2. Use `fractal-navigate` tool to locate the target in the tree
-3. Load the CLAUDE.md chain (Claude Code handles this natively)
-4. If context is too large, use `doc-compress` tool with mode `auto`
-5. Answer the question within 3 prompt interactions maximum
+## Quick Reference
 
-## 3-Prompt Limit Rule
+```bash
+# Look up boundary rules for a module
+/filid:query "What are the boundaries for the payments module?"
 
-FCA-AI enforces a maximum of 3 agent prompts per query to prevent
-unbounded context exploration. If the answer cannot be determined
-within 3 interactions, respond with what is known and indicate
-what additional information would be needed.
+# Find module ownership
+/filid:query "Which fractal node owns retry logic?"
+
+# Check what is forbidden in a module
+/filid:query "What does the auth CLAUDE.md say we must never do?"
+
+# 3-Prompt Limit
+Prompt 1  →  fractal-navigate (locate module)
+Prompt 2  →  load/analyse CLAUDE.md chain
+Prompt 3  →  final answer (hard limit)
+
+# If answer requires > 3 prompts
+→  Report what is known
+→  State which files contain the missing information
+→  Do not exceed the budget
+```

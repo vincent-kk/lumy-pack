@@ -1,31 +1,95 @@
 ---
 name: init
-description: "Initialize FCA-AI structure in a project directory"
+description: >
+  Initialize FCA-AI fractal context architecture in a project directory.
+  Use this skill when setting up a new project for FCA-AI compliance or
+  when onboarding an existing codebase into the fractal context system.
+  It provides automated directory classification into fractal, organ, and
+  pure-function node types; CLAUDE.md generation with 3-tier boundary
+  sections (Always do / Ask first / Never do); and SPEC.md scaffolding
+  for modules requiring formal specifications. Typical scenarios: first-time
+  project setup, adding FCA-AI governance to a legacy codebase, regenerating
+  missing context documents after a major refactor. Triggers: /filid:init,
+  /filid:init [path], explicit request to initialize FCA-AI structure.
+version: 1.0.0
+complexity: medium
 ---
 
-# /init — FCA-AI Initialization
+# init — FCA-AI Initialization
 
-Initialize the FCA-AI fractal context architecture in the current project.
+Initialize the FCA-AI fractal context architecture in a project. Scans the
+directory tree, classifies every directory by node type, generates missing
+CLAUDE.md files for fractal nodes, and produces a validation report.
 
-## What This Skill Does
+## When to Use This Skill
 
-1. **Scan directory structure** to identify existing modules
-2. **Classify directories** as fractal or organ using naming conventions
-3. **Generate CLAUDE.md** files for fractal directories (max 100 lines each)
-4. **Generate SPEC.md** files for modules that need specifications
-5. **Validate** the resulting structure against FCA-AI rules
+- Starting a new project that will follow FCA-AI conventions
+- Onboarding an existing codebase into the fractal context system
+- Regenerating CLAUDE.md files after a large-scale refactor removed them
+- Creating SPEC.md scaffolds for modules that lack formal specifications
+- Auditing which directories are correctly classified before running `/filid:scan`
 
-## Usage
+## Core Workflow
+
+### Phase 1 — Directory Scan
+Retrieve the complete project hierarchy using `fractal-navigate(action: "tree")`.
+Build a working list of all directories for classification.
+See [reference.md Section 1](./reference.md#section-1--directory-scan-details).
+
+### Phase 2 — Node Classification
+Classify each directory as fractal, organ, or pure-function using
+`fractal-navigate(action: "classify")` and priority-ordered decision rules.
+See [reference.md Section 2](./reference.md#section-2--node-classification-rules).
+
+### Phase 3 — CLAUDE.md Generation
+Generate CLAUDE.md (≤100 lines, 3-tier boundaries) for each fractal directory
+that lacks one. Organ directories are skipped.
+See [reference.md Section 3](./reference.md#section-3--claudemd-generation-template).
+
+### Phase 4 — SPEC.md Scaffolding
+Create SPEC.md scaffolds for fractal modules with public APIs that lack
+formal specifications.
+See [reference.md Section 4](./reference.md#section-4--specmd-scaffolding).
+
+### Phase 5 — Validation and Report
+Validate all generated files against FCA-AI rules and emit a summary report.
+See [reference.md Section 5](./reference.md#section-5--validation-and-report-format).
+
+## Available MCP Tools
+
+| Tool | Action | Purpose |
+|------|--------|---------|
+| `fractal-navigate` | `tree` | Retrieve complete project directory hierarchy |
+| `fractal-navigate` | `classify` | Classify a single directory as fractal / organ / pure-function |
+
+## Options
 
 ```
-/init [path]
+/filid:init [path]
 ```
 
-- `path` (optional): Target directory. Defaults to current working directory.
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `path` | string | Current working directory | Root directory to initialize |
 
-## Steps
+## Quick Reference
 
-1. Use `fractal-navigate` tool with action `tree` to build the hierarchy
-2. For each fractal directory without CLAUDE.md, create one with 3-tier boundaries
-3. Skip organ directories (components, utils, types, hooks, helpers, lib, styles, assets, constants)
-4. Report initialization summary: directories scanned, CLAUDE.md created, warnings
+```bash
+# Initialize current project
+/filid:init
+
+# Initialize a specific sub-directory
+/filid:init src/payments
+
+# Constants
+ORGAN_DIR_NAMES   = components | utils | types | hooks | helpers
+                    | lib | styles | assets | constants
+CLAUDE_MD_LIMIT   = 100 lines
+3-TIER SECTIONS   = "Always do" | "Ask first" | "Never do"
+```
+
+Key rules:
+- Organ directories must never receive a CLAUDE.md
+- CLAUDE.md must not exceed 100 lines
+- All three boundary sections are required in every CLAUDE.md
+- Existing CLAUDE.md files are preserved, never overwritten

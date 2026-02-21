@@ -1,32 +1,88 @@
 ---
 name: sync
-description: "Synchronize CLAUDE.md/SPEC.md with code changes"
+description: >
+  Use this skill when you need to synchronize CLAUDE.md and SPEC.md documentation
+  with accumulated code changes at PR time. It provides batch document updating by
+  draining the ChangeQueue, identifying affected fractal modules, and applying precise
+  structural updates without append-only growth. Typical scenarios: finalizing a PR
+  before merge, reconciling doc drift after a multi-file refactor, or ensuring FCA-AI
+  document compliance before running /filid:review. Triggers: `/filid:sync`,
+  `/filid:sync --dry-run`, or when the change queue contains unprocessed records
+  from PostToolUse hooks.
+version: 1.0.0
+complexity: medium
 ---
 
-# /sync — Document Synchronization
+# sync — Documentation Sync
 
-Synchronize CLAUDE.md and SPEC.md documents with accumulated code changes.
+Synchronize CLAUDE.md and SPEC.md with accumulated code changes collected
+by PostToolUse hooks during development. Execute at PR time to batch-apply
+all pending documentation updates in a single, validated pass.
 
-## What This Skill Does
+## When to Use This Skill
 
-1. **Drain the change queue** to get all pending file modifications
-2. **Identify affected fractal modules** from changed file paths
-3. **Update CLAUDE.md** files to reflect new exports, dependencies, or structure
-4. **Update SPEC.md** files if specifications are impacted
-5. **Validate** all updated documents against FCA-AI rules
+- Before opening or merging a PR that includes code changes affecting module structure
+- After multi-file refactors that altered exports, dependencies, or directory layout
+- When CLAUDE.md or SPEC.md lag behind the current implementation
+- When the ChangeQueue contains unprocessed records from development session hooks
+- Before running `/filid:review` to ensure documents are up to date for compliance checks
 
-## Usage
+## Core Workflow
+
+### Phase 1 — Change Collection
+Drain the ChangeQueue to retrieve all pending change records accumulated
+by PostToolUse hooks since the last sync.
+See [reference.md Section 1](./reference.md#section-1--change-collection-details).
+
+### Phase 2 — Impact Analysis
+Identify affected fractal modules and group changes by module path using
+`fractal-navigate(action: "tree")` for boundary verification.
+See [reference.md Section 2](./reference.md#section-2--impact-analysis-details).
+
+### Phase 3 — CLAUDE.md Updates
+Update structure and dependency sections; apply `doc-compress` when
+approaching the 100-line limit.
+See [reference.md Section 3](./reference.md#section-3--claudemd-update-rules).
+
+### Phase 4 — SPEC.md Updates
+Sync specifications with implementation changes. Restructure content
+rather than appending.
+See [reference.md Section 4](./reference.md#section-4--specmd-update-rules).
+
+### Phase 5 — Validation
+Validate all updated documents against FCA-AI compliance rules.
+See [reference.md Section 5](./reference.md#section-5--validation-details).
+
+### Phase 6 — Report
+Emit a structured summary of all updates and validation outcomes.
+See [reference.md Section 6](./reference.md#section-6--report-and-dry-run-formats).
+
+## Available MCP Tools
+
+| Tool | Action / Parameters | Purpose |
+|------|---------------------|---------|
+| `doc-compress` | `mode: "auto"` | Compress CLAUDE.md approaching the 100-line limit |
+| `fractal-navigate` | `action: "tree"` | Display fractal module tree for boundary verification |
+
+## Options
 
 ```
-/sync [--dry-run]
+/filid:sync [--dry-run]
 ```
 
-- `--dry-run`: Show what would be updated without making changes.
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--dry-run` | flag | off | Preview all planned changes without writing files |
 
-## Steps
+## Quick Reference
 
-1. Review accumulated changes from the change queue
-2. Group changes by fractal module
-3. For each affected module, check if CLAUDE.md needs updating
-4. Apply updates while keeping CLAUDE.md under 100 lines
-5. Use `doc-compress` tool if documents approach the line limit
+```
+/filid:sync                 # Sync all accumulated changes (full pipeline)
+/filid:sync --dry-run       # Preview changes without writing
+
+Phases:  Collect → Impact → CLAUDE.md → SPEC.md → Validate → Report
+Agents:  context-manager (lead), architect (assist)
+Limit:   CLAUDE.md ≤ 100 lines (use doc-compress at ≥ 90)
+Queue:   ChangeQueue drained by PostToolUse hooks during development
+Rule:    Restructure docs — never append-only
+```
