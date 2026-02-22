@@ -11,8 +11,8 @@ import {
   unlinkSync,
   writeFileSync
 } from "node:fs";
-import { join } from "node:path";
 import { homedir } from "node:os";
+import { join } from "node:path";
 
 // src/types/rules.ts
 var BUILTIN_RULE_IDS = {

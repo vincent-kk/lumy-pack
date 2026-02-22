@@ -5,7 +5,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 // src/core/organ-classifier.ts
-var LEGACY_ORGAN_DIR_NAMES = [
+var ORGAN_BASE_NAMES = [
   "components",
   "utils",
   "types",
@@ -16,9 +16,25 @@ var LEGACY_ORGAN_DIR_NAMES = [
   "assets",
   "constants"
 ];
+var KNOWN_ORGAN_DIR_NAMES = [
+  ...ORGAN_BASE_NAMES,
+  "test",
+  "tests",
+  "spec",
+  "specs",
+  "fixtures",
+  "e2e"
+];
+function isInfraOrgDirectoryByPattern(dirName) {
+  const isDoubleUnderscore = dirName.startsWith("__") && dirName.endsWith("__") && dirName.length > 4;
+  const isDotPrefixed = dirName.startsWith(".");
+  return isDoubleUnderscore || isDotPrefixed;
+}
 function classifyNode(input) {
   if (input.hasClaudeMd) return "fractal";
   if (input.hasSpecMd) return "fractal";
+  if (isInfraOrgDirectoryByPattern(input.dirName)) return "organ";
+  if (KNOWN_ORGAN_DIR_NAMES.includes(input.dirName)) return "organ";
   if (!input.hasFractalChildren && input.isLeafDirectory) return "organ";
   const hasSideEffects = input.hasSideEffects ?? true;
   if (!hasSideEffects) return "pure-function";
@@ -35,7 +51,7 @@ function classifyPathCategory(filePath, cwd) {
     dirSoFar = path.join(dirSoFar, segment);
     try {
       if (!fs.existsSync(dirSoFar)) {
-        if (LEGACY_ORGAN_DIR_NAMES.includes(segment)) return "organ";
+        if (KNOWN_ORGAN_DIR_NAMES.includes(segment)) return "organ";
         continue;
       }
       const entries = fs.readdirSync(dirSoFar, { withFileTypes: true });

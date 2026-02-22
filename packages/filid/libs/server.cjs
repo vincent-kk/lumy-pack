@@ -50159,7 +50159,7 @@ var StdioServerTransport = class {
 };
 
 // src/version.ts
-var VERSION = "0.0.6";
+var VERSION = "0.0.7";
 
 // src/ast/parser.ts
 var import_parser = __toESM(require_lib(), 1);
@@ -51081,9 +51081,36 @@ var DEFAULT_SCAN_OPTIONS = {
 };
 
 // src/core/organ-classifier.ts
+var ORGAN_BASE_NAMES = [
+  "components",
+  "utils",
+  "types",
+  "hooks",
+  "helpers",
+  "lib",
+  "styles",
+  "assets",
+  "constants"
+];
+var KNOWN_ORGAN_DIR_NAMES = [
+  ...ORGAN_BASE_NAMES,
+  "test",
+  "tests",
+  "spec",
+  "specs",
+  "fixtures",
+  "e2e"
+];
+function isInfraOrgDirectoryByPattern(dirName) {
+  const isDoubleUnderscore = dirName.startsWith("__") && dirName.endsWith("__") && dirName.length > 4;
+  const isDotPrefixed = dirName.startsWith(".");
+  return isDoubleUnderscore || isDotPrefixed;
+}
 function classifyNode(input) {
   if (input.hasClaudeMd) return "fractal";
   if (input.hasSpecMd) return "fractal";
+  if (isInfraOrgDirectoryByPattern(input.dirName)) return "organ";
+  if (KNOWN_ORGAN_DIR_NAMES.includes(input.dirName)) return "organ";
   if (!input.hasFractalChildren && input.isLeafDirectory) return "organ";
   const hasSideEffects = input.hasSideEffects ?? true;
   if (!hasSideEffects) return "pure-function";

@@ -5,7 +5,7 @@ import { existsSync, readdirSync } from "node:fs";
 import * as path from "node:path";
 
 // src/core/organ-classifier.ts
-var LEGACY_ORGAN_DIR_NAMES = [
+var ORGAN_BASE_NAMES = [
   "components",
   "utils",
   "types",
@@ -16,9 +16,25 @@ var LEGACY_ORGAN_DIR_NAMES = [
   "assets",
   "constants"
 ];
+var KNOWN_ORGAN_DIR_NAMES = [
+  ...ORGAN_BASE_NAMES,
+  "test",
+  "tests",
+  "spec",
+  "specs",
+  "fixtures",
+  "e2e"
+];
+function isInfraOrgDirectoryByPattern(dirName) {
+  const isDoubleUnderscore = dirName.startsWith("__") && dirName.endsWith("__") && dirName.length > 4;
+  const isDotPrefixed = dirName.startsWith(".");
+  return isDoubleUnderscore || isDotPrefixed;
+}
 function classifyNode(input) {
   if (input.hasClaudeMd) return "fractal";
   if (input.hasSpecMd) return "fractal";
+  if (isInfraOrgDirectoryByPattern(input.dirName)) return "organ";
+  if (KNOWN_ORGAN_DIR_NAMES.includes(input.dirName)) return "organ";
   if (!input.hasFractalChildren && input.isLeafDirectory) return "organ";
   const hasSideEffects = input.hasSideEffects ?? true;
   if (!hasSideEffects) return "pure-function";
@@ -34,15 +50,15 @@ function isClaudeMd(filePath) {
 function isOrganByStructure(dirPath) {
   try {
     if (!existsSync(dirPath)) {
-      return LEGACY_ORGAN_DIR_NAMES.includes(path.basename(dirPath));
+      return KNOWN_ORGAN_DIR_NAMES.includes(path.basename(dirPath));
     }
     const entries = readdirSync(dirPath, { withFileTypes: true });
     const hasClaudeMd = entries.some(
       (e) => e.isFile() && e.name === "CLAUDE.md"
     );
     const hasSpecMd = entries.some((e) => e.isFile() && e.name === "SPEC.md");
-    const subdirs = entries.filter((e) => e.isDirectory());
-    const hasFractalChildren = subdirs.some((d) => {
+    const subDirs = entries.filter((e) => e.isDirectory());
+    const hasFractalChildren = subDirs.some((d) => {
       const childPath = path.join(dirPath, d.name);
       try {
         const childEntries = readdirSync(childPath, { withFileTypes: true });
@@ -53,7 +69,7 @@ function isOrganByStructure(dirPath) {
         return false;
       }
     });
-    const isLeafDirectory = subdirs.length === 0;
+    const isLeafDirectory = subDirs.length === 0;
     const category = classifyNode({
       dirName: path.basename(dirPath),
       hasClaudeMd,
