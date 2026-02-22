@@ -16,17 +16,18 @@ starting point. Otherwise proceed to Phase 2.
 
 ## Section 2 — Navigation Details
 
-Use `fractal-navigate` to locate the target module:
+Use `fractal-scan` to retrieve the full project tree, then find the node matching the target:
 
 ```
-fractal-navigate({ action: "tree", path: "<project-root>", entries: [] })
+fractal-scan({ path: "<project-root>" })
 ```
 
-Scan the tree for the node whose name or path best matches the target.
-If the match is ambiguous, use:
+Scan `tree.nodes` for the node whose name or path best matches the target.
+If the match is ambiguous, use `fractal-navigate(classify)` with the node's
+known children from the scan result:
 
 ```
-fractal-navigate({ action: "classify", path: "<candidate-path>", entries: [] })
+fractal-navigate({ action: "classify", path: "<candidate-path>", entries: [/* nodes from scan */] })
 ```
 
 This counts as **Prompt 1** of the 3-Prompt budget.

@@ -28,8 +28,8 @@ CLAUDE.md files for fractal nodes, and produces a validation report.
 
 ### Phase 1 — Directory Scan
 
-Retrieve the complete project hierarchy using `fractal-navigate(action: "tree")`.
-Build a working list of all directories for classification.
+Retrieve the complete project hierarchy using `fractal-scan`.
+Build a working list of all directories from `tree.nodes` for classification.
 See [reference.md Section 1](./reference.md#section-1--directory-scan-details).
 
 ### Phase 2 — Node Classification
@@ -59,7 +59,7 @@ See [reference.md Section 5](./reference.md#section-5--validation-and-report-for
 
 | Tool               | Action     | Purpose                                                        |
 | ------------------ | ---------- | -------------------------------------------------------------- |
-| `fractal-navigate` | `tree`     | Retrieve complete project directory hierarchy                  |
+| `fractal-scan`     | —          | Scan filesystem and retrieve complete project directory hierarchy |
 | `fractal-navigate` | `classify` | Classify a single directory as fractal / organ / pure-function |
 
 ## Options

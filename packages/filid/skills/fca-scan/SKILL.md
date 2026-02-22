@@ -33,8 +33,8 @@ changed in the current branch. Standalone execution (`/filid:fca-scan`) always s
 
 ### Phase 1 — Tree Construction
 
-Build the project hierarchy using `fractal-navigate(action: "tree")` and
-partition into fractal nodes, organ nodes, and spec files.
+Build the project hierarchy using `fractal-scan` and partition into fractal
+nodes, organ nodes, and spec files.
 See [reference.md Section 1](./reference.md#section-1--tree-construction).
 
 ### Phases 2–4 (Parallel — after Phase 1)
@@ -64,7 +64,7 @@ See [reference.md Section 5](./reference.md#section-5--report-formats).
 
 | Tool               | Action      | Purpose                                   |
 | ------------------ | ----------- | ----------------------------------------- |
-| `fractal-navigate` | `tree`      | Build complete project hierarchy for scan |
+| `fractal-scan`     | —           | Build complete project hierarchy for scan |
 | `test-metrics`     | `check-312` | Validate 3+12 rule across all spec files  |
 
 ## Options

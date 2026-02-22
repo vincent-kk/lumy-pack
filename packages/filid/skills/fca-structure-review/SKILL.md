@@ -68,7 +68,8 @@ See [reference.md Section 6](./reference.md#section-6--summary-report-format).
 
 | Tool               | Stage | Purpose                                          |
 | ------------------ | ----- | ------------------------------------------------ |
-| `fractal-navigate` | 1, 5  | Module tree and directory classification         |
+| `fractal-scan`     | 1     | Scan filesystem for full module tree             |
+| `fractal-navigate` | 1     | Classify individual directories                  |
 | `doc-compress`     | 2     | Document size checking                           |
 | `test-metrics`     | 3, 4  | 3+12 rule validation and decision recommendation |
 | `ast-analyze`      | 4, 5  | LCOM4, CC metrics, dependency DAG                |

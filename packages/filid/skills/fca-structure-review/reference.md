@@ -7,13 +7,14 @@ Detailed stage logic, MCP tool examples, and report format for the
 ## Section 1 — Structure Verification Details
 
 ```
-fractal-navigate(action: "tree", root: cwd)
-// Inspect every directory in the module tree
+fractal-scan({ path: cwd })
+// Retrieve full module tree by scanning the filesystem
 
 checks:
   - Every fractal dir has CLAUDE.md
   - No organ dir has CLAUDE.md
-  - fractal-navigate(classify, dir) matches actual directory role
+  - fractal-navigate(action: "classify", path: dir, entries: [/* nodes from scan */])
+    matches actual directory role
 ```
 
 Outcome: `PASS` if all boundaries are clean; `FAIL` with list of
@@ -25,7 +26,7 @@ misclassified paths.
 for each CLAUDE.md in scope:
   - lineCount <= 100                     // hard limit
   - contains 3-tier boundary sections    // required headings
-  - doc-compress(mode: "check")          // size warning at >= 90 lines
+  - doc-compress(mode: "auto")           // size warning at >= 90 lines
 
 for each SPEC.md in scope:
   - no append-only patterns detected     // no raw appended blocks

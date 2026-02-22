@@ -83,15 +83,18 @@ For each rejected fix:
      action: "create",
      projectRoot: <project_root>,
      debtItem: {
-       fractalPath: <fractal path>,
-       filePath: <file path>,
-       reviewBranch: <branch>,
-       originalFixId: <FIX-ID>,
-       severity: <severity>,
-       ruleViolated: <rule>,
-       metricValue: <current value>,
-       justification: <developer justification>,
-       adr: <refined ADR text>
+       fractal_path: <fractal path>,
+       file_path: <file path>,
+       created_at: <ISO date string>,
+       review_branch: <branch>,
+       original_fix_id: <FIX-ID>,
+       severity: <"LOW"|"MEDIUM"|"HIGH"|"CRITICAL">,
+       rule_violated: <rule>,
+       metric_value: <current value>,
+       title: <short title>,
+       original_request: <original fix request text>,
+       developer_justification: <developer justification>,
+       refined_adr: <refined ADR text>
      }
    )
    ```

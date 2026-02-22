@@ -5,16 +5,17 @@ rule scanner. For the quick-start guide, see [SKILL.md](./SKILL.md).
 
 ## Section 1 — Tree Construction
 
-Call `fractal-navigate` with `action: "tree"` to build the complete hierarchy.
+Call `fractal-scan` to build the complete hierarchy by scanning the filesystem.
 
 ```
-fractal-navigate({ action: "tree", path: "<target-path>", entries: [] })
+fractal-scan({ path: "<target-path>" })
 ```
 
-Partition the result into three working sets:
+The response is a `ScanReport` with `tree.nodes` (Map of path → FractalNode).
+Partition into three working sets:
 
-- **fractal nodes** — directories with `hasClaudeMd: true` or classified as fractal
-- **organ nodes** — directory names matching `ORGAN_DIR_NAMES`
+- **fractal nodes** — nodes with `hasClaudeMd: true` or `type: "fractal"`
+- **organ nodes** — nodes with `type: "organ"` or names matching `ORGAN_DIR_NAMES`
 - **spec files** — files matching `*.spec.ts` pattern
 
 ## Section 2 — CLAUDE.md Validation

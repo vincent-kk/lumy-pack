@@ -33,7 +33,8 @@ See [reference.md Section 1](./reference.md#section-1--question-parsing).
 
 ### Phase 2 — Navigation (Prompt 1)
 
-Locate the target module using `fractal-navigate(action: "tree")`.
+Locate the target module using `fractal-scan` to retrieve the full tree, then
+find the node matching the query.
 See [reference.md Section 2](./reference.md#section-2--navigation-details).
 
 ### Phase 3 — Context Loading
@@ -55,7 +56,7 @@ See [reference.md Section 5](./reference.md#section-5--3-prompt-limit-protocol).
 
 | Tool               | Action     | Purpose                                                 |
 | ------------------ | ---------- | ------------------------------------------------------- |
-| `fractal-navigate` | `tree`     | Scan project hierarchy to locate the target module      |
+| `fractal-scan`     | —          | Scan project hierarchy to locate the target module      |
 | `fractal-navigate` | `classify` | Resolve ambiguous module classification                 |
 | `doc-compress`     | `auto`     | Compress CLAUDE.md chain when it exceeds context limits |
 

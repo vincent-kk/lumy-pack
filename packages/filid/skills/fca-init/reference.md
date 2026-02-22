@@ -5,16 +5,21 @@ For the quick-start guide, see [SKILL.md](./SKILL.md).
 
 ## Section 1 — Directory Scan Details
 
-Call `fractal-navigate` with `action: "tree"` to retrieve the complete project hierarchy.
+Call `fractal-scan` to retrieve the complete project hierarchy by scanning the filesystem.
 
 ```
-fractal-navigate({ action: "tree", path: "<target-path>", entries: [] })
+fractal-scan({ path: "<target-path>" })
 ```
 
-The response contains every directory and file with the fields:
-`name`, `path`, `type` (file | directory), `hasClaudeMd`, `hasSpecMd`.
+The response is a `ScanReport` containing:
+- `tree.nodes`: Map of path → FractalNode (with `name`, `path`, `type`, `hasClaudeMd`, `hasSpecMd`)
+- `tree.root`: root directory path
+- `modules`: optional ModuleInfo list (empty unless `includeModuleInfo: true`)
 
-Build an internal working list of all directories for Phase 2 classification.
+Build an internal working list of all directories from `tree.nodes` for Phase 2 classification.
+
+> **Note**: Do NOT use `fractal-navigate(action: "tree")` for scanning — that tool
+> builds a tree only from a pre-supplied `entries` array and does not read the filesystem.
 
 ## Section 2 — Node Classification Rules
 
