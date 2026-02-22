@@ -8,6 +8,11 @@ import { handleAstAnalyze } from './tools/ast-analyze.js';
 import { handleFractalNavigate } from './tools/fractal-navigate.js';
 import { handleDocCompress } from './tools/doc-compress.js';
 import { handleTestMetrics } from './tools/test-metrics.js';
+import { handleFractalScan } from './tools/fractal-scan.js';
+import { handleDriftDetect } from './tools/drift-detect.js';
+import { handleLcaResolve } from './tools/lca-resolve.js';
+import { handleRuleQuery } from './tools/rule-query.js';
+import { handleStructureValidate } from './tools/structure-validate.js';
 
 const TOOL_DEFINITIONS = [
   {
@@ -136,6 +141,147 @@ const TOOL_DEFINITIONS = [
       required: ['action'],
     },
   },
+  {
+    name: 'fractal-scan',
+    description:
+      '프로젝트 디렉토리를 스캔하여 프랙탈 구조 트리(FractalTree)를 분석하고 ScanReport를 반환한다. ' +
+      '각 디렉토리 노드를 fractal/organ/pure-function/hybrid로 분류하며, ' +
+      'includeModuleInfo=true 설정 시 각 모듈의 진입점(index.ts, main.ts) 정보를 포함한다.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        path: {
+          type: 'string',
+          description: '스캔할 프로젝트 루트 디렉토리의 절대 경로',
+        },
+        depth: {
+          type: 'number',
+          description: '스캔할 최대 디렉토리 깊이. 기본값: 10',
+          minimum: 1,
+          maximum: 20,
+        },
+        includeModuleInfo: {
+          type: 'boolean',
+          description: '모듈 진입점 분석 결과 포함 여부. 기본값: false',
+        },
+      },
+      required: ['path'],
+    },
+  },
+  {
+    name: 'drift-detect',
+    description:
+      '현재 프로젝트 구조와 filid 프랙탈 구조 규칙 사이의 이격(drift)을 감지한다. ' +
+      '각 이격 항목에는 기대값, 실제값, severity(critical/high/medium/low), ' +
+      '보정 액션 제안(SyncAction)이 포함된다. ' +
+      'generatePlan=true 시 이격 해소를 위한 SyncPlan을 함께 생성한다.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        path: {
+          type: 'string',
+          description: '이격을 검사할 프로젝트 루트 디렉토리의 절대 경로',
+        },
+        severity: {
+          type: 'string',
+          enum: ['critical', 'high', 'medium', 'low'],
+          description: '이 severity 이상의 이격만 반환. 생략 시 모든 severity 반환',
+        },
+        generatePlan: {
+          type: 'boolean',
+          description: '이격 해소 SyncPlan 생성 여부. 기본값: false',
+        },
+      },
+      required: ['path'],
+    },
+  },
+  {
+    name: 'lca-resolve',
+    description:
+      '두 모듈의 Lowest Common Ancestor(LCA)를 프랙탈 트리에서 계산한다. ' +
+      '새로운 공유 의존성을 어느 레이어에 배치해야 하는지 결정할 때 사용한다. ' +
+      '각 모듈에서 LCA까지의 거리와 권장 배치 경로(suggestedPlacement)를 반환한다.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        path: {
+          type: 'string',
+          description: '프로젝트 루트 디렉토리의 절대 경로',
+        },
+        moduleA: {
+          type: 'string',
+          description: '첫 번째 모듈의 프로젝트 루트 기준 상대 경로 (예: src/features/auth)',
+        },
+        moduleB: {
+          type: 'string',
+          description: '두 번째 모듈의 프로젝트 루트 기준 상대 경로 (예: src/features/payment)',
+        },
+      },
+      required: ['path', 'moduleA', 'moduleB'],
+    },
+  },
+  {
+    name: 'rule-query',
+    description:
+      '현재 프로젝트에 적용되는 filid 프랙탈 구조 규칙을 조회하거나, 특정 경로의 규칙 준수 여부를 확인한다. ' +
+      "action='list'는 전체 규칙 목록, " +
+      "action='get'은 특정 규칙 상세 정보, " +
+      "action='check'는 경로의 규칙 평가 결과를 반환한다.",
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['list', 'get', 'check'],
+          description: "수행할 동작: 'list' | 'get' | 'check'",
+        },
+        path: {
+          type: 'string',
+          description: '프로젝트 루트 디렉토리의 절대 경로',
+        },
+        ruleId: {
+          type: 'string',
+          description: "action='get'일 때 조회할 규칙 ID",
+        },
+        category: {
+          type: 'string',
+          enum: ['fractal', 'organ', 'pure-function', 'hybrid', 'structure', 'dependency'],
+          description: "action='list'일 때 카테고리 필터",
+        },
+        targetPath: {
+          type: 'string',
+          description: "action='check'일 때 검사 대상 경로 (프로젝트 루트 기준 상대 경로)",
+        },
+      },
+      required: ['action', 'path'],
+    },
+  },
+  {
+    name: 'structure-validate',
+    description:
+      '프로젝트 전체 또는 특정 규칙 집합에 대해 프랙탈 구조 유효성을 종합 검증한다. ' +
+      '위반 항목 목록과 통과/실패/경고 수를 반환한다. ' +
+      'fix=true 설정 시 safe 등급의 위반 항목을 자동으로 수정하고 잔여 위반 항목을 재보고한다.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        path: {
+          type: 'string',
+          description: '검증할 프로젝트 루트 디렉토리의 절대 경로',
+        },
+        rules: {
+          type: 'array',
+          items: { type: 'string' },
+          description: '검사할 규칙 ID 목록. 생략 시 모든 활성 규칙 검사',
+        },
+        fix: {
+          type: 'boolean',
+          description: 'safe 등급 위반 항목 자동 수정 여부. 기본값: false',
+        },
+      },
+      required: ['path'],
+    },
+  },
 ];
 
 /**
@@ -169,6 +315,21 @@ export function createServer(): Server {
           break;
         case 'test-metrics':
           result = handleTestMetrics(args as any);
+          break;
+        case 'fractal-scan':
+          result = await handleFractalScan(args);
+          break;
+        case 'drift-detect':
+          result = await handleDriftDetect(args);
+          break;
+        case 'lca-resolve':
+          result = await handleLcaResolve(args);
+          break;
+        case 'rule-query':
+          result = await handleRuleQuery(args);
+          break;
+        case 'structure-validate':
+          result = await handleStructureValidate(args);
           break;
         default:
           return {

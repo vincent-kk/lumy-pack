@@ -38,7 +38,7 @@ console.log('  MCP server  -> libs/server.cjs');
 // 2. Hook script bundles (ESM, self-contained)
 const hookEntries = [
   'pre-tool-validator',
-  'organ-guard',
+  'structure-guard',
   'change-tracker',
   'agent-enforcer',
   'context-injector',

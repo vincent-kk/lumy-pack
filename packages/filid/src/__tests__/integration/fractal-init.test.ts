@@ -85,7 +85,8 @@ describe("fractal-init pipeline", () => {
       dirName: "auth",
       hasClaudeMd: true,
       hasSpecMd: false,
-      isInsideFractal: true,
+      hasFractalChildren: false,
+      isLeafDirectory: false,
     });
 
     expect(result).toBe("fractal");

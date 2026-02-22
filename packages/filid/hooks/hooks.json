@@ -11,7 +11,7 @@
           },
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/organ-guard.mjs\"",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/structure-guard.mjs\"",
             "timeout": 3
           }
         ]

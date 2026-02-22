@@ -1,129 +1,156 @@
 # sync — Reference Documentation
 
-Detailed workflow, ChangeQueue protocol, and update rules for the sync skill.
-For the quick-start guide, see [SKILL.md](./SKILL.md).
+Detailed workflow, MCP tool call signatures, and output format templates for the
+structural drift synchronization skill. For the quick-start overview, see [SKILL.md](./SKILL.md).
 
-## Section 1 — Change Collection Details
+## Section 1 — Scan
 
-Drain the ChangeQueue to retrieve all pending `ChangeRecord[]` entries:
-
-```
-changeRecords = drainChangeQueue()
-// Returns: ChangeRecord[] sorted by timestamp
-```
-
-Each record captures the changed file path, change type (add/modify/delete),
-and a summary of what changed.
-
-## Section 2 — Impact Analysis Details
-
-Identify which fractal modules are affected and group changes:
+`drift-analyzer` calls `fractal-scan` to retrieve the full directory tree and current
+node classifications.
 
 ```
-affectedFractals = getAffectedFractals(changeRecords)
-// Returns: string[] of parent fractal directory paths (deduped)
-
-changesByPath = getChangesByPath(changeRecords)
-// Returns: Map<fractalPath, ChangeRecord[]>
+fractal-scan({ path: "<target-path>" })
+// Returns: { nodes: FractalNode[], summary: ScanSummary, violations: Violation[] }
 ```
 
-Use `fractal-navigate(action: "tree")` to confirm module boundaries and
-ensure affected paths are correctly classified as fractal (not organ).
+For each node, confirm:
+- `category`: current classification (fractal / organ / pure-function / hybrid)
+- `hasIndex`: index.ts barrel export present
+- `hasMain`: main.ts entry point present
+- `children`: child node paths
 
-## Section 3 — CLAUDE.md Update Rules
+## Section 2 — Detect & Classify
 
-For each affected fractal module, determine and apply updates:
-
-```
-for fractalPath in affectedFractals:
-    changes = changesByPath[fractalPath]
-    claudeMd = read(fractalPath + "/CLAUDE.md")
-
-    if hasExportChanges(changes):
-        updateStructureSection(claudeMd, changes)
-
-    if hasDependencyChanges(changes):
-        updateDependenciesSection(claudeMd, changes)
-
-    if lineCount(claudeMd) >= 90:
-        doc-compress(mode: "auto", file: claudeMd)
-
-    write(fractalPath + "/CLAUDE.md", claudeMd)
-```
-
-**Key constraint**: CLAUDE.md must never exceed 100 lines. Restructure
-content rather than append.
-
-## Section 4 — SPEC.md Update Rules
-
-Update SPEC.md files where specifications are impacted:
+`drift-detect` identifies all deviations from fractal principles.
 
 ```
-for fractalPath in affectedFractals:
-    if hasSpecImpact(changesByPath[fractalPath]):
-        specMd = read(fractalPath + "/SPEC.md")
-        updateFunctionalRequirements(specMd, changes)
-        updateApiDefinitions(specMd, changes)
-        write(fractalPath + "/SPEC.md", specMd)
+drift-detect({ path: "<target-path>", severityFilter: "<level>" })
+// Returns: { drifts: DriftItem[], total: number, bySeverity: SeverityCount }
 ```
 
-Rules:
-- **Functional requirements altered** → rewrite affected entries (no append-only growth)
-- **API interfaces changed** → sync definitions with current implementation
-- **New behavior introduced** → integrate into existing spec structure
-- **Key constraint**: Restructure content — never append without consolidating
+When `--severity` is provided, only items at or above that level are returned.
 
-## Section 5 — Validation Details
+Each `DriftItem` fields:
+- `path`: node path where drift was detected
+- `driftType`: `category-mismatch` | `missing-index` | `missing-main` | `naming-violation` | `orphaned-node`
+- `severity`: `critical` | `high` | `medium` | `low`
+- `expected`: expected state
+- `actual`: current state
+- `suggestedAction`: recommended `SyncAction`
 
-Validate every updated document:
+`DriftSeverity` criteria:
+- `critical`: breaks module resolution or causes import errors
+- `high`: missing required files (index.ts, main.ts) or wrong category assignment
+- `medium`: naming convention violations or incomplete barrel exports
+- `low`: style/convention drift with no functional impact
 
-```
-for updatedDoc in allUpdatedDocs:
-    if isClaudeMd(updatedDoc):
-        result = validateClaudeMd(updatedDoc)
-    else:
-        result = validateSpecMd(updatedDoc)
+## Section 3 — Plan & Approval
 
-    if result.hasCriticalErrors:
-        flagForManualReview(updatedDoc, result.errors)
-```
-
-## Section 6 — Report and Dry-Run Formats
-
-### Standard report
+`drift-analyzer` generates the correction plan. For reclassification candidates,
+`fractal-architect` uses `lca-resolve` to confirm the correct target location.
 
 ```
-Updated documents (3):
-  ✓ packages/filid/src/core/CLAUDE.md — exports updated, 87 lines
-  ✓ packages/filid/src/core/SPEC.md — API interfaces synced
-  ✓ packages/filid/src/commands/CLAUDE.md — dependencies updated, compressed (94→81 lines)
-
-Validation: 3/3 PASSED
-ChangeQueue: drained (12 records processed)
+lca-resolve({ nodePath: "<drifted-path>", contextPaths: ["<neighbor1>"] })
+// Returns: { lcaPath: string, recommendedParent: string, confidence: number }
 ```
 
-### Dry-run output format
+Correction plan format:
+
+```yaml
+sync-plan:
+  target: src/
+  generated: "2026-02-22T00:00:00Z"
+  severity-filter: high
+  items:
+    - drift-id: D001
+      severity: critical
+      path: src/shared/state
+      action: reclassify
+      from: organ
+      to: fractal
+      lca: src/features
+    - drift-id: D002
+      severity: high
+      path: src/features/auth
+      action: create-index
+      target: src/features/auth/index.ts
+```
+
+`--dry-run` mode output:
 
 ```
-[DRY RUN] Would update 3 documents:
-  ~ packages/filid/src/core/CLAUDE.md
-    + exports: addDocCompress, addFractalNavigate
-    - exports: removedHelper
-  ~ packages/filid/src/core/SPEC.md
-    ~ API: updateSyncInterface
-  No changes written.
+[DRY RUN] Drift detected — severity: high and above
+  critical (2 items):
+    D001 RECLASSIFY src/shared/state: organ → fractal
+    D002 RENAME     src/utils/UserHelper.ts → src/utils/user-helper.ts
+  high (3 items):
+    D003 CREATE-INDEX src/features/auth/index.ts
+    D004 CREATE-MAIN  src/features/user/main.ts
+    D005 MOVE         src/components/AuthWidget → src/features/auth/components/AuthWidget
+No changes applied. Remove --dry-run to execute.
 ```
 
-## MCP Tool Examples
+Without `--auto-approve`, request explicit user confirmation:
 
-**doc-compress:**
 ```
-doc-compress(mode: "auto", file: "packages/filid/src/core/CLAUDE.md")
-// Compresses to under 100 lines, returns compressed content
+Apply the above correction plan?
+Drift items: N  |  Affected files: N
+[y/N]
 ```
 
-**fractal-navigate:**
+## Section 4 — Correction Execution
+
+`restructurer` applies each action from the approved sync-plan in this order:
+`reclassify` → `move` → `rename` → `create-index` → `create-main`
+
+After each move or rename, import paths are updated immediately:
+
 ```
-fractal-navigate(action: "tree", root: "packages/filid/src")
-// Returns: hierarchical module tree with fractal/organ classifications
+for each drift-item with move/rename action:
+  oldPath = drift-item.path
+  newPath = drift-item.target
+  affectedFiles = grep(oldPath, all_source_files)
+  for file in affectedFiles:
+    edit(file, replace(oldPath, newPath))
+```
+
+After execution, `structure-validate` confirms correctness:
+
+```
+structure-validate({ path: "<target-path>" })
+// Returns: { passed: boolean, checks: ValidationCheck[], violations: Violation[] }
+```
+
+### Final Report Format
+
+```
+## Sync Complete — <target path>
+
+### Drift Detected
+| Severity | Detected | Corrected | Skipped |
+|----------|----------|-----------|---------|
+| critical | 2 | 2 | 0 |
+| high | 3 | 3 | 0 |
+| medium | 5 | 0 | 5 (severity filter) |
+| low | 7 | 0 | 7 (severity filter) |
+
+### Corrections Applied
+| Drift ID | Path | Action | Status |
+|----------|------|--------|--------|
+| D001 | src/shared/state | reclassify: organ → fractal | ✓ |
+| D002 | src/utils/UserHelper.ts | rename → user-helper.ts | ✓ |
+| D003 | src/features/auth/index.ts | create-index | ✓ |
+| D004 | src/features/user/main.ts | create-main | ✓ |
+| D005 | src/components/AuthWidget | move → src/features/auth/... | ✓ |
+
+### Validation Result
+structure-validate: PASS
+- All imports resolvable: ✓
+- All fractal nodes have index.ts: ✓
+- Organ directory rules satisfied: ✓
+
+### Summary
+- Corrections applied: 5
+- Skipped (severity filter): 12
+- Validation: PASS
 ```

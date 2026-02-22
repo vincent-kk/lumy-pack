@@ -7,5 +7,12 @@ for await (const chunk of process.stdin) {
   chunks.push(chunk as Buffer);
 }
 const input = JSON.parse(Buffer.concat(chunks).toString('utf-8')) as UserPromptSubmitInput;
-const result = injectContext(input);
+
+let result;
+try {
+  result = await injectContext(input);
+} catch {
+  result = { continue: true };
+}
+
 process.stdout.write(JSON.stringify(result));

@@ -8,7 +8,7 @@ import { check312Rule } from "../../metrics/three-plus-twelve.js";
 import { decide } from "../../metrics/decision-tree.js";
 import { checkPromotionEligibility } from "../../metrics/promotion-tracker.js";
 import { validatePreToolUse } from "../../hooks/pre-tool-validator.js";
-import { guardOrganWrite } from "../../hooks/organ-guard.js";
+import { guardStructure } from "../../hooks/structure-guard.js";
 import type { PreToolUseInput } from "../../types/hooks.js";
 
 describe("review pipeline", () => {
@@ -155,7 +155,7 @@ describe("review pipeline", () => {
         hook_event_name: "PreToolUse",
       };
 
-      const result = guardOrganWrite(input);
+      const result = guardStructure(input);
       expect(result.continue).toBe(false);
     });
 
@@ -178,7 +178,7 @@ describe("review pipeline", () => {
       const result = validatePreToolUse(input);
       expect(result.continue).toBe(true);
 
-      const guardResult = guardOrganWrite(input);
+      const guardResult = guardStructure(input);
       expect(guardResult.continue).toBe(true);
     });
   });

@@ -10,10 +10,13 @@ export type * from './types/index.js';
 
 // Core modules
 export { validateClaudeMd, validateSpecMd } from './core/document-validator.js';
-export { classifyNode, isOrganDirectory, ORGAN_DIR_NAMES } from './core/organ-classifier.js';
-export { buildFractalTree, findNode, getAncestors, getDescendants } from './core/fractal-tree.js';
+export { classifyNode, isOrganDirectory, ORGAN_DIR_NAMES, LEGACY_ORGAN_DIR_NAMES } from './core/organ-classifier.js';
+export { buildFractalTree, findNode, getAncestors, getDescendants, scanProject, shouldExclude } from './core/fractal-tree.js';
 export { buildDAG, topologicalSort, detectCycles, getDirectDependencies } from './core/dependency-graph.js';
 export { ChangeQueue } from './core/change-queue.js';
+export { validateStructure, validateNode, validateDependencies } from './core/fractal-validator.js';
+export { detectDrift, compareCurrent, calculateSeverity, generateSyncPlan } from './core/drift-detector.js';
+export { analyzeProject, calculateHealthScore, generateReport } from './core/project-analyzer.js';
 
 // Metrics
 export { countTestCases } from './metrics/test-counter.js';
@@ -34,7 +37,7 @@ export { computeTreeDiff } from './ast/tree-diff.js';
 
 // Hooks
 export { validatePreToolUse } from './hooks/pre-tool-validator.js';
-export { guardOrganWrite } from './hooks/organ-guard.js';
+export { guardStructure } from './hooks/structure-guard.js';
 export { trackChange } from './hooks/change-tracker.js';
 export { enforceAgentRole } from './hooks/agent-enforcer.js';
 export { injectContext } from './hooks/context-injector.js';
@@ -44,6 +47,11 @@ export { handleAstAnalyze } from './mcp/tools/ast-analyze.js';
 export { handleFractalNavigate } from './mcp/tools/fractal-navigate.js';
 export { handleDocCompress } from './mcp/tools/doc-compress.js';
 export { handleTestMetrics } from './mcp/tools/test-metrics.js';
+export { handleFractalScan } from './mcp/tools/fractal-scan.js';
+export { handleDriftDetect } from './mcp/tools/drift-detect.js';
+export { handleLcaResolve } from './mcp/tools/lca-resolve.js';
+export { handleRuleQuery } from './mcp/tools/rule-query.js';
+export { handleStructureValidate } from './mcp/tools/structure-validate.js';
 
 // MCP server
 export { createServer, startServer } from './mcp/server.js';

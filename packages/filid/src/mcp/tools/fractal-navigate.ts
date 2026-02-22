@@ -46,12 +46,22 @@ export function handleFractalNavigate(input: FractalNavigateInput): FractalNavig
 }
 
 function handleClassify(input: FractalNavigateInput): FractalNavigateOutput {
+  // First check if the entry already has a known type in the provided entries
+  const entry = input.entries.find((e) => e.path === input.path);
+  if (entry && entry.type !== 'directory' as string) {
+    return { classification: entry.type };
+  }
+
   const dirName = input.path.split('/').filter((s) => s.length > 0).pop() ?? '';
+  const hasClaudeMd = entry?.hasClaudeMd ?? false;
+  const hasSpecMd = entry?.hasSpecMd ?? false;
+
   const classifyInput: ClassifyInput = {
     dirName,
-    hasClaudeMd: false,
-    hasSpecMd: false,
-    isInsideFractal: true,
+    hasClaudeMd,
+    hasSpecMd,
+    hasFractalChildren: false,
+    isLeafDirectory: true,
   };
   const result = classifyNode(classifyInput);
   return { classification: result };

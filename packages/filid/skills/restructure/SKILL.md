@@ -1,0 +1,96 @@
+---
+name: restructure
+user_invocable: true
+description: Analyze project structure and restructure it to follow fractal principles — multi-stage with user approval
+version: 1.0.0
+complexity: high
+---
+
+# restructure — Fractal Structure Restructuring
+
+Analyze the current project directory structure and restructure it according to
+fractal principles. The `fractal-architect` agent performs the analysis and produces
+a concrete proposal; after user approval the `restructurer` agent executes the file
+moves, renames, index.ts creations, and import path updates.
+
+> **Detail Reference**: For detailed workflow steps, MCP tool call examples,
+> and output format templates, read the `reference.md` file in this
+> skill's directory (same location as this SKILL.md).
+
+## When to Use This Skill
+
+- Migrating an existing project to a fractal directory structure
+- Recovering a project that has drifted from fractal principles after a large refactor
+- Fixing fractal modules that have been placed incorrectly under organ directories
+- Resolving accumulated structural violations in one coordinated operation
+- Splitting hybrid nodes into clean fractal or organ directories
+
+## Core Workflow
+
+### Stage 1 — Analysis & Proposal
+`fractal-architect` performs a full structure scan, identifies rule violations and
+structural improvements, and generates a concrete restructuring proposal.
+See [reference.md Section 1](./reference.md#section-1--analysis--proposal).
+
+### Stage 2 — Plan Review & Approval
+The restructuring plan is presented to the user with a summary of affected files.
+Explicit approval is required before any changes are made.
+`--auto-approve` skips this stage.
+See [reference.md Section 2](./reference.md#section-2--plan-review--approval).
+
+### Stage 3 — Execution
+`restructurer` applies the approved plan in priority order: file moves, renames,
+index.ts creation, and import path updates.
+See [reference.md Section 3](./reference.md#section-3--execution).
+
+### Stage 4 — Validation
+`fractal-architect` validates the result using `structure-validate` and reports any
+remaining violations.
+See [reference.md Section 4](./reference.md#section-4--validation).
+
+## Available MCP Tools
+
+| Tool | Stage | Purpose |
+|------|-------|---------|
+| `fractal-scan` | 1 | Full structure scan |
+| `drift-detect` | 1 | Detect fractal principle deviations |
+| `lca-resolve` | 1 | Resolve move targets via LCA |
+| `rule-query` | 1 | Fetch active rules |
+| `structure-validate` | 4 | Validate post-execution structure |
+
+## Options
+
+```
+/filid:restructure [path] [--dry-run] [--auto-approve]
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `path` | string | Current working directory | Root directory to restructure |
+| `--dry-run` | flag | off | Preview plan without making any changes |
+| `--auto-approve` | flag | off | Skip user approval (CI / automation environments) |
+
+## Quick Reference
+
+```bash
+# Restructure current project
+/filid:restructure
+
+# Restructure a specific path
+/filid:restructure src/features
+
+# Preview changes without applying them
+/filid:restructure --dry-run
+
+# Automated approval for CI environments
+/filid:restructure --auto-approve
+
+Stages:  Analysis → Plan → Execute → Validate
+Agents:  fractal-architect (Stage 1, 4), restructurer (Stage 3)
+Dry-run: Prints plan then exits — no file changes
+```
+
+Key rules:
+- Always run with `--dry-run` first to review the plan before applying
+- `--auto-approve` is recommended only in validated CI environments
+- If an out-of-scope change is discovered mid-execution, execution stops and reports
