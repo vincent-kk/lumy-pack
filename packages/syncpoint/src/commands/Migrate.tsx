@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Text, Box, useApp } from 'ink';
 import { Command } from 'commander';
+import { Box, Text, useApp } from 'ink';
 import { render } from 'ink';
+import React, { useEffect, useState } from 'react';
 
 import { migrateConfig } from '../core/migrate.js';
 import type { MigrateResult } from '../utils/types.js';
@@ -46,7 +46,11 @@ const MigrateView: React.FC<MigrateViewProps> = ({ dryRun }) => {
   if (!result) return null;
 
   // No changes needed
-  if (!result.migrated && result.added.length === 0 && result.deprecated.length === 0) {
+  if (
+    !result.migrated &&
+    result.added.length === 0 &&
+    result.deprecated.length === 0
+  ) {
     return (
       <Box flexDirection="column">
         <Text color="green">✓ Config is already up to date.</Text>
@@ -104,7 +108,9 @@ const MigrateView: React.FC<MigrateViewProps> = ({ dryRun }) => {
         <Box flexDirection="column" marginTop={1}>
           <Text color="green">✓ Migration complete.</Text>
           {result.backupPath && (
-            <Text>{'  '}Backup saved to: {result.backupPath}</Text>
+            <Text>
+              {'  '}Backup saved to: {result.backupPath}
+            </Text>
           )}
         </Box>
       )}

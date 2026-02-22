@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { countTestCases, type RawTestFile } from '../../../metrics/test-counter.js';
+import { describe, expect, it } from 'vitest';
+
+import {
+  type RawTestFile,
+  countTestCases,
+} from '../../../metrics/test-counter.js';
 
 describe('test-counter', () => {
   it('should count top-level it() calls as basic tests', () => {

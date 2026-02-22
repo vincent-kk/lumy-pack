@@ -51,27 +51,27 @@ yarn syncpoint test:e2e # E2E 테스트
 
 사용자 데이터는 `~/.syncpoint/` 하위에 저장:
 
-| 경로 | 용도 |
-|------|------|
-| `~/.syncpoint/config.yml` | 백업 설정 파일 |
-| `~/.syncpoint/backups/` | 백업 아카이브 (.tar.gz) |
+| 경로                      | 용도                     |
+| ------------------------- | ------------------------ |
+| `~/.syncpoint/config.yml` | 백업 설정 파일           |
+| `~/.syncpoint/backups/`   | 백업 아카이브 (.tar.gz)  |
 | `~/.syncpoint/templates/` | 프로비저닝 템플릿 (.yml) |
-| `~/.syncpoint/scripts/` | 사용자 스크립트 |
-| `~/.syncpoint/logs/` | 실행 로그 |
+| `~/.syncpoint/scripts/`   | 사용자 스크립트          |
+| `~/.syncpoint/logs/`      | 실행 로그                |
 
 ## CLI Commands
 
-| 명령어 | 설명 |
-|--------|------|
-| `syncpoint init` | 초기 설정 생성 |
-| `syncpoint wizard` | AI 기반 대화형 설정 |
-| `syncpoint backup` | 설정파일 백업 |
-| `syncpoint restore` | 백업 복원 |
-| `syncpoint provision <template>` | 머신 프로비저닝 |
-| `syncpoint create-template <name>` | 템플릿 생성 |
-| `syncpoint list <type>` | 백업/템플릿 목록 |
-| `syncpoint status` | 현재 상태 확인 |
-| `syncpoint migrate` | 설정 스키마 마이그레이션 |
+| 명령어                             | 설명                     |
+| ---------------------------------- | ------------------------ |
+| `syncpoint init`                   | 초기 설정 생성           |
+| `syncpoint wizard`                 | AI 기반 대화형 설정      |
+| `syncpoint backup`                 | 설정파일 백업            |
+| `syncpoint restore`                | 백업 복원                |
+| `syncpoint provision <template>`   | 머신 프로비저닝          |
+| `syncpoint create-template <name>` | 템플릿 생성              |
+| `syncpoint list <type>`            | 백업/템플릿 목록         |
+| `syncpoint status`                 | 현재 상태 확인           |
+| `syncpoint migrate`                | 설정 스키마 마이그레이션 |
 
 ## Conventions
 

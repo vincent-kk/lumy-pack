@@ -78,3 +78,24 @@ export type HookInput =
   | PostToolUseInput
   | SubagentStartInput
   | UserPromptSubmitInput;
+
+/** structure-guard가 출력하는 검증 결과. */
+export interface StructureGuardOutput extends HookOutput {
+  hookSpecificOutput?: {
+    additionalContext?: string;
+    violations?: Array<{
+      ruleId: string;
+      severity: string;
+      message: string;
+      path: string;
+    }>;
+  };
+}
+
+/** context-injector가 주입하는 프랙탈 컨텍스트 요약. */
+export interface FractalContextSummary {
+  root: string;
+  totalNodes: number;
+  pendingDrifts: number;
+  lastScanTimestamp: string | null;
+}

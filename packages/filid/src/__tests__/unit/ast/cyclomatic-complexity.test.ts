@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { calculateCC } from '../../../ast/cyclomatic-complexity.js';
 
 describe('cyclomatic-complexity', () => {

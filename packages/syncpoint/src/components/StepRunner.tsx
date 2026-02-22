@@ -1,8 +1,8 @@
-import React from "react";
-import { Text, Box, Static } from "ink";
-import Spinner from "ink-spinner";
+import { Box, Static, Text } from 'ink';
+import Spinner from 'ink-spinner';
+import React from 'react';
 
-import type { StepResult } from "../utils/types.js";
+import type { StepResult } from '../utils/types.js';
 
 interface StepRunnerProps {
   steps: StepResult[];
@@ -10,21 +10,21 @@ interface StepRunnerProps {
   total: number;
 }
 
-const StepIcon: React.FC<{ status: StepResult["status"] }> = ({ status }) => {
+const StepIcon: React.FC<{ status: StepResult['status'] }> = ({ status }) => {
   switch (status) {
-    case "success":
+    case 'success':
       return <Text color="green">✓</Text>;
-    case "running":
+    case 'running':
       return (
         <Text color="yellow">
           <Spinner type="dots" />
         </Text>
       );
-    case "skipped":
+    case 'skipped':
       return <Text color="blue">⏭</Text>;
-    case "failed":
+    case 'failed':
       return <Text color="red">✗</Text>;
-    case "pending":
+    case 'pending':
     default:
       return <Text color="gray">○</Text>;
   }
@@ -32,19 +32,24 @@ const StepIcon: React.FC<{ status: StepResult["status"] }> = ({ status }) => {
 
 const StepStatusText: React.FC<{ step: StepResult }> = ({ step }) => {
   switch (step.status) {
-    case "success":
+    case 'success':
       return (
         <Text color="green">
-          Done{step.duration != null ? ` (${Math.round(step.duration / 1000)}s)` : ""}
+          Done
+          {step.duration != null
+            ? ` (${Math.round(step.duration / 1000)}s)`
+            : ''}
         </Text>
       );
-    case "running":
+    case 'running':
       return <Text color="yellow">Running...</Text>;
-    case "skipped":
+    case 'skipped':
       return <Text color="blue">Skipped (already installed)</Text>;
-    case "failed":
-      return <Text color="red">Failed{step.error ? `: ${step.error}` : ""}</Text>;
-    case "pending":
+    case 'failed':
+      return (
+        <Text color="red">Failed{step.error ? `: ${step.error}` : ''}</Text>
+      );
+    case 'pending':
     default:
       return null;
   }
@@ -65,22 +70,25 @@ const StepItemView: React.FC<StepItemViewProps> = ({
 }) => (
   <Box flexDirection="column" marginBottom={isLast ? 0 : 1}>
     <Text>
-      {"  "}
+      {'  '}
       <StepIcon status={step.status} />
       <Text>
-        {" "}
+        {' '}
         <Text bold>
           Step {index + 1}/{total}
         </Text>
-        {"  "}
+        {'  '}
         {step.name}
       </Text>
     </Text>
-    {step.output && step.status !== "pending" && (
-      <Text color="gray">{"            "}{step.output}</Text>
+    {step.output && step.status !== 'pending' && (
+      <Text color="gray">
+        {'            '}
+        {step.output}
+      </Text>
     )}
     <Text>
-      {"            "}
+      {'            '}
       <StepStatusText step={step} />
     </Text>
   </Box>
@@ -88,16 +96,17 @@ const StepItemView: React.FC<StepItemViewProps> = ({
 
 type IndexedStep = StepResult & { idx: number };
 
-export const StepRunner: React.FC<StepRunnerProps> = ({
-  steps,
-  total,
-}) => {
+export const StepRunner: React.FC<StepRunnerProps> = ({ steps, total }) => {
   const completedSteps: IndexedStep[] = [];
   const activeSteps: IndexedStep[] = [];
 
   steps.forEach((step, idx) => {
     const indexed = { ...step, idx };
-    if (step.status === "success" || step.status === "failed" || step.status === "skipped") {
+    if (
+      step.status === 'success' ||
+      step.status === 'failed' ||
+      step.status === 'skipped'
+    ) {
       completedSteps.push(indexed);
     } else {
       activeSteps.push(indexed);

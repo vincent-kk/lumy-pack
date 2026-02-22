@@ -1,8 +1,9 @@
 /**
  * TypeScript/JavaScript source parser using TypeScript Compiler API
  */
-import ts from 'typescript';
 import { readFileSync } from 'node:fs';
+
+import ts from 'typescript';
 
 /**
  * Parse source code string into a TypeScript SourceFile AST.
@@ -13,9 +14,10 @@ export function parseSource(
   source: string,
   filePath: string = 'anonymous.ts',
 ): ts.SourceFile {
-  const scriptKind = filePath.endsWith('.js') || filePath.endsWith('.mjs')
-    ? ts.ScriptKind.JS
-    : ts.ScriptKind.TS;
+  const scriptKind =
+    filePath.endsWith('.js') || filePath.endsWith('.mjs')
+      ? ts.ScriptKind.JS
+      : ts.ScriptKind.TS;
 
   return ts.createSourceFile(
     filePath,

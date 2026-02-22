@@ -6,4 +6,8 @@ export default defineConfig({
     exclude: ['**/fixtures/**'],
     globals: true,
   },
+  benchmark: {
+    include: ['src/**/__tests__/bench/**/*.bench.ts'],
+    exclude: ['**/fixtures/**'],
+  },
 });

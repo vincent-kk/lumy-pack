@@ -3,18 +3,12 @@
   "title": "Syncpoint Config",
   "description": "Configuration for syncpoint backup tool",
   "type": "object",
-  "required": [
-    "backup"
-  ],
+  "required": ["backup"],
   "properties": {
     "backup": {
       "type": "object",
       "description": "Backup configuration",
-      "required": [
-        "targets",
-        "exclude",
-        "filename"
-      ],
+      "required": ["targets", "exclude", "filename"],
       "properties": {
         "targets": {
           "type": "array",

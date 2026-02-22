@@ -1,4 +1,4 @@
-import type { DependencyEdge, DependencyDAG } from '../types/fractal.js';
+import type { DependencyDAG, DependencyEdge } from '../types/fractal.js';
 
 /**
  * Build a DAG (Directed Acyclic Graph) from an edge array.
@@ -79,7 +79,7 @@ export function topologicalSort(dag: DependencyDAG): string[] | null {
  */
 export function detectCycles(dag: DependencyDAG): string[][] {
   const WHITE = 0; // Unvisited
-  const GRAY = 1;  // In progress (on stack)
+  const GRAY = 1; // In progress (on stack)
   const BLACK = 2; // Completed
 
   const color = new Map<string, number>();
@@ -123,7 +123,10 @@ export function detectCycles(dag: DependencyDAG): string[][] {
  * Return direct dependencies (outgoing edges) of a node.
  * Duplicates are removed.
  */
-export function getDirectDependencies(dag: DependencyDAG, node: string): string[] {
+export function getDirectDependencies(
+  dag: DependencyDAG,
+  node: string,
+): string[] {
   const deps = dag.adjacency.get(node);
   if (!deps) return [];
   return [...new Set(deps)];

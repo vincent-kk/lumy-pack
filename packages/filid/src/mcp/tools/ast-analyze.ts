@@ -2,9 +2,9 @@
  * MCP tool handler: ast-analyze
  * Wraps AST analysis modules (dependency-extractor, lcom4, cyclomatic-complexity, tree-diff).
  */
+import { calculateCC } from '../../ast/cyclomatic-complexity.js';
 import { extractDependencies } from '../../ast/dependency-extractor.js';
 import { calculateLCOM4 } from '../../ast/lcom4.js';
-import { calculateCC } from '../../ast/cyclomatic-complexity.js';
 import { computeTreeDiff } from '../../ast/tree-diff.js';
 
 export interface AstAnalyzeInput {
@@ -13,7 +13,12 @@ export interface AstAnalyzeInput {
   /** Virtual file path */
   filePath?: string;
   /** Analysis type */
-  analysisType: 'dependency-graph' | 'lcom4' | 'cyclomatic-complexity' | 'tree-diff' | 'full';
+  analysisType:
+    | 'dependency-graph'
+    | 'lcom4'
+    | 'cyclomatic-complexity'
+    | 'tree-diff'
+    | 'full';
   /** Class name (required for lcom4) */
   className?: string;
   /** Old source (required for tree-diff) */
@@ -23,7 +28,9 @@ export interface AstAnalyzeInput {
 /**
  * Handle AST analysis requests.
  */
-export function handleAstAnalyze(input: AstAnalyzeInput): Record<string, unknown> {
+export function handleAstAnalyze(
+  input: AstAnalyzeInput,
+): Record<string, unknown> {
   const filePath = input.filePath ?? 'anonymous.ts';
 
   switch (input.analysisType) {

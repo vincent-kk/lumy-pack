@@ -1,4 +1,8 @@
-import type { ClaudeMdValidation, SpecMdValidation, DocumentViolation } from '../types/documents.js';
+import type {
+  ClaudeMdValidation,
+  DocumentViolation,
+  SpecMdValidation,
+} from '../types/documents.js';
 
 /** Maximum line count for CLAUDE.md */
 const CLAUDE_MD_LINE_LIMIT = 100;
@@ -67,7 +71,10 @@ export function validateClaudeMd(content: string): ClaudeMdValidation {
  * Returns true if all old lines remain at the start of new content
  * and only new lines are added at the end.
  */
-export function detectAppendOnly(oldContent: string, newContent: string): boolean {
+export function detectAppendOnly(
+  oldContent: string,
+  newContent: string,
+): boolean {
   if (oldContent.length === 0) return false;
 
   const oldLines = oldContent.trimEnd().split('\n');
@@ -88,14 +95,18 @@ export function detectAppendOnly(oldContent: string, newContent: string): boolea
  * Validate a SPEC.md document.
  * - Append-only pattern prohibited (when oldContent provided)
  */
-export function validateSpecMd(content: string, oldContent?: string): SpecMdValidation {
+export function validateSpecMd(
+  content: string,
+  oldContent?: string,
+): SpecMdValidation {
   const violations: DocumentViolation[] = [];
 
   // Detect append-only (when previous content is provided)
   if (oldContent !== undefined && detectAppendOnly(oldContent, content)) {
     violations.push({
       rule: 'append-only',
-      message: 'SPEC.md must not be append-only. Restructure and compress content instead of simply appending.',
+      message:
+        'SPEC.md must not be append-only. Restructure and compress content instead of simply appending.',
       severity: 'error',
     });
   }

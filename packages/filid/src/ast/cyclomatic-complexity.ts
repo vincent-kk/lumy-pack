@@ -6,8 +6,10 @@
  * conditional (?:), && and ||.
  */
 import ts from 'typescript';
-import { parseSource } from './parser.js';
+
 import type { CyclomaticComplexityResult } from '../types/metrics.js';
+
+import { parseSource } from './parser.js';
 
 /**
  * Calculate cyclomatic complexity for all functions in source code.

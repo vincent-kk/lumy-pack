@@ -24,10 +24,10 @@ Each package has its own `README.md` with usage, dependencies, and examples.
 
 ### Packages
 
-| Package | Type | Description |
-|--------|------|-------------|
-| **[`@lumy-pack/syncpoint`](./packages/syncpoint/README.md)** | npm module | CLI for personal environment sync, backup/restore, and machine provisioning. Published to npm. |
-| **[`filid`](./packages/filid/)** | Claude plugin | FCA-AI rule enforcement and fractal context for Claude Code agent workflows. Install as a Claude plugin. |
+| Package                                                      | Type          | Description                                                                                              |
+| ------------------------------------------------------------ | ------------- | -------------------------------------------------------------------------------------------------------- |
+| **[`@lumy-pack/syncpoint`](./packages/syncpoint/README.md)** | npm module    | CLI for personal environment sync, backup/restore, and machine provisioning. Published to npm.           |
+| **[`filid`](./packages/filid/)**                             | Claude plugin | FCA-AI rule enforcement and fractal context for Claude Code agent workflows. Install as a Claude plugin. |
 
 ---
 

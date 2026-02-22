@@ -27,46 +27,54 @@ eligibility, analysis, generation, validation, and migration in one pass.
 ## Core Workflow
 
 ### Phase 1 — Discovery
+
 Locate all `test.ts` files and analyze metrics via `test-metrics(action: "count")`.
 See [reference.md Section 1](./reference.md#section-1--discovery-details).
 
 ### Phase 2 — Eligibility Check
+
 Apply stability threshold (default 90 days) and failure history filter.
 See [reference.md Section 2](./reference.md#section-2--eligibility-rules).
 
 ### Phase 3 — Pattern Analysis
+
 Categorize tests as basic/complex, identify duplicates and parameterizable patterns.
 See [reference.md Section 3](./reference.md#section-3--pattern-analysis).
 
 ### Phase 4 — Spec Generation
+
 Build parameterized `spec.ts` enforcing the 3+12 rule (≤15 total cases).
 See [reference.md Section 4](./reference.md#section-4--spec-generation-312-rule).
 
 ### Phase 5 — Validation
+
 Verify generated specs pass `test-metrics(action: "check-312")` before writing.
 See [reference.md Section 5](./reference.md#section-5--validation-and-migration).
 
 ### Phase 6 — Migration
+
 Write validated `spec.ts`, remove original `test.ts`, and emit report.
 See [reference.md Section 5](./reference.md#section-5--validation-and-migration).
 
 ## Available MCP Tools
 
-| Tool | Action | Purpose |
-|------|--------|---------|
-| `test-metrics` | `count` | Analyze test case counts, stability, and failure history |
-| `test-metrics` | `check-312` | Validate generated spec.ts against 3+12 rule |
+| Tool           | Action      | Purpose                                                  |
+| -------------- | ----------- | -------------------------------------------------------- |
+| `test-metrics` | `count`     | Analyze test case counts, stability, and failure history |
+| `test-metrics` | `check-312` | Validate generated spec.ts against 3+12 rule             |
 
 ## Options
+
+> Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well (e.g., "60일 기준으로 해줘" instead of `--days=60`).
 
 ```
 /filid:promote [path] [--days=90]
 ```
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `path` | string | current working directory | Target directory to scan for `test.ts` files |
-| `--days=N` | integer | 90 | Minimum stability period in days |
+| Option     | Type    | Default                   | Description                                  |
+| ---------- | ------- | ------------------------- | -------------------------------------------- |
+| `path`     | string  | current working directory | Target directory to scan for `test.ts` files |
+| `--days=N` | integer | 90                        | Minimum stability period in days             |
 
 ## Quick Reference
 

@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+// src/hooks/entries/pre-tool-validator.entry.ts
+import { readFileSync } from "node:fs";
+
 // src/core/document-validator.ts
 var CLAUDE_MD_LINE_LIMIT = 100;
 var BOUNDARY_KEYWORDS = {
@@ -67,17 +70,32 @@ function validateSpecMd(content, oldContent) {
   };
 }
 
-// src/hooks/pre-tool-validator.ts
+// src/hooks/shared.ts
 function isClaudeMd(filePath) {
   return filePath.endsWith("/CLAUDE.md") || filePath === "CLAUDE.md";
 }
 function isSpecMd(filePath) {
   return filePath.endsWith("/SPEC.md") || filePath === "SPEC.md";
 }
-function validatePreToolUse(input2, oldSpecContent) {
-  const filePath = input2.tool_input.file_path ?? input2.tool_input.path ?? "";
-  const content = input2.tool_input.content;
-  if (input2.tool_name !== "Write" || !content) {
+
+// src/hooks/pre-tool-validator.ts
+function validatePreToolUse(input, oldSpecContent) {
+  const filePath = input.tool_input.file_path ?? input.tool_input.path ?? "";
+  if (input.tool_name === "Edit" && isClaudeMd(filePath)) {
+    const newString = input.tool_input.new_string ?? "";
+    const lineCount = newString.split("\n").length;
+    if (lineCount > 20) {
+      return {
+        continue: true,
+        hookSpecificOutput: {
+          additionalContext: `Note: Editing CLAUDE.md via Edit tool with ${lineCount} new lines \u2014 line limit (100) cannot be enforced on partial edits. Verify the final line count does not exceed 100 lines after editing.`
+        }
+      };
+    }
+    return { continue: true };
+  }
+  const content = input.tool_input.content;
+  if (input.tool_name !== "Write" || !content) {
     return { continue: true };
   }
   if (isClaudeMd(filePath)) {
@@ -122,6 +140,20 @@ var chunks = [];
 for await (const chunk of process.stdin) {
   chunks.push(chunk);
 }
-var input = JSON.parse(Buffer.concat(chunks).toString("utf-8"));
-var result = validatePreToolUse(input);
+var raw = Buffer.concat(chunks).toString("utf-8");
+var result;
+try {
+  const input = JSON.parse(raw);
+  const filePath = input.tool_input.file_path ?? input.tool_input.path ?? "";
+  let oldSpecContent;
+  if (input.tool_name === "Write" && isSpecMd(filePath)) {
+    try {
+      oldSpecContent = readFileSync(filePath, "utf-8");
+    } catch {
+    }
+  }
+  result = validatePreToolUse(input, oldSpecContent);
+} catch {
+  result = { continue: true };
+}
 process.stdout.write(JSON.stringify(result));

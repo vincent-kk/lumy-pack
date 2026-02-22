@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import {
-  checkPromotionEligibility,
   type PromotionInput,
+  checkPromotionEligibility,
 } from '../../../metrics/promotion-tracker.js';
 
 describe('promotion-tracker', () => {

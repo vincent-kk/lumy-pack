@@ -1,11 +1,12 @@
-import { describe, it, expect } from 'vitest';
-import type { DependencyEdge } from '../../../types/fractal.js';
+import { describe, expect, it } from 'vitest';
+
 import {
   buildDAG,
-  topologicalSort,
   detectCycles,
   getDirectDependencies,
+  topologicalSort,
 } from '../../../core/dependency-graph.js';
+import type { DependencyEdge } from '../../../types/fractal.js';
 
 describe('dependency-graph', () => {
   describe('buildDAG', () => {
@@ -29,7 +30,9 @@ describe('dependency-graph', () => {
         { from: 'B', to: 'C', type: 'import' },
       ];
       const dag = buildDAG(edges);
-      expect(dag.adjacency.get('A')).toEqual(expect.arrayContaining(['B', 'C']));
+      expect(dag.adjacency.get('A')).toEqual(
+        expect.arrayContaining(['B', 'C']),
+      );
       expect(dag.adjacency.get('B')).toEqual(['C']);
       expect(dag.adjacency.get('C')).toEqual([]);
     });
@@ -146,9 +149,7 @@ describe('dependency-graph', () => {
     });
 
     it('should return empty array for node with no dependencies', () => {
-      const edges: DependencyEdge[] = [
-        { from: 'A', to: 'B', type: 'import' },
-      ];
+      const edges: DependencyEdge[] = [{ from: 'A', to: 'B', type: 'import' }];
       const dag = buildDAG(edges);
       expect(getDirectDependencies(dag, 'B')).toHaveLength(0);
     });

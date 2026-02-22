@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { calculateLCOM4, extractClassInfo } from '../../../ast/lcom4.js';
 
 describe('lcom4', () => {

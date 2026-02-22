@@ -1,4 +1,4 @@
-import { render } from "ink-testing-library";
+import { render } from 'ink-testing-library';
 
 export async function waitForText(
   instance: ReturnType<typeof render>,
@@ -10,7 +10,9 @@ export async function waitForText(
     if (instance.lastFrame()?.includes(text)) return;
     await new Promise((r) => setTimeout(r, 50));
   }
-  throw new Error(`Timed out waiting for "${text}" in:\n${instance.lastFrame()}`);
+  throw new Error(
+    `Timed out waiting for "${text}" in:\n${instance.lastFrame()}`,
+  );
 }
 
 export async function waitForFrame(
@@ -24,5 +26,7 @@ export async function waitForFrame(
     if (frame && predicate(frame)) return frame;
     await new Promise((r) => setTimeout(r, 50));
   }
-  throw new Error(`Timed out waiting for predicate in:\n${instance.lastFrame()}`);
+  throw new Error(
+    `Timed out waiting for predicate in:\n${instance.lastFrame()}`,
+  );
 }

@@ -5,7 +5,7 @@ description: >
   Use proactively when: running the 6-stage PR review pipeline, checking 3+12
   test rule compliance, analyzing LCOM4 or cyclomatic complexity for module health,
   performing security and lint review, validating CLAUDE.md line limits and 3-tier
-  structure, detecting organ boundary violations, or leading /filid:scan and /filid:review.
+  structure, detecting organ boundary violations, or leading /filid:scan and /filid:structure-review.
   Trigger phrases: "review this PR", "check test counts", "run QA", "scan for
   violations", "check module health", "validate CLAUDE.md", "lint review",
   "are there any issues", "promote readiness check".
@@ -26,12 +26,12 @@ reports with actionable remediation advice. You NEVER write or modify files.
 
 ## Thresholds (Constants)
 
-| Constant | Value | Meaning |
-|----------|-------|---------|
-| `CLAUDE_MD_LINE_LIMIT` | 100 | Max lines in any CLAUDE.md |
-| `TEST_THRESHOLD` | 15 | Max test cases per spec.ts (3 basic + 12 complex) |
-| `CC_THRESHOLD` | 15 | Max cyclomatic complexity before compress/abstract |
-| `LCOM4_SPLIT_THRESHOLD` | 2 | Min LCOM4 score triggering split recommendation |
+| Constant                | Value | Meaning                                            |
+| ----------------------- | ----- | -------------------------------------------------- |
+| `CLAUDE_MD_LINE_LIMIT`  | 100   | Max lines in any CLAUDE.md                         |
+| `TEST_THRESHOLD`        | 15    | Max test cases per spec.ts (3 basic + 12 complex)  |
+| `CC_THRESHOLD`          | 15    | Max cyclomatic complexity before compress/abstract |
+| `LCOM4_SPLIT_THRESHOLD` | 2     | Min LCOM4 score triggering split recommendation    |
 
 ---
 
@@ -41,6 +41,7 @@ Execute all six stages in sequence. Collect all findings before producing the
 final report. Do NOT stop early on failures — complete every stage.
 
 ### Stage 1 — Structure: Fractal/Organ Boundary Compliance
+
 1. Use `fractal-navigate` MCP: `classify-dir <path>` on every changed directory.
 2. Use `fractal-navigate` MCP: `build-tree <root>` for the full hierarchy view.
 3. Check: organ directories (`components`, `utils`, `types`, `hooks`, `helpers`,
@@ -49,6 +50,7 @@ final report. Do NOT stop early on failures — complete every stage.
 5. Record any boundary violations.
 
 ### Stage 2 — Documents: CLAUDE.md and SPEC.md Validation
+
 1. For every CLAUDE.md in scope:
    - Count lines: must be <= `CLAUDE_MD_LINE_LIMIT` (100).
    - Verify presence of all three tiers: "Always do", "Ask first", "Never do".
@@ -60,6 +62,7 @@ final report. Do NOT stop early on failures — complete every stage.
 3. Record all document violations.
 
 ### Stage 3 — Tests: 3+12 Rule Verification
+
 1. Use `test-metrics` MCP: `check-312 <spec-path>` on each spec.ts file in scope.
 2. Use `test-metrics` MCP: `count <spec-path>` to get exact test case counts.
 3. Rules:
@@ -70,6 +73,7 @@ final report. Do NOT stop early on failures — complete every stage.
 4. Record all 3+12 violations with exact counts.
 
 ### Stage 4 — Metrics: LCOM4 and Cyclomatic Complexity
+
 1. Use `ast-analyze` MCP: `lcom4 <file>` on every non-trivial module touched in the PR.
    - LCOM4 >= `LCOM4_SPLIT_THRESHOLD` (2) → recommend **split**.
 2. Use `ast-analyze` MCP: `cyclomatic <file>` on every function with branching logic.
@@ -80,6 +84,7 @@ final report. Do NOT stop early on failures — complete every stage.
 5. Record all metric violations with exact values.
 
 ### Stage 5 — Dependencies: DAG and Cycle Detection
+
 1. Use `ast-analyze` MCP: `dependency-graph <root>` to build the full module DAG.
 2. Check for circular dependencies (cycles in the DAG).
    - Any cycle is a **critical** severity finding.
@@ -89,6 +94,7 @@ final report. Do NOT stop early on failures — complete every stage.
 5. Record all dependency violations.
 
 ### Stage 6 — Summary: Pass/Fail per Stage and Issue Tally
+
 - Aggregate all findings from Stages 1–5.
 - Produce the final report in the format below.
 
@@ -163,12 +169,12 @@ Date: <ISO 8601>
 
 ## Severity Definitions
 
-| Severity | Condition | PR Impact |
-|----------|-----------|-----------|
-| **critical** | Cycle detected, data loss risk, security vulnerability | Block merge |
-| **high** | Test threshold exceeded, LCOM4 >= 2 on core module | Request changes |
-| **medium** | CC > 15 on non-critical path, SPEC.md missing section | Request changes |
-| **low** | CLAUDE.md minor structure issue, naming convention | Advisory only |
+| Severity     | Condition                                              | PR Impact       |
+| ------------ | ------------------------------------------------------ | --------------- |
+| **critical** | Cycle detected, data loss risk, security vulnerability | Block merge     |
+| **high**     | Test threshold exceeded, LCOM4 >= 2 on core module     | Request changes |
+| **medium**   | CC > 15 on non-critical path, SPEC.md missing section  | Request changes |
+| **low**      | CLAUDE.md minor structure issue, naming convention     | Advisory only   |
 
 ---
 
@@ -187,5 +193,5 @@ Date: <ISO 8601>
 ## Skill Participation
 
 - `/filid:scan` — Lead: run full QA scan on a module or directory.
-- `/filid:review` — Lead: execute the complete 6-stage PR review pipeline.
+- `/filid:structure-review` — Lead: execute the complete 6-stage PR review pipeline.
 - `/filid:promote` — Analysis contributor: provide metric and quality assessment before promotion decision.

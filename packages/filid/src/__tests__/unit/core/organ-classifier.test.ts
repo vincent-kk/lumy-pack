@@ -1,21 +1,37 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import {
+  LEGACY_ORGAN_DIR_NAMES,
+  ORGAN_DIR_NAMES,
   classifyNode,
   isOrganDirectory,
-  ORGAN_DIR_NAMES,
 } from '../../../core/organ-classifier.js';
 
 describe('organ-classifier', () => {
-  describe('ORGAN_DIR_NAMES', () => {
+  describe('ORGAN_DIR_NAMES (deprecated alias)', () => {
     it('should include standard organ directory names', () => {
-      const expected = ['components', 'utils', 'types', 'hooks', 'helpers', 'lib', 'styles', 'assets', 'constants'];
+      const expected = [
+        'components',
+        'utils',
+        'types',
+        'hooks',
+        'helpers',
+        'lib',
+        'styles',
+        'assets',
+        'constants',
+      ];
       for (const name of expected) {
         expect(ORGAN_DIR_NAMES).toContain(name);
       }
     });
+
+    it('LEGACY_ORGAN_DIR_NAMES should equal ORGAN_DIR_NAMES', () => {
+      expect(LEGACY_ORGAN_DIR_NAMES).toBe(ORGAN_DIR_NAMES);
+    });
   });
 
-  describe('isOrganDirectory', () => {
+  describe('isOrganDirectory (deprecated)', () => {
     it('should return true for known organ directory names', () => {
       expect(isOrganDirectory('components')).toBe(true);
       expect(isOrganDirectory('utils')).toBe(true);
@@ -43,80 +59,136 @@ describe('organ-classifier', () => {
 
   describe('classifyNode', () => {
     it('should classify as fractal when CLAUDE.md exists', () => {
-      expect(classifyNode({
-        dirName: 'auth',
-        hasClaudeMd: true,
-        hasSpecMd: false,
-        isInsideFractal: false,
-      })).toBe('fractal');
+      expect(
+        classifyNode({
+          dirName: 'auth',
+          hasClaudeMd: true,
+          hasSpecMd: false,
+          hasFractalChildren: false,
+          isLeafDirectory: true,
+        }),
+      ).toBe('fractal');
     });
 
-    it('should classify as fractal when CLAUDE.md exists even with organ-like name', () => {
-      // If someone explicitly gave CLAUDE.md to a "utils" dir, treat it as fractal
-      expect(classifyNode({
-        dirName: 'utils',
-        hasClaudeMd: true,
-        hasSpecMd: false,
-        isInsideFractal: true,
-      })).toBe('fractal');
+    it('should classify as fractal when SPEC.md exists', () => {
+      expect(
+        classifyNode({
+          dirName: 'auth',
+          hasClaudeMd: false,
+          hasSpecMd: true,
+          hasFractalChildren: false,
+          isLeafDirectory: true,
+        }),
+      ).toBe('fractal');
     });
 
-    it('should classify as organ for known organ dirs inside a fractal without CLAUDE.md', () => {
-      expect(classifyNode({
-        dirName: 'components',
-        hasClaudeMd: false,
-        hasSpecMd: false,
-        isInsideFractal: true,
-      })).toBe('organ');
-
-      expect(classifyNode({
-        dirName: 'utils',
-        hasClaudeMd: false,
-        hasSpecMd: false,
-        isInsideFractal: true,
-      })).toBe('organ');
+    it('should classify as fractal when CLAUDE.md exists even for leaf directory without fractal children', () => {
+      expect(
+        classifyNode({
+          dirName: 'utils',
+          hasClaudeMd: true,
+          hasSpecMd: false,
+          hasFractalChildren: false,
+          isLeafDirectory: true,
+        }),
+      ).toBe('fractal');
     });
 
-    it('should classify as pure-function when no side effects and no CLAUDE.md', () => {
-      expect(classifyNode({
-        dirName: 'math-helpers',
-        hasClaudeMd: false,
-        hasSpecMd: false,
-        isInsideFractal: false,
-        hasSideEffects: false,
-      })).toBe('pure-function');
+    it('should classify as organ when leaf directory with no fractal children and no CLAUDE.md/SPEC.md', () => {
+      expect(
+        classifyNode({
+          dirName: 'components',
+          hasClaudeMd: false,
+          hasSpecMd: false,
+          hasFractalChildren: false,
+          isLeafDirectory: true,
+        }),
+      ).toBe('organ');
+
+      expect(
+        classifyNode({
+          dirName: 'utils',
+          hasClaudeMd: false,
+          hasSpecMd: false,
+          hasFractalChildren: false,
+          isLeafDirectory: true,
+        }),
+      ).toBe('organ');
     });
 
-    it('should classify as fractal (without CLAUDE.md) when not organ and has side effects', () => {
-      // A non-organ directory with side effects that lacks CLAUDE.md
-      // is still a fractal — it just needs a CLAUDE.md added
-      expect(classifyNode({
-        dirName: 'payments',
-        hasClaudeMd: false,
-        hasSpecMd: false,
-        isInsideFractal: false,
-        hasSideEffects: true,
-      })).toBe('fractal');
+    it('should classify non-standard dir as organ when leaf with no fractal children', () => {
+      expect(
+        classifyNode({
+          dirName: 'my-custom-dir',
+          hasClaudeMd: false,
+          hasSpecMd: false,
+          hasFractalChildren: false,
+          isLeafDirectory: true,
+        }),
+      ).toBe('organ');
     });
 
-    it('should default hasSideEffects to true when not provided', () => {
-      // Unknown dir without CLAUDE.md, no hasSideEffects info → assume fractal
-      expect(classifyNode({
-        dirName: 'checkout',
-        hasClaudeMd: false,
-        hasSpecMd: false,
-        isInsideFractal: false,
-      })).toBe('fractal');
+    it('should classify as pure-function when no side effects and no CLAUDE.md/SPEC.md', () => {
+      expect(
+        classifyNode({
+          dirName: 'math-helpers',
+          hasClaudeMd: false,
+          hasSpecMd: false,
+          hasFractalChildren: false,
+          isLeafDirectory: false,
+          hasSideEffects: false,
+        }),
+      ).toBe('pure-function');
     });
 
-    it('should classify organ dirs at top level (not inside fractal) as organ', () => {
-      // Even at top level, a "components" dir without CLAUDE.md is organ-like
-      expect(classifyNode({
-        dirName: 'components',
-        hasClaudeMd: false,
-        hasSpecMd: false,
-        isInsideFractal: false,
-      })).toBe('organ');
+    it('should classify as fractal when has fractal children even without CLAUDE.md', () => {
+      expect(
+        classifyNode({
+          dirName: 'payments',
+          hasClaudeMd: false,
+          hasSpecMd: false,
+          hasFractalChildren: true,
+          isLeafDirectory: false,
+          hasSideEffects: true,
+        }),
+      ).toBe('fractal');
+    });
+
+    it('should classify as fractal when not leaf and has side effects', () => {
+      expect(
+        classifyNode({
+          dirName: 'checkout',
+          hasClaudeMd: false,
+          hasSpecMd: false,
+          hasFractalChildren: false,
+          isLeafDirectory: false,
+          hasSideEffects: true,
+        }),
+      ).toBe('fractal');
+    });
+
+    it('should default hasSideEffects to true when not provided (non-leaf)', () => {
+      expect(
+        classifyNode({
+          dirName: 'checkout',
+          hasClaudeMd: false,
+          hasSpecMd: false,
+          hasFractalChildren: false,
+          isLeafDirectory: false,
+        }),
+      ).toBe('fractal');
+    });
+
+    it('should prioritize CLAUDE.md over SPEC.md', () => {
+      expect(
+        classifyNode({
+          dirName: 'auth',
+          hasClaudeMd: true,
+          hasSpecMd: true,
+          hasFractalChildren: false,
+          isLeafDirectory: true,
+        }),
+      ).toBe('fractal');
     });
   });
 });

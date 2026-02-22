@@ -1,20 +1,10 @@
-import type { PreToolUseInput, HookOutput } from '../types/hooks.js';
 import { validateClaudeMd } from '../core/document-validator.js';
 import { validateSpecMd } from '../core/document-validator.js';
+import type { HookOutput, PreToolUseInput } from '../types/hooks.js';
 
-/**
- * Check if a file path targets CLAUDE.md.
- */
-function isClaudeMd(filePath: string): boolean {
-  return filePath.endsWith('/CLAUDE.md') || filePath === 'CLAUDE.md';
-}
+import { isClaudeMd, isSpecMd } from './shared.js';
 
-/**
- * Check if a file path targets SPEC.md.
- */
-function isSpecMd(filePath: string): boolean {
-  return filePath.endsWith('/SPEC.md') || filePath === 'SPEC.md';
-}
+export { isSpecMd } from './shared.js';
 
 /**
  * PreToolUse hook logic for CLAUDE.md/SPEC.md validation.
@@ -26,17 +16,36 @@ function isSpecMd(filePath: string): boolean {
  * For Write tool targeting SPEC.md:
  * - Blocks if detected as append-only (when oldSpecContent provided)
  *
- * For Edit tool: partial edits cannot be validated for line limit,
- * so they pass through.
+ * For Edit tool targeting CLAUDE.md:
+ * - Warns when new_string exceeds 20 lines (partial edits cannot be validated for line limit)
  */
 export function validatePreToolUse(
   input: PreToolUseInput,
   oldSpecContent?: string,
 ): HookOutput {
   const filePath = input.tool_input.file_path ?? input.tool_input.path ?? '';
+
+  // Edit targeting CLAUDE.md: 대규모 편집(>20줄) 시 경고 주입 (차단하지 않음)
+  if (input.tool_name === 'Edit' && isClaudeMd(filePath)) {
+    const newString = (input.tool_input.new_string as string) ?? '';
+    const lineCount = newString.split('\n').length;
+    if (lineCount > 20) {
+      return {
+        continue: true,
+        hookSpecificOutput: {
+          additionalContext:
+            `Note: Editing CLAUDE.md via Edit tool with ${lineCount} new lines — ` +
+            'line limit (100) cannot be enforced on partial edits. ' +
+            'Verify the final line count does not exceed 100 lines after editing.',
+        },
+      };
+    }
+    return { continue: true };
+  }
+
   const content = input.tool_input.content;
 
-  // Only validate Write tool with full content
+  // Write만 검증 (Edit은 위에서 처리됨)
   if (input.tool_name !== 'Write' || !content) {
     return { continue: true };
   }

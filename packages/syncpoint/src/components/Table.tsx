@@ -1,5 +1,5 @@
-import React from "react";
-import { Text, Box } from "ink";
+import { Box, Text } from 'ink';
+import React from 'react';
 
 interface TableProps {
   headers: string[];
@@ -16,7 +16,7 @@ export const Table: React.FC<TableProps> = ({
     columnWidths ??
     headers.map((header, colIdx) => {
       const dataMax = rows.reduce(
-        (max, row) => Math.max(max, (row[colIdx] ?? "").length),
+        (max, row) => Math.max(max, (row[colIdx] ?? '').length),
         0,
       );
       return Math.max(header.length, dataMax) + 2;
@@ -26,7 +26,7 @@ export const Table: React.FC<TableProps> = ({
     return text.padEnd(width);
   };
 
-  const separator = widths.map((w) => "─".repeat(w)).join("  ");
+  const separator = widths.map((w) => '─'.repeat(w)).join('  ');
 
   return (
     <Box flexDirection="column">
@@ -34,7 +34,7 @@ export const Table: React.FC<TableProps> = ({
         {headers.map((h, i) => (
           <Text key={i} bold>
             {padCell(h, widths[i])}
-            {i < headers.length - 1 ? "  " : ""}
+            {i < headers.length - 1 ? '  ' : ''}
           </Text>
         ))}
       </Text>
@@ -44,7 +44,7 @@ export const Table: React.FC<TableProps> = ({
           {row.map((cell, colIdx) => (
             <Text key={colIdx}>
               {padCell(cell, widths[colIdx])}
-              {colIdx < row.length - 1 ? "  " : ""}
+              {colIdx < row.length - 1 ? '  ' : ''}
             </Text>
           ))}
         </Text>

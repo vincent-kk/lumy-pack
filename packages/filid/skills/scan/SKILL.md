@@ -22,49 +22,56 @@ violation report and, with `--fix`, applies automatic remediation.
 - Checking for regressions after a large-scale refactor
 - Verifying that `/filid:init` produced a fully compliant structure
 - Running a periodic governance health check
-- Preparing a baseline report before `/filid:review` or `/filid:promote`
+- Preparing a baseline report before `/filid:structure-review` or `/filid:promote`
 
 ## Core Workflow
 
 ### Phase 1 — Tree Construction
+
 Build the project hierarchy using `fractal-navigate(action: "tree")` and
 partition into fractal nodes, organ nodes, and spec files.
 See [reference.md Section 1](./reference.md#section-1--tree-construction).
 
 ### Phase 2 — CLAUDE.md Validation
+
 Check line count (≤100) and 3-tier boundary sections for every CLAUDE.md.
 See [reference.md Section 2](./reference.md#section-2--claudemd-validation).
 
 ### Phase 3 — Organ Directory Validation
+
 Verify no organ directory contains a CLAUDE.md file.
 See [reference.md Section 3](./reference.md#section-3--organ-directory-validation).
 
 ### Phase 4 — Test File Validation (3+12 Rule)
+
 Validate all `*.spec.ts` files against the 15-case limit using `test-metrics`.
 See [reference.md Section 4](./reference.md#section-4--test-file-validation-312-rule).
 
 ### Phase 5 — Report Generation
+
 Emit a structured violation report; with `--fix`, apply auto-remediations
 and re-validate.
 See [reference.md Section 5](./reference.md#section-5--report-formats).
 
 ## Available MCP Tools
 
-| Tool | Action | Purpose |
-|------|--------|---------|
-| `fractal-navigate` | `tree` | Build complete project hierarchy for scan |
-| `test-metrics` | `check-312` | Validate 3+12 rule across all spec files |
+| Tool               | Action      | Purpose                                   |
+| ------------------ | ----------- | ----------------------------------------- |
+| `fractal-navigate` | `tree`      | Build complete project hierarchy for scan |
+| `test-metrics`     | `check-312` | Validate 3+12 rule across all spec files  |
 
 ## Options
+
+> Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well (e.g., "고칠 수 있는 건 고쳐줘" instead of `--fix`).
 
 ```
 /filid:scan [path] [--fix]
 ```
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `path` | string | Current working directory | Root directory to scan |
-| `--fix` | flag | off | Apply automatic remediations where possible |
+| Parameter | Type   | Default                   | Description                                 |
+| --------- | ------ | ------------------------- | ------------------------------------------- |
+| `path`    | string | Current working directory | Root directory to scan                      |
+| `--fix`   | flag   | off                       | Apply automatic remediations where possible |
 
 ## Quick Reference
 

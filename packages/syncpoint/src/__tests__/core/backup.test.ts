@@ -173,7 +173,11 @@ describe('core/backup', () => {
     it('excludes sensitive files from glob targets', async () => {
       await mkdir(join(sandbox.home, '.ssh'), { recursive: true });
       await writeFile(join(sandbox.home, '.ssh', 'config'), 'Host *', 'utf-8');
-      await writeFile(join(sandbox.home, '.ssh', 'id_rsa'), 'privatekey', 'utf-8');
+      await writeFile(
+        join(sandbox.home, '.ssh', 'id_rsa'),
+        'privatekey',
+        'utf-8',
+      );
 
       const config = makeConfig({
         backup: {
@@ -192,7 +196,11 @@ describe('core/backup', () => {
     it('excludes sensitive files from directory targets', async () => {
       await mkdir(join(sandbox.home, '.ssh'), { recursive: true });
       await writeFile(join(sandbox.home, '.ssh', 'config'), 'Host *', 'utf-8');
-      await writeFile(join(sandbox.home, '.ssh', 'id_ed25519'), 'privatekey', 'utf-8');
+      await writeFile(
+        join(sandbox.home, '.ssh', 'id_ed25519'),
+        'privatekey',
+        'utf-8',
+      );
 
       const config = makeConfig({
         backup: {

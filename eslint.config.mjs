@@ -80,7 +80,13 @@ export function createESLintConfig(
       },
     },
     {
-      ignores: ["**/dist/**", "**/node_modules/**", "**/*.config.*"],
+      ignores: [
+        "**/dist/**",
+        "**/node_modules/**",
+        "**/libs/**",
+        "**/scripts/**",
+        "**/*.config.*",
+      ],
     },
   ];
 }

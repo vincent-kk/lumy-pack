@@ -1,22 +1,23 @@
-import React, { useState, useEffect } from "react";
-import { Text, Box, useApp } from "ink";
-import { Command } from "commander";
-import { render } from "ink";
-import { join } from "node:path";
+import { join } from 'node:path';
+
+import { Command } from 'commander';
+import { Box, Text, useApp } from 'ink';
+import { render } from 'ink';
+import React, { useEffect, useState } from 'react';
 
 import {
   APP_NAME,
+  BACKUPS_DIR,
+  CONFIG_FILENAME,
+  LOGS_DIR,
+  SCRIPTS_DIR,
+  TEMPLATES_DIR,
   getAppDir,
   getSubDir,
-  BACKUPS_DIR,
-  TEMPLATES_DIR,
-  SCRIPTS_DIR,
-  LOGS_DIR,
-  CONFIG_FILENAME,
-} from "../constants.js";
-import { readAsset } from "../utils/assets.js";
-import { ensureDir, fileExists } from "../utils/paths.js";
-import { initDefaultConfig } from "../core/config.js";
+} from '../constants.js';
+import { initDefaultConfig } from '../core/config.js';
+import { readAsset } from '../utils/assets.js';
+import { ensureDir, fileExists } from '../utils/paths.js';
 
 interface StepInfo {
   name: string;
@@ -70,15 +71,21 @@ const InitView: React.FC = () => {
         }
 
         await initDefaultConfig();
-        completed.push({ name: `Created ${CONFIG_FILENAME} (defaults)`, done: true });
+        completed.push({
+          name: `Created ${CONFIG_FILENAME} (defaults)`,
+          done: true,
+        });
         setSteps([...completed]);
 
         // Create example template
-        const exampleTemplatePath = join(getSubDir(TEMPLATES_DIR), "example.yml");
+        const exampleTemplatePath = join(
+          getSubDir(TEMPLATES_DIR),
+          'example.yml',
+        );
         if (!(await fileExists(exampleTemplatePath))) {
-          const { writeFile } = await import("node:fs/promises");
-          const exampleYaml = readAsset("template.example.yml");
-          await writeFile(exampleTemplatePath, exampleYaml, "utf-8");
+          const { writeFile } = await import('node:fs/promises');
+          const exampleYaml = readAsset('template.example.yml');
+          await writeFile(exampleTemplatePath, exampleYaml, 'utf-8');
           completed.push({ name: `Created templates/example.yml`, done: true });
           setSteps([...completed]);
         }
@@ -113,14 +120,12 @@ const InitView: React.FC = () => {
       {complete && (
         <Box flexDirection="column" marginTop={1}>
           <Text bold>Initialization complete! Next steps:</Text>
+          <Text>{'  '}1. Edit config.yml to specify backup targets</Text>
           <Text>
-            {"  "}1. Edit config.yml to specify backup targets
+            {'     '}→ ~/.{APP_NAME}/{CONFIG_FILENAME}
           </Text>
           <Text>
-            {"     "}→ ~/.{APP_NAME}/{CONFIG_FILENAME}
-          </Text>
-          <Text>
-            {"  "}2. Run {APP_NAME} backup to create your first snapshot
+            {'  '}2. Run {APP_NAME} backup to create your first snapshot
           </Text>
         </Box>
       )}
@@ -130,8 +135,10 @@ const InitView: React.FC = () => {
 
 export function registerInitCommand(program: Command): void {
   program
-    .command("init")
-    .description(`Initialize ~/.${APP_NAME}/ directory structure and default config`)
+    .command('init')
+    .description(
+      `Initialize ~/.${APP_NAME}/ directory structure and default config`,
+    )
     .action(async () => {
       const { waitUntilExit } = render(<InitView />);
       await waitUntilExit();

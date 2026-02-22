@@ -8,11 +8,11 @@
 
 ### 사전 요구사항
 
-| 요구사항 | 최소 버전 | 비고 |
-|----------|----------|------|
-| Node.js | >= 20.0.0 | `package.json` engines 명시 |
-| Claude Code | 최신 | 플러그인 시스템 지원 버전 |
-| npm / yarn | - | 의존성 설치용 |
+| 요구사항    | 최소 버전 | 비고                        |
+| ----------- | --------- | --------------------------- |
+| Node.js     | >= 20.0.0 | `package.json` engines 명시 |
+| Claude Code | 최신      | 플러그인 시스템 지원 버전   |
+| npm / yarn  | -         | 의존성 설치용               |
 
 ### 의존성 설치
 
@@ -27,13 +27,13 @@ npm install
 
 핵심 런타임 의존성:
 
-| 패키지 | 용도 |
-|--------|------|
-| `typescript` | Compiler API (AST 파싱), MCP 서버에서 사용 |
-| `@modelcontextprotocol/sdk` | MCP 서버 프레임워크 |
-| `fast-glob` | 파일 패턴 탐색 |
-| `yaml` | YAML 설정 파싱 |
-| `zod` | 입력 스키마 검증 |
+| 패키지                      | 용도                                       |
+| --------------------------- | ------------------------------------------ |
+| `typescript`                | Compiler API (AST 파싱), MCP 서버에서 사용 |
+| `@modelcontextprotocol/sdk` | MCP 서버 프레임워크                        |
+| `fast-glob`                 | 파일 패턴 탐색                             |
+| `yaml`                      | YAML 설정 파싱                             |
+| `zod`                       | 입력 스키마 검증                           |
 
 ---
 
@@ -93,10 +93,10 @@ yarn test:run   # 1회 실행
 }
 ```
 
-| 필드 | 설명 |
-|------|------|
-| `skills` | 스킬 디렉토리 경로. 하위의 `*/SKILL.md` 파일이 스킬로 등록됨 |
-| `mcpServers` | MCP 서버 설정 파일 경로 |
+| 필드         | 설명                                                         |
+| ------------ | ------------------------------------------------------------ |
+| `skills`     | 스킬 디렉토리 경로. 하위의 `*/SKILL.md` 파일이 스킬로 등록됨 |
+| `mcpServers` | MCP 서버 설정 파일 경로                                      |
 
 ### `.mcp.json` — MCP 서버 등록
 
@@ -111,51 +111,68 @@ yarn test:run   # 1회 실행
 }
 ```
 
-| 필드 | 설명 |
-|------|------|
-| `command` | 서버 실행 명령 (`node`) |
-| `args` | 서버 번들 경로. `${CLAUDE_PLUGIN_ROOT}`는 플러그인 루트로 치환 |
+| 필드      | 설명                                                           |
+| --------- | -------------------------------------------------------------- |
+| `command` | 서버 실행 명령 (`node`)                                        |
+| `args`    | 서버 번들 경로. `${CLAUDE_PLUGIN_ROOT}`는 플러그인 루트로 치환 |
 
 ### `hooks/hooks.json` — Hook 이벤트 등록
 
 ```json
 {
   "hooks": {
-    "PreToolUse": [{
-      "matcher": "Write|Edit",
-      "hooks": [
-        { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/pre-tool-validator.mjs\"", "timeout": 3 },
-        { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/organ-guard.mjs\"", "timeout": 3 }
-      ]
-    }],
-    "PostToolUse": [{
-      "matcher": "Write|Edit",
-      "hooks": [
-        { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/change-tracker.mjs\"", "timeout": 3 }
-      ]
-    }],
-    "SubagentStart": [{
-      "matcher": "*",
-      "hooks": [
-        { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/agent-enforcer.mjs\"", "timeout": 3 }
-      ]
-    }],
-    "UserPromptSubmit": [{
-      "matcher": "*",
-      "hooks": [
-        { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/context-injector.mjs\"", "timeout": 5 }
-      ]
-    }]
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/pre-tool-validator.mjs\"",
+            "timeout": 3
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/structure-guard.mjs\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [],
+    "SubagentStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/agent-enforcer.mjs\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/context-injector.mjs\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
   }
 }
 ```
 
-| Hook 이벤트 | matcher | 스크립트 | timeout |
-|-------------|---------|----------|---------|
-| PreToolUse | `Write\|Edit` | pre-tool-validator, organ-guard | 3초 |
-| PostToolUse | `Write\|Edit` | change-tracker | 3초 |
-| SubagentStart | `*` (모든 에이전트) | agent-enforcer | 3초 |
-| UserPromptSubmit | `*` (모든 프롬프트) | context-injector | 5초 |
+| Hook 이벤트      | matcher             | 스크립트                            | timeout |
+| ---------------- | ------------------- | ----------------------------------- | ------- |
+| PreToolUse       | `Write\|Edit`       | pre-tool-validator, structure-guard | 3초     |
+| PostToolUse      | —                   | _(disabled)_                        | —       |
+| SubagentStart    | `*` (모든 에이전트) | agent-enforcer                      | 3초     |
+| UserPromptSubmit | `*` (모든 프롬프트) | context-injector                    | 5초     |
 
 ---
 
@@ -167,11 +184,12 @@ yarn test:run   # 1회 실행
 /init [path]
 ```
 
-| 옵션 | 기본값 | 설명 |
-|------|--------|------|
-| `path` | cwd | 대상 디렉토리 |
+| 옵션   | 기본값 | 설명          |
+| ------ | ------ | ------------- |
+| `path` | cwd    | 대상 디렉토리 |
 
 **예시**:
+
 ```
 /init
 /init ./packages/my-app
@@ -185,12 +203,13 @@ yarn test:run   # 1회 실행
 /scan [path] [--fix]
 ```
 
-| 옵션 | 기본값 | 설명 |
-|------|--------|------|
-| `path` | cwd | 대상 디렉토리 |
+| 옵션    | 기본값 | 설명                       |
+| ------- | ------ | -------------------------- |
+| `path`  | cwd    | 대상 디렉토리              |
 | `--fix` | (없음) | 자동 수정 가능한 위반 해결 |
 
 **예시**:
+
 ```
 /scan
 /scan --fix
@@ -205,11 +224,12 @@ yarn test:run   # 1회 실행
 /sync [--dry-run]
 ```
 
-| 옵션 | 기본값 | 설명 |
-|------|--------|------|
+| 옵션        | 기본값 | 설명                    |
+| ----------- | ------ | ----------------------- |
 | `--dry-run` | (없음) | 실제 변경 없이 미리보기 |
 
 **예시**:
+
 ```
 /sync
 /sync --dry-run
@@ -223,12 +243,13 @@ yarn test:run   # 1회 실행
 /review [--stage=1-6] [--verbose]
 ```
 
-| 옵션 | 기본값 | 설명 |
-|------|--------|------|
-| `--stage` | all | 특정 단계만 실행 (1-6) |
-| `--verbose` | (없음) | 상세 분석 포함 |
+| 옵션        | 기본값 | 설명                   |
+| ----------- | ------ | ---------------------- |
+| `--stage`   | all    | 특정 단계만 실행 (1-6) |
+| `--verbose` | (없음) | 상세 분석 포함         |
 
 **예시**:
+
 ```
 /review
 /review --stage=3
@@ -243,12 +264,13 @@ yarn test:run   # 1회 실행
 /promote [path] [--days=90]
 ```
 
-| 옵션 | 기본값 | 설명 |
-|------|--------|------|
-| `path` | cwd | 대상 디렉토리 |
-| `--days` | 90 | 최소 안정 기간 (일) |
+| 옵션     | 기본값 | 설명                |
+| -------- | ------ | ------------------- |
+| `path`   | cwd    | 대상 디렉토리       |
+| `--days` | 90     | 최소 안정 기간 (일) |
 
 **예시**:
+
 ```
 /promote
 /promote --days=60
@@ -264,12 +286,88 @@ yarn test:run   # 1회 실행
 ```
 
 **예시**:
+
 ```
 /query fractal-tree 모듈의 역할은?
 /query organ 디렉토리에서 허용되는 작업은?
 ```
 
 **결과**: 3-Prompt Limit 내에서 답변. 컨텍스트 초과 시 압축 적용.
+
+### /code-review — AI 거버넌스 코드 리뷰
+
+```
+/code-review [--scope=branch|pr|commit] [--base=ref] [--force] [--verbose]
+```
+
+| 옵션        | 기본값   | 설명                         |
+| ----------- | -------- | ---------------------------- |
+| `--scope`   | `branch` | 리뷰 범위 (branch/pr/commit) |
+| `--base`    | `main`   | 비교 기준 ref                |
+| `--force`   | (없음)   | 기존 리뷰 삭제 후 재시작     |
+| `--verbose` | (없음)   | 상세 분석 포함               |
+
+**예시**:
+
+```
+/code-review
+/code-review --scope=pr --verbose
+/code-review --force
+```
+
+**결과**: `.filid/review/<branch>/`에 review-report.md, fix-requests.md 생성. `--scope=pr` 시 PR 코멘트 게시.
+
+### /resolve-review — 수정 사항 해결
+
+```
+/resolve-review
+```
+
+파라미터 없음. 현재 브랜치 자동 감지.
+
+**예시**:
+
+```
+/resolve-review
+```
+
+**결과**: 각 fix 항목에 대해 수용/거부 선택 → 거부 시 소명 수집 → justifications.md + 부채 파일 생성.
+
+### /re-validate — Delta 재검증
+
+```
+/re-validate
+```
+
+파라미터 없음. 현재 브랜치 자동 감지.
+
+**예시**:
+
+```
+/re-validate
+```
+
+**결과**: PASS/FAIL 판정 → re-validate.md 생성. `gh` 인증 시 PR 코멘트 게시.
+
+### .filid/ 디렉토리 구조
+
+거버넌스 스킬이 사용하는 파일 시스템:
+
+```
+.filid/
+├── review/<branch>/       # 브랜치별 리뷰 산출물
+│   ├── session.md            # Phase A: 위원회 선출 결과
+│   ├── verification.md       # Phase B: 기술 검증 결과
+│   ├── review-report.md      # Phase C: 최종 리뷰 보고서
+│   ├── fix-requests.md       # Phase C: 수정 요청 사항
+│   ├── justifications.md     # /resolve-review: 수용/거부 결정
+│   └── re-validate.md        # /re-validate: PASS/FAIL 판정
+└── debt/                  # 기술 부채 (전체 공유, 커밋 대상)
+    └── <debt-id>.md          # 개별 부채 항목 (YAML frontmatter)
+```
+
+- `.filid/review/` — 커밋 대상 (PR에 리뷰 이력 남김)
+- `.filid/debt/` — 커밋 대상 (팀 간 부채 공유)
 
 ---
 
@@ -382,20 +480,20 @@ yarn test:run   # 1회 실행
 ```yaml
 ---
 name: architect
-description: "FCA-AI Architect agent — read-only design and planning"
-disallowedTools:    # 선택적 — 도구 제한
+description: 'FCA-AI Architect agent — read-only design and planning'
+disallowedTools: # 선택적 — 도구 제한
   - Write
   - Edit
   - Bash
 ---
 ```
 
-| 에이전트 | disallowedTools | 주 용도 |
-|----------|----------------|---------|
-| architect | Write, Edit, Bash | 설계, 분석, SPEC.md 초안 제안 |
-| qa-reviewer | Write, Edit, Bash | 규칙 검증, 메트릭 분석, PR 리뷰 |
-| implementer | (없음) | SPEC.md 범위 내 코드 구현 |
-| context-manager | (없음) | CLAUDE.md/SPEC.md 문서 관리 |
+| 에이전트        | disallowedTools   | 주 용도                         |
+| --------------- | ----------------- | ------------------------------- |
+| architect       | Write, Edit, Bash | 설계, 분석, SPEC.md 초안 제안   |
+| qa-reviewer     | Write, Edit, Bash | 규칙 검증, 메트릭 분석, PR 리뷰 |
+| implementer     | (없음)            | SPEC.md 범위 내 코드 구현       |
+| context-manager | (없음)            | CLAUDE.md/SPEC.md 문서 관리     |
 
 ---
 
@@ -406,6 +504,7 @@ disallowedTools:    # 선택적 — 도구 제한
 **증상**: 도구 호출 시 "MCP server not found" 또는 timeout.
 
 **원인 및 해결**:
+
 1. `libs/server.cjs` 미존재 → `node build-plugin.mjs` 실행
 2. `typescript` 미설치 → `npm install` 실행
 3. Node.js 버전 < 20 → 업그레이드
@@ -415,6 +514,7 @@ disallowedTools:    # 선택적 — 도구 제한
 **증상**: CLAUDE.md 100줄 초과해도 차단 안 됨.
 
 **원인 및 해결**:
+
 1. `scripts/*.mjs` 미존재 → `node build-plugin.mjs` 실행
 2. `hooks.json` 경로 오류 → `${CLAUDE_PLUGIN_ROOT}` 변수 확인
 3. 플러그인 미등록 → `.claude-plugin/plugin.json` 확인
@@ -424,6 +524,7 @@ disallowedTools:    # 선택적 — 도구 제한
 **증상**: "Hook timed out" 오류.
 
 **원인 및 해결**:
+
 1. 대형 파일 Write 시 stdin 처리 지연 → 정상 동작, timeout 내 처리됨
 2. Node.js 초기 로딩 느림 → 콜드 스타트 문제, 재시도하면 해결
 
@@ -432,6 +533,7 @@ disallowedTools:    # 선택적 — 도구 제한
 **증상**: architect 에이전트가 파일을 수정함.
 
 **원인 및 해결**:
+
 1. `agent-enforcer` 훅은 지시만 주입 → 에이전트가 무시할 수 있음
 2. `agents/*.md`의 `disallowedTools` 확인 — 이것이 실제 도구 차단 메커니즘
 3. 두 메커니즘이 모두 올바르게 설정되어야 함
@@ -441,6 +543,7 @@ disallowedTools:    # 선택적 — 도구 제한
 **증상**: `build-plugin.mjs` 실행 시 에러.
 
 **원인 및 해결**:
+
 1. esbuild 미설치 → `npm install` (devDependencies)
 2. TypeScript 문법 에러 → `yarn typecheck` 으로 확인
 3. `libs/` 또는 `scripts/` 디렉토리 권한 → `mkdir -p` 로 재생성

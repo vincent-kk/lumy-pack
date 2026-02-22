@@ -1,5 +1,9 @@
+import {
+  type ToolCallEntry,
+  type ToolCallSummary,
+  summarizeLossy,
+} from '../../compress/lossy-summarizer.js';
 import { compactReversible } from '../../compress/reversible-compactor.js';
-import { summarizeLossy, type ToolCallEntry, type ToolCallSummary } from '../../compress/lossy-summarizer.js';
 import type { CompressionMeta } from '../../types/documents.js';
 
 /** Input for doc-compress tool */

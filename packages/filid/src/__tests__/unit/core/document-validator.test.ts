@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import {
-  validateClaudeMd,
-  validateSpecMd,
   countLines,
   detectAppendOnly,
+  validateClaudeMd,
+  validateSpecMd,
 } from '../../../core/document-validator.js';
 
 describe('document-validator', () => {
@@ -37,13 +38,19 @@ describe('document-validator', () => {
     });
 
     it('should pass for exactly 100 lines', () => {
-      const content = Array.from({ length: 100 }, (_, i) => `Line ${i + 1}`).join('\n');
+      const content = Array.from(
+        { length: 100 },
+        (_, i) => `Line ${i + 1}`,
+      ).join('\n');
       const result = validateClaudeMd(content);
       expect(result.valid).toBe(true);
     });
 
     it('should fail for CLAUDE.md exceeding 100 lines', () => {
-      const content = Array.from({ length: 101 }, (_, i) => `Line ${i + 1}`).join('\n');
+      const content = Array.from(
+        { length: 101 },
+        (_, i) => `Line ${i + 1}`,
+      ).join('\n');
       const result = validateClaudeMd(content);
       expect(result.valid).toBe(false);
       expect(result.violations).toContainEqual(
@@ -93,7 +100,8 @@ describe('document-validator', () => {
 
     it('should fail when append-only pattern detected', () => {
       const oldContent = '# Spec\n## Log\n- Entry 1\n- Entry 2\n';
-      const newContent = '# Spec\n## Log\n- Entry 1\n- Entry 2\n- Entry 3\n- Entry 4\n';
+      const newContent =
+        '# Spec\n## Log\n- Entry 1\n- Entry 2\n- Entry 3\n- Entry 4\n';
       const result = validateSpecMd(newContent, oldContent);
       expect(result.valid).toBe(false);
       expect(result.violations).toContainEqual(

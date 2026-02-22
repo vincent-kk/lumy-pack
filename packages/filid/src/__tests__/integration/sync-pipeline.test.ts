@@ -2,11 +2,12 @@
  * Integration test: Sync Pipeline
  * Tests: code change → AST diff → dependency extraction → metrics
  */
-import { describe, it, expect } from 'vitest';
-import { computeTreeDiff } from '../../ast/tree-diff.js';
-import { extractDependencies } from '../../ast/dependency-extractor.js';
+import { describe, expect, it } from 'vitest';
+
 import { calculateCC } from '../../ast/cyclomatic-complexity.js';
+import { extractDependencies } from '../../ast/dependency-extractor.js';
 import { calculateLCOM4 } from '../../ast/lcom4.js';
+import { computeTreeDiff } from '../../ast/tree-diff.js';
 import { decide } from '../../metrics/decision-tree.js';
 
 describe('sync pipeline', () => {
@@ -64,20 +65,20 @@ describe('sync pipeline', () => {
 
     expect(diff.hasSemanticChanges).toBe(true);
     // DataService modified + createService added
-    const modified = diff.changes.filter(c => c.type === 'modified');
-    const added = diff.changes.filter(c => c.type === 'added');
+    const modified = diff.changes.filter((c) => c.type === 'modified');
+    const added = diff.changes.filter((c) => c.type === 'added');
 
-    expect(modified.some(c => c.name === 'DataService')).toBe(true);
-    expect(added.some(c => c.name === 'createService')).toBe(true);
+    expect(modified.some((c) => c.name === 'DataService')).toBe(true);
+    expect(added.some((c) => c.name === 'createService')).toBe(true);
   });
 
   it('should extract updated dependencies from new version', () => {
     const deps = extractDependencies(newSource, 'data-service.ts');
 
     expect(deps.imports).toHaveLength(2);
-    expect(deps.imports.some(i => i.source === './logger.js')).toBe(true);
-    expect(deps.exports.some(e => e.name === 'DataService')).toBe(true);
-    expect(deps.exports.some(e => e.name === 'createService')).toBe(true);
+    expect(deps.imports.some((i) => i.source === './logger.js')).toBe(true);
+    expect(deps.exports.some((e) => e.name === 'DataService')).toBe(true);
+    expect(deps.exports.some((e) => e.name === 'createService')).toBe(true);
   });
 
   it('should measure LCOM4 for the updated class', () => {

@@ -30,12 +30,12 @@ fractal-navigate({
 
 Apply the following decision logic in order:
 
-| Condition | Node Type | Action |
-|-----------|-----------|--------|
-| `hasClaudeMd === true` | fractal | Preserve existing file, skip generation |
-| Directory name in `ORGAN_DIR_NAMES` | organ | Skip — CLAUDE.md is prohibited |
-| No observable side effects, stateless | pure-function | No CLAUDE.md needed |
-| Default (none of the above) | fractal | Generate CLAUDE.md |
+| Condition                             | Node Type     | Action                                  |
+| ------------------------------------- | ------------- | --------------------------------------- |
+| `hasClaudeMd === true`                | fractal       | Preserve existing file, skip generation |
+| Directory name in `ORGAN_DIR_NAMES`   | organ         | Skip — CLAUDE.md is prohibited          |
+| No observable side effects, stateless | pure-function | No CLAUDE.md needed                     |
+| Default (none of the above)           | fractal       | Generate CLAUDE.md                      |
 
 `ORGAN_DIR_NAMES` = `components`, `utils`, `types`, `hooks`, `helpers`,
 `lib`, `styles`, `assets`, `constants`
@@ -51,28 +51,35 @@ CLAUDE.md structure (hard limit: 100 lines):
 # <Module Name>
 
 ## Purpose
+
 <1–2 sentence description of what this module does>
 
 ## Structure
+
 <key files and sub-directories with one-line descriptions>
 
 ## Conventions
+
 <language, patterns, naming rules specific to this module>
 
 ## Boundaries
 
 ### Always do
+
 - <rule 1>
 - <rule 2>
 
 ### Ask first
+
 - <action that requires user confirmation before proceeding>
 
 ### Never do
+
 - <prohibited action 1>
 - <prohibited action 2>
 
 ## Dependencies
+
 <list of modules this directory depends on>
 ```
 
@@ -88,12 +95,15 @@ a scaffold:
 # <Module Name> Specification
 
 ## Requirements
+
 - <functional requirement>
 
 ## API Contracts
+
 - <function signature and expected behaviour>
 
 ## Last Updated
+
 <ISO date>
 ```
 

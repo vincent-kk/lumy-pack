@@ -11,24 +11,13 @@
           },
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/organ-guard.mjs\"",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/structure-guard.mjs\"",
             "timeout": 3
           }
         ]
       }
     ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/change-tracker.mjs\"",
-            "timeout": 3
-          }
-        ]
-      }
-    ],
+    "PostToolUse": [],
     "SubagentStart": [
       {
         "matcher": "*",
