@@ -125,7 +125,7 @@ yarn test:run   # 1회 실행
       "matcher": "Write|Edit",
       "hooks": [
         { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/pre-tool-validator.mjs\"", "timeout": 3 },
-        { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/organ-guard.mjs\"", "timeout": 3 }
+        { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/structure-guard.mjs\"", "timeout": 3 }
       ]
     }],
     "PostToolUse": [],
@@ -147,7 +147,7 @@ yarn test:run   # 1회 실행
 
 | Hook 이벤트 | matcher | 스크립트 | timeout |
 |-------------|---------|----------|---------|
-| PreToolUse | `Write\|Edit` | pre-tool-validator, organ-guard | 3초 |
+| PreToolUse | `Write\|Edit` | pre-tool-validator, structure-guard | 3초 |
 | PostToolUse | — | _(disabled)_ | — |
 | SubagentStart | `*` (모든 에이전트) | agent-enforcer | 3초 |
 | UserPromptSubmit | `*` (모든 프롬프트) | context-injector | 5초 |

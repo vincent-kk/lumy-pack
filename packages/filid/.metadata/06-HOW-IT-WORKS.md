@@ -29,7 +29,7 @@
 │     │   └─ append-only → continue: false (BLOCKED)   │
 │     └─ 기타 → continue: true (통과)                   │
 │                                                       │
-│  2. organ-guard.mjs (timeout: 3s)                    │
+│  2. structure-guard.mjs (timeout: 3s)                 │
 │     ├─ Write + CLAUDE.md + Organ 경로                 │
 │     │   └─ continue: false (BLOCKED)                  │
 │     └─ 기타 → continue: true (통과)                   │

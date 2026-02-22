@@ -13,8 +13,8 @@
 | Compression | 3 | 1 | 4 |
 | AST | 5 | 8 | 13 |
 | Hooks | 5 | 7 | 12 |
-| MCP | 6 | 0 | 6 |
-| **합계** | **33** | **30** | **63** |
+| MCP | 13 | 0 | 13 |
+| **합계** | **40** | **30** | **70** |
 
 ---
 
@@ -240,13 +240,15 @@ function validatePreToolUse(input: PreToolUseInput, oldSpecContent?: string): Ho
 CLAUDE.md: 100줄 초과 → 차단, 3-tier 누락 → 경고.
 SPEC.md: append-only 감지 → 차단.
 
-### organ-guard
+### structure-guard
 
 ```typescript
-function guardOrganWrite(input: PreToolUseInput): HookOutput
+function guardStructure(input: PreToolUseInput): HookOutput
 ```
 Organ 디렉토리 내 CLAUDE.md 생성을 차단한다.
 경로의 모든 부모 세그먼트를 `ORGAN_DIR_NAMES`와 비교.
+
+> **Note**: 이전 명칭 `organ-guard` / `guardOrganWrite`에서 `structure-guard` / `guardStructure`로 리네임됨.
 
 ### change-tracker _(disabled)_
 
@@ -282,7 +284,7 @@ function injectContext(input: UserPromptSubmitInput): HookOutput
 ```typescript
 function createServer(): Server
 ```
-FCA-AI MCP 서버를 생성하고 4개 도구를 등록한다.
+FCA-AI MCP 서버를 생성하고 11개 도구를 등록한다.
 
 ```typescript
 async function startServer(): Promise<void>
@@ -296,6 +298,13 @@ function handleAstAnalyze(input: AstAnalyzeInput): Record<string, unknown>
 function handleFractalNavigate(input: FractalNavigateInput): FractalNavigateOutput
 function handleDocCompress(input: DocCompressInput): DocCompressOutput
 function handleTestMetrics(input: TestMetricsInput): TestMetricsOutput
+function handleFractalScan(input: FractalScanInput): Promise<FractalScanOutput>
+function handleDriftDetect(input: DriftDetectInput): Promise<DriftDetectOutput>
+function handleLcaResolve(input: LcaResolveInput): Promise<LcaResolveOutput>
+function handleRuleQuery(input: RuleQueryInput): Promise<RuleQueryOutput>
+function handleStructureValidate(input: StructureValidateInput): Promise<StructureValidateOutput>
+function handleReviewManage(input: ReviewManageInput): Promise<ReviewManageOutput>
+function handleDebtManage(input: DebtManageInput): Promise<DebtManageOutput>
 ```
 
 ---
@@ -358,6 +367,114 @@ function handleTestMetrics(input: TestMetricsInput): TestMetricsOutput
     "action":        "enum: count | check-312 | decide",
     "files":         "array — count/check-312용 { filePath, content }[]",
     "decisionInput": "object — decide용 { testCount, lcom4, cyclomaticComplexity }"
+  }
+}
+```
+
+### fractal-scan
+
+```json
+{
+  "name": "fractal-scan",
+  "required": ["path"],
+  "properties": {
+    "path":              "string — 프로젝트 루트 디렉토리 (절대 경로)",
+    "depth":             "number — 최대 스캔 깊이 (1-20, 기본: 10)",
+    "includeModuleInfo": "boolean — 모듈 진입점 분석 포함 여부 (기본: false)"
+  }
+}
+```
+
+### drift-detect
+
+```json
+{
+  "name": "drift-detect",
+  "required": ["path"],
+  "properties": {
+    "path":         "string — 프로젝트 루트 디렉토리 (절대 경로)",
+    "severity":     "enum: critical | high | medium | low — 이 심각도 이상만 필터링",
+    "generatePlan": "boolean — SyncPlan 생성 여부 (기본: false)"
+  }
+}
+```
+
+### lca-resolve
+
+```json
+{
+  "name": "lca-resolve",
+  "required": ["path", "moduleA", "moduleB"],
+  "properties": {
+    "path":    "string — 프로젝트 루트 디렉토리 (절대 경로)",
+    "moduleA": "string — 첫 번째 모듈 상대 경로 (예: src/features/auth)",
+    "moduleB": "string — 두 번째 모듈 상대 경로 (예: src/features/payment)"
+  }
+}
+```
+
+### rule-query
+
+```json
+{
+  "name": "rule-query",
+  "required": ["action", "path"],
+  "properties": {
+    "action":     "enum: list | get | check",
+    "path":       "string — 프로젝트 루트 디렉토리 (절대 경로)",
+    "ruleId":     "string — 규칙 ID (action=get 시 필수)",
+    "category":   "enum: naming | structure | dependency | documentation | index | module — action=list 시 필터",
+    "targetPath": "string — 대상 경로 (action=check 시 필수)"
+  }
+}
+```
+
+### structure-validate
+
+```json
+{
+  "name": "structure-validate",
+  "required": ["path"],
+  "properties": {
+    "path":  "string — 프로젝트 루트 디렉토리 (절대 경로)",
+    "rules": "string[] — 검사할 규칙 ID 목록 (생략 시 전체 활성 규칙)",
+    "fix":   "boolean — 안전한 위반 자동 수정 여부 (기본: false, 현재 미구현)"
+  }
+}
+```
+
+### review-manage
+
+```json
+{
+  "name": "review-manage",
+  "required": ["action", "projectRoot"],
+  "properties": {
+    "action":              "enum: normalize-branch | ensure-dir | checkpoint | elect-committee | cleanup",
+    "projectRoot":         "string — 프로젝트 루트 디렉토리 (절대 경로)",
+    "branchName":          "string — Git 브랜치명 (elect-committee 제외 모든 액션)",
+    "changedFilesCount":   "number — 변경 파일 수 (elect-committee용)",
+    "changedFractalsCount":"number — 변경 프랙탈 수 (elect-committee용)",
+    "hasInterfaceChanges": "boolean — 인터페이스 변경 여부 (elect-committee용)"
+  }
+}
+```
+
+### debt-manage
+
+```json
+{
+  "name": "debt-manage",
+  "required": ["action", "projectRoot"],
+  "properties": {
+    "action":              "enum: create | list | resolve | calculate-bias",
+    "projectRoot":         "string — 프로젝트 루트 디렉토리 (절대 경로)",
+    "debtItem":            "object — 부채 항목 (action=create용, DebtItemCreate 스키마)",
+    "fractalPath":         "string — 프랙탈 경로 필터 (action=list용)",
+    "debtId":              "string — 부채 ID (action=resolve용)",
+    "debts":               "array — 부채 목록 (action=calculate-bias용)",
+    "changedFractalPaths": "string[] — 변경된 프랙탈 경로 (action=calculate-bias용)",
+    "currentCommitSha":    "string — 현재 커밋 SHA (멱등성, action=calculate-bias용)"
   }
 }
 ```

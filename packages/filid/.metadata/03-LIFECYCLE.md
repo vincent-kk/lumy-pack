@@ -6,14 +6,40 @@
 
 ## 라이프사이클 개요
 
+### 기본 워크플로우 (6개 스킬)
+
 ```
-┌──────┐    ┌──────┐    ┌──────┐    ┌────────┐    ┌─────────┐    ┌───────┐
-│ /init │───→│ /scan │───→│ /sync │───→│ /review │───→│ /promote │───→│ /query │
-│      │    │      │    │      │    │        │    │         │    │       │
-│ 초기화 │    │ 검증  │    │ 동기화 │    │ PR 리뷰 │    │ 테스트   │    │ 질의   │
-│      │    │      │    │      │    │        │    │ 승격     │    │       │
-└──────┘    └──────┘    └──────┘    └────────┘    └─────────┘    └───────┘
-  1회성       수시        PR 시점     PR 시점      안정화 후      수시
+┌──────┐    ┌──────┐    ┌──────┐    ┌──────────────────┐    ┌─────────┐    ┌───────────────┐
+│ /init │───→│ /scan │───→│ /sync │───→│ /structure-review │───→│ /promote │───→│ /context-query │
+│      │    │      │    │      │    │                  │    │         │    │               │
+│ 초기화 │    │ 검증  │    │ 동기화 │    │ PR 구조 리뷰     │    │ 테스트   │    │ 질의           │
+│      │    │      │    │      │    │                  │    │ 승격     │    │               │
+└──────┘    └──────┘    └──────┘    └──────────────────┘    └─────────┘    └───────────────┘
+  1회성       수시      drift 감지     PR 시점              안정화 후        수시
+```
+
+### 거버넌스 파이프라인 (3개 스킬)
+
+```
+┌──────────────┐    ┌─────────────────┐    ┌───────────────┐
+│ /code-review  │───→│ /resolve-review  │───→│ /re-validate   │
+│              │    │                 │    │               │
+│ 다중 페르소나  │    │ 수정 해결/소명    │    │ Delta 재검증    │
+│ 합의 리뷰     │    │ + 부채 관리      │    │ + PASS/FAIL   │
+└──────────────┘    └─────────────────┘    └───────────────┘
+  PR 시점              리뷰 완료 후           수정 적용 후
+```
+
+### 보조 스킬 (2개)
+
+```
+┌───────────┐    ┌──────────────┐
+│ /guide     │    │ /restructure  │
+│           │    │              │
+│ 구조 가이드 │    │ 프랙탈 구조   │
+│ 생성       │    │ 리팩토링      │
+└───────────┘    └──────────────┘
+  수시               필요 시
 ```
 
 ---
@@ -114,59 +140,58 @@
 
 ---
 
-## 단계 3: /sync — 코드 변경 → 문서 동기화
+## 단계 3: /sync — 구조 Drift 감지 & 동기화
 
 ### 트리거 조건
-- PR 생성 시점 (매 커밋이 아닌 PR 단위)
-- 사용자가 `/sync [--dry-run]` 명령 실행
+- 구조적 이탈이 의심될 때
+- 사용자가 `/sync [--dry-run] [--severity=<level>]` 명령 실행
 
 ### 관여 에이전트
-- **context-manager** (주도): 문서 갱신
-- **architect** (보조): 구조 변경 시 자문
+- **drift-analyzer** (Stage 1-2 주도): drift 감지 및 계획
+- **fractal-architect** (보조): 구조 분석 자문
+- **restructurer** (Stage 4): 승인된 수정 실행
 
 ### 사용 MCP 도구
-- `doc-compress` (mode: `auto`): 문서 줄 수 초과 시 압축
-- `fractal-navigate` (action: `tree`): 영향 받는 모듈 파악
+- `fractal-scan`: 프로젝트 구조 스캔
+- `drift-detect`: 프랙탈 원칙 이탈 감지
+- `lca-resolve`: 이동 대상 LCA 계산
+- `structure-validate`: 실행 후 구조 검증
 
 ### 워크플로우
 
 ```
-1. 변경 큐 소비
-   ChangeQueue.drain() → ChangeRecord[]
-   (PostToolUse hook으로 누적된 변경 이력)
+1. 프로젝트 스캔
+   fractal-scan(path) → FractalTree
        │
        ▼
-2. 영향 프랙탈 식별
-   ChangeQueue.getAffectedFractals()
-   → 변경 파일의 부모 디렉토리들 (중복 제거)
+2. Drift 감지
+   drift-detect(path, severity?) → DriftItem[]
+   ├── 각 이탈 항목: expected, actual, severity, correction
+   └── --severity 필터 적용
        │
        ▼
-3. 모듈별 변경 그룹화
-   ChangeQueue.getChangesByPath()
-   → Map<filePath, ChangeRecord[]>
+3. 수정 계획 수립
+   drift-detect(path, generatePlan: true) → SyncPlan
+   ├── 파일 이동, 디렉토리 재분류
+   └── lca-resolve로 최적 배치 경로 결정
        │
        ▼
-4. CLAUDE.md 갱신 필요성 판단
-   각 영향 프랙탈에 대해:
-   ├── 새 export 추가/제거 → 구조 섹션 갱신
-   ├── 의존성 변경 → dependencies 갱신
-   └── 100줄 제한 접근 → doc-compress로 압축
+4. 수정 실행 (승인 후)
+   restructurer가 SyncPlan 실행
+   ├── 파일 이동/이름 변경
+   ├── index.ts 재생성
+   └── import 경로 갱신
        │
        ▼
-5. SPEC.md 갱신 (해당 시)
-   - 기능 요구사항 변경 반영
-   - append-only 금지 → 재구조화
-       │
-       ▼
-6. 검증
-   갱신된 모든 문서에 validateClaudeMd/validateSpecMd 실행
+5. 검증
+   structure-validate(path) → 위반 0건 확인
 ```
 
-### 동기화 시점이 PR인 이유
+### 설계 배경
 
-- 매 커밋마다 동기화하면 에이전트 오버헤드 과다
-- PR 시점 = 코드 리뷰 시점 → 문서 정확성이 가장 중요한 순간
-- ChangeQueue로 중간 변경을 누적 → 배치 처리로 효율성 확보
+> **Note**: 초기 설계에서는 PostToolUse hook 기반 ChangeQueue로 변경을 추적했으나,
+> hook 프로세스 간 상태 비공유 문제로 MCP 기반 drift 감지로 재설계되었다.
+> ChangeQueue 클래스는 라이브러리 유틸리티로 유지되지만 hook에 의해 자동 채워지지 않는다.
 
 ---
 
@@ -326,7 +351,7 @@ Prompt 3 (최대): 최종 응답 생성
                  │ Implementer   │ ← SPEC 범위 내 코드 작성
                  │ (구현)         │
                  └─────┬────────┘
-                       │ 코드 변경 (PostToolUse → ChangeQueue)
+                       │ 코드 변경
                        ▼
                  ┌────────────────┐
                  │ Context Manager │ ← 문서만 수정
@@ -347,12 +372,14 @@ Prompt 3 (최대): 최종 응답 생성
 
 | 에이전트 | Read | Glob | Grep | Write | Edit | Bash | MCP |
 |----------|------|------|------|-------|------|------|-----|
-| architect | O | O | O | X | X | X | O |
+| fractal-architect | O | O | O | X | X | X | O |
 | implementer | O | O | O | O | O | O | O |
-| context-manager | O | O | O | O* | O* | O | O |
+| context-manager | O | O | O | O* | O* | X | O |
 | qa-reviewer | O | O | O | X | X | X | O |
+| drift-analyzer | O | O | O | X | X | X | O |
+| restructurer | O | O | O | O | O | O | O |
 
-> *context-manager: CLAUDE.md, SPEC.md 문서만 Write/Edit 가능 (역할 제한)
+> *context-manager: CLAUDE.md, SPEC.md 문서만 Write/Edit 가능 (역할 제한), Bash 사용 불가
 
 ---
 
@@ -370,7 +397,7 @@ T0  사용자 프롬프트 입력
 T1  에이전트가 Write 도구 호출
     └─ PreToolUse (matcher: Write|Edit)
        ├─ pre-tool-validator: CLAUDE.md/SPEC.md 검증
-       └─ organ-guard: Organ 디렉토리 보호
+       └─ structure-guard: Organ 디렉토리 보호 (구조 경비)
        → pass/block 결정
 
 T2  (pass 시) Write 도구 실행 → 파일 생성/수정

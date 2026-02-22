@@ -55,7 +55,7 @@ const BOUNDARY_KEYWORDS = {
 | line-limit | CLAUDE.md | 줄 수 > 100 | Write 차단 | `error` |
 | missing-boundaries | CLAUDE.md | Always do/Ask first/Never do 섹션 누락 | 경고 주입 | `warning` |
 | append-only | SPEC.md | 기존 내용 유지 + 끝에만 추가 | Write 차단 | `error` |
-| organ-guard | CLAUDE.md | Organ 디렉토리 내 생성 시도 | Write 차단 | `error` (implicit) |
+| structure-guard | CLAUDE.md | Organ 디렉토리 내 생성 시도 | Write 차단 | `error` (implicit) |
 
 ### 메트릭 규칙
 

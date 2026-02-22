@@ -11,7 +11,7 @@
 | Hook 스크립트 | 이벤트 | timeout | 번들 크기 | 예상 실행 시간 |
 |--------------|--------|---------|-----------|---------------|
 | `pre-tool-validator.mjs` | PreToolUse | 3초 | 4.1KB | <50ms |
-| `organ-guard.mjs` | PreToolUse | 3초 | 1.5KB | <30ms |
+| `structure-guard.mjs` | PreToolUse | 3초 | 1.5KB | <30ms |
 | `change-tracker.mjs` | _(disabled)_ | — | 633B | — |
 | `agent-enforcer.mjs` | SubagentStart | 3초 | 1.3KB | <30ms |
 | `context-injector.mjs` | UserPromptSubmit | 5초 | 988B | <20ms |
@@ -25,7 +25,7 @@
 |------|------------|---------------|
 | context-injector | 매 사용자 프롬프트 | **높음** — 모든 상호작용마다 |
 | pre-tool-validator | Write\|Edit 도구 호출 | **중간** — 파일 수정 시 |
-| organ-guard | Write\|Edit 도구 호출 | **중간** — 파일 수정 시 |
+| structure-guard | Write\|Edit 도구 호출 | **중간** — 파일 수정 시 |
 | change-tracker | _(disabled)_ | — |
 | agent-enforcer | 서브에이전트 생성 | **낮음** — 에이전트 생성 시 |
 
@@ -38,14 +38,14 @@
 
 ### PreToolUse 이중 Hook 비용
 
-Write|Edit 시 `pre-tool-validator` + `organ-guard` 두 Hook이 순차 실행:
+Write|Edit 시 `pre-tool-validator` + `structure-guard` 두 Hook이 순차 실행:
 
 ```
 Write 도구 호출
     │
     ├─ pre-tool-validator.mjs (Node 시작 → 실행 → 종료): ~50ms
     │
-    ├─ organ-guard.mjs (Node 시작 → 실행 → 종료): ~30ms
+    ├─ structure-guard.mjs (Node 시작 → 실행 → 종료): ~30ms
     │
     ▼
 합계: ~80ms (Write 1회당 추가 지연)
@@ -53,7 +53,7 @@ Write 도구 호출
 
 CLAUDE.md/SPEC.md가 아닌 일반 파일 Write 시:
 - `pre-tool-validator`: 즉시 `{ continue: true }` 반환 (~20ms)
-- `organ-guard`: CLAUDE.md가 아니므로 즉시 통과 (~15ms)
+- `structure-guard`: CLAUDE.md가 아니므로 즉시 통과 (~15ms)
 - 합계: ~35ms (최소 지연)
 
 ---
@@ -176,7 +176,7 @@ Rules:
 | 파일 | 크기 | 형식 | 포함 내용 |
 |------|------|------|-----------|
 | `scripts/pre-tool-validator.mjs` | 4.1KB | ESM | document-validator + hook 로직 |
-| `scripts/organ-guard.mjs` | 1.5KB | ESM | organ-classifier + hook 로직 |
+| `scripts/structure-guard.mjs` | 1.5KB | ESM | organ-classifier + hook 로직 |
 | `scripts/agent-enforcer.mjs` | 1.3KB | ESM | ROLE_RESTRICTIONS + hook 로직 |
 | `scripts/context-injector.mjs` | 988B | ESM | 규칙 문자열 + hook 로직 |
 | `scripts/change-tracker.mjs` | 633B | ESM | ChangeQueue 타입 + hook 로직 _(disabled)_ |

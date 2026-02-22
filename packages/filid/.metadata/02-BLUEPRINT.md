@@ -387,7 +387,7 @@ summarizeLossy(ToolCallEntry[]) → LossySummaryResult
 | 모듈 | Hook 이벤트 | 동작 |
 |------|------------|------|
 | `pre-tool-validator` | PreToolUse | CLAUDE.md/SPEC.md Write 검증 |
-| `organ-guard` | PreToolUse | Organ 디렉토리 CLAUDE.md 차단 |
+| `structure-guard` | PreToolUse | Organ 디렉토리 CLAUDE.md 차단 |
 | `change-tracker` | _(disabled)_ | ChangeQueue에 변경 기록 (hooks.json에서 제거됨) |
 | `agent-enforcer` | SubagentStart | 에이전트 역할 제한 주입 |
 | `context-injector` | UserPromptSubmit | FCA-AI 규칙 리마인더 주입 |

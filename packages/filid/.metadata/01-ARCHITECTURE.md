@@ -37,7 +37,7 @@ AI 에이전트가 대규모 코드베이스를 다룰 때 발생하는 핵심 �
 | CLAUDE.md 100줄 제한 | `validateClaudeMd()` | `core/document-validator.ts` |
 | 3-tier 경계 시스템 | `ThreeTierBoundary` 검증 | `core/document-validator.ts` |
 | SPEC.md append-only 금지 | `detectAppendOnly()` + `validateSpecMd()` | `core/document-validator.ts` |
-| Organ CLAUDE.md 금지 | `guardOrganWrite()` | `hooks/organ-guard.ts` |
+| Organ CLAUDE.md 금지 | `guardStructure()` | `hooks/structure-guard.ts` |
 | 3+12 테스트 규칙 | `check312Rule()` | `metrics/three-plus-twelve.ts` |
 | LCOM4 분할 기준 | `calculateLCOM4()` + `decide()` | `ast/lcom4.ts`, `metrics/decision-tree.ts` |
 | CC 압축 기준 | `calculateCC()` + `decide()` | `ast/cyclomatic-complexity.ts`, `metrics/decision-tree.ts` |
@@ -63,7 +63,7 @@ AI 에이전트가 대규모 코드베이스를 다룰 때 발생하는 핵심 �
 │                                                                    │
 │  ┌─────────────┐    ┌────────────────┐    ┌───────────────────┐  │
 │  │ Write/Edit   │───→│  PreToolUse    │───→│ pre-tool-validator│  │
-│  │ Tool Call    │    │    Hook         │    │ organ-guard       │  │
+│  │ Tool Call    │    │    Hook         │    │ structure-guard   │  │
 │  └─────────────┘    └────────────────┘    └───────┬───────────┘  │
 │        │                                          │ pass/block    │
 │        ▼                                          ▼               │
@@ -148,7 +148,7 @@ packages/filid/
 │   └── server.cjs               # MCP 서버 번들 (~516KB)
 ├── scripts/                     # Hook 스크립트 번들 (5개)
 │   ├── pre-tool-validator.mjs   # CLAUDE.md/SPEC.md 검증
-│   ├── organ-guard.mjs          # Organ 보호
+│   ├── structure-guard.mjs       # Organ 보호
 │   ├── change-tracker.mjs       # 변경 기록 (disabled)
 │   ├── agent-enforcer.mjs       # 역할 제한
 │   └── context-injector.mjs     # 규칙 주입

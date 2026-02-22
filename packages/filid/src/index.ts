@@ -57,6 +57,8 @@ export { handleDriftDetect } from './mcp/tools/drift-detect.js';
 export { handleLcaResolve } from './mcp/tools/lca-resolve.js';
 export { handleRuleQuery } from './mcp/tools/rule-query.js';
 export { handleStructureValidate } from './mcp/tools/structure-validate.js';
+export { handleReviewManage } from './mcp/tools/review-manage.js';
+export { handleDebtManage } from './mcp/tools/debt-manage.js';
 
 // MCP server
 export { createServer, startServer } from './mcp/server.js';
