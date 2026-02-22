@@ -25,7 +25,7 @@ a final PASS/FAIL verdict. Optionally post the result as a PR comment.
 ### Step 1 — Branch Detection & File Loading
 
 1. Detect branch: `git branch --show-current` (Bash)
-2. Normalize: `review-manage(normalize-branch)` MCP tool
+2. Normalize: `review-manage(action: "normalize-branch", projectRoot: <project_root>, branchName: <branch>)` MCP tool
 3. Load review files from `.filid/review/<normalized>/`:
    - `review-report.md` — original review findings
    - `fix-requests.md` — original fix requests

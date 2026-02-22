@@ -56,7 +56,7 @@ See [reference.md Section 2](./reference.md#section-2--sync).
 Update CLAUDE.md/SPEC.md and organize test.ts/spec.ts based on changed files.
 
 Agent: `context-manager` (sonnet) — document updates
-Agent: `test-engineer` (sonnet) — test organization
+Agent: `implementer` (sonnet) — test organization
 See [reference.md Section 3](./reference.md#section-3--doc--test-update).
 
 ### Stage 4 — Finalize
@@ -114,7 +114,7 @@ See [reference.md Section 4](./reference.md#section-4--finalize).
 /filid:fca-update --no-sync
 
 Stages:   Change Detection → Scan → Sync (conditional) → Doc & Test Update → Finalize
-Agents:   qa-reviewer (Stage 1), drift-analyzer+restructurer (Stage 2), context-manager+test-engineer (Stage 3)
+Agents:   qa-reviewer (Stage 1), drift-analyzer+restructurer (Stage 2), context-manager+implementer (Stage 3)
 Cache:    ~/.claude/plugins/filid/{cwdHash}/run-fca-update.hash
 ```
 

@@ -55,13 +55,13 @@ per-file breakdown showing excess cases.
 ## Section 4 — Metric Analysis Details
 
 ```
-ast-analyze(action: "lcom4", files: changedSourceFiles)
+ast-analyze(source: <file content>, analysisType: "lcom4")
 // LCOM4 >= 2 → recommend module split
 
-ast-analyze(action: "cyclomatic-complexity", files: changedSourceFiles)
+ast-analyze(source: <file content>, analysisType: "cyclomatic-complexity")
 // CC > 15 → recommend function compression or decomposition
 
-test-metrics(action: "decide", metrics: { lcom4, cc })
+test-metrics(action: "decide", decisionInput: { testCount, lcom4, cyclomaticComplexity })
 // decision: ok | split | compress | parameterize
 ```
 
@@ -76,7 +76,7 @@ values and recommended actions.
 ## Section 5 — Dependency Verification Details
 
 ```
-ast-analyze(action: "dependency-graph", root: cwd)
+ast-analyze(source: <file content>, analysisType: "dependency-graph")
 // Returns: DAG of module import relationships
 
 detectCycles(dag)
@@ -87,7 +87,7 @@ verifyTopologicalSort(dag)
 ```
 
 ```
-fractal-navigate(action: "tree")
+fractal-scan({ path: cwd })
 // Cross-reference with fractal structure to validate dependency directions
 ```
 
@@ -123,26 +123,28 @@ Recommendations:
 **fractal-navigate classify:**
 
 ```
-fractal-navigate(action: "classify", dir: "packages/filid/src/parser")
+fractal-navigate(action: "classify", path: "packages/filid/src/parser", entries: [/* nodes from fractal-scan */])
 // Returns: { type: "fractal" | "organ", hasClaude: boolean }
 ```
 
 **ast-analyze lcom4:**
 
 ```
-ast-analyze(action: "lcom4", files: ["src/core/index.ts", "src/parser/index.ts"])
-// Returns: [{ file: "src/core/index.ts", lcom4: 1 }, { file: "src/parser/index.ts", lcom4: 3 }]
+// Read file first, then call ast-analyze with source content
+const source = readFile("src/core/index.ts")
+ast-analyze(source: source, analysisType: "lcom4")
+// Returns: { lcom4: 1 }
 ```
 
 ## MCP Tool Reference
 
-| Tool               | Action / Parameters                      | Stage | Purpose                                      |
-| ------------------ | ---------------------------------------- | ----- | -------------------------------------------- |
-| `fractal-navigate` | `action: "tree"`                         | 1, 5  | Retrieve module tree; verify classifications |
-| `fractal-navigate` | `action: "classify", dir`                | 1     | Classify a specific directory                |
-| `doc-compress`     | `mode: "check"`                          | 2     | Check document size                          |
-| `test-metrics`     | `action: "check-312", files`             | 3     | Validate 3+12 rule per spec.ts               |
-| `test-metrics`     | `action: "decide", metrics`              | 4     | Generate split/compress recommendation       |
-| `ast-analyze`      | `action: "lcom4", files`                 | 4     | Compute LCOM4 cohesion metric                |
-| `ast-analyze`      | `action: "cyclomatic-complexity", files` | 4     | Compute cyclomatic complexity                |
-| `ast-analyze`      | `action: "dependency-graph", root`       | 5     | Build full import dependency DAG             |
+| Tool               | Action / Parameters                              | Stage | Purpose                                      |
+| ------------------ | ------------------------------------------------ | ----- | -------------------------------------------- |
+| `fractal-scan`     | `path: cwd`                                      | 1, 5  | Retrieve module tree; verify classifications |
+| `fractal-navigate` | `action: "classify", path, entries`              | 1     | Classify a specific directory                |
+| `doc-compress`     | `mode: "auto"`                                   | 2     | Check document size                          |
+| `test-metrics`     | `action: "check-312", files`                     | 3     | Validate 3+12 rule per spec.ts               |
+| `test-metrics`     | `action: "decide", decisionInput`                | 4     | Generate split/compress recommendation       |
+| `ast-analyze`      | `analysisType: "lcom4", source`                  | 4     | Compute LCOM4 cohesion metric                |
+| `ast-analyze`      | `analysisType: "cyclomatic-complexity", source`  | 4     | Compute cyclomatic complexity                |
+| `ast-analyze`      | `analysisType: "dependency-graph", source`       | 5     | Build full import dependency DAG             |

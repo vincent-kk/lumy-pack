@@ -29,8 +29,8 @@ and a state machine.
 ### Step 1 — Branch Detection & Checkpoint Resume
 
 1. Detect branch: `git branch --show-current` (Bash)
-2. Normalize: `review-manage(normalize-branch)` MCP tool
-3. Check checkpoint: `review-manage(checkpoint)` MCP tool
+2. Normalize: `review-manage(action: "normalize-branch", projectRoot: <project_root>, branchName: <branch>)` MCP tool
+3. Check checkpoint: `review-manage(action: "checkpoint", projectRoot: <project_root>, branchName: <branch>)` MCP tool
 4. Resume logic:
    - No checkpoint files → Phase A (unless `--no-structure-check`, then Phase B)
    - `structure-check.md` only → Phase B
@@ -38,7 +38,7 @@ and a state machine.
    - `session.md` + `verification.md` → Phase D
    - All complete (`review-report.md` exists) → "Review complete"
 
-If `--force`: call `review-manage(cleanup)` first, then restart from Phase A.
+If `--force`: call `review-manage(action: "cleanup", projectRoot: <project_root>, branchName: <branch>)` first, then restart from Phase A.
 
 ### Step 2 — Phase A + B: Parallel Delegation
 

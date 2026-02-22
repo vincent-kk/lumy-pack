@@ -38,8 +38,8 @@ Use ChangeQueue: drain() to get pending changes, getAffectedFractals() to scope 
 ### 2. NAVIGATE — Understand Module Hierarchy
 
 ```
-Use fractal-navigate (tree) to see the full fractal hierarchy.
-Use fractal-navigate (classify) to identify directory types (atom/molecule/organ/system).
+Use fractal-scan to retrieve the full fractal hierarchy.
+Use fractal-navigate (classify) to identify directory types (fractal/organ/pure-function/hybrid).
 Determine which CLAUDE.md and SPEC.md files govern the affected modules.
 Never confuse organ directories with fractal modules — no CLAUDE.md in organs.
 ```
@@ -105,8 +105,8 @@ Report all files changed with absolute paths and line counts.
 | `doc-compress`     | `reversible`       | Compress content that may need exact recall later     |
 | `doc-compress`     | `lossy`            | Compress historical context and aggregate stats       |
 | `doc-compress`     | `auto`             | Let the tool choose the optimal compression strategy  |
-| `fractal-navigate` | `tree`             | Get the full fractal hierarchy for context            |
-| `fractal-navigate` | `classify`         | Identify directory types (atom/molecule/organ/system) |
+| `fractal-scan`     | —                  | Get the full fractal hierarchy for context (`path` param)   |
+| `fractal-navigate` | `classify`         | Identify directory types (fractal/organ/pure-function/hybrid) |
 | `ast-analyze`      | `dependency-graph` | Detect which modules changed and require doc sync     |
 
 ## ChangeQueue Protocol

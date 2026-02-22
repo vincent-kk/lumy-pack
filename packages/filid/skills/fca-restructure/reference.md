@@ -15,7 +15,7 @@ fractal-scan({ path: "<target-path>" })
 drift-detect({ path: "<target-path>" })
 // Returns: { drifts: DriftItem[], total: number }
 
-rule-query({ action: "list" })
+rule-query({ action: "list", path: "<target-path>" })
 // Returns: { rules: Rule[] }
 ```
 
@@ -24,7 +24,7 @@ After `drift-detect` completes, call `lca-resolve` for each move candidate
 
 ```
 // Sequential — after drift-detect:
-lca-resolve({ nodePath: "<path>", contextPaths: ["<sibling1>", "<sibling2>"] })
+lca-resolve({ path: "<path>", moduleA: "<sibling1>", moduleB: "<sibling2>" })
 // Returns: { lcaPath: string, recommendedParent: string, confidence: number }
 ```
 

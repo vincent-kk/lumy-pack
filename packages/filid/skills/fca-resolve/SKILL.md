@@ -25,7 +25,7 @@ them into ADRs, and create technical debt records.
 ### Step 1 — Branch Detection & Review Directory Lookup
 
 1. Detect branch: `git branch --show-current` (Bash)
-2. Normalize: `review-manage(normalize-branch)` MCP tool
+2. Normalize: `review-manage(action: "normalize-branch", projectRoot: <project_root>, branchName: <branch>)` MCP tool
 3. Verify: Read `.filid/review/<normalized>/fix-requests.md`
 4. If not found: abort with "No fix requests found. Run /filid:fca-review first."
 

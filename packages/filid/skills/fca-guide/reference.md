@@ -28,7 +28,7 @@ Build three working sets from the response:
 Call `rule-query` to retrieve the full list of active rules.
 
 ```
-rule-query({ action: "list" })
+rule-query({ action: "list", path: "<target-path>" })
 ```
 
 Response fields:

@@ -105,15 +105,18 @@ Options:
   "action": "create",
   "projectRoot": "<project root>",
   "debtItem": {
-    "fractalPath": "src/features/auth",
-    "filePath": "src/features/auth/validator.ts",
-    "reviewBranch": "feature/issue-6",
-    "originalFixId": "FIX-002",
+    "fractal_path": "src/features/auth",
+    "file_path": "src/features/auth/validator.ts",
+    "created_at": "2026-02-22T00:00:00Z",
+    "review_branch": "feature/issue-6",
+    "original_fix_id": "FIX-002",
     "severity": "HIGH",
-    "ruleViolated": "LCOM4 >= 2",
-    "metricValue": "LCOM4=3",
-    "justification": "Sprint deadline in 2 days...",
-    "adr": "ADR-2026-02-22: validator.ts module split deferred..."
+    "rule_violated": "LCOM4 >= 2",
+    "metric_value": "LCOM4=3",
+    "title": "validator.ts module cohesion — split deferred",
+    "original_request": "<original FIX-002 request text>",
+    "developer_justification": "Sprint deadline in 2 days...",
+    "refined_adr": "ADR-2026-02-22: validator.ts module split deferred..."
   }
 }
 ```

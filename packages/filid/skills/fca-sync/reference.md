@@ -25,7 +25,7 @@ For each node, confirm:
 `drift-detect` identifies all deviations from fractal principles.
 
 ```
-drift-detect({ path: "<target-path>", severityFilter: "<level>" })
+drift-detect({ path: "<target-path>", severity: "<level>" })
 // Returns: { drifts: DriftItem[], total: number, bySeverity: SeverityCount }
 ```
 
@@ -53,7 +53,7 @@ Each `DriftItem` fields:
 `fractal-architect` uses `lca-resolve` to confirm the correct target location.
 
 ```
-lca-resolve({ nodePath: "<drifted-path>", contextPaths: ["<neighbor1>"] })
+lca-resolve({ path: "<drifted-path>", moduleA: "<neighbor1>", moduleB: "<neighbor2>" })
 // Returns: { lcaPath: string, recommendedParent: string, confidence: number }
 ```
 

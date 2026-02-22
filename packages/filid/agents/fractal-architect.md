@@ -61,11 +61,11 @@ When invoked, execute these steps in order:
    - Categorize violations by severity: `error`, `warning`, `info`.
 
 5. **Analyze metrics** (when evaluating module quality)
-   - Use `ast-analyze` MCP tool: `lcom4 <file>` for cohesion measurement.
+   - Use `ast-analyze` MCP tool: `analysisType: "lcom4"` with `source` (file content) for cohesion measurement.
      - LCOM4 >= 2 → recommend **split** into focused sub-modules.
-   - Use `ast-analyze` MCP tool: `cyclomatic <file>` for complexity measurement.
+   - Use `ast-analyze` MCP tool: `analysisType: "cyclomatic-complexity"` with `source` (file content) for complexity measurement.
      - CC > 15 → recommend **compress** (extract helpers) or **abstract** (introduce interface).
-   - Use `test-metrics` MCP tool: `decide <module-path>` for automated decision recommendation.
+   - Use `test-metrics` MCP tool: `action: "decide"` with `decisionInput: { testCount, lcom4, cyclomaticComplexity }` for automated decision recommendation.
 
 6. **Analyze drift** (when performing sync-related analysis)
    - Use `drift-detect` MCP tool to identify deviations between current structure

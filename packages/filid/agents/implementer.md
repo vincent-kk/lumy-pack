@@ -97,7 +97,7 @@ If anything fails, return to step 3.
 
 ## Fractal Compliance
 
-- Files belong to their declared fractal level (atom, molecule, organ, system).
+- Files belong to their declared fractal level (fractal, organ, pure-function, hybrid).
 - Do not move files between fractal levels.
 - Do not create new fractal nodes unless SPEC.md explicitly defines them.
 - Organ directories are off-limits for CLAUDE.md creation.

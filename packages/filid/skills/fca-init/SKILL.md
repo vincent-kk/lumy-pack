@@ -35,7 +35,7 @@ See [reference.md Section 1](./reference.md#section-1--directory-scan-details).
 ### Phase 2 — Node Classification
 
 Classify each directory as fractal, organ, or pure-function using
-`fractal-navigate(action: "classify")` and priority-ordered decision rules.
+`fractal-navigate(action: "classify", path, entries)` (entries from Phase 1 scan) and priority-ordered decision rules.
 See [reference.md Section 2](./reference.md#section-2--node-classification-rules).
 
 ### Phase 3 — CLAUDE.md Generation

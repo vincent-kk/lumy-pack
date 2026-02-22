@@ -131,7 +131,7 @@ When `--scope=pr` and `gh` CLI is authenticated:
 | -------------------- | -------------------------------- | ----- | ------------------------------------------------ |
 | `fractal-navigate`   | `action: "classify"`             | 1     | Classify changed dirs for boundary check         |
 | `structure-validate` | `path: <changed dir>`            | 1     | Fractal/organ boundary validation (diff only)    |
-| `doc-compress`       | `mode: "check"`                  | 2     | CLAUDE.md line count (changed CLAUDE.md only)    |
+| `doc-compress`       | `mode: "auto"`                   | 2     | CLAUDE.md line count (changed CLAUDE.md only)    |
 | `test-metrics`       | `action: "check-312"`            | 3     | 3+12 rule on changed spec.ts files only          |
 | `ast-analyze`        | `analysisType: "lcom4"`          | 4     | Module cohesion on changed source files          |
 | `ast-analyze`        | `analysisType: "cyclomatic-complexity"` | 4 | Complexity on changed source files          |

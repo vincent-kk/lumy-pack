@@ -41,7 +41,7 @@ If `SCOPE=pr`, also run `gh pr view --json title,body` for intent context.
 For each changed file directory, call:
 
 ```
-fractal-navigate(action: "classify", path: <directory>)
+fractal-navigate(action: "classify", path: <directory>, entries: [/* nodes from fractal-scan */])
 ```
 
 Build a list of unique fractal paths affected by the change.

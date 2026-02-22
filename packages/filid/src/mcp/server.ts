@@ -111,6 +111,8 @@ export function createServer(): McpServer {
               ]),
               hasClaudeMd: z.boolean(),
               hasSpecMd: z.boolean(),
+              hasIndex: z.boolean().optional(),
+              hasMain: z.boolean().optional(),
             }),
           )
           .describe('Directory/file entries for tree construction'),

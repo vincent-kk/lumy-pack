@@ -38,7 +38,7 @@ If a list is empty for a given stage, record the stage as `SKIP`.
 For each directory in `CHANGED_DIRS`:
 
 ```
-fractal-navigate(action: "classify", dir: <directory>)
+fractal-navigate(action: "classify", path: <directory>, entries: [/* nodes from fractal-scan */])
 structure-validate(path: <directory>)
 ```
 
@@ -57,7 +57,7 @@ Severity mapping:
 For each file in `CHANGED_CLAUDE_MDS`:
 - Line count must be <= 100
 - Must contain all three tier sections: "Always do", "Ask first", "Never do"
-- Run `doc-compress(mode: "check")` — warning if >= 90 lines
+- Run `doc-compress(mode: "auto")` — warning if >= 90 lines
 
 For each file in `CHANGED_SPEC_MDS`:
 - Check for append-only patterns (duplicate section headings from prior iterations)
@@ -91,7 +91,7 @@ For each file in `CHANGED_FILES` (skip index.ts, *.d.ts, *.spec.ts):
 ```
 ast-analyze(source: <file content>, analysisType: "lcom4", className: <class>)
 ast-analyze(source: <file content>, analysisType: "cyclomatic-complexity")
-test-metrics(action: "decide", metrics: { lcom4, cc })
+test-metrics(action: "decide", decisionInput: { testCount, lcom4, cyclomaticComplexity })
 ```
 
 Thresholds:
