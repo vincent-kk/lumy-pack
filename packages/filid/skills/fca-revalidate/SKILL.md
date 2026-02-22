@@ -1,7 +1,7 @@
 ---
 name: fca-revalidate
 user_invocable: true
-description: Delta-based lightweight re-validation after fix resolution. Extracts changes since resolve_commit_sha, verifies accepted fixes resolved their issues, checks justifications for constitutional compliance, resolves cleared debt, and renders final PASS/FAIL verdict with optional PR comment.
+description: Delta-based lightweight re-validation after fix resolution. Extracts changes since resolve_commit_sha, verifies accepted fixes resolved their issues, checks justifications for constitutional compliance, resolves cleared debt, and renders final PASS/FAIL verdict with optional PR comment. On PASS, automatically cleans up the review session directory (.filid/review/<branch>/); debt files are preserved.
 version: 1.0.0
 complexity: medium
 ---
@@ -112,6 +112,23 @@ Post verdict to PR if GitHub CLI is available:
 2. If authenticated: `gh pr comment --body "<verdict summary>"` (Bash)
 3. If not authenticated: skip with info message
 
+### Step 8 — Cleanup on PASS
+
+After Step 7, if the verdict is **PASS**:
+
+```
+review-manage(action: "cleanup", projectRoot: <project_root>, branchName: <branch>)
+```
+
+This deletes the entire `.filid/review/<branch>/` directory (session artifacts,
+review report, fix requests, justifications, re-validate report).
+
+**Debt files are NOT affected** — they live in `.filid/debt/` and are managed
+separately by `debt-manage`.
+
+If the verdict is **FAIL**, skip cleanup so the developer can inspect the
+remaining unresolved items.
+
 ## Options
 
 > Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well.
@@ -132,7 +149,8 @@ Output:   re-validate.md, PR comment (optional)
 Prereq:   /filid:fca-resolve must have completed + fixes applied
 Verdict:  PASS | FAIL
 
-Steps:    1 (Load) → 2 (Delta) → [3 + 4 + 5 in parallel] → 6 (Verdict) → 7 (PR)
-MCP tools: review-manage(normalize-branch), ast-analyze(tree-diff, lcom4, cc),
+Steps:    1 (Load) → 2 (Delta) → [3 + 4 + 5 in parallel] → 6 (Verdict) → 7 (PR) → 8 (Cleanup on PASS)
+MCP tools: review-manage(normalize-branch, cleanup), ast-analyze(tree-diff, lcom4, cc),
            test-metrics(check-312), structure-validate, debt-manage(list, resolve)
+Cleanup:  PASS → .filid/review/<branch>/ deleted | FAIL → kept for inspection
 ```
