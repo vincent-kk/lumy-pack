@@ -1,9 +1,27 @@
+/**
+ * context-injector.ts — UserPromptSubmit hook for FCA-AI context injection.
+ *
+ * Layer Architecture:
+ *
+ * Layer 1 (SessionStart hook) — NOT IMPLEMENTED
+ *   - Role: Prepare context assets at session start (e.g., compute fractal tree)
+ *   - Would write: {cwdHash}/context-text  (plain text, pre-computed content)
+ *   - Integration point: hooks/entries/session-start.entry.ts (future)
+ *   - Status: Architecture reserved, content unspecified, implementation deferred
+ *
+ * Layer 2 (UserPromptSubmit hook) — THIS FILE
+ *   - Role: Inject FCA-AI rules + fractal structure rules on session's first prompt
+ *   - Session gate: session-{sessionIdHash} marker file in cache directory
+ *   - Cache: content hash-based invalidation (no TTL)
+ */
 import { createHash } from 'node:crypto';
 import {
   existsSync,
   mkdirSync,
   readFileSync,
+  readdirSync,
   statSync,
+  unlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
@@ -11,10 +29,6 @@ import { homedir } from 'node:os';
 
 import { getActiveRules, loadBuiltinRules } from '../core/rule-engine.js';
 import type { HookOutput, UserPromptSubmitInput } from '../types/hooks.js';
-
-// 5min TTL — 구조 변경(CLAUDE.md Write)은 드물게 발생하므로 안전.
-// 필요 시 Write hook에서 캐시 무효화를 추가할 수 있다.
-const CACHE_TTL_MS = 300_000;
 
 function cwdHash(cwd: string): string {
   return createHash('sha256').update(cwd).digest('hex').slice(0, 12);
@@ -25,6 +39,12 @@ function getCacheDir(cwd: string): string {
   return join(configDir, 'plugins', 'filid', cwdHash(cwd));
 }
 
+// Cache directory layout:
+//   {cwdHash}/cached-context.txt  -- Layer 2: FCA rules text cache
+//   {cwdHash}/timestamp           -- Layer 2: content hash for version-based invalidation (no TTL)
+//   {cwdHash}/session-{hash}      -- Layer 2: session inject marker (auto-purged after 24h)
+//   {cwdHash}/context-text        -- Layer 1: reserved for future use (not implemented)
+
 function readCachedContext(cwd: string): string | null {
   const cacheDir = getCacheDir(cwd);
   const stampFile = join(cacheDir, 'timestamp');
@@ -32,9 +52,11 @@ function readCachedContext(cwd: string): string | null {
 
   try {
     if (!existsSync(stampFile) || !existsSync(contextFile)) return null;
-    const mtime = statSync(stampFile).mtimeMs;
-    if (Date.now() - mtime > CACHE_TTL_MS) return null;
-    return readFileSync(contextFile, 'utf-8');
+    const savedHash = readFileSync(stampFile, 'utf-8').trim();
+    const context = readFileSync(contextFile, 'utf-8');
+    const currentHash = createHash('sha256').update(context).digest('hex').slice(0, 8);
+    if (savedHash !== currentHash) return null; // hash mismatch — regenerate cache
+    return context;
   } catch {
     return null;
   }
@@ -48,9 +70,56 @@ function writeCachedContext(cwd: string, context: string): void {
   try {
     if (!existsSync(cacheDir)) mkdirSync(cacheDir, { recursive: true });
     writeFileSync(contextFile, context, 'utf-8');
-    writeFileSync(stampFile, '');
+    const hash = createHash('sha256').update(context).digest('hex').slice(0, 8);
+    writeFileSync(stampFile, hash, 'utf-8');
   } catch {
-    // 캐시 쓰기 실패는 조용히 무시
+    // silently ignore cache write failures
+  }
+}
+
+function sessionIdHash(sessionId: string): string {
+  return createHash('sha256').update(sessionId).digest('hex').slice(0, 12);
+}
+
+function isFirstInSession(sessionId: string, cwd: string): boolean {
+  const marker = join(getCacheDir(cwd), `session-${sessionIdHash(sessionId)}`);
+  try {
+    return !existsSync(marker);
+  } catch {
+    return true; // on I/O error, fall back to inject (safe direction)
+  }
+}
+
+function pruneOldSessions(cwd: string): void {
+  try {
+    const dir = getCacheDir(cwd);
+    const files = readdirSync(dir);
+    const sessionFiles = files.filter((f) => f.startsWith('session-'));
+    if (sessionFiles.length <= 10) return; // threshold guard: skip pruning when 10 or fewer session files
+    const now = Date.now();
+    const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+    for (const file of sessionFiles) {
+      const fp = join(dir, file);
+      try {
+        if (now - statSync(fp).mtimeMs > TTL_MS) unlinkSync(fp);
+      } catch {
+        // ignore individual file deletion failures
+      }
+    }
+  } catch {
+    // ignore directory read failures
+  }
+}
+
+function markSessionInjected(sessionId: string, cwd: string): void {
+  const cacheDir = getCacheDir(cwd);
+  const marker = join(cacheDir, `session-${sessionIdHash(sessionId)}`);
+  try {
+    if (!existsSync(cacheDir)) mkdirSync(cacheDir, { recursive: true });
+    writeFileSync(marker, '', 'utf-8');
+    pruneOldSessions(cwd);
+  } catch {
+    // silently ignore marker write failures
   }
 }
 
@@ -62,18 +131,18 @@ const CATEGORY_GUIDE = [
 ].join('\n');
 
 /**
- * FCA-AI 프로젝트 여부 판별.
- * .filid/ 디렉토리 또는 CLAUDE.md 존재 시 FCA-AI 프로젝트로 간주.
+ * Returns true if the cwd is an FCA-AI project.
+ * Treats presence of .filid/ directory or CLAUDE.md as indicator.
  *
- * 엣지 케이스: 신규 프로젝트에서 /filid:init 전에는 false 반환 (의도적).
- * init 스킬은 자체 SKILL.md에서 규칙을 로드하므로 hook 컨텍스트에 의존하지 않는다.
+ * Edge case: returns false before /filid:init on new projects (intentional).
+ * The init skill loads rules from its own SKILL.md and does not rely on hook context.
  */
 function isFcaProject(cwd: string): boolean {
   return existsSync(join(cwd, '.filid')) || existsSync(join(cwd, 'CLAUDE.md'));
 }
 
 /**
- * 기존 FCA-AI 규칙 텍스트 (변경 없음)
+ * Builds the FCA-AI rules text to inject into Claude's context.
  */
 function buildFcaContext(cwd: string): string {
   return [
@@ -90,33 +159,40 @@ function buildFcaContext(cwd: string): string {
 /**
  * UserPromptSubmit hook: inject FCA-AI context reminders.
  *
- * 기존 FCA-AI 규칙 텍스트를 유지하면서, 아래에 프랙탈 구조 규칙 요약 섹션을 추가 주입한다.
+ * Injects FCA-AI rules only on the first prompt of each session.
+ * Subsequent prompts return { continue: true } immediately.
  *
  * Never blocks user prompts (always continue: true).
  */
 export async function injectContext(
   input: UserPromptSubmitInput,
 ): Promise<HookOutput> {
-  const cwd = input.cwd;
+  const { cwd, session_id } = input;
 
-  // 게이트: FCA-AI 프로젝트가 아니면 즉시 반환
+  // Gate 1: skip if not an FCA-AI project
   if (!isFcaProject(cwd)) {
     return { continue: true };
   }
 
-  // 캐시된 컨텍스트 확인
+  // Gate 2: skip if not the first prompt in this session
+  if (!isFirstInSession(session_id, cwd)) {
+    return { continue: true };
+  }
+
+  // use cached context if content hash matches
   const cached = readCachedContext(cwd);
   if (cached) {
+    markSessionInjected(session_id, cwd);
     return {
       continue: true,
       hookSpecificOutput: { additionalContext: cached },
     };
   }
 
-  // 1단계: 기존 FCA-AI 컨텍스트 (항상 포함)
+  // Step 1: FCA-AI rules (always included)
   const fcaContext = buildFcaContext(cwd);
 
-  // 2단계: 경량 프랙탈 섹션 (규칙 목록 + 분류 가이드만, 스캔/이격 감지 없음)
+  // Step 2: fractal rules section (rule list + category guide only, no scan)
   let fractalSection = '';
   try {
     const rules = getActiveRules(loadBuiltinRules());
@@ -133,13 +209,14 @@ export async function injectContext(
       CATEGORY_GUIDE,
     ].join('\n');
   } catch {
-    // 규칙 로드 실패 → 프랙탈 섹션 생략, FCA-AI만 반환
+    // on rule load failure, omit fractal section and return FCA-AI rules only
   }
 
   const additionalContext = (fcaContext + fractalSection).trim();
 
-  // 캐시 저장
+  // persist cache and record session marker
   writeCachedContext(cwd, additionalContext);
+  markSessionInjected(session_id, cwd);
 
   return {
     continue: true,

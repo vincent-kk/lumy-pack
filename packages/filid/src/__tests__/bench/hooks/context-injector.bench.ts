@@ -3,13 +3,13 @@ import { bench, describe } from 'vitest';
 import { injectContext } from '../../../hooks/context-injector.js';
 import { generateUserPromptInput } from '../fixtures/generator.js';
 
-// 티어별 입력 사전 생성
+// pre-generate inputs per tier
 const inputS = generateUserPromptInput('S');
 const inputM = generateUserPromptInput('M');
 const inputL = generateUserPromptInput('L');
 const inputXL = generateUserPromptInput('XL');
 
-// cwd 경로 깊이별 입력
+// inputs by cwd path depth
 const cwdInputs = [
   { label: 'shallow cwd (depth 1)', cwd: '/workspace' },
   { label: 'medium cwd (depth 4)', cwd: '/workspace/packages/filid/src' },
@@ -58,9 +58,18 @@ describe('context-injector: cwd path depth', () => {
 });
 
 describe('context-injector: sustained injection', () => {
-  bench('100 sequential injections', () => {
+  // same session: 1 inject on first call + 99 session gate early returns
+  bench('100 calls, same session (1 inject + 99 gate checks)', () => {
+    const sessionInput = { ...inputS, session_id: 'bench-sustained' };
     for (let i = 0; i < 100; i++) {
-      injectContext(inputS);
+      injectContext(sessionInput);
+    }
+  });
+
+  // unique sessions: new session on every call (100 injects)
+  bench('100 calls, unique sessions (100 injects)', () => {
+    for (let i = 0; i < 100; i++) {
+      injectContext({ ...inputS, session_id: `bench-unique-${i}` });
     }
   });
 });

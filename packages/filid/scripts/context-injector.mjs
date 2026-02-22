@@ -6,7 +6,9 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  readdirSync,
   statSync,
+  unlinkSync,
   writeFileSync
 } from "node:fs";
 import { join } from "node:path";
@@ -226,7 +228,6 @@ function getActiveRules(rules) {
 }
 
 // src/hooks/context-injector.ts
-var CACHE_TTL_MS = 3e5;
 function cwdHash(cwd) {
   return createHash("sha256").update(cwd).digest("hex").slice(0, 12);
 }
@@ -240,9 +241,11 @@ function readCachedContext(cwd) {
   const contextFile = join(cacheDir, "cached-context.txt");
   try {
     if (!existsSync(stampFile) || !existsSync(contextFile)) return null;
-    const mtime = statSync(stampFile).mtimeMs;
-    if (Date.now() - mtime > CACHE_TTL_MS) return null;
-    return readFileSync(contextFile, "utf-8");
+    const savedHash = readFileSync(stampFile, "utf-8").trim();
+    const context = readFileSync(contextFile, "utf-8");
+    const currentHash = createHash("sha256").update(context).digest("hex").slice(0, 8);
+    if (savedHash !== currentHash) return null;
+    return context;
   } catch {
     return null;
   }
@@ -254,7 +257,47 @@ function writeCachedContext(cwd, context) {
   try {
     if (!existsSync(cacheDir)) mkdirSync(cacheDir, { recursive: true });
     writeFileSync(contextFile, context, "utf-8");
-    writeFileSync(stampFile, "");
+    const hash = createHash("sha256").update(context).digest("hex").slice(0, 8);
+    writeFileSync(stampFile, hash, "utf-8");
+  } catch {
+  }
+}
+function sessionIdHash(sessionId) {
+  return createHash("sha256").update(sessionId).digest("hex").slice(0, 12);
+}
+function isFirstInSession(sessionId, cwd) {
+  const marker = join(getCacheDir(cwd), `session-${sessionIdHash(sessionId)}`);
+  try {
+    return !existsSync(marker);
+  } catch {
+    return true;
+  }
+}
+function pruneOldSessions(cwd) {
+  try {
+    const dir = getCacheDir(cwd);
+    const files = readdirSync(dir);
+    const sessionFiles = files.filter((f) => f.startsWith("session-"));
+    if (sessionFiles.length <= 10) return;
+    const now = Date.now();
+    const TTL_MS = 24 * 60 * 60 * 1e3;
+    for (const file of sessionFiles) {
+      const fp = join(dir, file);
+      try {
+        if (now - statSync(fp).mtimeMs > TTL_MS) unlinkSync(fp);
+      } catch {
+      }
+    }
+  } catch {
+  }
+}
+function markSessionInjected(sessionId, cwd) {
+  const cacheDir = getCacheDir(cwd);
+  const marker = join(cacheDir, `session-${sessionIdHash(sessionId)}`);
+  try {
+    if (!existsSync(cacheDir)) mkdirSync(cacheDir, { recursive: true });
+    writeFileSync(marker, "", "utf-8");
+    pruneOldSessions(cwd);
   } catch {
   }
 }
@@ -279,12 +322,16 @@ function buildFcaContext(cwd) {
   ].join("\n");
 }
 async function injectContext(input) {
-  const cwd = input.cwd;
+  const { cwd, session_id } = input;
   if (!isFcaProject(cwd)) {
+    return { continue: true };
+  }
+  if (!isFirstInSession(session_id, cwd)) {
     return { continue: true };
   }
   const cached = readCachedContext(cwd);
   if (cached) {
+    markSessionInjected(session_id, cwd);
     return {
       continue: true,
       hookSpecificOutput: { additionalContext: cached }
@@ -307,6 +354,7 @@ async function injectContext(input) {
   }
   const additionalContext = (fcaContext + fractalSection).trim();
   writeCachedContext(cwd, additionalContext);
+  markSessionInjected(session_id, cwd);
   return {
     continue: true,
     hookSpecificOutput: {
