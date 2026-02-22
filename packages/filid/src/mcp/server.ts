@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { VERSION } from '../version.js';
 
 import { handleAstAnalyze } from './tools/ast-analyze.js';
+import { handleCacheManage } from './tools/cache-manage.js';
 import { handleDebtManage } from './tools/debt-manage.js';
 import { handleDocCompress } from './tools/doc-compress.js';
 import { handleDriftDetect } from './tools/drift-detect.js';
@@ -505,6 +506,39 @@ export function createServer(): McpServer {
     async (args) => {
       try {
         const result = await handleDebtManage(args);
+        return toolResult(result);
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'cache-manage',
+    {
+      description:
+        'Manage the filid incremental cache. ' +
+        "action='compute-hash': compute a project fingerprint hash from source file paths and mtimes. " +
+        "action='save-hash': persist a skill run hash to disk for incremental mode. " +
+        "action='get-hash': retrieve the last saved run hash for a skill.",
+      inputSchema: z.object({
+        action: z
+          .enum(['compute-hash', 'save-hash', 'get-hash'])
+          .describe('Action to perform'),
+        cwd: z.string().describe('Project root directory (absolute path)'),
+        skillName: z
+          .string()
+          .describe('Skill identifier (required for save-hash and get-hash)')
+          .optional(),
+        hash: z
+          .string()
+          .describe('Hash value to store (required for save-hash)')
+          .optional(),
+      }),
+    },
+    async (args) => {
+      try {
+        const result = await handleCacheManage(args);
         return toolResult(result);
       } catch (error) {
         return toolError(error);

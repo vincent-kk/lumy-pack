@@ -24,6 +24,11 @@ violation report and, with `--fix`, applies automatic remediation.
 - Running a periodic governance health check
 - Preparing a baseline report before `/filid:fca-structure-review` or `/filid:fca-promote`
 
+### Integration with fca-update
+
+When invoked via `/filid:fca-update`, this skill runs as Stage 1 and restricts its scan to files
+changed in the current branch. Standalone execution (`/filid:fca-scan`) always scans the full project.
+
 ## Core Workflow
 
 ### Phase 1 — Tree Construction

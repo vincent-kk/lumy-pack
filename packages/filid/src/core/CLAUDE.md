@@ -23,7 +23,7 @@ FCA-AI 아키텍처의 핵심 알고리즘을 구현한다. 프랙탈 트리 구
 
 ## Conventions
 
-- 외부 I/O는 `fractal-tree.ts`(`scanProject`)와 `rule-engine.ts`(`loadBuiltinRules`)에만 허용
+- 외부 I/O는 `fractal-tree.ts`(`scanProject`), `rule-engine.ts`(`loadBuiltinRules`), `cache-manager.ts`(캐시 읽기/쓰기)에만 허용
 - 나머지 모듈은 순수 함수 지향 (입력 → 출력, 사이드 이펙트 없음)
 - `classifyNode()`는 구조 기반 분류 우선 (이름 기반 `ORGAN_DIR_NAMES`는 deprecated)
 

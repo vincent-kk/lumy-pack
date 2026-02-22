@@ -24,6 +24,11 @@ documents, tests, metrics, and dependencies, then emit a consolidated verdict.
 - To detect circular dependencies introduced by refactoring
 - For targeted checks on a single stage (`--stage=N`)
 
+### Integration with fca-update
+
+Referenced by `/filid:fca-update` Stage 3 as the verification step after document and test updates.
+Standalone execution (`/filid:fca-structure-review`) always runs the full 6-stage pipeline.
+
 ## Core Workflow
 
 ### Stage 1 — Structure Verification

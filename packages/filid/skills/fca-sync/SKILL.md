@@ -25,6 +25,12 @@ approved corrections.
 - Applying small corrections without the full scope of `/filid:fca-restructure`
 - Inspecting drift status without making changes (`--dry-run`)
 
+### Integration with fca-update
+
+When invoked via `/filid:fca-update`, this skill runs as Stage 2 only when `critical` or `high`
+severity violations are detected in Stage 1. Standalone execution (`/filid:fca-sync`) always
+operates independently.
+
 ## Core Workflow
 
 ### Stage 1 — Scan

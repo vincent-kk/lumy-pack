@@ -13,118 +13,20 @@
  *   - Role: Inject FCA-AI rules + fractal structure rules on session's first prompt
  *   - Session gate: session-{sessionIdHash} marker file in cache directory
  *   - Cache: content hash-based invalidation (no TTL)
+ *
+ * Cache functions are provided by src/core/cache-manager.ts.
  */
-import { createHash } from 'node:crypto';
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  statSync,
-  unlinkSync,
-  writeFileSync,
-} from 'node:fs';
-import { homedir } from 'node:os';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
+import {
+  isFirstInSession,
+  markSessionInjected,
+  readCachedContext,
+  writeCachedContext,
+} from '../core/cache-manager.js';
 import { getActiveRules, loadBuiltinRules } from '../core/rule-engine.js';
 import type { HookOutput, UserPromptSubmitInput } from '../types/hooks.js';
-
-function cwdHash(cwd: string): string {
-  return createHash('sha256').update(cwd).digest('hex').slice(0, 12);
-}
-
-function getCacheDir(cwd: string): string {
-  const configDir = process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.claude');
-  return join(configDir, 'plugins', 'filid', cwdHash(cwd));
-}
-
-// Cache directory layout:
-//   {cwdHash}/cached-context.txt  -- Layer 2: FCA rules text cache
-//   {cwdHash}/timestamp           -- Layer 2: content hash for version-based invalidation (no TTL)
-//   {cwdHash}/session-{hash}      -- Layer 2: session inject marker (auto-purged after 24h)
-//   {cwdHash}/context-text        -- Layer 1: reserved for future use (not implemented)
-
-function readCachedContext(cwd: string): string | null {
-  const cacheDir = getCacheDir(cwd);
-  const stampFile = join(cacheDir, 'timestamp');
-  const contextFile = join(cacheDir, 'cached-context.txt');
-
-  try {
-    if (!existsSync(stampFile) || !existsSync(contextFile)) return null;
-    const savedHash = readFileSync(stampFile, 'utf-8').trim();
-    const context = readFileSync(contextFile, 'utf-8');
-    const currentHash = createHash('sha256')
-      .update(context)
-      .digest('hex')
-      .slice(0, 8);
-    if (savedHash !== currentHash) return null; // hash mismatch — regenerate cache
-    return context;
-  } catch {
-    return null;
-  }
-}
-
-function writeCachedContext(cwd: string, context: string): void {
-  const cacheDir = getCacheDir(cwd);
-  const stampFile = join(cacheDir, 'timestamp');
-  const contextFile = join(cacheDir, 'cached-context.txt');
-
-  try {
-    if (!existsSync(cacheDir)) mkdirSync(cacheDir, { recursive: true });
-    writeFileSync(contextFile, context, 'utf-8');
-    const hash = createHash('sha256').update(context).digest('hex').slice(0, 8);
-    writeFileSync(stampFile, hash, 'utf-8');
-  } catch {
-    // silently ignore cache write failures
-  }
-}
-
-function sessionIdHash(sessionId: string): string {
-  return createHash('sha256').update(sessionId).digest('hex').slice(0, 12);
-}
-
-function isFirstInSession(sessionId: string, cwd: string): boolean {
-  const marker = join(getCacheDir(cwd), `session-${sessionIdHash(sessionId)}`);
-  try {
-    return !existsSync(marker);
-  } catch {
-    return true; // on I/O error, fall back to inject (safe direction)
-  }
-}
-
-function pruneOldSessions(cwd: string): void {
-  try {
-    const dir = getCacheDir(cwd);
-    const files = readdirSync(dir);
-    const sessionFiles = files.filter((f) => f.startsWith('session-'));
-    if (sessionFiles.length <= 10) return; // threshold guard: skip pruning when 10 or fewer session files
-    const now = Date.now();
-    const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-    for (const file of sessionFiles) {
-      const fp = join(dir, file);
-      try {
-        if (now - statSync(fp).mtimeMs > TTL_MS) unlinkSync(fp);
-      } catch {
-        // ignore individual file deletion failures
-      }
-    }
-  } catch {
-    // ignore directory read failures
-  }
-}
-
-function markSessionInjected(sessionId: string, cwd: string): void {
-  const cacheDir = getCacheDir(cwd);
-  const marker = join(cacheDir, `session-${sessionIdHash(sessionId)}`);
-  try {
-    if (!existsSync(cacheDir)) mkdirSync(cacheDir, { recursive: true });
-    writeFileSync(marker, '', 'utf-8');
-    pruneOldSessions(cwd);
-  } catch {
-    // silently ignore marker write failures
-  }
-}
 
 const CATEGORY_GUIDE = [
   '- fractal: independent module with CLAUDE.md or SPEC.md',

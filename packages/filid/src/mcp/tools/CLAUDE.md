@@ -6,19 +6,20 @@ MCP 서버에 등록된 11개 도구의 실제 비즈니스 로직을 구현한�
 
 ## Structure
 
-| 파일 | MCP 도구 | 주요 의존 |
-|------|----------|-----------|
-| `ast-analyze.ts` | `ast-analyze` | `ast/` |
-| `fractal-navigate.ts` | `fractal-navigate` | `core/fractal-tree`, `core/organ-classifier` |
-| `fractal-scan.ts` | `fractal-scan` | `core/fractal-tree`, `core/project-analyzer` |
-| `drift-detect.ts` | `drift-detect` | `core/drift-detector` |
-| `lca-resolve.ts` | `lca-resolve` | `core/lca-calculator` |
-| `rule-query.ts` | `rule-query` | `core/rule-engine` |
-| `structure-validate.ts` | `structure-validate` | `core/fractal-validator` |
-| `test-metrics.ts` | `test-metrics` | `metrics/` |
-| `doc-compress.ts` | `doc-compress` | `compress/` |
-| `review-manage.ts` | `review-manage` | 파일시스템 (`.filid/review/`) |
-| `debt-manage.ts` | `debt-manage` | 파일시스템 (`.filid/debt/`) |
+| 파일                    | MCP 도구             | 주요 의존                                    |
+| ----------------------- | -------------------- | -------------------------------------------- |
+| `ast-analyze.ts`        | `ast-analyze`        | `ast/`                                       |
+| `fractal-navigate.ts`   | `fractal-navigate`   | `core/fractal-tree`, `core/organ-classifier` |
+| `fractal-scan.ts`       | `fractal-scan`       | `core/fractal-tree`, `core/project-analyzer` |
+| `drift-detect.ts`       | `drift-detect`       | `core/drift-detector`                        |
+| `lca-resolve.ts`        | `lca-resolve`        | `core/lca-calculator`                        |
+| `rule-query.ts`         | `rule-query`         | `core/rule-engine`                           |
+| `structure-validate.ts` | `structure-validate` | `core/fractal-validator`                     |
+| `test-metrics.ts`       | `test-metrics`       | `metrics/`                                   |
+| `doc-compress.ts`       | `doc-compress`       | `compress/`                                  |
+| `review-manage.ts`      | `review-manage`      | 파일시스템 (`.filid/review/`)                |
+| `debt-manage.ts`        | `debt-manage`        | 파일시스템 (`.filid/debt/`)                  |
+| `cache-manage.ts`       | `cache-manage`       | `core/cache-manager`                         |
 
 ## Conventions
 
