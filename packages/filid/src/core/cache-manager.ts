@@ -11,8 +11,6 @@ import {
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-import fg from 'fast-glob';
-
 // Cache directory layout:
 //   {cwdHash}/cached-context.txt    — Layer 2: FCA rules text cache
 //   {cwdHash}/timestamp             — Layer 2: content hash for invalidation
@@ -131,33 +129,4 @@ export function getLastRunHash(cwd: string, skillName: string): string | null {
   } catch {
     return null;
   }
-}
-
-export async function computeProjectHash(cwd: string): Promise<string> {
-  const files = await fg('**/*.{ts,tsx,js,jsx,md}', {
-    cwd,
-    ignore: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/.git/**',
-      '**/.filid/review/**',
-    ],
-    absolute: false,
-  });
-
-  files.sort();
-
-  const parts: string[] = [];
-  for (const file of files) {
-    try {
-      const fullPath = join(cwd, file);
-      const mtime = statSync(fullPath).mtimeMs;
-      parts.push(`${file}:${mtime}`);
-    } catch {
-      // skip files that can't be stat'd
-    }
-  }
-
-  const input = parts.join('\n');
-  return createHash('sha256').update(input).digest('hex').slice(0, 16);
 }

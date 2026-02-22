@@ -105,8 +105,8 @@ export {
   markSessionInjected,
   saveRunHash,
   getLastRunHash,
-  computeProjectHash,
 } from './core/cache-manager.js';
+export { computeProjectHash } from './core/project-hash.js';
 
 // MCP tool handlers
 export { handleAstAnalyze } from './mcp/tools/ast-analyze.js';
