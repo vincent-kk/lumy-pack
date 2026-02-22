@@ -59,9 +59,9 @@ Once installed, verify that all components are active:
 /filid:scan
 
 # Check MCP tools are available (in Claude Code)
-# The 9 MCP tools (ast-analyze, fractal-navigate, doc-compress, test-metrics,
-# fractal-scan, drift-detect, lca-resolve, rule-query, structure-validate)
-# will appear automatically in the tool list.
+# The 11 MCP tools (ast-analyze, fractal-navigate, doc-compress, test-metrics,
+# fractal-scan, drift-detect, lca-resolve, rule-query, structure-validate,
+# review-manage, debt-manage) will appear automatically in the tool list.
 
 # Check agents (fractal-architect, implementer, context-manager, qa-reviewer,
 # drift-analyzer, restructurer) are listed in /agents
@@ -87,8 +87,8 @@ Once installed, verify that all components are active:
 
 | Component | Count | Auto-registered | User Action Needed |
 |-----------|-------|-----------------|-------------------|
-| **Skills** | 8 | Yes — available as `/filid:*` commands | None |
-| **MCP Tools** | 9 | Yes — MCP server starts automatically | None |
+| **Skills** | 11 | Yes — available as `/filid:*` commands | None |
+| **MCP Tools** | 11 | Yes — MCP server starts automatically | None |
 | **Agents** | 6 | Yes — available as subagents | None |
 | **Hooks** | 5 | Yes — fire on matching events | None |
 
@@ -171,6 +171,7 @@ filid operates through a **4-layer architecture**, ordered by automation level:
 |  | ast-analyze | fractal-navigate | doc-compress        | |
 |  | test-metrics | fractal-scan | drift-detect           | |
 |  | lca-resolve | rule-query | structure-validate        | |
+|  | review-manage | debt-manage                          | |
 |  +-----------------------------------------------------+ |
 |                                                          |
 |  Layer 3: AGENTS (role-restricted autonomy)              |
@@ -184,6 +185,7 @@ filid operates through a **4-layer architecture**, ordered by automation level:
 |  +-----------------------------------------------------+ |
 |  | /init | /scan | /sync | /structure-review | /promote | |
 |  | /context-query | /guide | /restructure               | |
+|  | /code-review | /resolve-review | /re-validate        | |
 |  +-----------------------------------------------------+ |
 +---------------------------------------------------------+
 ```
@@ -263,9 +265,39 @@ Guides restructuring of modules that violate fractal principles, with safe migra
 /filid:restructure [path]
 ```
 
+### `/filid:code-review` — AI Governance Code Review
+
+Multi-persona consensus-based code review using the Chairperson Delegation Pattern. Phase A (analysis, haiku) elects a review committee, Phase B (verification, sonnet) runs MCP-based technical checks, Phase C (consensus, chairperson) conducts political deliberation via a state machine.
+
+```
+/filid:code-review [--scope=branch|pr|commit] [--base=ref] [--force] [--verbose]
+```
+
+**Outputs**: `review-report.md`, `fix-requests.md` in `.filid/review/<branch>/`
+
+### `/filid:resolve-review` — Fix Request Resolution
+
+Interactive workflow to accept or reject fix requests from a completed code review. Collects developer justifications for rejected items, refines them into ADRs, and creates technical debt records.
+
+```
+/filid:resolve-review
+```
+
+**Outputs**: `justifications.md` with `resolve_commit_sha` for delta baseline, `.filid/debt/*.md` per rejected item
+
+### `/filid:re-validate` — Delta Re-validation
+
+Lightweight re-validation after fix resolution. Extracts the delta since `resolve_commit_sha`, verifies accepted fixes resolved their issues, checks justifications for constitutional compliance, and renders a final PASS/FAIL verdict.
+
+```
+/filid:re-validate
+```
+
+**Outputs**: `re-validate.md` with verdict, optional PR comment via `gh` CLI
+
 ## MCP Tools
 
-Nine tools exposed via stdio JSON-RPC transport:
+Eleven tools exposed via stdio JSON-RPC transport:
 
 ### `ast-analyze`
 
@@ -337,6 +369,29 @@ Queries the fractal structure rules applied to the current project. `action='lis
 ### `structure-validate`
 
 Comprehensive fractal structure validation against all or selected rules. Returns violation lists with pass/fail/warning counts. The `fix` parameter is reserved for future auto-remediation support.
+
+### `review-manage`
+
+Code review governance session management.
+
+| Action | Description |
+|--------|-------------|
+| `normalize-branch` | Convert branch name to directory-safe string (`/` → `--`) |
+| `ensure-dir` | Create `.filid/review/<branch>/` directory |
+| `checkpoint` | Detect review phase state from intermediate files |
+| `elect-committee` | Deterministic committee election based on complexity |
+| `cleanup` | Delete review directory after merge |
+
+### `debt-manage`
+
+Technical debt lifecycle management with weight calculation.
+
+| Action | Description |
+|--------|-------------|
+| `create` | Create debt file with frontmatter and ADR |
+| `list` | List debts by fractal path with total weight |
+| `resolve` | Delete debt file when rule is satisfied |
+| `calculate-bias` | Update weights (`base × 2^touch_count`, cap=16) with idempotency protection |
 
 ## Agents
 
@@ -436,9 +491,12 @@ packages/filid/
 │   │   ├── change-tracker.ts      # Change tracking (disabled)
 │   │   ├── agent-enforcer.ts      # Agent role enforcement
 │   │   └── context-injector.ts    # Context injection
-│   └── mcp/                  # MCP server + 9 tool handlers
-├── skills/                   # 8 user-invocable skills
-│   └── {init,scan,sync,structure-review,promote,context-query,guide,restructure}/
+│   └── mcp/                  # MCP server + 11 tool handlers
+├── skills/                   # 11 user-invocable skills
+│   ├── {init,scan,sync,structure-review,promote,context-query,guide,restructure}/
+│   ├── code-review/          # Multi-persona governance review (phases/, personas/)
+│   ├── resolve-review/       # Fix request resolution + debt creation
+│   └── re-validate/          # Delta re-validation (PASS/FAIL verdict)
 ├── agents/                   # 6 specialized agent definitions
 │   └── {fractal-architect,implementer,context-manager,qa-reviewer,drift-analyzer,restructurer}.md
 ├── hooks/hooks.json          # Hook event registration

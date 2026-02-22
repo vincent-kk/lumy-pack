@@ -10,6 +10,8 @@ import { handleDriftDetect } from './tools/drift-detect.js';
 import { handleLcaResolve } from './tools/lca-resolve.js';
 import { handleRuleQuery } from './tools/rule-query.js';
 import { handleStructureValidate } from './tools/structure-validate.js';
+import { handleReviewManage } from './tools/review-manage.js';
+import { handleDebtManage } from './tools/debt-manage.js';
 
 /** JSON.stringify replacer that converts Map/Set to plain objects/arrays */
 function mapReplacer(_key: string, value: unknown): unknown {
@@ -297,6 +299,131 @@ export function createServer(): McpServer {
     async (args) => {
       try {
         const result = await handleStructureValidate(args);
+        return toolResult(result);
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'review-manage',
+    {
+      description:
+        '코드 리뷰 거버넌스 세션을 관리한다. ' +
+        "action='normalize-branch': 브랜치명을 파일시스템 안전 문자열로 변환. " +
+        "action='ensure-dir': 리뷰 디렉토리 생성(.filid/review/<normalized>). " +
+        "action='checkpoint': 리뷰 진행 단계(A/B/C/DONE) 감지. " +
+        "action='elect-committee': 변경 복잡도 기반 위원회 선출. " +
+        "action='cleanup': 리뷰 디렉토리 삭제.",
+      inputSchema: z.object({
+        action: z
+          .enum(['normalize-branch', 'ensure-dir', 'checkpoint', 'elect-committee', 'cleanup'])
+          .describe('수행할 동작'),
+        projectRoot: z.string().describe('프로젝트 루트 디렉토리 절대 경로'),
+        branchName: z
+          .string()
+          .describe("normalize-branch / ensure-dir / checkpoint / cleanup 액션에서 사용할 브랜치명")
+          .optional(),
+        changedFilesCount: z
+          .number()
+          .describe("elect-committee 액션에서 사용할 변경 파일 수")
+          .optional(),
+        changedFractalsCount: z
+          .number()
+          .describe("elect-committee 액션에서 사용할 변경 프랙탈 수")
+          .optional(),
+        hasInterfaceChanges: z
+          .boolean()
+          .describe("elect-committee 액션에서 사용할 인터페이스 변경 여부")
+          .optional(),
+      }),
+    },
+    async (args) => {
+      try {
+        const result = await handleReviewManage(args);
+        return toolResult(result);
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'debt-manage',
+    {
+      description:
+        '기술 부채 항목을 관리한다. ' +
+        "action='create': 새 부채 항목을 .filid/debt/<id>.md 파일로 생성. " +
+        "action='list': 부채 목록 조회 (fractalPath로 필터 가능). " +
+        "action='resolve': 부채 항목 파일 삭제(해결 처리). " +
+        "action='calculate-bias': 변경된 프랙탈 경로 기반으로 가중치 재계산 및 바이어스 수준 산출.",
+      inputSchema: z.object({
+        action: z
+          .enum(['create', 'list', 'resolve', 'calculate-bias'])
+          .describe('수행할 동작'),
+        projectRoot: z.string().describe('프로젝트 루트 디렉토리 절대 경로'),
+        debtItem: z
+          .object({
+            fractal_path: z.string(),
+            file_path: z.string(),
+            created_at: z.string(),
+            review_branch: z.string(),
+            original_fix_id: z.string(),
+            severity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
+            rule_violated: z.string(),
+            metric_value: z.string(),
+            title: z.string(),
+            original_request: z.string(),
+            developer_justification: z.string(),
+            refined_adr: z.string(),
+          })
+          .describe("action='create'일 때 생성할 부채 항목")
+          .optional(),
+        fractalPath: z
+          .string()
+          .describe("action='list'일 때 필터링할 프랙탈 경로")
+          .optional(),
+        debtId: z
+          .string()
+          .describe("action='resolve'일 때 삭제할 부채 ID")
+          .optional(),
+        debts: z
+          .array(
+            z.object({
+              id: z.string(),
+              fractal_path: z.string(),
+              file_path: z.string(),
+              created_at: z.string(),
+              review_branch: z.string(),
+              original_fix_id: z.string(),
+              severity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
+              weight: z.number(),
+              touch_count: z.number(),
+              last_review_commit: z.string().nullable(),
+              rule_violated: z.string(),
+              metric_value: z.string(),
+              title: z.string(),
+              original_request: z.string(),
+              developer_justification: z.string(),
+              refined_adr: z.string(),
+            }),
+          )
+          .describe("action='calculate-bias'일 때 평가할 부채 목록")
+          .optional(),
+        changedFractalPaths: z
+          .array(z.string())
+          .describe("action='calculate-bias'일 때 변경된 프랙탈 경로 목록")
+          .optional(),
+        currentCommitSha: z
+          .string()
+          .describe("action='calculate-bias'일 때 현재 커밋 SHA (멱등성 보호)")
+          .optional(),
+      }),
+    },
+    async (args) => {
+      try {
+        const result = await handleDebtManage(args);
         return toolResult(result);
       } catch (error) {
         return toolError(error);

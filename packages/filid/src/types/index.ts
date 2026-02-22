@@ -90,3 +90,23 @@ export type {
   AnalyzeOptions,
   RenderedReport,
 } from './report.js';
+
+export type {
+  Complexity,
+  PersonaId,
+  CheckpointPhase,
+  CheckpointStatus,
+  CommitteeElection,
+  ReviewSession,
+  StateMachineState,
+  ReviewVerdict,
+} from './review.js';
+
+export type {
+  DebtSeverity,
+  BiasLevel,
+  DebtItem,
+  DebtItemCreate,
+  BiasResult,
+} from './debt.js';
+export { DEBT_WEIGHT_CAP, DEBT_BASE_WEIGHT } from './debt.js';

@@ -266,6 +266,78 @@ yarn test:run   # 1회 실행
 
 **결과**: 3-Prompt Limit 내에서 답변. 컨텍스트 초과 시 압축 적용.
 
+### /code-review — AI 거버넌스 코드 리뷰
+
+```
+/code-review [--scope=branch|pr|commit] [--base=ref] [--force] [--verbose]
+```
+
+| 옵션 | 기본값 | 설명 |
+|------|--------|------|
+| `--scope` | `branch` | 리뷰 범위 (branch/pr/commit) |
+| `--base` | `main` | 비교 기준 ref |
+| `--force` | (없음) | 기존 리뷰 삭제 후 재시작 |
+| `--verbose` | (없음) | 상세 분석 포함 |
+
+**예시**:
+```
+/code-review
+/code-review --scope=pr --verbose
+/code-review --force
+```
+
+**결과**: `.filid/review/<branch>/`에 review-report.md, fix-requests.md 생성. `--scope=pr` 시 PR 코멘트 게시.
+
+### /resolve-review — 수정 사항 해결
+
+```
+/resolve-review
+```
+
+파라미터 없음. 현재 브랜치 자동 감지.
+
+**예시**:
+```
+/resolve-review
+```
+
+**결과**: 각 fix 항목에 대해 수용/거부 선택 → 거부 시 소명 수집 → justifications.md + 부채 파일 생성.
+
+### /re-validate — Delta 재검증
+
+```
+/re-validate
+```
+
+파라미터 없음. 현재 브랜치 자동 감지.
+
+**예시**:
+```
+/re-validate
+```
+
+**결과**: PASS/FAIL 판정 → re-validate.md 생성. `gh` 인증 시 PR 코멘트 게시.
+
+### .filid/ 디렉토리 구조
+
+거버넌스 스킬이 사용하는 파일 시스템:
+
+```
+.filid/
+├── review/<branch>/       # 브랜치별 리뷰 산출물
+│   ├── session.md            # Phase A: 위원회 선출 결과
+│   ├── verification.md       # Phase B: 기술 검증 결과
+│   ├── review-report.md      # Phase C: 최종 리뷰 보고서
+│   ├── fix-requests.md       # Phase C: 수정 요청 사항
+│   ├── justifications.md     # /resolve-review: 수용/거부 결정
+│   └── re-validate.md        # /re-validate: PASS/FAIL 판정
+└── debt/                  # 기술 부채 (전체 공유, 커밋 대상)
+    └── <debt-id>.md          # 개별 부채 항목 (YAML frontmatter)
+```
+
+- `.filid/review/` — 커밋 대상 (PR에 리뷰 이력 남김)
+- `.filid/debt/` — 커밋 대상 (팀 간 부채 공유)
+
 ---
 
 ## MCP 도구 사용법

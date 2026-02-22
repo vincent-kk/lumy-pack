@@ -1,6 +1,6 @@
 # 03. 플러그인 라이프사이클 & 워크플로우
 
-> 6개 스킬 기반 라이프사이클 단계, 에이전트 협업 시퀀스, Hook 이벤트 타임라인.
+> 11개 스킬 기반 라이프사이클 단계, 에이전트 협업 시퀀스, Hook 이벤트 타임라인, 거버넌스 파이프라인.
 
 ---
 
@@ -380,6 +380,96 @@ T3  PostToolUse (disabled — no active hooks)
 T4  에이전트가 서브에이전트 생성
     └─ SubagentStart (matcher: *)
        └─ agent-enforcer: 역할 제한 주입
+```
+
+---
+
+---
+
+## 거버넌스 라이프사이클: 코드 리뷰 → 해결 → 재검증
+
+기존 6단계 라이프사이클과 독립적으로 동작하는 거버넌스 파이프라인.
+
+```
+┌──────────────┐    ┌─────────────────┐    ┌───────────────┐
+│ /code-review  │───→│ /resolve-review  │───→│ /re-validate   │
+│               │    │                  │    │                │
+│ Phase A: 분석  │    │ 수용/거부 선택     │    │ Delta 추출      │
+│ Phase B: 검증  │    │ 소명 수집         │    │ 수정 확인       │
+│ Phase C: 합의  │    │ ADR 정제         │    │ PASS/FAIL      │
+│               │    │ 부채 생성         │    │ PR 코멘트       │
+└──────────────┘    └─────────────────┘    └───────────────┘
+  PR 시점              리뷰 완료 후           수정 적용 후
+```
+
+### /code-review — 3-Phase 위임 패턴
+
+```
+Phase A (haiku subagent)
+├── git diff 분석
+├── review-manage(elect-committee) → 결정론적 위원회 선출
+├── review-manage(ensure-dir) → 리뷰 디렉토리 생성
+└── 출력: session.md
+
+Phase B (sonnet subagent)
+├── 기존 MCP tool 기반 기술 검증 (ast-analyze, test-metrics, ...)
+├── debt-manage(calculate-bias) → 부채 바이어스 계산
+└── 출력: verification.md
+
+Phase C (의장 직접)
+├── 페르소나 프레임워크 지연 로딩
+├── 상태 머신: PROPOSAL→DEBATE→VETO/SYNTHESIS/ABSTAIN→CONCLUSION
+├── 최대 5라운드
+└── 출력: review-report.md, fix-requests.md
+```
+
+### /resolve-review — 수정 사항 해결
+
+```
+1. 브랜치 감지 + fix-requests.md 로딩
+2. AskUserQuestion으로 각 fix 항목 수용/거부
+3. 수용 → 코드 패치 안내
+4. 거부 → 소명 수집 → ADR 정제 → debt-manage(create)
+5. justifications.md 출력 (resolve_commit_sha 포함)
+```
+
+### /re-validate — Delta 재검증
+
+```
+1. resolve_commit_sha 기반 Delta 추출
+2. 수용된 fix 항목별 MCP tool 재검증
+3. 거부된 항목의 소명 헌법 검사
+4. 기존 부채 해소 확인 → debt-manage(resolve)
+5. PASS/FAIL 판정 → re-validate.md 출력
+6. (선택) gh pr comment으로 PR 코멘트
+```
+
+### 부채 관리 라이프사이클
+
+```
+┌─────────┐     ┌───────────┐     ┌──────────┐
+│ 발생     │────→│ 누적/가중  │────→│ 해소      │
+│ (create) │     │ (bias)    │     │ (resolve) │
+└─────────┘     └───────────┘     └──────────┘
+
+발생: /resolve-review에서 거부 시 debt-manage(create)
+누적: 이후 리뷰에서 동일 프랙탈 수정 시 touch_count++ → 가중치 2배
+해소: /re-validate에서 규칙 충족 시 debt-manage(resolve)
+```
+
+### .filid/ 디렉토리 구조
+
+```
+.filid/
+├── review/<branch>/       # 리뷰 중간 산출물 (브랜치별)
+│   ├── session.md            # Phase A 출력
+│   ├── verification.md       # Phase B 출력
+│   ├── review-report.md      # Phase C 출력 (최종 보고서)
+│   ├── fix-requests.md       # Phase C 출력 (수정 요청)
+│   ├── justifications.md     # /resolve-review 출력
+│   └── re-validate.md        # /re-validate 출력
+└── debt/                  # 기술 부채 파일 (전체 공유)
+    └── <debt-id>.md          # 개별 부채 항목
 ```
 
 ---

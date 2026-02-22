@@ -8,12 +8,13 @@
 
 ```
 src/
-├── types/      5 파일   30 타입/인터페이스   ← 모든 모듈의 기반
+├── types/      7 파일   38 타입/인터페이스   ← 모든 모듈의 기반 (+review.ts, debt.ts)
 ├── core/       5 모듈   10 함수 + 1 클래스    순수 비즈니스 로직
 ├── ast/        5 모듈   7 함수               TypeScript AST 분석
 ├── metrics/    4 모듈   4 함수               소프트웨어 메트릭
 ├── compress/   2 모듈   3 함수               컨텍스트 압축
-└── hooks/      5 모듈   5 함수 + 5 엔트리     Claude Code Hook 연동
+├── hooks/      5 모듈   5 함수 + 5 엔트리     Claude Code Hook 연동
+└── mcp/tools/  6 모듈                        MCP tool 핸들러 (+review-manage, debt-manage)
 ```
 
 ---
@@ -439,6 +440,111 @@ stdin에서 JSON 읽기 → 핸들러 호출 → stdout에 JSON 쓰기.
                    │ param.    │  │           │
                    └──────────┘  └───────────┘
 ```
+
+---
+
+---
+
+## 7. 거버넌스 모듈 — 코드 리뷰 스킬
+
+### skills/code-review/
+
+**목적**: 다중 페르소나 합의체 기반 코드 리뷰 거버넌스
+
+**구조**:
+```
+skills/code-review/
+├── SKILL.md                      # 의장 오케스트레이터 (~105줄)
+├── reference.md                  # 출력 포맷, MCP tool 맵, 부채 바이어스 테이블
+├── state-machine.md              # PROPOSAL→DEBATE→VETO/SYNTHESIS/ABSTAIN→CONCLUSION
+├── phases/
+│   ├── phase-a-analysis.md       # Phase A subagent: git diff, 위원회 선출
+│   └── phase-b-verification.md   # Phase B subagent: MCP 기술 검증
+└── personas/                     # 6개 페르소나 프레임워크 (각 ≤70줄)
+    ├── engineering-architect.md
+    ├── knowledge-manager.md
+    ├── operations-sre.md
+    ├── business-driver.md
+    ├── product-manager.md
+    └── design-hci.md
+```
+
+**MCP tool 의존**: `review-manage` (5 actions), `debt-manage` (1 action: calculate-bias), 기존 9개 MCP tool
+
+### skills/resolve-review/
+
+**목적**: 수정 사항 수용/거부 + 소명 + ADR 정제 + 부채 기록
+
+**구조**:
+```
+skills/resolve-review/
+├── SKILL.md       # 6-step 워크플로우 (~119줄)
+└── reference.md   # justifications.md 포맷, ADR 가이드라인, AskUserQuestion 패턴
+```
+
+**MCP tool 의존**: `review-manage` (normalize-branch), `debt-manage` (create)
+
+### skills/re-validate/
+
+**목적**: Delta 기반 경량 재검증, PASS/FAIL 최종 판정
+
+**구조**:
+```
+skills/re-validate/
+├── SKILL.md       # 7-step 워크플로우 (~126줄)
+└── reference.md   # re-validate.md 포맷, PR 코멘트 포맷, 비협상 규칙
+```
+
+**MCP tool 의존**: `review-manage` (normalize-branch), `debt-manage` (list, resolve), 기존 MCP tool (재검증용)
+
+---
+
+## 8. 거버넌스 MCP tool 모듈
+
+### src/mcp/tools/review-manage.ts (217줄)
+
+**목적**: 리뷰 세션 결정론적 관리
+
+| Action | 핵심 알고리즘 |
+|--------|-------------|
+| `normalize-branch` | `/` → `--`, 특수문자 → `_`, 연속 `--` 보존 |
+| `ensure-dir` | `.filid/review/<normalized>/` 재귀 생성 |
+| `checkpoint` | session.md/verification.md/review-report.md 존재로 Phase 판정 |
+| `elect-committee` | 복잡도(LOW/MED/HIGH) → 위원 수(2/4/6) + 적대적 짝짓기 |
+| `cleanup` | 리뷰 디렉토리 재귀 삭제 |
+
+**의존**: `types/review.ts`
+
+### src/mcp/tools/debt-manage.ts (301줄)
+
+**목적**: 기술 부채 결정론적 관리
+
+| Action | 핵심 알고리즘 |
+|--------|-------------|
+| `create` | YAML frontmatter + markdown 본문으로 `.filid/debt/<id>.md` 생성 |
+| `list` | glob 패턴으로 부채 파일 수집 + 가중치 합계 |
+| `resolve` | 부채 파일 삭제 (규칙 충족 시) |
+| `calculate-bias` | `base × 2^touch_count` (cap=16) + `last_review_commit` 멱등성 |
+
+**의존**: `types/debt.ts`
+
+### src/types/review.ts (66줄)
+
+| 타입 | 용도 |
+|------|------|
+| `ReviewSession` | 브랜치, 복잡도, 위원회, 변경 프랙탈 목록 |
+| `VerificationResult` | 통과 여부, 치명적 실패 목록, 부채 바이어스 |
+| `CommitteeElection` | 복잡도 판정, 위원 배열, 적대적 짝짓기 |
+| `CheckpointStatus` | phase(A/B/C/DONE), 존재 파일 목록 |
+
+### src/types/debt.ts (66줄)
+
+| 타입 | 용도 |
+|------|------|
+| `DebtItem` | 프랙탈 경로, 규칙 위반, 가중치, 소명, ADR |
+| `DebtWeight` | base, touch_count, calculated, capped |
+| `BiasLevel` | LOW_PRESSURE / MODERATE / HIGH / CRITICAL |
+| `BiasResult` | 수준, 총점, 갱신된 부채 목록 |
 
 ---
 
