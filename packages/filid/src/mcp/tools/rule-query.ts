@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { loadBuiltinRules, getActiveRules, evaluateRules } from '../../core/rule-engine.js';
 import { scanProject } from '../../core/fractal-tree.js';
 import type { Rule, RuleEvaluationResult } from '../../types/rules.js';
@@ -94,7 +95,14 @@ export async function handleRuleQuery(args: unknown): Promise<RuleQueryResult> {
 
       const tree = await scanProject(input.path);
       const result = evaluateRules(tree, activeRules);
-      return result;
+      const absTargetPath = resolve(input.path, input.targetPath);
+      const filteredViolations = result.violations.filter(
+        v => v.path === absTargetPath || v.path.startsWith(absTargetPath + '/')
+      );
+      return {
+        ...result,
+        violations: filteredViolations,
+      };
     }
 
     default:

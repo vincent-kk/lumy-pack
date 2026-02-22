@@ -59,14 +59,15 @@ Once installed, verify that all components are active:
 /filid:scan
 
 # Check MCP tools are available (in Claude Code)
-# The 4 MCP tools (ast-analyze, fractal-navigate, doc-compress, test-metrics)
+# The 9 MCP tools (ast-analyze, fractal-navigate, doc-compress, test-metrics,
+# fractal-scan, drift-detect, lca-resolve, rule-query, structure-validate)
 # will appear automatically in the tool list.
 
-# Check agents (architect, implementer, context-manager, qa-reviewer)
-# are listed in /agents
+# Check agents (fractal-architect, implementer, context-manager, qa-reviewer,
+# drift-analyzer, restructurer) are listed in /agents
 
 # Check hooks are firing
-# Write/Edit operations will trigger pre-tool-validator and organ-guard hooks.
+# Write/Edit operations will trigger pre-tool-validator and structure-guard hooks.
 ```
 
 ### First Steps After Installation
@@ -86,9 +87,9 @@ Once installed, verify that all components are active:
 
 | Component | Count | Auto-registered | User Action Needed |
 |-----------|-------|-----------------|-------------------|
-| **Skills** | 6 | Yes — available as `/filid:*` commands | None |
-| **MCP Tools** | 4 | Yes — MCP server starts automatically | None |
-| **Agents** | 4 | Yes — available as subagents | None |
+| **Skills** | 8 | Yes — available as `/filid:*` commands | None |
+| **MCP Tools** | 9 | Yes — MCP server starts automatically | None |
+| **Agents** | 6 | Yes — available as subagents | None |
 | **Hooks** | 5 | Yes — fire on matching events | None |
 
 All components are automatically registered when the plugin is enabled. No manual configuration required.
@@ -154,35 +155,37 @@ claude plugin validate ./packages/filid
 filid operates through a **4-layer architecture**, ordered by automation level:
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                  Claude Code Runtime                 │
-│                                                      │
-│  Layer 1: HOOKS (automatic, event-driven)            │
-│  ┌─────────────────────────────────────────────────┐ │
-│  │ PreToolUse  → pre-tool-validator, organ-guard   │ │
-│  │ PostToolUse → (disabled)                         │ │
-│  │ SubagentStart → agent-enforcer                  │ │
-│  │ UserPromptSubmit → context-injector             │ │
-│  └─────────────────────────────────────────────────┘ │
-│                                                      │
-│  Layer 2: MCP TOOLS (on-demand analysis)             │
-│  ┌─────────────────────────────────────────────────┐ │
-│  │ ast-analyze │ fractal-navigate │ doc-compress   │ │
-│  │ test-metrics                                    │ │
-│  └─────────────────────────────────────────────────┘ │
-│                                                      │
-│  Layer 3: AGENTS (role-restricted autonomy)          │
-│  ┌─────────────────────────────────────────────────┐ │
-│  │ architect(RO) │ implementer │ context-manager   │ │
-│  │ qa-reviewer(RO)                                 │ │
-│  └─────────────────────────────────────────────────┘ │
-│                                                      │
-│  Layer 4: SKILLS (user-invoked workflows)            │
-│  ┌─────────────────────────────────────────────────┐ │
-│  │ /init │ /scan │ /sync │ /structure-review │ /promote │ │
-│  │ /context-query                                  │ │
-│  └─────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────┘
++---------------------------------------------------------+
+|                  Claude Code Runtime                     |
+|                                                          |
+|  Layer 1: HOOKS (automatic, event-driven)                |
+|  +-----------------------------------------------------+ |
+|  | PreToolUse  -> pre-tool-validator, structure-guard   | |
+|  | PostToolUse -> (disabled)                            | |
+|  | SubagentStart -> agent-enforcer                     | |
+|  | UserPromptSubmit -> context-injector                | |
+|  +-----------------------------------------------------+ |
+|                                                          |
+|  Layer 2: MCP TOOLS (on-demand analysis)                 |
+|  +-----------------------------------------------------+ |
+|  | ast-analyze | fractal-navigate | doc-compress        | |
+|  | test-metrics | fractal-scan | drift-detect           | |
+|  | lca-resolve | rule-query | structure-validate        | |
+|  +-----------------------------------------------------+ |
+|                                                          |
+|  Layer 3: AGENTS (role-restricted autonomy)              |
+|  +-----------------------------------------------------+ |
+|  | fractal-architect(RO) | implementer                  | |
+|  | context-manager | qa-reviewer(RO)                    | |
+|  | drift-analyzer(RO) | restructurer                    | |
+|  +-----------------------------------------------------+ |
+|                                                          |
+|  Layer 4: SKILLS (user-invoked workflows)                |
+|  +-----------------------------------------------------+ |
+|  | /init | /scan | /sync | /structure-review | /promote | |
+|  | /context-query | /guide | /restructure               | |
+|  +-----------------------------------------------------+ |
++---------------------------------------------------------+
 ```
 
 | Layer | Role | Trigger | Interface |
@@ -218,7 +221,7 @@ Runs a 6-stage verification pipeline on pull request changes.
 /filid:structure-review [--stage=1-6] [--verbose]
 ```
 
-**Stages**: boundary check → document validation → dependency analysis → test metrics → complexity assessment → final verdict
+**Stages**: boundary check -> document validation -> dependency analysis -> test metrics -> complexity assessment -> final verdict
 
 ### `/filid:promote` — Test Promotion
 
@@ -244,9 +247,25 @@ Batch-applies accumulated documentation updates from the ChangeQueue at PR time.
 /filid:sync [--dry-run]
 ```
 
+### `/filid:guide` — FCA-AI Guidance
+
+Provides contextual guidance on FCA-AI principles and best practices for the current project state.
+
+```
+/filid:guide [topic]
+```
+
+### `/filid:restructure` — Structure Restructuring
+
+Guides restructuring of modules that violate fractal principles, with safe migration steps.
+
+```
+/filid:restructure [path]
+```
+
 ## MCP Tools
 
-Four tools exposed via stdio JSON-RPC transport:
+Nine tools exposed via stdio JSON-RPC transport:
 
 ### `ast-analyze`
 
@@ -266,7 +285,7 @@ AST-based code analysis using the TypeScript Compiler API.
   "analysisType": "lcom4",
   "className": "Foo"
 }
-// → { "value": 1, "components": [["getX"]], "methodCount": 1, "fieldCount": 1 }
+// -> { "value": 1, "components": [["getX"]], "methodCount": 1, "fieldCount": 1 }
 ```
 
 ### `fractal-navigate`
@@ -276,7 +295,7 @@ Directory classification and fractal tree operations.
 | Action | Description |
 |--------|-------------|
 | `classify` | Determine if a directory is fractal, organ, or pure-function |
-| `siblings` | List sibling nodes at the same tree level |
+| `sibling-list` | List sibling nodes at the same tree level |
 | `tree` | Build the full fractal hierarchy tree |
 
 ### `doc-compress`
@@ -299,24 +318,38 @@ Test analysis and decision support.
 | `check-312` | Validate the 3+12 rule (max 15 tests per spec.ts) |
 | `decide` | Run the decision tree (split/compress/parameterize recommendation) |
 
-```json
-{
-  "action": "decide",
-  "decisionInput": { "testCount": 20, "lcom4": 3, "cyclomaticComplexity": 10 }
-}
-// → { "decision": { "action": "split", "reason": "LCOM4 = 3 indicates multiple responsibilities..." } }
-```
+### `fractal-scan`
+
+Scans a project directory and builds the complete fractal structure tree (FractalTree) with ScanReport. Classifies each directory node as fractal/organ/pure-function/hybrid. With `includeModuleInfo=true`, includes module entry point information.
+
+### `drift-detect`
+
+Detects structural drift between the current project layout and fractal principles. Each drift item includes expected/actual values, severity (critical/high/medium/low), and suggested corrective actions. With `generatePlan=true`, produces a SyncPlan.
+
+### `lca-resolve`
+
+Computes the Lowest Common Ancestor (LCA) of two modules in the fractal tree. Used to determine where a shared dependency should be placed. Returns distance from each module to the LCA and a `suggestedPlacement` path.
+
+### `rule-query`
+
+Queries the fractal structure rules applied to the current project. `action='list'` returns all rules (filterable by category), `action='get'` returns rule details by ID, `action='check'` evaluates rules against a target path and filters violations.
+
+### `structure-validate`
+
+Comprehensive fractal structure validation against all or selected rules. Returns violation lists with pass/fail/warning counts. The `fix` parameter is reserved for future auto-remediation support.
 
 ## Agents
 
-Four specialized agents with role-based tool restrictions:
+Six specialized agents with role-based tool restrictions:
 
 | Agent | Model | Tools Restricted | Purpose |
 |-------|-------|-----------------|---------|
-| **architect** | opus | Write, Edit, Bash | Read-only design, planning, SPEC.md drafting |
+| **fractal-architect** | opus | Write, Edit, Bash | Read-only design, planning, SPEC.md drafting |
 | **implementer** | sonnet | _(none)_ | Code implementation within approved SPEC.md scope |
 | **context-manager** | sonnet | _(none)_ | CLAUDE.md/SPEC.md sync, AST-based drift detection |
 | **qa-reviewer** | sonnet | Write, Edit, Bash | Read-only test metrics validation, PR review |
+| **drift-analyzer** | sonnet | Write, Edit, Bash | Read-only drift detection and reporting |
+| **restructurer** | sonnet | _(none)_ | Guided structure refactoring within approval flow |
 
 ## Hooks
 
@@ -325,7 +358,7 @@ Runtime enforcement hooks that fire automatically on Claude Code events:
 | Hook Event | Matcher | Script | Purpose |
 |------------|---------|--------|---------|
 | `PreToolUse` | `Write\|Edit` | `pre-tool-validator` | Validate CLAUDE.md line limits, SPEC.md constraints |
-| `PreToolUse` | `Write\|Edit` | `organ-guard` | Block CLAUDE.md creation in organ directories |
+| `PreToolUse` | `Write\|Edit` | `structure-guard` | Block CLAUDE.md creation in organ directories |
 | `PostToolUse` | — | _(disabled)_ | change-tracker removed — no active PostToolUse hooks |
 | `SubagentStart` | `*` | `agent-enforcer` | Inject role constraints into sub-agents |
 | `UserPromptSubmit` | `*` | `context-injector` | Inject FCA-AI rules into agent context |
@@ -337,9 +370,11 @@ Runtime enforcement hooks that fire automatically on Claude Code events:
 ```json
 {
   "name": "filid",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "FCA-AI rule enforcement for Claude Code agent workflows",
   "skills": "./skills/",
+  "agents": "./agents/",
+  "hooks": "./hooks/hooks.json",
   "mcpServers": "./.mcp.json"
 }
 ```
@@ -366,14 +401,20 @@ Registers 5 hook scripts across 4 Claude Code lifecycle events. See [Usage Guide
 ```
 packages/filid/
 ├── src/
-│   ├── index.ts              # Library exports (33 functions + 30 types)
+│   ├── index.ts              # Library exports
 │   ├── types/                # Type definitions (6 files)
-│   ├── core/                 # Business logic (5 modules)
+│   ├── core/                 # Business logic (9 modules)
 │   │   ├── fractal-tree.ts       # Fractal hierarchy building & navigation
-│   │   ├── document-validator.ts  # CLAUDE.md / SPEC.md validation
-│   │   ├── organ-classifier.ts    # Directory classification
-│   │   ├── dependency-graph.ts    # DAG construction & cycle detection
-│   │   └── change-queue.ts        # PR-time change batching
+│   │   ├── fractal-validator.ts  # Structure validation orchestrator
+│   │   ├── document-validator.ts # CLAUDE.md / SPEC.md validation
+│   │   ├── organ-classifier.ts   # Directory classification
+│   │   ├── dependency-graph.ts   # DAG construction & cycle detection
+│   │   ├── change-queue.ts       # PR-time change batching
+│   │   ├── rule-engine.ts        # Built-in rule definitions & evaluation
+│   │   ├── module-main-analyzer.ts # Module entry point analysis
+│   │   ├── index-analyzer.ts     # Barrel file analysis
+│   │   ├── lca-calculator.ts     # Lowest Common Ancestor calculation
+│   │   └── drift-detector.ts     # Structural drift detection
 │   ├── ast/                  # AST analysis (5 modules)
 │   │   ├── parser.ts              # TypeScript Compiler API parser
 │   │   ├── dependency-extractor.ts # Import/export/call extraction
@@ -388,12 +429,18 @@ packages/filid/
 │   ├── compress/             # Context compression (2 modules)
 │   │   ├── reversible-compactor.ts # File-reference compression
 │   │   └── lossy-summarizer.ts     # Tool history summarization
-│   ├── hooks/                # Runtime hooks (5 modules + entries)
-│   └── mcp/                  # MCP server + 4 tool handlers
-├── skills/                   # 6 user-invocable skills
-│   └── {init,scan,sync,structure-review,promote,context-query}/SKILL.md
-├── agents/                   # 4 specialized agent definitions
-│   └── {architect,implementer,context-manager,qa-reviewer}.md
+│   ├── hooks/                # Runtime hooks (6 modules + entries)
+│   │   ├── shared.ts              # Common hook utilities
+│   │   ├── pre-tool-validator.ts  # CLAUDE.md/SPEC.md validation
+│   │   ├── structure-guard.ts     # Organ directory protection
+│   │   ├── change-tracker.ts      # Change tracking (disabled)
+│   │   ├── agent-enforcer.ts      # Agent role enforcement
+│   │   └── context-injector.ts    # Context injection
+│   └── mcp/                  # MCP server + 9 tool handlers
+├── skills/                   # 8 user-invocable skills
+│   └── {init,scan,sync,structure-review,promote,context-query,guide,restructure}/
+├── agents/                   # 6 specialized agent definitions
+│   └── {fractal-architect,implementer,context-manager,qa-reviewer,drift-analyzer,restructurer}.md
 ├── hooks/hooks.json          # Hook event registration
 ├── libs/server.cjs           # MCP server bundle
 ├── scripts/*.mjs             # Hook script bundles
@@ -402,13 +449,18 @@ packages/filid/
 
 ## Programmatic API
 
-filid exports 33 functions and 30 types for direct use:
+filid exports functions and types for direct use:
 
 ```typescript
 import {
   // Core
   buildFractalTree, findNode, validateClaudeMd, classifyNode,
   buildDAG, detectCycles, ChangeQueue,
+  validateStructure, analyzeProject,
+  loadBuiltinRules, evaluateRules, getActiveRules,
+  analyzeModule, findEntryPoint,
+  analyzeIndex, extractModuleExports,
+  findLCA, getModulePlacement, getAncestorPaths,
 
   // AST Analysis
   parseSource, extractDependencies, calculateLCOM4, calculateCC, computeTreeDiff,
@@ -420,7 +472,7 @@ import {
   compactReversible, restoreFromCompacted, summarizeLossy,
 
   // Hooks
-  validatePreToolUse, guardOrganWrite, trackChange, enforceAgentRole, injectContext,
+  validatePreToolUse, guardStructure, enforceAgentRole, injectContext,
 
   // MCP
   createServer, startServer,
@@ -433,7 +485,7 @@ import {
 |------|-----------|-------------|
 | CLAUDE.md max lines | 100 | Hook (pre-tool-validator) |
 | 3-Tier boundary sections required | Always / Ask / Never | Hook (pre-tool-validator) |
-| Organ directories: no CLAUDE.md | `components`, `utils`, `types`, `hooks`, `helpers`, `lib`, `styles`, `assets`, `constants` | Hook (organ-guard) |
+| Organ directories: no CLAUDE.md | `components`, `utils`, `types`, `hooks`, `helpers`, `lib`, `styles`, `assets`, `constants` | Hook (structure-guard) |
 | SPEC.md no append-only growth | Structural change required | Validator |
 | Max tests per spec.ts | 15 (3 core + 12 edge) | MCP (test-metrics) |
 | LCOM4 split threshold | >= 2 | MCP (ast-analyze) + Decision tree |
@@ -454,7 +506,7 @@ Detailed design documentation is available in the [`.metadata/`](./.metadata/) d
 | [05-COST-ANALYSIS](./.metadata/05-COST-ANALYSIS.md) | Hook overhead, MCP costs, bundle size analysis |
 | [06-HOW-IT-WORKS](./.metadata/06-HOW-IT-WORKS.md) | Internal mechanics, AST engine, decision tree |
 | [07-RULES-REFERENCE](./.metadata/07-RULES-REFERENCE.md) | Complete rule catalog with constants and thresholds |
-| [08-API-SURFACE](./.metadata/08-API-SURFACE.md) | Full public API reference (33 functions + 30 types) |
+| [08-API-SURFACE](./.metadata/08-API-SURFACE.md) | Full public API reference |
 
 ## Tech Stack
 
@@ -462,9 +514,7 @@ Detailed design documentation is available in the [`.metadata/`](./.metadata/) d
 |------------|---------|
 | TypeScript 5.7 | Language + Compiler API for AST analysis |
 | @modelcontextprotocol/sdk | MCP server framework |
-| Zod | Input schema validation |
 | fast-glob | File pattern scanning |
-| YAML | Configuration parsing |
 | esbuild | Plugin bundling |
 | Vitest | Testing |
 

@@ -8,6 +8,7 @@
 import type { FractalTree, FractalNode } from '../types/fractal.js';
 import type { Rule, RuleContext, RuleViolation, RuleEvaluationResult } from '../types/rules.js';
 import type { ValidationReport } from '../types/report.js';
+import { loadBuiltinRules } from './rule-engine.js';
 
 /**
  * FractalTree 전체를 검증하고 ValidationReport를 반환한다.
@@ -23,8 +24,7 @@ export function validateStructure(tree: FractalTree, rules?: Rule[]): Validation
   if (rules && rules.length > 0) {
     ruleList = rules;
   } else {
-    // 동적 import 대신 직접 내장 규칙을 정의 (rule-engine은 Core B에서 구현)
-    ruleList = getDefaultRules();
+    ruleList = loadBuiltinRules();
   }
 
   const violations: RuleViolation[] = [];
@@ -76,7 +76,7 @@ export function validateNode(_node: FractalNode, context: RuleContext, rule?: Ru
     return rule.check(context);
   }
 
-  const rules = getDefaultRules();
+  const rules = loadBuiltinRules();
   const violations: RuleViolation[] = [];
   for (const r of rules) {
     if (r.enabled) {
@@ -151,51 +151,3 @@ function detectCycles(tree: FractalTree): string[][] {
   return cycles;
 }
 
-/**
- * 기본 내장 규칙 목록을 반환한다.
- * rule-engine이 구현되면 해당 모듈로 위임한다.
- */
-function getDefaultRules(): Rule[] {
-  return [
-    {
-      id: 'organ-no-claudemd',
-      name: 'Organ No CLAUDE.md',
-      description: 'Organ directories should not contain CLAUDE.md',
-      category: 'structure',
-      severity: 'error',
-      enabled: true,
-      check: (ctx: RuleContext): RuleViolation[] => {
-        if (ctx.node.type === 'organ' && ctx.node.hasClaudeMd) {
-          return [{
-            ruleId: 'organ-no-claudemd',
-            severity: 'error',
-            message: `Organ directory "${ctx.node.name}" should not have CLAUDE.md`,
-            path: ctx.node.path,
-            suggestion: 'Remove CLAUDE.md or reclassify the directory as fractal.',
-          }];
-        }
-        return [];
-      },
-    },
-    {
-      id: 'module-entry-point',
-      name: 'Module Entry Point',
-      description: 'Fractal nodes should have an index.ts or main.ts entry point',
-      category: 'module',
-      severity: 'warning',
-      enabled: true,
-      check: (ctx: RuleContext): RuleViolation[] => {
-        if (ctx.node.type === 'fractal' && !ctx.node.hasIndex && !ctx.node.hasMain) {
-          return [{
-            ruleId: 'module-entry-point',
-            severity: 'warning',
-            message: `Fractal "${ctx.node.name}" is missing an entry point (index.ts or main.ts)`,
-            path: ctx.node.path,
-            suggestion: 'Add an index.ts barrel file to expose the module public API.',
-          }];
-        }
-        return [];
-      },
-    },
-  ];
-}

@@ -9,7 +9,7 @@ export interface DriftDetectInput {
   generatePlan?: boolean;
 }
 
-export interface DriftReport {
+export interface McpDriftReport {
   items: DriftItem[];
   totalDrifts: number;
   bySeverity: Record<DriftSeverity, number>;
@@ -31,7 +31,7 @@ const SEVERITY_ORDER: Record<DriftSeverity, number> = {
  * fractal principles. Optionally filters by severity and generates
  * a SyncPlan for correcting the detected drift items.
  */
-export async function handleDriftDetect(args: unknown): Promise<DriftReport> {
+export async function handleDriftDetect(args: unknown): Promise<McpDriftReport> {
   const input = args as DriftDetectInput;
 
   if (!input.path) {
@@ -62,7 +62,7 @@ export async function handleDriftDetect(args: unknown): Promise<DriftReport> {
     bySeverity[item.severity]++;
   }
 
-  const report: DriftReport = {
+  const report: McpDriftReport = {
     items,
     totalDrifts: items.length,
     bySeverity,

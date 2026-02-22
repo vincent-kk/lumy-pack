@@ -2981,7 +2981,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve2.call(this, root, ref);
+      let _sch = resolve3.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a2 = root.localRefs) === null || _a2 === void 0 ? void 0 : _a2[ref];
         const { schemaId } = this.opts;
@@ -3008,7 +3008,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve2(root, ref) {
+    function resolve3(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -3583,7 +3583,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve2(baseURI, relativeURI, options) {
+    function resolve3(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const resolved = resolveComponent(parse3(baseURI, schemelessOptions), parse3(relativeURI, schemelessOptions), schemelessOptions, true);
       schemelessOptions.skipEscape = true;
@@ -3810,7 +3810,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize: normalize2,
-      resolve: resolve2,
+      resolve: resolve3,
       resolveComponent,
       equal,
       serialize,
@@ -11092,41 +11092,41 @@ var require_queue = __commonJS({
       queue.drained = drained;
       return queue;
       function push(value) {
-        var p = new Promise(function(resolve2, reject) {
+        var p = new Promise(function(resolve3, reject) {
           pushCb(value, function(err, result) {
             if (err) {
               reject(err);
               return;
             }
-            resolve2(result);
+            resolve3(result);
           });
         });
         p.catch(noop);
         return p;
       }
       function unshift(value) {
-        var p = new Promise(function(resolve2, reject) {
+        var p = new Promise(function(resolve3, reject) {
           unshiftCb(value, function(err, result) {
             if (err) {
               reject(err);
               return;
             }
-            resolve2(result);
+            resolve3(result);
           });
         });
         p.catch(noop);
         return p;
       }
       function drained() {
-        var p = new Promise(function(resolve2) {
+        var p = new Promise(function(resolve3) {
           process.nextTick(function() {
             if (queue.idle()) {
-              resolve2();
+              resolve3();
             } else {
               var previousDrain = queue.drain;
               queue.drain = function() {
                 if (typeof previousDrain === "function") previousDrain();
-                resolve2();
+                resolve3();
                 queue.drain = previousDrain;
               };
             }
@@ -11612,9 +11612,9 @@ var require_stream3 = __commonJS({
         });
       }
       _getStat(filepath) {
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve3, reject) => {
           this._stat(filepath, this._fsStatSettings, (error2, stats) => {
-            return error2 === null ? resolve2(stats) : reject(error2);
+            return error2 === null ? resolve3(stats) : reject(error2);
           });
         });
       }
@@ -11638,10 +11638,10 @@ var require_async5 = __commonJS({
         this._readerStream = new stream_1.default(this._settings);
       }
       dynamic(root, options) {
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve3, reject) => {
           this._walkAsync(root, options, (error2, entries) => {
             if (error2 === null) {
-              resolve2(entries);
+              resolve3(entries);
             } else {
               reject(error2);
             }
@@ -11651,10 +11651,10 @@ var require_async5 = __commonJS({
       async static(patterns, options) {
         const entries = [];
         const stream = this._readerStream.static(patterns, options);
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve3, reject) => {
           stream.once("error", reject);
           stream.on("data", (entry) => entries.push(entry));
-          stream.once("end", () => resolve2(entries));
+          stream.once("end", () => resolve3(entries));
         });
       }
     };
@@ -25085,7 +25085,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve2) => setTimeout(resolve2, pollInterval));
+        await new Promise((resolve3) => setTimeout(resolve3, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error2) {
@@ -25102,7 +25102,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve2, reject) => {
+    return new Promise((resolve3, reject) => {
       const earlyReject = (error2) => {
         reject(error2);
       };
@@ -25180,7 +25180,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve2(parseResult.data);
+            resolve3(parseResult.data);
           }
         } catch (error2) {
           reject(error2);
@@ -25441,12 +25441,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve2, reject) => {
+    return new Promise((resolve3, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve2, interval);
+      const timeoutId = setTimeout(resolve3, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -26316,12 +26316,12 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve2) => {
+    return new Promise((resolve3) => {
       const json2 = serializeMessage(message);
       if (this._stdout.write(json2)) {
-        resolve2();
+        resolve3();
       } else {
-        this._stdout.once("drain", resolve2);
+        this._stdout.once("drain", resolve3);
       }
     });
   }
@@ -27502,6 +27502,236 @@ async function handleFractalScan(args) {
   };
 }
 
+// src/types/rules.ts
+var BUILTIN_RULE_IDS = {
+  NAMING_CONVENTION: "naming-convention",
+  ORGAN_NO_CLAUDEMD: "organ-no-claudemd",
+  INDEX_BARREL_PATTERN: "index-barrel-pattern",
+  MODULE_ENTRY_POINT: "module-entry-point",
+  MAX_DEPTH: "max-depth",
+  CIRCULAR_DEPENDENCY: "circular-dependency",
+  PURE_FUNCTION_ISOLATION: "pure-function-isolation"
+};
+
+// src/core/rule-engine.ts
+var KEBAB_CASE_RE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
+var CAMEL_CASE_RE = /^[a-z][a-zA-Z0-9]*$/;
+function isValidNaming(name) {
+  return KEBAB_CASE_RE.test(name) || CAMEL_CASE_RE.test(name);
+}
+function loadBuiltinRules() {
+  return [
+    // 1. naming-convention: 디렉토리명이 kebab-case 또는 camelCase여야 한다
+    {
+      id: BUILTIN_RULE_IDS.NAMING_CONVENTION,
+      name: "Naming Convention",
+      description: "\uB514\uB809\uD1A0\uB9AC/\uD30C\uC77C\uBA85\uC774 kebab-case \uB610\uB294 camelCase\uB97C \uB530\uB77C\uC57C \uD55C\uB2E4.",
+      category: "naming",
+      severity: "warning",
+      enabled: true,
+      check(context) {
+        const { node } = context;
+        if (!isValidNaming(node.name)) {
+          return [
+            {
+              ruleId: BUILTIN_RULE_IDS.NAMING_CONVENTION,
+              severity: "warning",
+              message: `\uB514\uB809\uD1A0\uB9AC\uBA85 "${node.name}"\uC774 kebab-case \uB610\uB294 camelCase \uADDC\uCE59\uC744 \uB530\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.`,
+              path: node.path,
+              suggestion: `"${node.name}"\uC744 kebab-case(\uC608: my-module) \uB610\uB294 camelCase(\uC608: myModule)\uB85C \uBCC0\uACBD\uD558\uC138\uC694.`
+            }
+          ];
+        }
+        return [];
+      }
+    },
+    // 2. organ-no-claudemd: organ 노드에 CLAUDE.md가 없어야 한다
+    {
+      id: BUILTIN_RULE_IDS.ORGAN_NO_CLAUDEMD,
+      name: "Organ No CLAUDE.md",
+      description: "organ \uB178\uB4DC\uC5D0 CLAUDE.md\uAC00 \uC874\uC7AC\uD558\uBA74 \uC548 \uB41C\uB2E4.",
+      category: "structure",
+      severity: "error",
+      enabled: true,
+      check(context) {
+        const { node } = context;
+        if (node.type === "organ" && node.hasClaudeMd) {
+          return [
+            {
+              ruleId: BUILTIN_RULE_IDS.ORGAN_NO_CLAUDEMD,
+              severity: "error",
+              message: `organ \uB514\uB809\uD1A0\uB9AC "${node.name}"\uC5D0 CLAUDE.md\uAC00 \uC874\uC7AC\uD569\uB2C8\uB2E4. organ\uC740 \uB3C5\uB9BD \uBB38\uC11C\uD654\uAC00 \uAE08\uC9C0\uB429\uB2C8\uB2E4.`,
+              path: node.path,
+              suggestion: "CLAUDE.md\uB97C \uC81C\uAC70\uD558\uAC70\uB098 \uD574\uB2F9 \uB514\uB809\uD1A0\uB9AC\uB97C fractal\uB85C \uC7AC\uBD84\uB958\uD558\uC138\uC694."
+            }
+          ];
+        }
+        return [];
+      }
+    },
+    // 3. index-barrel-pattern: fractal 노드의 index.ts가 순수 barrel이어야 한다
+    {
+      id: BUILTIN_RULE_IDS.INDEX_BARREL_PATTERN,
+      name: "Index Barrel Pattern",
+      description: "fractal \uB178\uB4DC\uC758 index.ts\uB294 \uC21C\uC218 barrel(re-export\uB9CC) \uD328\uD134\uC744 \uB530\uB77C\uC57C \uD55C\uB2E4.",
+      category: "index",
+      severity: "warning",
+      enabled: true,
+      check(context) {
+        const { node } = context;
+        if (node.type !== "fractal" && node.type !== "hybrid") return [];
+        if (!node.hasIndex) return [];
+        const barrelPattern = node.metadata["barrelPattern"];
+        if (barrelPattern && !barrelPattern.isPureBarrel && barrelPattern.declarationCount > 0) {
+          return [
+            {
+              ruleId: BUILTIN_RULE_IDS.INDEX_BARREL_PATTERN,
+              severity: "warning",
+              message: `"${node.name}/index.ts"\uC5D0 ${barrelPattern.declarationCount}\uAC1C\uC758 \uC9C1\uC811 \uC120\uC5B8\uC774 \uC788\uC2B5\uB2C8\uB2E4. \uC21C\uC218 barrel \uD328\uD134\uC744 \uB530\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.`,
+              path: node.path,
+              suggestion: "\uC9C1\uC811 \uC120\uC5B8\uC744 \uBCC4\uB3C4 \uD30C\uC77C\uB85C \uBD84\uB9AC\uD558\uACE0 index.ts\uC5D0\uC11C re-export\uD558\uC138\uC694."
+            }
+          ];
+        }
+        return [];
+      }
+    },
+    // 4. module-entry-point: 모든 fractal 노드에 index.ts 또는 main.ts가 있어야 한다
+    {
+      id: BUILTIN_RULE_IDS.MODULE_ENTRY_POINT,
+      name: "Module Entry Point",
+      description: "\uBAA8\uB4E0 fractal \uB178\uB4DC\uC5D0 index.ts \uB610\uB294 main.ts\uAC00 \uC874\uC7AC\uD574\uC57C \uD55C\uB2E4.",
+      category: "module",
+      severity: "warning",
+      enabled: true,
+      check(context) {
+        const { node } = context;
+        if (node.type !== "fractal" && node.type !== "hybrid") return [];
+        if (!node.hasIndex && !node.hasMain) {
+          return [
+            {
+              ruleId: BUILTIN_RULE_IDS.MODULE_ENTRY_POINT,
+              severity: "warning",
+              message: `fractal \uBAA8\uB4C8 "${node.name}"\uC5D0 \uC9C4\uC785\uC810(index.ts \uB610\uB294 main.ts)\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.`,
+              path: node.path,
+              suggestion: "index.ts \uB610\uB294 main.ts\uB97C \uC0DD\uC131\uD558\uC5EC \uBAA8\uB4C8\uC758 \uACF5\uAC1C API\uB97C \uC815\uC758\uD558\uC138\uC694."
+            }
+          ];
+        }
+        return [];
+      }
+    },
+    // 5. max-depth: 트리 깊이가 maxDepth를 초과하면 안 된다
+    {
+      id: BUILTIN_RULE_IDS.MAX_DEPTH,
+      name: "Max Depth",
+      description: "\uD504\uB799\uD0C8 \uD2B8\uB9AC\uC758 \uAE4A\uC774\uAC00 \uCD5C\uB300 \uD5C8\uC6A9 \uAE4A\uC774\uB97C \uCD08\uACFC\uD558\uBA74 \uC548 \uB41C\uB2E4.",
+      category: "structure",
+      severity: "error",
+      enabled: true,
+      check(context) {
+        const { node, scanOptions } = context;
+        const maxDepth = scanOptions?.maxDepth ?? DEFAULT_SCAN_OPTIONS.maxDepth;
+        if (node.depth > maxDepth) {
+          return [
+            {
+              ruleId: BUILTIN_RULE_IDS.MAX_DEPTH,
+              severity: "error",
+              message: `"${node.name}"\uC758 \uAE4A\uC774(${node.depth})\uAC00 \uCD5C\uB300 \uD5C8\uC6A9 \uAE4A\uC774(${maxDepth})\uB97C \uCD08\uACFC\uD569\uB2C8\uB2E4.`,
+              path: node.path,
+              suggestion: "\uB514\uB809\uD1A0\uB9AC \uAD6C\uC870\uB97C \uD3C9\uD0C4\uD654\uD558\uAC70\uB098 \uAD00\uB828 \uBAA8\uB4C8\uC744 \uBCD1\uD569\uD558\uC138\uC694."
+            }
+          ];
+        }
+        return [];
+      }
+    },
+    // 6. circular-dependency: 순환 의존 감지 (placeholder - 빈 배열 반환)
+    {
+      id: BUILTIN_RULE_IDS.CIRCULAR_DEPENDENCY,
+      name: "Circular Dependency",
+      description: "\uBAA8\uB4C8 \uAC04 \uC21C\uD658 \uC758\uC874\uC774 \uC5C6\uC5B4\uC57C \uD55C\uB2E4.",
+      category: "dependency",
+      severity: "error",
+      enabled: true,
+      check(_context) {
+        return [];
+      }
+    },
+    // 7. pure-function-isolation: pure-function 노드는 부작용이 없어야 한다
+    {
+      id: BUILTIN_RULE_IDS.PURE_FUNCTION_ISOLATION,
+      name: "Pure Function Isolation",
+      description: "pure-function \uB178\uB4DC\uB294 \uC0C1\uC704 fractal \uBAA8\uB4C8\uC744 import\uD558\uBA74 \uC548 \uB41C\uB2E4.",
+      category: "dependency",
+      severity: "error",
+      enabled: true,
+      check(context) {
+        const { node, tree } = context;
+        if (node.type !== "pure-function") return [];
+        const deps = node.metadata["dependencies"];
+        if (!deps || deps.length === 0) return [];
+        const violations = [];
+        for (const dep of deps) {
+          const depNode = tree.nodes.get(dep);
+          if (depNode && (depNode.type === "fractal" || depNode.type === "hybrid")) {
+            violations.push({
+              ruleId: BUILTIN_RULE_IDS.PURE_FUNCTION_ISOLATION,
+              severity: "error",
+              message: `pure-function \uB178\uB4DC "${node.name}"\uC774 fractal \uBAA8\uB4C8 "${depNode.name}"\uC744 \uC758\uC874\uD569\uB2C8\uB2E4.`,
+              path: node.path,
+              suggestion: `"${depNode.name}"\uC758 \uD558\uC704 organ\uC73C\uB85C \uC774\uB3D9\uD558\uAC70\uB098 \uC758\uC874\uC744 \uC81C\uAC70\uD558\uC138\uC694.`
+            });
+          }
+        }
+        return violations;
+      }
+    }
+  ];
+}
+function getActiveRules(rules) {
+  return rules.filter((r) => r.enabled);
+}
+function evaluateRule(rule, context) {
+  if (!rule.enabled) return [];
+  try {
+    return rule.check(context);
+  } catch {
+    return [];
+  }
+}
+function evaluateRules(tree, rules, options) {
+  const start = Date.now();
+  const activeRules = getActiveRules(rules ?? loadBuiltinRules());
+  const violations = [];
+  let passed = 0;
+  let failed = 0;
+  let skipped = 0;
+  for (const [, node] of tree.nodes) {
+    const context = { node, tree, scanOptions: options };
+    for (const rule of activeRules) {
+      if (!rule.enabled) {
+        skipped++;
+        continue;
+      }
+      const nodeViolations = evaluateRule(rule, context);
+      if (nodeViolations.length === 0) {
+        passed++;
+      } else {
+        failed++;
+        violations.push(...nodeViolations);
+      }
+    }
+  }
+  return {
+    violations,
+    passed,
+    failed,
+    skipped,
+    duration: Date.now() - start
+  };
+}
+
 // src/core/fractal-validator.ts
 function validateStructure(tree, rules) {
   const start = Date.now();
@@ -27509,7 +27739,7 @@ function validateStructure(tree, rules) {
   if (rules && rules.length > 0) {
     ruleList = rules;
   } else {
-    ruleList = getDefaultRules();
+    ruleList = loadBuiltinRules();
   }
   const violations = [];
   let passed = 0;
@@ -27547,7 +27777,7 @@ function validateNode(_node, context, rule) {
   if (rule) {
     return rule.check(context);
   }
-  const rules = getDefaultRules();
+  const rules = loadBuiltinRules();
   const violations = [];
   for (const r of rules) {
     if (r.enabled) {
@@ -27555,50 +27785,6 @@ function validateNode(_node, context, rule) {
     }
   }
   return violations;
-}
-function getDefaultRules() {
-  return [
-    {
-      id: "organ-no-claudemd",
-      name: "Organ No CLAUDE.md",
-      description: "Organ directories should not contain CLAUDE.md",
-      category: "structure",
-      severity: "error",
-      enabled: true,
-      check: (ctx) => {
-        if (ctx.node.type === "organ" && ctx.node.hasClaudeMd) {
-          return [{
-            ruleId: "organ-no-claudemd",
-            severity: "error",
-            message: `Organ directory "${ctx.node.name}" should not have CLAUDE.md`,
-            path: ctx.node.path,
-            suggestion: "Remove CLAUDE.md or reclassify the directory as fractal."
-          }];
-        }
-        return [];
-      }
-    },
-    {
-      id: "module-entry-point",
-      name: "Module Entry Point",
-      description: "Fractal nodes should have an index.ts or main.ts entry point",
-      category: "module",
-      severity: "warning",
-      enabled: true,
-      check: (ctx) => {
-        if (ctx.node.type === "fractal" && !ctx.node.hasIndex && !ctx.node.hasMain) {
-          return [{
-            ruleId: "module-entry-point",
-            severity: "warning",
-            message: `Fractal "${ctx.node.name}" is missing an entry point (index.ts or main.ts)`,
-            path: ctx.node.path,
-            suggestion: "Add an index.ts barrel file to expose the module public API."
-          }];
-        }
-        return [];
-      }
-    }
-  ];
 }
 
 // src/core/drift-detector.ts
@@ -27839,237 +28025,8 @@ async function handleLcaResolve(args) {
   };
 }
 
-// src/types/rules.ts
-var BUILTIN_RULE_IDS = {
-  NAMING_CONVENTION: "naming-convention",
-  ORGAN_NO_CLAUDEMD: "organ-no-claudemd",
-  INDEX_BARREL_PATTERN: "index-barrel-pattern",
-  MODULE_ENTRY_POINT: "module-entry-point",
-  MAX_DEPTH: "max-depth",
-  CIRCULAR_DEPENDENCY: "circular-dependency",
-  PURE_FUNCTION_ISOLATION: "pure-function-isolation"
-};
-
-// src/core/rule-engine.ts
-var KEBAB_CASE_RE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
-var CAMEL_CASE_RE = /^[a-z][a-zA-Z0-9]*$/;
-function isValidNaming(name) {
-  return KEBAB_CASE_RE.test(name) || CAMEL_CASE_RE.test(name);
-}
-function loadBuiltinRules() {
-  return [
-    // 1. naming-convention: 디렉토리명이 kebab-case 또는 camelCase여야 한다
-    {
-      id: BUILTIN_RULE_IDS.NAMING_CONVENTION,
-      name: "Naming Convention",
-      description: "\uB514\uB809\uD1A0\uB9AC/\uD30C\uC77C\uBA85\uC774 kebab-case \uB610\uB294 camelCase\uB97C \uB530\uB77C\uC57C \uD55C\uB2E4.",
-      category: "naming",
-      severity: "warning",
-      enabled: true,
-      check(context) {
-        const { node } = context;
-        if (!isValidNaming(node.name)) {
-          return [
-            {
-              ruleId: BUILTIN_RULE_IDS.NAMING_CONVENTION,
-              severity: "warning",
-              message: `\uB514\uB809\uD1A0\uB9AC\uBA85 "${node.name}"\uC774 kebab-case \uB610\uB294 camelCase \uADDC\uCE59\uC744 \uB530\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.`,
-              path: node.path,
-              suggestion: `"${node.name}"\uC744 kebab-case(\uC608: my-module) \uB610\uB294 camelCase(\uC608: myModule)\uB85C \uBCC0\uACBD\uD558\uC138\uC694.`
-            }
-          ];
-        }
-        return [];
-      }
-    },
-    // 2. organ-no-claudemd: organ 노드에 CLAUDE.md가 없어야 한다
-    {
-      id: BUILTIN_RULE_IDS.ORGAN_NO_CLAUDEMD,
-      name: "Organ No CLAUDE.md",
-      description: "organ \uB178\uB4DC\uC5D0 CLAUDE.md\uAC00 \uC874\uC7AC\uD558\uBA74 \uC548 \uB41C\uB2E4.",
-      category: "structure",
-      severity: "error",
-      enabled: true,
-      check(context) {
-        const { node } = context;
-        if (node.type === "organ" && node.hasClaudeMd) {
-          return [
-            {
-              ruleId: BUILTIN_RULE_IDS.ORGAN_NO_CLAUDEMD,
-              severity: "error",
-              message: `organ \uB514\uB809\uD1A0\uB9AC "${node.name}"\uC5D0 CLAUDE.md\uAC00 \uC874\uC7AC\uD569\uB2C8\uB2E4. organ\uC740 \uB3C5\uB9BD \uBB38\uC11C\uD654\uAC00 \uAE08\uC9C0\uB429\uB2C8\uB2E4.`,
-              path: node.path,
-              suggestion: "CLAUDE.md\uB97C \uC81C\uAC70\uD558\uAC70\uB098 \uD574\uB2F9 \uB514\uB809\uD1A0\uB9AC\uB97C fractal\uB85C \uC7AC\uBD84\uB958\uD558\uC138\uC694."
-            }
-          ];
-        }
-        return [];
-      }
-    },
-    // 3. index-barrel-pattern: fractal 노드의 index.ts가 순수 barrel이어야 한다
-    {
-      id: BUILTIN_RULE_IDS.INDEX_BARREL_PATTERN,
-      name: "Index Barrel Pattern",
-      description: "fractal \uB178\uB4DC\uC758 index.ts\uB294 \uC21C\uC218 barrel(re-export\uB9CC) \uD328\uD134\uC744 \uB530\uB77C\uC57C \uD55C\uB2E4.",
-      category: "index",
-      severity: "warning",
-      enabled: true,
-      check(context) {
-        const { node } = context;
-        if (node.type !== "fractal" && node.type !== "hybrid") return [];
-        if (!node.hasIndex) return [];
-        const barrelPattern = node.metadata["barrelPattern"];
-        if (barrelPattern && !barrelPattern.isPureBarrel && barrelPattern.declarationCount > 0) {
-          return [
-            {
-              ruleId: BUILTIN_RULE_IDS.INDEX_BARREL_PATTERN,
-              severity: "warning",
-              message: `"${node.name}/index.ts"\uC5D0 ${barrelPattern.declarationCount}\uAC1C\uC758 \uC9C1\uC811 \uC120\uC5B8\uC774 \uC788\uC2B5\uB2C8\uB2E4. \uC21C\uC218 barrel \uD328\uD134\uC744 \uB530\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.`,
-              path: node.path,
-              suggestion: "\uC9C1\uC811 \uC120\uC5B8\uC744 \uBCC4\uB3C4 \uD30C\uC77C\uB85C \uBD84\uB9AC\uD558\uACE0 index.ts\uC5D0\uC11C re-export\uD558\uC138\uC694."
-            }
-          ];
-        }
-        return [];
-      }
-    },
-    // 4. module-entry-point: 모든 fractal 노드에 index.ts 또는 main.ts가 있어야 한다
-    {
-      id: BUILTIN_RULE_IDS.MODULE_ENTRY_POINT,
-      name: "Module Entry Point",
-      description: "\uBAA8\uB4E0 fractal \uB178\uB4DC\uC5D0 index.ts \uB610\uB294 main.ts\uAC00 \uC874\uC7AC\uD574\uC57C \uD55C\uB2E4.",
-      category: "module",
-      severity: "warning",
-      enabled: true,
-      check(context) {
-        const { node } = context;
-        if (node.type !== "fractal" && node.type !== "hybrid") return [];
-        if (!node.hasIndex && !node.hasMain) {
-          return [
-            {
-              ruleId: BUILTIN_RULE_IDS.MODULE_ENTRY_POINT,
-              severity: "warning",
-              message: `fractal \uBAA8\uB4C8 "${node.name}"\uC5D0 \uC9C4\uC785\uC810(index.ts \uB610\uB294 main.ts)\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.`,
-              path: node.path,
-              suggestion: "index.ts \uB610\uB294 main.ts\uB97C \uC0DD\uC131\uD558\uC5EC \uBAA8\uB4C8\uC758 \uACF5\uAC1C API\uB97C \uC815\uC758\uD558\uC138\uC694."
-            }
-          ];
-        }
-        return [];
-      }
-    },
-    // 5. max-depth: 트리 깊이가 maxDepth를 초과하면 안 된다
-    {
-      id: BUILTIN_RULE_IDS.MAX_DEPTH,
-      name: "Max Depth",
-      description: "\uD504\uB799\uD0C8 \uD2B8\uB9AC\uC758 \uAE4A\uC774\uAC00 \uCD5C\uB300 \uD5C8\uC6A9 \uAE4A\uC774\uB97C \uCD08\uACFC\uD558\uBA74 \uC548 \uB41C\uB2E4.",
-      category: "structure",
-      severity: "error",
-      enabled: true,
-      check(context) {
-        const { node, scanOptions } = context;
-        const maxDepth = scanOptions?.maxDepth ?? DEFAULT_SCAN_OPTIONS.maxDepth;
-        if (node.depth > maxDepth) {
-          return [
-            {
-              ruleId: BUILTIN_RULE_IDS.MAX_DEPTH,
-              severity: "error",
-              message: `"${node.name}"\uC758 \uAE4A\uC774(${node.depth})\uAC00 \uCD5C\uB300 \uD5C8\uC6A9 \uAE4A\uC774(${maxDepth})\uB97C \uCD08\uACFC\uD569\uB2C8\uB2E4.`,
-              path: node.path,
-              suggestion: "\uB514\uB809\uD1A0\uB9AC \uAD6C\uC870\uB97C \uD3C9\uD0C4\uD654\uD558\uAC70\uB098 \uAD00\uB828 \uBAA8\uB4C8\uC744 \uBCD1\uD569\uD558\uC138\uC694."
-            }
-          ];
-        }
-        return [];
-      }
-    },
-    // 6. circular-dependency: 순환 의존 감지 (placeholder - 빈 배열 반환)
-    {
-      id: BUILTIN_RULE_IDS.CIRCULAR_DEPENDENCY,
-      name: "Circular Dependency",
-      description: "\uBAA8\uB4C8 \uAC04 \uC21C\uD658 \uC758\uC874\uC774 \uC5C6\uC5B4\uC57C \uD55C\uB2E4.",
-      category: "dependency",
-      severity: "error",
-      enabled: true,
-      check(_context) {
-        return [];
-      }
-    },
-    // 7. pure-function-isolation: pure-function 노드는 부작용이 없어야 한다
-    {
-      id: BUILTIN_RULE_IDS.PURE_FUNCTION_ISOLATION,
-      name: "Pure Function Isolation",
-      description: "pure-function \uB178\uB4DC\uB294 \uC0C1\uC704 fractal \uBAA8\uB4C8\uC744 import\uD558\uBA74 \uC548 \uB41C\uB2E4.",
-      category: "dependency",
-      severity: "error",
-      enabled: true,
-      check(context) {
-        const { node, tree } = context;
-        if (node.type !== "pure-function") return [];
-        const deps = node.metadata["dependencies"];
-        if (!deps || deps.length === 0) return [];
-        const violations = [];
-        for (const dep of deps) {
-          const depNode = tree.nodes.get(dep);
-          if (depNode && (depNode.type === "fractal" || depNode.type === "hybrid")) {
-            violations.push({
-              ruleId: BUILTIN_RULE_IDS.PURE_FUNCTION_ISOLATION,
-              severity: "error",
-              message: `pure-function \uB178\uB4DC "${node.name}"\uC774 fractal \uBAA8\uB4C8 "${depNode.name}"\uC744 \uC758\uC874\uD569\uB2C8\uB2E4.`,
-              path: node.path,
-              suggestion: `"${depNode.name}"\uC758 \uD558\uC704 organ\uC73C\uB85C \uC774\uB3D9\uD558\uAC70\uB098 \uC758\uC874\uC744 \uC81C\uAC70\uD558\uC138\uC694.`
-            });
-          }
-        }
-        return violations;
-      }
-    }
-  ];
-}
-function getActiveRules(rules) {
-  return rules.filter((r) => r.enabled);
-}
-function evaluateRule(rule, context) {
-  if (!rule.enabled) return [];
-  try {
-    return rule.check(context);
-  } catch {
-    return [];
-  }
-}
-function evaluateRules(tree, rules, options) {
-  const start = Date.now();
-  const activeRules = getActiveRules(rules ?? loadBuiltinRules());
-  const violations = [];
-  let passed = 0;
-  let failed = 0;
-  let skipped = 0;
-  for (const [, node] of tree.nodes) {
-    const context = { node, tree, scanOptions: options };
-    for (const rule of activeRules) {
-      if (!rule.enabled) {
-        skipped++;
-        continue;
-      }
-      const nodeViolations = evaluateRule(rule, context);
-      if (nodeViolations.length === 0) {
-        passed++;
-      } else {
-        failed++;
-        violations.push(...nodeViolations);
-      }
-    }
-  }
-  return {
-    violations,
-    passed,
-    failed,
-    skipped,
-    duration: Date.now() - start
-  };
-}
-
 // src/mcp/tools/rule-query.ts
+var import_node_path3 = require("node:path");
 async function handleRuleQuery(args) {
   const input = args;
   if (!input.action || !input.path) {
@@ -28116,7 +28073,14 @@ async function handleRuleQuery(args) {
       }
       const tree = await scanProject(input.path);
       const result = evaluateRules(tree, activeRules);
-      return result;
+      const absTargetPath = (0, import_node_path3.resolve)(input.path, input.targetPath);
+      const filteredViolations = result.violations.filter(
+        (v) => v.path === absTargetPath || v.path.startsWith(absTargetPath + "/")
+      );
+      return {
+        ...result,
+        violations: filteredViolations
+      };
     }
     default:
       throw new Error(`Unknown action: ${input.action}`);
@@ -28364,7 +28328,7 @@ var TOOL_DEFINITIONS = [
         },
         category: {
           type: "string",
-          enum: ["fractal", "organ", "pure-function", "hybrid", "structure", "dependency"],
+          enum: ["naming", "structure", "dependency", "documentation", "index", "module"],
           description: "action='list'\uC77C \uB54C \uCE74\uD14C\uACE0\uB9AC \uD544\uD130"
         },
         targetPath: {
@@ -28392,7 +28356,7 @@ var TOOL_DEFINITIONS = [
         },
         fix: {
           type: "boolean",
-          description: "safe \uB4F1\uAE09 \uC704\uBC18 \uD56D\uBAA9 \uC790\uB3D9 \uC218\uC815 \uC5EC\uBD80. \uAE30\uBCF8\uAC12: false"
+          description: "safe \uB4F1\uAE09 \uC704\uBC18 \uD56D\uBAA9 \uC790\uB3D9 \uC218\uC815 \uC5EC\uBD80. \uAE30\uBCF8\uAC12: false (\uD604\uC7AC \uBBF8\uAD6C\uD604 \u2014 \uD5A5\uD6C4 \uC9C0\uC6D0 \uC608\uC815)"
         }
       },
       required: ["path"]
@@ -28401,7 +28365,7 @@ var TOOL_DEFINITIONS = [
 ];
 function createServer() {
   const server = new Server(
-    { name: "filid", version: "1.0.0" },
+    { name: "filid", version: "0.1.0" },
     { capabilities: { tools: {} } }
   );
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -28413,16 +28377,16 @@ function createServer() {
       let result;
       switch (name) {
         case "ast-analyze":
-          result = handleAstAnalyze(args);
+          result = await handleAstAnalyze(args);
           break;
         case "fractal-navigate":
-          result = handleFractalNavigate(args);
+          result = await handleFractalNavigate(args);
           break;
         case "doc-compress":
-          result = handleDocCompress(args);
+          result = await handleDocCompress(args);
           break;
         case "test-metrics":
-          result = handleTestMetrics(args);
+          result = await handleTestMetrics(args);
           break;
         case "fractal-scan":
           result = await handleFractalScan(args);

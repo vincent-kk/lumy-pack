@@ -70,13 +70,15 @@ function validateSpecMd(content, oldContent) {
   };
 }
 
-// src/hooks/pre-tool-validator.ts
+// src/hooks/shared.ts
 function isClaudeMd(filePath2) {
   return filePath2.endsWith("/CLAUDE.md") || filePath2 === "CLAUDE.md";
 }
 function isSpecMd(filePath2) {
   return filePath2.endsWith("/SPEC.md") || filePath2 === "SPEC.md";
 }
+
+// src/hooks/pre-tool-validator.ts
 function validatePreToolUse(input2, oldSpecContent2) {
   const filePath2 = input2.tool_input.file_path ?? input2.tool_input.path ?? "";
   if (input2.tool_name === "Edit" && isClaudeMd(filePath2)) {
@@ -147,5 +149,10 @@ if (input.tool_name === "Write" && isSpecMd(filePath)) {
   } catch {
   }
 }
-var result = validatePreToolUse(input, oldSpecContent);
+var result;
+try {
+  result = validatePreToolUse(input, oldSpecContent);
+} catch {
+  result = { continue: true };
+}
 process.stdout.write(JSON.stringify(result));

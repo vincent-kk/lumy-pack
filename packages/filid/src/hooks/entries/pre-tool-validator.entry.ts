@@ -20,5 +20,10 @@ if (input.tool_name === 'Write' && isSpecMd(filePath)) {
   }
 }
 
-const result = validatePreToolUse(input, oldSpecContent);
+let result;
+try {
+  result = validatePreToolUse(input, oldSpecContent);
+} catch {
+  result = { continue: true };
+}
 process.stdout.write(JSON.stringify(result));

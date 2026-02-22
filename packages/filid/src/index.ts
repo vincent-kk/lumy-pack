@@ -17,6 +17,10 @@ export { ChangeQueue } from './core/change-queue.js';
 export { validateStructure, validateNode, validateDependencies } from './core/fractal-validator.js';
 export { detectDrift, compareCurrent, calculateSeverity, generateSyncPlan } from './core/drift-detector.js';
 export { analyzeProject, calculateHealthScore, generateReport } from './core/project-analyzer.js';
+export { loadBuiltinRules, evaluateRules, evaluateRule, getActiveRules } from './core/rule-engine.js';
+export { analyzeModule, findEntryPoint, extractImports, extractPublicApi } from './core/module-main-analyzer.js';
+export { analyzeIndex, extractModuleExports } from './core/index-analyzer.js';
+export { findLCA, getModulePlacement, getAncestorPaths } from './core/lca-calculator.js';
 
 // Metrics
 export { countTestCases } from './metrics/test-counter.js';
@@ -38,6 +42,7 @@ export { computeTreeDiff } from './ast/tree-diff.js';
 // Hooks
 export { validatePreToolUse } from './hooks/pre-tool-validator.js';
 export { guardStructure } from './hooks/structure-guard.js';
+/** @deprecated Disabled in hooks.json. Entry stub uses no-op queue. */
 export { trackChange } from './hooks/change-tracker.js';
 export { enforceAgentRole } from './hooks/agent-enforcer.js';
 export { injectContext } from './hooks/context-injector.js';

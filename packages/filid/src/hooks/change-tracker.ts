@@ -1,3 +1,7 @@
+/**
+ * @deprecated Disabled in hooks.json. Entry stub uses no-op queue.
+ * This module is retained for backward compatibility but is not active at runtime.
+ */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type { PostToolUseInput, HookOutput } from '../types/hooks.js';

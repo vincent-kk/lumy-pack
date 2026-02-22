@@ -12,6 +12,7 @@ import type { SyncPlan } from '../types/drift.js';
 import { scanProject } from './fractal-tree.js';
 import { validateStructure } from './fractal-validator.js';
 import { detectDrift, generateSyncPlan } from './drift-detector.js';
+import { analyzeModule } from './module-main-analyzer.js';
 
 /**
  * 프로젝트 루트에서 시작하여 전체 분석 파이프라인을 실행한다.
@@ -40,7 +41,17 @@ export async function analyzeProject(
   // 1. 스캔
   const scanStart = Date.now();
   const tree = await scanProject(root);
-  const modules: ModuleInfo[] = []; // module-main-analyzer는 Core B에서 구현
+  const modules: ModuleInfo[] = [];
+  for (const [, node] of tree.nodes) {
+    if (node.type === 'fractal' || node.type === 'hybrid') {
+      try {
+        const moduleInfo = await analyzeModule(node.path);
+        modules.push(moduleInfo);
+      } catch {
+        // 분석 실패 시 무시 (best-effort)
+      }
+    }
+  }
   const scanReport: ScanReport = {
     tree,
     modules,

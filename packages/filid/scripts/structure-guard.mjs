@@ -25,6 +25,11 @@ function classifyNode(input2) {
   return "fractal";
 }
 
+// src/hooks/shared.ts
+function isClaudeMd(filePath) {
+  return filePath.endsWith("/CLAUDE.md") || filePath === "CLAUDE.md";
+}
+
 // src/hooks/structure-guard.ts
 function isOrganByStructure(dirPath) {
   try {
@@ -63,9 +68,6 @@ function getParentSegments(filePath) {
   const normalized = filePath.replace(/\\/g, "/");
   const parts = normalized.split("/").filter((p) => p.length > 0);
   return parts.slice(0, -1);
-}
-function isClaudeMd(filePath) {
-  return filePath.endsWith("/CLAUDE.md") || filePath === "CLAUDE.md";
 }
 function extractImportPaths(content) {
   const importRegex = /from\s+['"]([^'"]+)['"]/g;

@@ -29,5 +29,10 @@ for await (const chunk of process.stdin) {
   chunks.push(chunk);
 }
 var input = JSON.parse(Buffer.concat(chunks).toString("utf-8"));
-var result = enforceAgentRole(input);
+var result;
+try {
+  result = enforceAgentRole(input);
+} catch {
+  result = { continue: true };
+}
 process.stdout.write(JSON.stringify(result));

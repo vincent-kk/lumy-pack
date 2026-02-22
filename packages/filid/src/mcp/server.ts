@@ -245,7 +245,7 @@ const TOOL_DEFINITIONS = [
         },
         category: {
           type: 'string',
-          enum: ['fractal', 'organ', 'pure-function', 'hybrid', 'structure', 'dependency'],
+          enum: ['naming', 'structure', 'dependency', 'documentation', 'index', 'module'],
           description: "action='list'일 때 카테고리 필터",
         },
         targetPath: {
@@ -276,7 +276,7 @@ const TOOL_DEFINITIONS = [
         },
         fix: {
           type: 'boolean',
-          description: 'safe 등급 위반 항목 자동 수정 여부. 기본값: false',
+          description: 'safe 등급 위반 항목 자동 수정 여부. 기본값: false (현재 미구현 — 향후 지원 예정)',
         },
       },
       required: ['path'],
@@ -289,7 +289,7 @@ const TOOL_DEFINITIONS = [
  */
 export function createServer(): Server {
   const server = new Server(
-    { name: 'filid', version: '1.0.0' },
+    { name: 'filid', version: '0.1.0' },
     { capabilities: { tools: {} } },
   );
 
@@ -305,16 +305,16 @@ export function createServer(): Server {
 
       switch (name) {
         case 'ast-analyze':
-          result = handleAstAnalyze(args as any);
+          result = await handleAstAnalyze(args as any);
           break;
         case 'fractal-navigate':
-          result = handleFractalNavigate(args as any);
+          result = await handleFractalNavigate(args as any);
           break;
         case 'doc-compress':
-          result = handleDocCompress(args as any);
+          result = await handleDocCompress(args as any);
           break;
         case 'test-metrics':
-          result = handleTestMetrics(args as any);
+          result = await handleTestMetrics(args as any);
           break;
         case 'fractal-scan':
           result = await handleFractalScan(args);

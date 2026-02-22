@@ -1,20 +1,9 @@
 import type { PreToolUseInput, HookOutput } from '../types/hooks.js';
 import { validateClaudeMd } from '../core/document-validator.js';
 import { validateSpecMd } from '../core/document-validator.js';
+import { isClaudeMd, isSpecMd } from './shared.js';
 
-/**
- * Check if a file path targets CLAUDE.md.
- */
-function isClaudeMd(filePath: string): boolean {
-  return filePath.endsWith('/CLAUDE.md') || filePath === 'CLAUDE.md';
-}
-
-/**
- * Check if a file path targets SPEC.md.
- */
-export function isSpecMd(filePath: string): boolean {
-  return filePath.endsWith('/SPEC.md') || filePath === 'SPEC.md';
-}
+export { isSpecMd } from './shared.js';
 
 /**
  * PreToolUse hook logic for CLAUDE.md/SPEC.md validation.

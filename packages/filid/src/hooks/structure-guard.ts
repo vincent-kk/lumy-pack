@@ -2,6 +2,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import * as path from 'node:path';
 import type { PreToolUseInput, HookOutput } from '../types/hooks.js';
 import { classifyNode, LEGACY_ORGAN_DIR_NAMES } from '../core/organ-classifier.js';
+import { isClaudeMd } from './shared.js';
 
 /**
  * 디렉토리 경로를 기반으로 organ 여부를 판별.
@@ -49,9 +50,7 @@ function getParentSegments(filePath: string): string[] {
   return parts.slice(0, -1);
 }
 
-function isClaudeMd(filePath: string): boolean {
-  return filePath.endsWith('/CLAUDE.md') || filePath === 'CLAUDE.md';
-}
+// isClaudeMd imported from shared.ts
 
 function extractImportPaths(content: string): string[] {
   const importRegex = /from\s+['"]([^'"]+)['"]/g;
@@ -75,10 +74,9 @@ function isAncestorPath(filePath: string, importPath: string, cwd: string): bool
  * PreToolUse hook: organ-guard 로직을 포팅하고 카테고리 검증 3가지를 추가.
  *
  * [기존 로직 보존] organ 디렉토리 내 CLAUDE.md Write → continue: false
- * [추가 검증] 경고 3가지 (continue: true):
- *   1. 미분류 경로 모듈 생성
- *   2. organ 내부 하위 디렉토리 생성
- *   3. 잠재적 순환 의존 import
+ * [추가 검증] 경고 2가지 (continue: true):
+ *   1. organ 내부 하위 디렉토리 생성
+ *   2. 잠재적 순환 의존 import
  */
 export function guardStructure(input: PreToolUseInput): HookOutput {
   if (input.tool_name !== 'Write' && input.tool_name !== 'Edit') {
