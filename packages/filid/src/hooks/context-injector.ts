@@ -3,11 +3,10 @@ import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'no
 import { join } from 'node:path';
 import type { UserPromptSubmitInput, HookOutput } from '../types/hooks.js';
 import { loadBuiltinRules, getActiveRules } from '../core/rule-engine.js';
-import { scanProject } from '../core/fractal-tree.js';
-import { validateStructure } from '../core/fractal-validator.js';
-import { detectDrift } from '../core/drift-detector.js';
 
-const CACHE_TTL_MS = 30_000; // 30 seconds
+// 5min TTL — 구조 변경(CLAUDE.md Write)은 드물게 발생하므로 안전.
+// 필요 시 Write hook에서 캐시 무효화를 추가할 수 있다.
+const CACHE_TTL_MS = 300_000;
 
 function cwdHash(cwd: string): string {
   return createHash('sha256').update(cwd).digest('hex').slice(0, 12);
@@ -56,6 +55,17 @@ const CATEGORY_GUIDE = [
 ].join('\n');
 
 /**
+ * FCA-AI 프로젝트 여부 판별.
+ * .filid/ 디렉토리 또는 CLAUDE.md 존재 시 FCA-AI 프로젝트로 간주.
+ *
+ * 엣지 케이스: 신규 프로젝트에서 /filid:init 전에는 false 반환 (의도적).
+ * init 스킬은 자체 SKILL.md에서 규칙을 로드하므로 hook 컨텍스트에 의존하지 않는다.
+ */
+function isFcaProject(cwd: string): boolean {
+  return existsSync(join(cwd, '.filid')) || existsSync(join(cwd, 'CLAUDE.md'));
+}
+
+/**
  * 기존 FCA-AI 규칙 텍스트 (변경 없음)
  */
 function buildFcaContext(cwd: string): string {
@@ -74,17 +84,18 @@ function buildFcaContext(cwd: string): string {
  * UserPromptSubmit hook: inject FCA-AI context reminders.
  *
  * 기존 FCA-AI 규칙 텍스트를 유지하면서, 아래에 프랙탈 구조 규칙 요약 섹션을 추가 주입한다.
- * 프랙탈 구조 스캔에 실패하면 기존 FCA-AI 컨텍스트만 반환한다.
  *
  * Never blocks user prompts (always continue: true).
  */
 export async function injectContext(input: UserPromptSubmitInput): Promise<HookOutput> {
   const cwd = input.cwd;
 
-  // 1단계: 기존 FCA-AI 컨텍스트 (항상 포함)
-  const fcaContext = buildFcaContext(cwd);
+  // 게이트: FCA-AI 프로젝트가 아니면 즉시 반환
+  if (!isFcaProject(cwd)) {
+    return { continue: true };
+  }
 
-  // 2단계: 캐시된 프랙탈 컨텍스트 확인
+  // 캐시된 컨텍스트 확인
   const cached = readCachedContext(cwd);
   if (cached) {
     return {
@@ -93,32 +104,14 @@ export async function injectContext(input: UserPromptSubmitInput): Promise<HookO
     };
   }
 
-  // 3단계: 프랙탈 구조 섹션 (스캔 성공 시에만 추가)
+  // 1단계: 기존 FCA-AI 컨텍스트 (항상 포함)
+  const fcaContext = buildFcaContext(cwd);
+
+  // 2단계: 경량 프랙탈 섹션 (규칙 목록 + 분류 가이드만, 스캔/이격 감지 없음)
   let fractalSection = '';
   try {
     const rules = getActiveRules(loadBuiltinRules());
     const rulesText = rules.map((r) => `- ${r.id}: ${r.description}`).join('\n');
-
-    // 고위험 이격 감지 (실패 시 섹션 생략)
-    let driftText = '';
-    try {
-      const tree = await scanProject(cwd);
-      const validationReport = validateStructure(tree);
-      const driftResult = detectDrift(tree, validationReport.result.violations);
-      const highPriority = driftResult.items.filter(
-        (d) => d.severity === 'critical' || d.severity === 'high',
-      );
-      if (highPriority.length > 0) {
-        const driftLines = highPriority
-          .slice(0, 5)
-          .map((d) => `- ${d.path} — ${d.expected} (expected: ${d.actual})`)
-          .join('\n');
-        driftText =
-          `\n\n⚠ High-severity drifts detected: ${highPriority.length} items\n` + driftLines;
-      }
-    } catch {
-      // 이격 감지 실패는 조용히 무시
-    }
 
     fractalSection = [
       '',
@@ -127,10 +120,9 @@ export async function injectContext(input: UserPromptSubmitInput): Promise<HookO
       '',
       'Category Classification:',
       CATEGORY_GUIDE,
-      driftText,
     ].join('\n');
   } catch {
-    // 프랙탈 스캔 실패 → 프랙탈 섹션 생략, FCA-AI만 반환
+    // 규칙 로드 실패 → 프랙탈 섹션 생략, FCA-AI만 반환
   }
 
   const additionalContext = (fcaContext + fractalSection).trim();

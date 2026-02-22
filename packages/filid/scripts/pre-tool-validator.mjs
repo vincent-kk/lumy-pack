@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+// src/hooks/entries/pre-tool-validator.entry.ts
+import { readFileSync } from "node:fs";
+
 // src/core/document-validator.ts
 var CLAUDE_MD_LINE_LIMIT = 100;
 var BOUNDARY_KEYWORDS = {
@@ -68,19 +71,32 @@ function validateSpecMd(content, oldContent) {
 }
 
 // src/hooks/pre-tool-validator.ts
-function isClaudeMd(filePath) {
-  return filePath.endsWith("/CLAUDE.md") || filePath === "CLAUDE.md";
+function isClaudeMd(filePath2) {
+  return filePath2.endsWith("/CLAUDE.md") || filePath2 === "CLAUDE.md";
 }
-function isSpecMd(filePath) {
-  return filePath.endsWith("/SPEC.md") || filePath === "SPEC.md";
+function isSpecMd(filePath2) {
+  return filePath2.endsWith("/SPEC.md") || filePath2 === "SPEC.md";
 }
-function validatePreToolUse(input2, oldSpecContent) {
-  const filePath = input2.tool_input.file_path ?? input2.tool_input.path ?? "";
+function validatePreToolUse(input2, oldSpecContent2) {
+  const filePath2 = input2.tool_input.file_path ?? input2.tool_input.path ?? "";
+  if (input2.tool_name === "Edit" && isClaudeMd(filePath2)) {
+    const newString = input2.tool_input.new_string ?? "";
+    const lineCount = newString.split("\n").length;
+    if (lineCount > 20) {
+      return {
+        continue: true,
+        hookSpecificOutput: {
+          additionalContext: `Note: Editing CLAUDE.md via Edit tool with ${lineCount} new lines \u2014 line limit (100) cannot be enforced on partial edits. Verify the final line count does not exceed 100 lines after editing.`
+        }
+      };
+    }
+    return { continue: true };
+  }
   const content = input2.tool_input.content;
   if (input2.tool_name !== "Write" || !content) {
     return { continue: true };
   }
-  if (isClaudeMd(filePath)) {
+  if (isClaudeMd(filePath2)) {
     const result2 = validateClaudeMd(content);
     if (!result2.valid) {
       const errorMessages = result2.violations.filter((v) => v.severity === "error").map((v) => v.message).join("; ");
@@ -102,8 +118,8 @@ function validatePreToolUse(input2, oldSpecContent) {
     }
     return { continue: true };
   }
-  if (isSpecMd(filePath) && oldSpecContent !== void 0) {
-    const result2 = validateSpecMd(content, oldSpecContent);
+  if (isSpecMd(filePath2) && oldSpecContent2 !== void 0) {
+    const result2 = validateSpecMd(content, oldSpecContent2);
     if (!result2.valid) {
       const errorMessages = result2.violations.filter((v) => v.severity === "error").map((v) => v.message).join("; ");
       return {
@@ -123,5 +139,13 @@ for await (const chunk of process.stdin) {
   chunks.push(chunk);
 }
 var input = JSON.parse(Buffer.concat(chunks).toString("utf-8"));
-var result = validatePreToolUse(input);
+var filePath = input.tool_input.file_path ?? input.tool_input.path ?? "";
+var oldSpecContent;
+if (input.tool_name === "Write" && isSpecMd(filePath)) {
+  try {
+    oldSpecContent = readFileSync(filePath, "utf-8");
+  } catch {
+  }
+}
+var result = validatePreToolUse(input, oldSpecContent);
 process.stdout.write(JSON.stringify(result));
