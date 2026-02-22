@@ -57,18 +57,15 @@ Consequences: <technical debt created, future impact, estimated resolution>
 
 ## Accepted Fix Output Format
 
-For each accepted fix, output guidance:
+Accepted fixes are applied directly to source files via parallel `code-surgeon`
+subagents. After all subagents complete, report results:
 
 ```markdown
-### FIX-<ID>: <title> — ACCEPTED
+### FIX-<ID>: <title> — APPLIED
 
-Apply the following patch to `<file path>`:
-
-\`\`\`typescript
-<code patch from fix-requests.md>
-\`\`\`
-
-After applying, commit your changes before running `/filid:fca-revalidate`.
+**Path**: `<file path>`
+**Change**: <brief description of what was changed>
+**Status**: Modified ✓
 ```
 
 ## AskUserQuestion Patterns

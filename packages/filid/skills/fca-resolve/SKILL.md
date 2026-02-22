@@ -54,10 +54,15 @@ For each fix item:
 
 ### Step 4 — Process Accepted Items
 
-For each accepted fix:
+Delegate all accepted fixes **in parallel** as separate Task subagents
+(`filid:code-surgeon`, model: `sonnet`, `run_in_background: true`).
 
-- Output the recommended code patch with file path
-- Provide guidance: "Apply the patch above to <path>, then commit."
+For each accepted fix, spawn one subagent with:
+- The target file path
+- The recommended action and code patch from `fix-requests.md`
+- Instruction to apply the fix directly to the file
+
+Await all subagents before proceeding to Step 5.
 
 ### Step 5 — Process Rejected Items
 
@@ -104,14 +109,14 @@ Delta baseline). See `reference.md` for the full output template.
 After writing justifications.md, prompt the developer:
 
 ```
-If there were accepted fixes:
+If there were accepted fixes (already applied to files by Step 4):
   AskUserQuestion(
-    question: "Accepted fixes have been outlined above. Once you have applied
-               and committed them, run /filid:fca-revalidate for the final
-               PASS/FAIL verdict.\n\nAre you ready to run fca-revalidate now?",
+    question: "Fixes have been applied to the files above. Commit the changes,
+               then run /filid:fca-revalidate for the final PASS/FAIL verdict.
+               \n\nReady to run fca-revalidate now?",
     options: [
       { label: "Run now",   description: "Invoke /filid:fca-revalidate immediately" },
-      { label: "Not yet",   description: "Apply the fixes first, then run manually" }
+      { label: "Not yet",   description: "Commit the changes first, then run manually" }
     ]
   )
   → On "Run now": invoke /filid:fca-revalidate
