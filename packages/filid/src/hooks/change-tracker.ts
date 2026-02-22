@@ -7,7 +7,7 @@ import * as path from 'node:path';
 
 import type { ChangeQueue, ChangeRecord } from '../core/change-queue.js';
 import {
-  LEGACY_ORGAN_DIR_NAMES,
+  KNOWN_ORGAN_DIR_NAMES,
   classifyNode,
 } from '../core/organ-classifier.js';
 import type { HookOutput, PostToolUseInput } from '../types/hooks.js';
@@ -37,7 +37,7 @@ function classifyPathCategory(filePath: string, cwd: string): string {
     try {
       if (!fs.existsSync(dirSoFar)) {
         // 파일시스템에 없으면 레거시 이름 기반 폴백
-        if (LEGACY_ORGAN_DIR_NAMES.includes(segment)) return 'organ';
+        if (KNOWN_ORGAN_DIR_NAMES.includes(segment)) return 'organ';
         continue;
       }
       const entries = fs.readdirSync(dirSoFar, { withFileTypes: true });

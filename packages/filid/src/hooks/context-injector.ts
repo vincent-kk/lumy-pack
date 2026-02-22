@@ -24,8 +24,8 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { join } from 'node:path';
 import { homedir } from 'node:os';
+import { join } from 'node:path';
 
 import { getActiveRules, loadBuiltinRules } from '../core/rule-engine.js';
 import type { HookOutput, UserPromptSubmitInput } from '../types/hooks.js';
@@ -54,7 +54,10 @@ function readCachedContext(cwd: string): string | null {
     if (!existsSync(stampFile) || !existsSync(contextFile)) return null;
     const savedHash = readFileSync(stampFile, 'utf-8').trim();
     const context = readFileSync(contextFile, 'utf-8');
-    const currentHash = createHash('sha256').update(context).digest('hex').slice(0, 8);
+    const currentHash = createHash('sha256')
+      .update(context)
+      .digest('hex')
+      .slice(0, 8);
     if (savedHash !== currentHash) return null; // hash mismatch — regenerate cache
     return context;
   } catch {

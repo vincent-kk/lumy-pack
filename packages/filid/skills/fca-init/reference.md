@@ -30,15 +30,29 @@ fractal-navigate({
 
 Apply the following decision logic in order:
 
-| Condition                             | Node Type     | Action                                  |
-| ------------------------------------- | ------------- | --------------------------------------- |
-| `hasClaudeMd === true`                | fractal       | Preserve existing file, skip generation |
-| Directory name in `ORGAN_DIR_NAMES`   | organ         | Skip — CLAUDE.md is prohibited          |
-| No observable side effects, stateless | pure-function | No CLAUDE.md needed                     |
-| Default (none of the above)           | fractal       | Generate CLAUDE.md                      |
+| Condition                               | Node Type     | Action                                  |
+| --------------------------------------- | ------------- | --------------------------------------- |
+| `hasClaudeMd === true`                  | fractal       | Preserve existing file, skip generation |
+| `hasSpecMd === true`                    | fractal       | Preserve existing file, skip generation |
+| Directory name in `KNOWN_ORGAN_DIR_NAMES` | organ       | Skip — CLAUDE.md is prohibited          |
+| No fractal children + leaf directory    | organ         | Skip — CLAUDE.md is prohibited          |
+| No observable side effects, stateless   | pure-function | No CLAUDE.md needed                     |
+| Default (none of the above)             | fractal       | Generate CLAUDE.md                      |
 
-`ORGAN_DIR_NAMES` = `components`, `utils`, `types`, `hooks`, `helpers`,
-`lib`, `styles`, `assets`, `constants`
+`KNOWN_ORGAN_DIR_NAMES` (name-based, always organ regardless of structure):
+
+- **UI/shared**: `components`, `utils`, `types`, `hooks`, `helpers`, `lib`, `styles`, `assets`, `constants`
+- **Test/infra**: `__tests__`, `__mocks__`, `__fixtures__`, `test`, `tests`, `spec`, `specs`, `fixtures`, `e2e`
+
+Pattern-based organ rules (applied before name list, after CLAUDE.md/SPEC.md check):
+
+| Pattern | Example | Classification |
+| ------- | ------- | -------------- |
+| `__name__` (double-underscore wrapped) | `__tests__`, `__mocks__`, `__custom__` | organ |
+| `.name` (dot-prefixed) | `.git`, `.github`, `.vscode`, `.claude` | organ |
+
+> **중요**: 패턴 규칙은 구조(리프 여부, 자식 유무)와 무관하게 적용된다.
+> CLAUDE.md가 명시적으로 존재하면 패턴보다 우선한다.
 
 ## Section 3 — CLAUDE.md Generation Template
 

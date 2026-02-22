@@ -40,11 +40,13 @@ describe('context-injector', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // restore default existsSync behavior so each test runs independently
-    (existsSync as ReturnType<typeof vi.fn>).mockImplementation((p: unknown) => {
-      if (typeof p === 'string' && p.endsWith('.filid')) return true;
-      if (typeof p === 'string' && p.includes('/session-')) return false;
-      return false;
-    });
+    (existsSync as ReturnType<typeof vi.fn>).mockImplementation(
+      (p: unknown) => {
+        if (typeof p === 'string' && p.endsWith('.filid')) return true;
+        if (typeof p === 'string' && p.includes('/session-')) return false;
+        return false;
+      },
+    );
   });
 
   it('should inject FCA-AI context reminder', async () => {
@@ -103,11 +105,13 @@ describe('context-injector', () => {
 
   it('should not inject on second call in same session', async () => {
     // simulate second call: session marker already exists
-    (existsSync as ReturnType<typeof vi.fn>).mockImplementation((p: unknown) => {
-      if (typeof p === 'string' && p.endsWith('.filid')) return true;
-      if (typeof p === 'string' && p.includes('/session-')) return true; // marker exists
-      return false;
-    });
+    (existsSync as ReturnType<typeof vi.fn>).mockImplementation(
+      (p: unknown) => {
+        if (typeof p === 'string' && p.endsWith('.filid')) return true;
+        if (typeof p === 'string' && p.includes('/session-')) return true; // marker exists
+        return false;
+      },
+    );
 
     const result = await injectContext(baseInput);
     expect(result.continue).toBe(true);
@@ -127,12 +131,14 @@ describe('context-injector', () => {
 
   it('should safely inject when session marker I/O fails', async () => {
     // existsSync throws on session marker check → isFirstInSession returns true (safe fallback)
-    (existsSync as ReturnType<typeof vi.fn>).mockImplementation((p: unknown) => {
-      if (typeof p === 'string' && p.endsWith('.filid')) return true;
-      if (typeof p === 'string' && p.includes('/session-'))
-        throw new Error('fs error');
-      return false;
-    });
+    (existsSync as ReturnType<typeof vi.fn>).mockImplementation(
+      (p: unknown) => {
+        if (typeof p === 'string' && p.endsWith('.filid')) return true;
+        if (typeof p === 'string' && p.includes('/session-'))
+          throw new Error('fs error');
+        return false;
+      },
+    );
 
     const result = await injectContext(baseInput);
     expect(result.continue).toBe(true);

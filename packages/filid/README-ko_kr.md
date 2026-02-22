@@ -115,6 +115,7 @@ CLAUDE.md 100줄 초과, 3-tier 경계 섹션 누락, organ 디렉토리 내 CLA
 산출물은 `.filid/review/<branch>/`에, 기술 부채는 `.filid/debt/`에 저장됩니다.
 
 > **`fca-structure-review` vs `fca-review` 요약:**
+>
 > - `fca-structure-review` — 전체 프로젝트 스캔 (주기적 점검용)
 > - `fca-review` — 변경된 파일만 검사 + 다중 페르소나 리뷰 (PR마다 사용)
 
@@ -152,19 +153,19 @@ CLAUDE.md 100줄 초과, 3-tier 경계 섹션 누락, organ 디렉토리 내 CLA
 
 ## 전체 스킬 목록
 
-| 스킬                          | 범위            | 설명                                               |
-| ----------------------------- | --------------- | -------------------------------------------------- |
-| `/filid:fca-init`             | —               | 프로젝트 FCA-AI 초기화                             |
-| `/filid:fca-scan`             | 전체 프로젝트   | 규칙 위반 검출 (자동 수정 가능)                    |
-| `/filid:fca-sync`             | 전체 프로젝트   | 코드-문서 동기화                                   |
+| 스킬                          | 범위              | 설명                                                 |
+| ----------------------------- | ----------------- | ---------------------------------------------------- |
+| `/filid:fca-init`             | —                 | 프로젝트 FCA-AI 초기화                               |
+| `/filid:fca-scan`             | 전체 프로젝트     | 규칙 위반 검출 (자동 수정 가능)                      |
+| `/filid:fca-sync`             | 전체 프로젝트     | 코드-문서 동기화                                     |
 | `/filid:fca-structure-review` | **전체 프로젝트** | 구조 건강 점검 (6단계) — 주기적 점검 / 리팩토링 전후 |
-| `/filid:fca-promote`          | —               | 안정된 테스트를 spec으로 승격                      |
-| `/filid:fca-context-query`    | —               | 구조 관련 질의응답                                 |
-| `/filid:fca-guide`            | —               | FCA-AI 가이드                                      |
-| `/filid:fca-restructure`      | —               | 모듈 리팩토링 가이드 + 마이그레이션 단계           |
-| `/filid:fca-review`           | **변경 파일만** | 다중 페르소나 거버넌스 코드 리뷰 — PR마다 사용     |
-| `/filid:fca-resolve`          | —               | 수정 요청 해결                                     |
-| `/filid:fca-revalidate`       | —               | 수정 후 재검증 (PASS/FAIL)                         |
+| `/filid:fca-promote`          | —                 | 안정된 테스트를 spec으로 승격                        |
+| `/filid:fca-context-query`    | —                 | 구조 관련 질의응답                                   |
+| `/filid:fca-guide`            | —                 | FCA-AI 가이드                                        |
+| `/filid:fca-restructure`      | —                 | 모듈 리팩토링 가이드 + 마이그레이션 단계             |
+| `/filid:fca-review`           | **변경 파일만**   | 다중 페르소나 거버넌스 코드 리뷰 — PR마다 사용       |
+| `/filid:fca-resolve`          | —                 | 수정 요청 해결                                       |
+| `/filid:fca-revalidate`       | —                 | 수정 후 재검증 (PASS/FAIL)                           |
 
 ---
 

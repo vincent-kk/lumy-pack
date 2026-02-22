@@ -13,7 +13,7 @@ import {
   findNode,
   getDescendants,
 } from '../../core/fractal-tree.js';
-import { classifyNode, isOrganDirectory } from '../../core/organ-classifier.js';
+import { classifyNode } from '../../core/organ-classifier.js';
 
 describe('fractal-init pipeline', () => {
   // Simulate a project with fractal/organ structure
@@ -74,11 +74,26 @@ describe('fractal-init pipeline', () => {
   });
 
   it('should classify organ directories correctly', () => {
-    expect(isOrganDirectory('components')).toBe(true);
-    expect(isOrganDirectory('utils')).toBe(true);
-    expect(isOrganDirectory('helpers')).toBe(true);
-    expect(isOrganDirectory('auth')).toBe(false);
-    expect(isOrganDirectory('payment')).toBe(false);
+    const organInput = (dirName: string) => ({
+      dirName,
+      hasClaudeMd: false,
+      hasSpecMd: false,
+      hasFractalChildren: false,
+      isLeafDirectory: true,
+    });
+    expect(classifyNode(organInput('components'))).toBe('organ');
+    expect(classifyNode(organInput('utils'))).toBe('organ');
+    expect(classifyNode(organInput('helpers'))).toBe('organ');
+    expect(classifyNode({ ...organInput('auth'), hasClaudeMd: true })).toBe(
+      'fractal',
+    );
+    expect(
+      classifyNode({
+        ...organInput('payment'),
+        hasFractalChildren: true,
+        isLeafDirectory: false,
+      }),
+    ).toBe('fractal');
   });
 
   it('should classify nodes with context', () => {

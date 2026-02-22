@@ -2,7 +2,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import * as path from 'node:path';
 
 import {
-  LEGACY_ORGAN_DIR_NAMES,
+  KNOWN_ORGAN_DIR_NAMES,
   classifyNode,
 } from '../core/organ-classifier.js';
 import type { HookOutput, PreToolUseInput } from '../types/hooks.js';
@@ -18,15 +18,15 @@ function isOrganByStructure(dirPath: string): boolean {
   try {
     if (!existsSync(dirPath)) {
       // 파일시스템에 없으면 레거시 이름 기반 폴백
-      return LEGACY_ORGAN_DIR_NAMES.includes(path.basename(dirPath));
+      return KNOWN_ORGAN_DIR_NAMES.includes(path.basename(dirPath));
     }
     const entries = readdirSync(dirPath, { withFileTypes: true });
     const hasClaudeMd = entries.some(
       (e) => e.isFile() && e.name === 'CLAUDE.md',
     );
     const hasSpecMd = entries.some((e) => e.isFile() && e.name === 'SPEC.md');
-    const subdirs = entries.filter((e) => e.isDirectory());
-    const hasFractalChildren = subdirs.some((d) => {
+    const subDirs = entries.filter((e) => e.isDirectory());
+    const hasFractalChildren = subDirs.some((d) => {
       const childPath = path.join(dirPath, d.name);
       try {
         const childEntries = readdirSync(childPath, { withFileTypes: true });
@@ -38,7 +38,7 @@ function isOrganByStructure(dirPath: string): boolean {
         return false;
       }
     });
-    const isLeafDirectory = subdirs.length === 0;
+    const isLeafDirectory = subDirs.length === 0;
     const category = classifyNode({
       dirName: path.basename(dirPath),
       hasClaudeMd,

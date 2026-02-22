@@ -84,8 +84,10 @@ See [reference.md Section 5](./reference.md#section-5--validation-and-report-for
 /filid:fca-init src/payments
 
 # Constants
-ORGAN_DIR_NAMES   = components | utils | types | hooks | helpers
-                    | lib | styles | assets | constants
+KNOWN_ORGAN_DIR_NAMES (UI/shared)  = components | utils | types | hooks | helpers
+                                     | lib | styles | assets | constants
+KNOWN_ORGAN_DIR_NAMES (test/infra) = __tests__ | __mocks__ | __fixtures__
+                                     | test | tests | spec | specs | fixtures | e2e
 CLAUDE_MD_LIMIT   = 100 lines
 3-TIER SECTIONS   = "Always do" | "Ask first" | "Never do"
 ```

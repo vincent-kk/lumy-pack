@@ -74,15 +74,15 @@ yarn version:sync
 
 ### Key Source Directories
 
-| 경로 | 역할 |
-|------|------|
-| `src/core/` | 핵심 비즈니스 로직 (FractalTree, RuleEngine, DriftDetector 등 12개 모듈) |
-| `src/ast/` | TypeScript Compiler API 기반 AST 분석 (LCOM4, CC, 의존성 추출) |
-| `src/mcp/` | MCP 서버 + 11개 도구 핸들러 |
-| `src/hooks/` | 훅 구현체 + `entries/` (esbuild 진입점) |
-| `src/metrics/` | 테스트 밀도, 모듈 분리 결정 메트릭 |
-| `src/compress/` | 컨텍스트 압축 (가역/비가역) |
-| `src/types/` | 타입 정의 (index.ts에서 중앙 export) |
+| 경로            | 역할                                                                     |
+| --------------- | ------------------------------------------------------------------------ |
+| `src/core/`     | 핵심 비즈니스 로직 (FractalTree, RuleEngine, DriftDetector 등 12개 모듈) |
+| `src/ast/`      | TypeScript Compiler API 기반 AST 분석 (LCOM4, CC, 의존성 추출)           |
+| `src/mcp/`      | MCP 서버 + 11개 도구 핸들러                                              |
+| `src/hooks/`    | 훅 구현체 + `entries/` (esbuild 진입점)                                  |
+| `src/metrics/`  | 테스트 밀도, 모듈 분리 결정 메트릭                                       |
+| `src/compress/` | 컨텍스트 압축 (가역/비가역)                                              |
+| `src/types/`    | 타입 정의 (index.ts에서 중앙 export)                                     |
 
 ### Key Files
 
@@ -102,12 +102,14 @@ yarn version:sync
 ### Agents & Skills
 
 `agents/*.md` — 6개 특화 에이전트 정의:
+
 - `fractal-architect`, `qa-reviewer` — 읽기 전용 리뷰어 (코드 수정 불가)
 - `implementer`, `restructurer` — 구현/리팩터링 담당
 - `context-manager` — CLAUDE.md/SPEC.md 문서 관리
 - `drift-analyzer` — 코드-문서 드리프트 감지
 
 `skills/*/SKILL.md` — 11개 사용자 호출 가능 스킬:
+
 - `fca-review` — 다중 페르소나 거버넌스 리뷰 (가장 복잡)
 - `fca-scan` — 규칙 위반 스캔 (`--fix` 자동 수정)
 - `fca-init`, `fca-sync`, `fca-structure-review`, `fca-promote`, `fca-restructure`, `fca-resolve`, `fca-revalidate`, `fca-guide`, `fca-context-query`
@@ -115,6 +117,7 @@ yarn version:sync
 ## Internal Documentation
 
 `.metadata/` 디렉터리에 상세 기술 문서가 있다:
+
 - `01-ARCHITECTURE.md` — FCA-AI 이론, 4계층 아키텍처, ADR
 - `06-HOW-IT-WORKS.md` — AST 엔진 메커니즘, 결정 트리, MCP 라우팅
 - `07-RULES-REFERENCE.md` — 규칙 카탈로그 + 임계값 상수

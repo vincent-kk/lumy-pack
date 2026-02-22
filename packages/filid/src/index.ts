@@ -12,9 +12,8 @@ export type * from './types/index.js';
 export { validateClaudeMd, validateSpecMd } from './core/document-validator.js';
 export {
   classifyNode,
-  isOrganDirectory,
-  ORGAN_DIR_NAMES,
-  LEGACY_ORGAN_DIR_NAMES,
+  isInfraOrgDirectoryByPattern,
+  KNOWN_ORGAN_DIR_NAMES,
 } from './core/organ-classifier.js';
 export {
   buildFractalTree,
