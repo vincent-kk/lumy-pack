@@ -1,4 +1,4 @@
-# review — Reference Documentation
+# structure-review — Reference Documentation
 
 Detailed stage logic, MCP tool examples, and report format for the
 6-stage PR verification pipeline. For the quick-start guide, see

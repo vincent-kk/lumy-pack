@@ -3655,11 +3655,11 @@ var require_out = __commonJS({
       async.read(path, getSettings(optionsOrSettingsOrCallback), callback);
     }
     exports.stat = stat;
-    function statSync(path, optionsOrSettings) {
+    function statSync2(path, optionsOrSettings) {
       const settings = getSettings(optionsOrSettings);
       return sync.read(path, settings);
     }
-    exports.statSync = statSync;
+    exports.statSync = statSync2;
     function getSettings(settingsOrOptions = {}) {
       if (settingsOrOptions instanceof settings_1.default) {
         return settingsOrOptions;
@@ -5543,6 +5543,11 @@ var require_out4 = __commonJS({
   }
 });
 
+// src/hooks/context-injector.ts
+import { createHash } from "node:crypto";
+import { existsSync as existsSync2, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { join as join2 } from "node:path";
+
 // src/types/rules.ts
 var BUILTIN_RULE_IDS = {
   NAMING_CONVENTION: "naming-convention",
@@ -5557,7 +5562,21 @@ var BUILTIN_RULE_IDS = {
 // src/types/scan.ts
 var DEFAULT_SCAN_OPTIONS = {
   include: ["**"],
-  exclude: ["**/node_modules/**", "**/.git/**", "**/dist/**", "**/build/**", "**/coverage/**"],
+  exclude: [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/coverage/**",
+    "**/docs/**",
+    "**/scripts/**",
+    "**/.filid/**",
+    "**/.claude/**",
+    "**/.omc/**",
+    "**/.metadata/**",
+    "**/next/**",
+    "**/libs/**"
+  ],
   maxDepth: 10,
   followSymlinks: false
 };
@@ -6059,6 +6078,39 @@ function detectDrift(_tree, violations, options) {
 }
 
 // src/hooks/context-injector.ts
+var CACHE_TTL_MS = 3e4;
+function cwdHash(cwd) {
+  return createHash("sha256").update(cwd).digest("hex").slice(0, 12);
+}
+function getCacheDir(cwd) {
+  return join2(cwd, ".filid");
+}
+function readCachedContext(cwd) {
+  const hash = cwdHash(cwd);
+  const cacheDir = getCacheDir(cwd);
+  const stampFile = join2(cacheDir, `last-scan-${hash}`);
+  const contextFile = join2(cacheDir, `cached-context-${hash}.txt`);
+  try {
+    if (!existsSync2(stampFile) || !existsSync2(contextFile)) return null;
+    const mtime = statSync(stampFile).mtimeMs;
+    if (Date.now() - mtime > CACHE_TTL_MS) return null;
+    return readFileSync(contextFile, "utf-8");
+  } catch {
+    return null;
+  }
+}
+function writeCachedContext(cwd, context) {
+  const hash = cwdHash(cwd);
+  const cacheDir = getCacheDir(cwd);
+  const stampFile = join2(cacheDir, `last-scan-${hash}`);
+  const contextFile = join2(cacheDir, `cached-context-${hash}.txt`);
+  try {
+    if (!existsSync2(cacheDir)) mkdirSync(cacheDir, { recursive: true });
+    writeFileSync(contextFile, context, "utf-8");
+    writeFileSync(stampFile, String(Date.now()), "utf-8");
+  } catch {
+  }
+}
 var CATEGORY_GUIDE = [
   "- fractal: CLAUDE.md \uB610\uB294 SPEC.md\uAC00 \uC788\uB294 \uB3C5\uB9BD \uBAA8\uB4C8",
   "- organ: \uD504\uB799\uD0C8 \uC790\uC2DD\uC774 \uC5C6\uB294 \uB9AC\uD504 \uB514\uB809\uD1A0\uB9AC",
@@ -6079,6 +6131,13 @@ function buildFcaContext(cwd) {
 async function injectContext(input2) {
   const cwd = input2.cwd;
   const fcaContext = buildFcaContext(cwd);
+  const cached = readCachedContext(cwd);
+  if (cached) {
+    return {
+      continue: true,
+      hookSpecificOutput: { additionalContext: cached }
+    };
+  }
   let fractalSection = "";
   try {
     const rules = getActiveRules(loadBuiltinRules());
@@ -6112,6 +6171,7 @@ async function injectContext(input2) {
   } catch {
   }
   const additionalContext = (fcaContext + fractalSection).trim();
+  writeCachedContext(cwd, additionalContext);
   return {
     continue: true,
     hookSpecificOutput: {

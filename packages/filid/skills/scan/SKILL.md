@@ -22,7 +22,7 @@ violation report and, with `--fix`, applies automatic remediation.
 - Checking for regressions after a large-scale refactor
 - Verifying that `/filid:init` produced a fully compliant structure
 - Running a periodic governance health check
-- Preparing a baseline report before `/filid:review` or `/filid:promote`
+- Preparing a baseline report before `/filid:structure-review` or `/filid:promote`
 
 ## Core Workflow
 

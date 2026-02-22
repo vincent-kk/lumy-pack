@@ -61,9 +61,9 @@
 
 | 파일 | 역할 | 프랙탈 참조 방식 |
 |------|------|-----------------|
-| `src/hooks/structure-guard.ts` | organ 내 CLAUDE.md 차단, organ 중첩 경고, 순환 import 경고 | `isOrganDirectory()` import |
-| `src/hooks/context-injector.ts` | FCA-AI 규칙 + 프랙탈 구조 규칙 + 카테고리 분류 가이드 + 고위험 이격 주입 | `loadBuiltinRules()`, `scanProject()`, `validateStructure()`, `detectDrift()` import. 카테고리 가이드는 인라인 문자열 |
-| `src/hooks/change-tracker.ts` | 파일 변경 시 카테고리 태그 부여 | `isOrganDirectory()` import |
+| `src/hooks/structure-guard.ts` | organ 내 CLAUDE.md 차단, organ 중첩 경고, 순환 import 경고 | `classifyNode()`, `LEGACY_ORGAN_DIR_NAMES` import |
+| `src/hooks/context-injector.ts` | FCA-AI 규칙 + 프랙탈 구조 규칙 + 카테고리 분류 가이드 + 고위험 이격 주입 | `loadBuiltinRules()`, `scanProject()`, `validateStructure()`, `detectDrift()` import. 카테고리 가이드는 인라인 문자열. 파일 기반 캐싱 (30s TTL) |
+| `src/hooks/change-tracker.ts` | 파일 변경 시 카테고리 태그 부여 | `classifyNode()`, `LEGACY_ORGAN_DIR_NAMES` import |
 
 ---
 
@@ -76,7 +76,7 @@
 | `agents/drift-analyzer.md` | 이격 분석 전문 (sonnet, read-only) |
 | `skills/guide/SKILL.md` | 프랙탈 구조 가이드 워크플로우 |
 | `skills/restructure/SKILL.md` | 프랙탈 구조 재구성 워크플로우 |
-| `skills/drift-sync/SKILL.md` | 이격 보정 워크플로우 |
+| `skills/sync/SKILL.md` | 이격 보정 워크플로우 |
 | `skills/scan/SKILL.md` | `fractal-navigate(action: "tree")` 호출 |
 | `skills/init/SKILL.md` | `fractal-navigate(action: "tree"/"classify")` 호출 |
 

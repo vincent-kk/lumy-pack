@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 // src/hooks/structure-guard.ts
+import { existsSync, readdirSync } from "node:fs";
 import * as path from "node:path";
 
 // src/core/organ-classifier.ts
@@ -15,11 +16,49 @@ var LEGACY_ORGAN_DIR_NAMES = [
   "assets",
   "constants"
 ];
-function isOrganDirectory(dirName) {
-  return LEGACY_ORGAN_DIR_NAMES.includes(dirName);
+function classifyNode(input2) {
+  if (input2.hasClaudeMd) return "fractal";
+  if (input2.hasSpecMd) return "fractal";
+  if (!input2.hasFractalChildren && input2.isLeafDirectory) return "organ";
+  const hasSideEffects = input2.hasSideEffects ?? true;
+  if (!hasSideEffects) return "pure-function";
+  return "fractal";
 }
 
 // src/hooks/structure-guard.ts
+function isOrganByStructure(dirPath) {
+  try {
+    if (!existsSync(dirPath)) {
+      return LEGACY_ORGAN_DIR_NAMES.includes(path.basename(dirPath));
+    }
+    const entries = readdirSync(dirPath, { withFileTypes: true });
+    const hasClaudeMd = entries.some((e) => e.isFile() && e.name === "CLAUDE.md");
+    const hasSpecMd = entries.some((e) => e.isFile() && e.name === "SPEC.md");
+    const subdirs = entries.filter((e) => e.isDirectory());
+    const hasFractalChildren = subdirs.some((d) => {
+      const childPath = path.join(dirPath, d.name);
+      try {
+        const childEntries = readdirSync(childPath, { withFileTypes: true });
+        return childEntries.some(
+          (ce) => ce.isFile() && (ce.name === "CLAUDE.md" || ce.name === "SPEC.md")
+        );
+      } catch {
+        return false;
+      }
+    });
+    const isLeafDirectory = subdirs.length === 0;
+    const category = classifyNode({
+      dirName: path.basename(dirPath),
+      hasClaudeMd,
+      hasSpecMd,
+      hasFractalChildren,
+      isLeafDirectory
+    });
+    return category === "organ";
+  } catch {
+    return false;
+  }
+}
 function getParentSegments(filePath) {
   const normalized = filePath.replace(/\\/g, "/");
   const parts = normalized.split("/").filter((p) => p.length > 0);
@@ -55,8 +94,10 @@ function guardStructure(input2) {
   const cwd = input2.cwd;
   const segments = getParentSegments(filePath);
   if (input2.tool_name === "Write" && isClaudeMd(filePath)) {
+    let dirSoFar = cwd;
     for (const segment of segments) {
-      if (isOrganDirectory(segment)) {
+      dirSoFar = path.join(dirSoFar, segment);
+      if (isOrganByStructure(dirSoFar)) {
         return {
           continue: false,
           hookSpecificOutput: {
@@ -67,9 +108,20 @@ function guardStructure(input2) {
     }
   }
   const warnings = [];
-  const organIdx = segments.findIndex((s) => isOrganDirectory(s));
+  let organIdx = -1;
+  let organSegment = "";
+  {
+    let dirSoFar = cwd;
+    for (let i = 0; i < segments.length; i++) {
+      dirSoFar = path.join(dirSoFar, segments[i]);
+      if (isOrganByStructure(dirSoFar)) {
+        organIdx = i;
+        organSegment = segments[i];
+        break;
+      }
+    }
+  }
   if (organIdx !== -1 && organIdx < segments.length - 1) {
-    const organSegment = segments[organIdx];
     warnings.push(
       `organ \uB514\uB809\uD1A0\uB9AC "${organSegment}" \uB0B4\uBD80\uC5D0 \uD558\uC704 \uB514\uB809\uD1A0\uB9AC\uB97C \uC0DD\uC131\uD558\uB824 \uD569\uB2C8\uB2E4. Organ \uB514\uB809\uD1A0\uB9AC\uB294 flat leaf \uAD6C\uD68D\uC73C\uB85C \uC911\uCCA9 \uB514\uB809\uD1A0\uB9AC\uB97C \uAC00\uC838\uC11C\uB294 \uC548 \uB429\uB2C8\uB2E4.`
     );

@@ -26805,7 +26805,21 @@ var import_node_path = require("node:path");
 // src/types/scan.ts
 var DEFAULT_SCAN_OPTIONS = {
   include: ["**"],
-  exclude: ["**/node_modules/**", "**/.git/**", "**/dist/**", "**/build/**", "**/coverage/**"],
+  exclude: [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/coverage/**",
+    "**/docs/**",
+    "**/scripts/**",
+    "**/.filid/**",
+    "**/.claude/**",
+    "**/.omc/**",
+    "**/.metadata/**",
+    "**/next/**",
+    "**/libs/**"
+  ],
   maxDepth: 10,
   followSymlinks: false
 };

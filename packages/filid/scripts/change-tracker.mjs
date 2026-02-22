@@ -16,18 +16,56 @@ var LEGACY_ORGAN_DIR_NAMES = [
   "assets",
   "constants"
 ];
-function isOrganDirectory(dirName) {
-  return LEGACY_ORGAN_DIR_NAMES.includes(dirName);
+function classifyNode(input2) {
+  if (input2.hasClaudeMd) return "fractal";
+  if (input2.hasSpecMd) return "fractal";
+  if (!input2.hasFractalChildren && input2.isLeafDirectory) return "organ";
+  const hasSideEffects = input2.hasSideEffects ?? true;
+  if (!hasSideEffects) return "pure-function";
+  return "fractal";
 }
 
 // src/hooks/change-tracker.ts
-function classifyPathCategory(filePath) {
+function classifyPathCategory(filePath, cwd) {
   const segments = filePath.replace(/\\/g, "/").split("/").filter((p) => p.length > 0);
-  for (const segment of segments.slice(0, -1)) {
-    if (isOrganDirectory(segment)) return "organ";
-  }
   const fileName = segments[segments.length - 1] ?? "";
   if (fileName === "CLAUDE.md" || fileName === "SPEC.md") return "fractal";
+  let dirSoFar = cwd;
+  for (const segment of segments.slice(0, -1)) {
+    dirSoFar = path.join(dirSoFar, segment);
+    try {
+      if (!fs.existsSync(dirSoFar)) {
+        if (LEGACY_ORGAN_DIR_NAMES.includes(segment)) return "organ";
+        continue;
+      }
+      const entries = fs.readdirSync(dirSoFar, { withFileTypes: true });
+      const hasClaudeMd = entries.some((e) => e.isFile() && e.name === "CLAUDE.md");
+      const hasSpecMd = entries.some((e) => e.isFile() && e.name === "SPEC.md");
+      const subdirs = entries.filter((e) => e.isDirectory());
+      const isLeafDirectory = subdirs.length === 0;
+      const hasFractalChildren = subdirs.some((d) => {
+        try {
+          const childPath = path.join(dirSoFar, d.name);
+          const childEntries = fs.readdirSync(childPath, { withFileTypes: true });
+          return childEntries.some(
+            (ce) => ce.isFile() && (ce.name === "CLAUDE.md" || ce.name === "SPEC.md")
+          );
+        } catch {
+          return false;
+        }
+      });
+      const category = classifyNode({
+        dirName: segment,
+        hasClaudeMd,
+        hasSpecMd,
+        hasFractalChildren,
+        isLeafDirectory
+      });
+      if (category === "organ") return "organ";
+    } catch {
+      continue;
+    }
+  }
   return "unknown";
 }
 function appendChangeLog(cwd, entry) {
@@ -53,7 +91,7 @@ function trackChange(input2, queue) {
   const toolName = input2.tool_name;
   const changeType = toolName === "Write" ? "created" : "modified";
   queue.enqueue({ filePath, changeType });
-  const category = classifyPathCategory(filePath);
+  const category = classifyPathCategory(filePath, cwd);
   const timestamp = (/* @__PURE__ */ new Date()).toISOString();
   const entry = {
     timestamp,

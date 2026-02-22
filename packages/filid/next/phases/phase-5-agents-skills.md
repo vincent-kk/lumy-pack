@@ -580,7 +580,7 @@ Total: 17 drift items
 - `skills/enforce/` — `/filid:enforce` 규칙 강제
 - `skills/report/` — `/filid:report` 보고서
 - `skills/migrate/` — `/filid:migrate` 마이그레이션
-- `skills/review/` — `/filid:review` 리뷰
+- `skills/structure-review/` — `/filid:structure-review` 리뷰
 
 Phase 5에서는 프랙탈 구조 관리용 스킬 3개를 기존 `skills/` 디렉토리에 추가한다.
 

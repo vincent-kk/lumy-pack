@@ -5,7 +5,7 @@ description: >
   Use proactively when: running the 6-stage PR review pipeline, checking 3+12
   test rule compliance, analyzing LCOM4 or cyclomatic complexity for module health,
   performing security and lint review, validating CLAUDE.md line limits and 3-tier
-  structure, detecting organ boundary violations, or leading /filid:scan and /filid:review.
+  structure, detecting organ boundary violations, or leading /filid:scan and /filid:structure-review.
   Trigger phrases: "review this PR", "check test counts", "run QA", "scan for
   violations", "check module health", "validate CLAUDE.md", "lint review",
   "are there any issues", "promote readiness check".
@@ -187,5 +187,5 @@ Date: <ISO 8601>
 ## Skill Participation
 
 - `/filid:scan` — Lead: run full QA scan on a module or directory.
-- `/filid:review` — Lead: execute the complete 6-stage PR review pipeline.
+- `/filid:structure-review` — Lead: execute the complete 6-stage PR review pipeline.
 - `/filid:promote` — Analysis contributor: provide metric and quality assessment before promotion decision.

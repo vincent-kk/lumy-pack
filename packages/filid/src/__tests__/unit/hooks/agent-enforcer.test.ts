@@ -11,15 +11,36 @@ const baseInput: SubagentStartInput = {
 };
 
 describe("agent-enforcer", () => {
-  it("should restrict architect to read-only (disallow Write, Edit)", () => {
+  it("should restrict fractal-architect to read-only (disallow Write, Edit)", () => {
     const input: SubagentStartInput = {
       ...baseInput,
-      agent_type: "architect",
+      agent_type: "fractal-architect",
     };
     const result = enforceAgentRole(input);
     expect(result.continue).toBe(true);
     expect(result.hookSpecificOutput?.additionalContext).toContain("Write");
     expect(result.hookSpecificOutput?.additionalContext).toContain("Edit");
+  });
+
+  it("should restrict drift-analyzer to read-only (disallow Write, Edit)", () => {
+    const input: SubagentStartInput = {
+      ...baseInput,
+      agent_type: "drift-analyzer",
+    };
+    const result = enforceAgentRole(input);
+    expect(result.continue).toBe(true);
+    expect(result.hookSpecificOutput?.additionalContext).toContain("Write");
+    expect(result.hookSpecificOutput?.additionalContext).toContain("Edit");
+  });
+
+  it("should restrict restructurer to approved plan scope", () => {
+    const input: SubagentStartInput = {
+      ...baseInput,
+      agent_type: "restructurer",
+    };
+    const result = enforceAgentRole(input);
+    expect(result.continue).toBe(true);
+    expect(result.hookSpecificOutput?.additionalContext).toContain("approved restructuring plan");
   });
 
   it("should restrict qa-reviewer to read-only (disallow Write, Edit)", () => {

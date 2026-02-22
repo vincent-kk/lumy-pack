@@ -1,8 +1,52 @@
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { UserPromptSubmitInput, HookOutput } from '../types/hooks.js';
 import { loadBuiltinRules, getActiveRules } from '../core/rule-engine.js';
 import { scanProject } from '../core/fractal-tree.js';
 import { validateStructure } from '../core/fractal-validator.js';
 import { detectDrift } from '../core/drift-detector.js';
+
+const CACHE_TTL_MS = 30_000; // 30 seconds
+
+function cwdHash(cwd: string): string {
+  return createHash('sha256').update(cwd).digest('hex').slice(0, 12);
+}
+
+function getCacheDir(cwd: string): string {
+  return join(cwd, '.filid');
+}
+
+function readCachedContext(cwd: string): string | null {
+  const hash = cwdHash(cwd);
+  const cacheDir = getCacheDir(cwd);
+  const stampFile = join(cacheDir, `last-scan-${hash}`);
+  const contextFile = join(cacheDir, `cached-context-${hash}.txt`);
+
+  try {
+    if (!existsSync(stampFile) || !existsSync(contextFile)) return null;
+    const mtime = statSync(stampFile).mtimeMs;
+    if (Date.now() - mtime > CACHE_TTL_MS) return null;
+    return readFileSync(contextFile, 'utf-8');
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedContext(cwd: string, context: string): void {
+  const hash = cwdHash(cwd);
+  const cacheDir = getCacheDir(cwd);
+  const stampFile = join(cacheDir, `last-scan-${hash}`);
+  const contextFile = join(cacheDir, `cached-context-${hash}.txt`);
+
+  try {
+    if (!existsSync(cacheDir)) mkdirSync(cacheDir, { recursive: true });
+    writeFileSync(contextFile, context, 'utf-8');
+    writeFileSync(stampFile, String(Date.now()), 'utf-8');
+  } catch {
+    // 캐시 쓰기 실패는 조용히 무시
+  }
+}
 
 const CATEGORY_GUIDE = [
   '- fractal: CLAUDE.md 또는 SPEC.md가 있는 독립 모듈',
@@ -40,7 +84,16 @@ export async function injectContext(input: UserPromptSubmitInput): Promise<HookO
   // 1단계: 기존 FCA-AI 컨텍스트 (항상 포함)
   const fcaContext = buildFcaContext(cwd);
 
-  // 2단계: 프랙탈 구조 섹션 (스캔 성공 시에만 추가)
+  // 2단계: 캐시된 프랙탈 컨텍스트 확인
+  const cached = readCachedContext(cwd);
+  if (cached) {
+    return {
+      continue: true,
+      hookSpecificOutput: { additionalContext: cached },
+    };
+  }
+
+  // 3단계: 프랙탈 구조 섹션 (스캔 성공 시에만 추가)
   let fractalSection = '';
   try {
     const rules = getActiveRules(loadBuiltinRules());
@@ -81,6 +134,9 @@ export async function injectContext(input: UserPromptSubmitInput): Promise<HookO
   }
 
   const additionalContext = (fcaContext + fractalSection).trim();
+
+  // 캐시 저장
+  writeCachedContext(cwd, additionalContext);
 
   return {
     continue: true,

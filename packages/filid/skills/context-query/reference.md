@@ -1,4 +1,4 @@
-# query — Reference Documentation
+# context-query — Reference Documentation
 
 Detailed workflow, 3-Prompt Limit protocol, and compression strategy for
 the context query skill. For the quick-start guide, see [SKILL.md](./SKILL.md).

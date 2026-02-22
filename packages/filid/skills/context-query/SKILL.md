@@ -1,12 +1,12 @@
 ---
-name: query
+name: context-query
 user_invocable: true
 description: Query FCA-AI context — module/rule lookup within 3-Prompt Limit
 version: 1.0.0
 complexity: simple
 ---
 
-# query — Context Query
+# context-query — Context Query
 
 Answer a targeted question about the FCA-AI project by navigating the
 fractal hierarchy, loading the minimal CLAUDE.md chain, and responding
@@ -57,7 +57,7 @@ See [reference.md Section 5](./reference.md#section-5--3-prompt-limit-protocol).
 ## Options
 
 ```
-/filid:query <question>
+/filid:context-query <question>
 ```
 
 | Parameter | Type | Required | Description |
@@ -68,13 +68,13 @@ See [reference.md Section 5](./reference.md#section-5--3-prompt-limit-protocol).
 
 ```bash
 # Look up boundary rules for a module
-/filid:query "What are the boundaries for the payments module?"
+/filid:context-query "What are the boundaries for the payments module?"
 
 # Find module ownership
-/filid:query "Which fractal node owns retry logic?"
+/filid:context-query "Which fractal node owns retry logic?"
 
 # Check what is forbidden in a module
-/filid:query "What does the auth CLAUDE.md say we must never do?"
+/filid:context-query "What does the auth CLAUDE.md say we must never do?"
 
 # 3-Prompt Limit
 Prompt 1  →  fractal-navigate (locate module)

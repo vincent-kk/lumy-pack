@@ -179,8 +179,8 @@ filid operates through a **4-layer architecture**, ordered by automation level:
 │                                                      │
 │  Layer 4: SKILLS (user-invoked workflows)            │
 │  ┌─────────────────────────────────────────────────┐ │
-│  │ /init │ /scan │ /sync │ /review │ /promote      │ │
-│  │ /query                                          │ │
+│  │ /init │ /scan │ /sync │ /structure-review │ /promote │ │
+│  │ /context-query                                  │ │
 │  └─────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────┘
 ```
@@ -210,12 +210,12 @@ Detects FCA-AI rule violations (CLAUDE.md limits, organ boundaries, test rules) 
 /filid:scan [path] [--fix]
 ```
 
-### `/filid:review` — PR Verification Pipeline
+### `/filid:structure-review` — PR Verification Pipeline
 
 Runs a 6-stage verification pipeline on pull request changes.
 
 ```
-/filid:review [--stage=1-6] [--verbose]
+/filid:structure-review [--stage=1-6] [--verbose]
 ```
 
 **Stages**: boundary check → document validation → dependency analysis → test metrics → complexity assessment → final verdict
@@ -228,12 +228,12 @@ Promotes stable regression tests (`test.ts`) to specification tests (`spec.ts`) 
 /filid:promote [path] [--days=90]
 ```
 
-### `/filid:query` — Context Query
+### `/filid:context-query` — Context Query
 
 Answers targeted questions about project structure within a 3-prompt limit, applying compression when context exceeds thresholds.
 
 ```
-/filid:query <question>
+/filid:context-query <question>
 ```
 
 ### `/filid:sync` — Document Synchronization
@@ -391,7 +391,7 @@ packages/filid/
 │   ├── hooks/                # Runtime hooks (5 modules + entries)
 │   └── mcp/                  # MCP server + 4 tool handlers
 ├── skills/                   # 6 user-invocable skills
-│   └── {init,scan,sync,review,promote,query}/SKILL.md
+│   └── {init,scan,sync,structure-review,promote,context-query}/SKILL.md
 ├── agents/                   # 4 specialized agent definitions
 │   └── {architect,implementer,context-manager,qa-reviewer}.md
 ├── hooks/hooks.json          # Hook event registration

@@ -21,7 +21,21 @@ export interface ScanOptions {
 /** 기본 스캔 옵션 (내장 하드코딩, 외부 설정 파일 없음) */
 export const DEFAULT_SCAN_OPTIONS: Required<ScanOptions> = {
   include: ['**'],
-  exclude: ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**', '**/coverage/**'],
+  exclude: [
+    '**/node_modules/**',
+    '**/.git/**',
+    '**/dist/**',
+    '**/build/**',
+    '**/coverage/**',
+    '**/docs/**',
+    '**/scripts/**',
+    '**/.filid/**',
+    '**/.claude/**',
+    '**/.omc/**',
+    '**/.metadata/**',
+    '**/next/**',
+    '**/libs/**',
+  ],
   maxDepth: 10,
   followSymlinks: false,
 };
