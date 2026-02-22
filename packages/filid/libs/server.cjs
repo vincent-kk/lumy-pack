@@ -50159,7 +50159,7 @@ var StdioServerTransport = class {
 };
 
 // src/version.ts
-var VERSION = "0.0.5";
+var VERSION = "0.0.6";
 
 // src/ast/parser.ts
 var import_parser = __toESM(require_lib(), 1);

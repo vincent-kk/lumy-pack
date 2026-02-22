@@ -1,6 +1,6 @@
 {
   "name": "filid",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "FCA-AI rule enforcement + fractal structure management plugin for Claude Code agent workflows",
   "author": {
     "name": "Vincent K. Kelvin"

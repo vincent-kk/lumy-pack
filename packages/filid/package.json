@@ -1,6 +1,6 @@
 {
   "name": "@lumy-pack/filid",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "FCA-AI rule enforcement plugin for Claude Code agent workflows",
   "keywords": [
     "claude-code",
@@ -51,7 +51,10 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "bench": "vitest bench",
-    "bench:run": "vitest bench --run"
+    "bench:run": "vitest bench --run",
+    "version:major": "yarn version major",
+    "version:minor": "yarn version minor",
+    "version:patch": "yarn version patch"
   },
   "dependencies": {
     "@babel/parser": "^7.29.0",
