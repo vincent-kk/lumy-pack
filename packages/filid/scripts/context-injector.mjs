@@ -230,7 +230,7 @@ function cwdHash(cwd) {
   return createHash("sha256").update(cwd).digest("hex").slice(0, 12);
 }
 function getCacheDir(cwd) {
-  return join(cwd, ".filid");
+  return join(cwd, ".filid", "cache");
 }
 function readCachedContext(cwd) {
   const hash = cwdHash(cwd);

@@ -20,7 +20,7 @@ function cwdHash(cwd: string): string {
 }
 
 function getCacheDir(cwd: string): string {
-  return join(cwd, '.filid');
+  return join(cwd, '.filid', 'cache');
 }
 
 function readCachedContext(cwd: string): string | null {
