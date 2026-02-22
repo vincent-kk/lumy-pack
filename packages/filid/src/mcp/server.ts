@@ -2,6 +2,8 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
+import { VERSION } from '../version.js';
+
 import { handleAstAnalyze } from './tools/ast-analyze.js';
 import { handleDebtManage } from './tools/debt-manage.js';
 import { handleDocCompress } from './tools/doc-compress.js';
@@ -45,7 +47,7 @@ function toolError(error: unknown) {
  * Create and configure the FCA-AI MCP server.
  */
 export function createServer(): McpServer {
-  const server = new McpServer({ name: 'filid', version: '0.0.1' });
+  const server = new McpServer({ name: 'filid', version: VERSION });
 
   server.registerTool(
     'ast-analyze',

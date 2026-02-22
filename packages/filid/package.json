@@ -1,6 +1,6 @@
 {
   "name": "@lumy-pack/filid",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "FCA-AI rule enforcement plugin for Claude Code agent workflows",
   "keywords": [
     "claude-code",
@@ -34,14 +34,14 @@
     "libs",
     "hooks",
     "skills",
-    "scripts",
     ".claude-plugin",
     ".mcp.json",
     "README.md"
   ],
   "scripts": {
-    "clean": "rm -rf libs scripts",
-    "build": "yarn clean && tsc -p tsconfig.build.json && node build-plugin.mjs",
+    "clean": "rm -rf libs",
+    "version:sync": "node scripts/inject-version.mjs",
+    "build": "yarn clean && yarn version:sync && tsc -p tsconfig.build.json && node build-plugin.mjs",
     "build:plugin": "node build-plugin.mjs",
     "format": "prettier --write \"src/**/*.ts\" \"*.{json,mjs,md}\"",
     "dev": "tsc --watch",
