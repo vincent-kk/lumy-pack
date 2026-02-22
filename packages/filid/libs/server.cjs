@@ -2234,7 +2234,7 @@ var require_resolve = __commonJS({
     }
     function getFullPath(resolver, id = "", normalize2) {
       if (normalize2 !== false)
-        id = normalizeId(id);
+        id = normalizeId2(id);
       const p = resolver.parse(id);
       return _getFullPath(resolver, p);
     }
@@ -2245,12 +2245,12 @@ var require_resolve = __commonJS({
     }
     exports2._getFullPath = _getFullPath;
     var TRAILING_SLASH_HASH = /#\/?$/;
-    function normalizeId(id) {
+    function normalizeId2(id) {
       return id ? id.replace(TRAILING_SLASH_HASH, "") : "";
     }
-    exports2.normalizeId = normalizeId;
+    exports2.normalizeId = normalizeId2;
     function resolveUrl(resolver, baseId, id) {
-      id = normalizeId(id);
+      id = normalizeId2(id);
       return resolver.resolve(baseId, id);
     }
     exports2.resolveUrl = resolveUrl;
@@ -2259,7 +2259,7 @@ var require_resolve = __commonJS({
       if (typeof schema == "boolean")
         return {};
       const { schemaId, uriResolver } = this.opts;
-      const schId = normalizeId(schema[schemaId] || baseId);
+      const schId = normalizeId2(schema[schemaId] || baseId);
       const baseIds = { "": schId };
       const pathPrefix = getFullPath(uriResolver, schId, false);
       const localRefs = {};
@@ -2276,7 +2276,7 @@ var require_resolve = __commonJS({
         baseIds[jsonPtr] = innerBaseId;
         function addRef(ref) {
           const _resolve = this.opts.uriResolver.resolve;
-          ref = normalizeId(innerBaseId ? _resolve(innerBaseId, ref) : ref);
+          ref = normalizeId2(innerBaseId ? _resolve(innerBaseId, ref) : ref);
           if (schemaRefs.has(ref))
             throw ambiguos(ref);
           schemaRefs.add(ref);
@@ -2285,7 +2285,7 @@ var require_resolve = __commonJS({
             schOrRef = this.refs[schOrRef];
           if (typeof schOrRef == "object") {
             checkAmbiguosRef(sch, schOrRef.schema, ref);
-          } else if (ref !== normalizeId(fullPath)) {
+          } else if (ref !== normalizeId2(fullPath)) {
             if (ref[0] === "#") {
               checkAmbiguosRef(sch, localRefs[ref], ref);
               localRefs[ref] = sch;
@@ -3223,8 +3223,8 @@ var require_utils = __commonJS({
       }
       return ind;
     }
-    function removeDotSegments(path2) {
-      let input = path2;
+    function removeDotSegments(path3) {
+      let input = path3;
       const output = [];
       let nextSlash = -1;
       let len = 0;
@@ -3423,8 +3423,8 @@ var require_schemes = __commonJS({
         wsComponent.secure = void 0;
       }
       if (wsComponent.resourceName) {
-        const [path2, query] = wsComponent.resourceName.split("?");
-        wsComponent.path = path2 && path2 !== "/" ? path2 : void 0;
+        const [path3, query] = wsComponent.resourceName.split("?");
+        wsComponent.path = path3 && path3 !== "/" ? path3 : void 0;
         wsComponent.query = query;
         wsComponent.resourceName = void 0;
       }
@@ -6786,12 +6786,12 @@ var require_dist = __commonJS({
         throw new Error(`Unknown format "${name}"`);
       return f;
     };
-    function addFormats(ajv, list, fs, exportName) {
+    function addFormats(ajv, list, fs2, exportName) {
       var _a2;
       var _b;
       (_a2 = (_b = ajv.opts.code).formats) !== null && _a2 !== void 0 ? _a2 : _b.formats = (0, codegen_1._)`require("ajv-formats/dist/formats").${exportName}`;
       for (const f of list)
-        ajv.addFormat(f, fs[f]);
+        ajv.addFormat(f, fs2[f]);
     }
     module2.exports = exports2 = formatsPlugin;
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -6871,7 +6871,7 @@ var require_path = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.convertPosixPathToPattern = exports2.convertWindowsPathToPattern = exports2.convertPathToPattern = exports2.escapePosixPath = exports2.escapeWindowsPath = exports2.escape = exports2.removeLeadingDotSegment = exports2.makeAbsolute = exports2.unixify = void 0;
     var os = require("os");
-    var path2 = require("path");
+    var path3 = require("path");
     var IS_WINDOWS_PLATFORM = os.platform() === "win32";
     var LEADING_DOT_SEGMENT_CHARACTERS_COUNT = 2;
     var POSIX_UNESCAPED_GLOB_SYMBOLS_RE = /(\\?)([()*?[\]{|}]|^!|[!+@](?=\()|\\(?![!()*+?@[\]{|}]))/g;
@@ -6883,7 +6883,7 @@ var require_path = __commonJS({
     }
     exports2.unixify = unixify;
     function makeAbsolute(cwd, filepath) {
-      return path2.resolve(cwd, filepath);
+      return path3.resolve(cwd, filepath);
     }
     exports2.makeAbsolute = makeAbsolute;
     function removeLeadingDotSegment(entry) {
@@ -8180,7 +8180,7 @@ var require_braces = __commonJS({
 var require_constants2 = __commonJS({
   "../../node_modules/micromatch/node_modules/picomatch/lib/constants.js"(exports2, module2) {
     "use strict";
-    var path2 = require("path");
+    var path3 = require("path");
     var WIN_SLASH = "\\\\/";
     var WIN_NO_SLASH = `[^${WIN_SLASH}]`;
     var DOT_LITERAL = "\\.";
@@ -8350,7 +8350,7 @@ var require_constants2 = __commonJS({
       /* | */
       CHAR_ZERO_WIDTH_NOBREAK_SPACE: 65279,
       /* \uFEFF */
-      SEP: path2.sep,
+      SEP: path3.sep,
       /**
        * Create EXTGLOB_CHARS
        */
@@ -8377,7 +8377,7 @@ var require_constants2 = __commonJS({
 var require_utils3 = __commonJS({
   "../../node_modules/micromatch/node_modules/picomatch/lib/utils.js"(exports2) {
     "use strict";
-    var path2 = require("path");
+    var path3 = require("path");
     var win32 = process.platform === "win32";
     var {
       REGEX_BACKSLASH,
@@ -8406,7 +8406,7 @@ var require_utils3 = __commonJS({
       if (options && typeof options.windows === "boolean") {
         return options.windows;
       }
-      return win32 === true || path2.sep === "\\";
+      return win32 === true || path3.sep === "\\";
     };
     exports2.escapeLast = (input, char, lastIdx) => {
       const idx = input.lastIndexOf(char, lastIdx);
@@ -9541,7 +9541,7 @@ var require_parse2 = __commonJS({
 var require_picomatch = __commonJS({
   "../../node_modules/micromatch/node_modules/picomatch/lib/picomatch.js"(exports2, module2) {
     "use strict";
-    var path2 = require("path");
+    var path3 = require("path");
     var scan = require_scan();
     var parse3 = require_parse2();
     var utils = require_utils3();
@@ -9626,7 +9626,7 @@ var require_picomatch = __commonJS({
     };
     picomatch.matchBase = (input, glob, options, posix = utils.isWindows(options)) => {
       const regex = glob instanceof RegExp ? glob : picomatch.makeRe(glob, options);
-      return regex.test(path2.basename(input));
+      return regex.test(path3.basename(input));
     };
     picomatch.isMatch = (str, patterns, options) => picomatch(patterns, options)(str);
     picomatch.parse = (pattern, options) => {
@@ -9853,7 +9853,7 @@ var require_pattern2 = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.isAbsolute = exports2.partitionAbsoluteAndRelative = exports2.removeDuplicateSlashes = exports2.matchAny = exports2.convertPatternsToRe = exports2.makeRe = exports2.getPatternParts = exports2.expandBraceExpansion = exports2.expandPatternsWithBraceExpansion = exports2.isAffectDepthOfReadingPattern = exports2.endsWithSlashGlobStar = exports2.hasGlobStar = exports2.getBaseDirectory = exports2.isPatternRelatedToParentDirectory = exports2.getPatternsOutsideCurrentDirectory = exports2.getPatternsInsideCurrentDirectory = exports2.getPositivePatterns = exports2.getNegativePatterns = exports2.isPositivePattern = exports2.isNegativePattern = exports2.convertToNegativePattern = exports2.convertToPositivePattern = exports2.isDynamicPattern = exports2.isStaticPattern = void 0;
-    var path2 = require("path");
+    var path3 = require("path");
     var globParent = require_glob_parent();
     var micromatch = require_micromatch();
     var GLOBSTAR = "**";
@@ -9948,7 +9948,7 @@ var require_pattern2 = __commonJS({
     }
     exports2.endsWithSlashGlobStar = endsWithSlashGlobStar;
     function isAffectDepthOfReadingPattern(pattern) {
-      const basename = path2.basename(pattern);
+      const basename = path3.basename(pattern);
       return endsWithSlashGlobStar(pattern) || isStaticPattern(basename);
     }
     exports2.isAffectDepthOfReadingPattern = isAffectDepthOfReadingPattern;
@@ -10006,7 +10006,7 @@ var require_pattern2 = __commonJS({
     }
     exports2.partitionAbsoluteAndRelative = partitionAbsoluteAndRelative;
     function isAbsolute2(pattern) {
-      return path2.isAbsolute(pattern);
+      return path3.isAbsolute(pattern);
     }
     exports2.isAbsolute = isAbsolute2;
   }
@@ -10181,10 +10181,10 @@ var require_utils4 = __commonJS({
     exports2.array = array2;
     var errno = require_errno();
     exports2.errno = errno;
-    var fs = require_fs();
-    exports2.fs = fs;
-    var path2 = require_path();
-    exports2.path = path2;
+    var fs2 = require_fs();
+    exports2.fs = fs2;
+    var path3 = require_path();
+    exports2.path = path3;
     var pattern = require_pattern2();
     exports2.pattern = pattern;
     var stream = require_stream();
@@ -10296,8 +10296,8 @@ var require_async = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.read = void 0;
-    function read(path2, settings, callback) {
-      settings.fs.lstat(path2, (lstatError, lstat) => {
+    function read(path3, settings, callback) {
+      settings.fs.lstat(path3, (lstatError, lstat) => {
         if (lstatError !== null) {
           callFailureCallback(callback, lstatError);
           return;
@@ -10306,7 +10306,7 @@ var require_async = __commonJS({
           callSuccessCallback(callback, lstat);
           return;
         }
-        settings.fs.stat(path2, (statError, stat) => {
+        settings.fs.stat(path3, (statError, stat) => {
           if (statError !== null) {
             if (settings.throwErrorOnBrokenSymbolicLink) {
               callFailureCallback(callback, statError);
@@ -10338,13 +10338,13 @@ var require_sync = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.read = void 0;
-    function read(path2, settings) {
-      const lstat = settings.fs.lstatSync(path2);
+    function read(path3, settings) {
+      const lstat = settings.fs.lstatSync(path3);
       if (!lstat.isSymbolicLink() || !settings.followSymbolicLink) {
         return lstat;
       }
       try {
-        const stat = settings.fs.statSync(path2);
+        const stat = settings.fs.statSync(path3);
         if (settings.markSymbolicLink) {
           stat.isSymbolicLink = () => true;
         }
@@ -10366,12 +10366,12 @@ var require_fs2 = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.createFileSystemAdapter = exports2.FILE_SYSTEM_ADAPTER = void 0;
-    var fs = require("fs");
+    var fs2 = require("fs");
     exports2.FILE_SYSTEM_ADAPTER = {
-      lstat: fs.lstat,
-      stat: fs.stat,
-      lstatSync: fs.lstatSync,
-      statSync: fs.statSync
+      lstat: fs2.lstat,
+      stat: fs2.stat,
+      lstatSync: fs2.lstatSync,
+      statSync: fs2.statSync
     };
     function createFileSystemAdapter(fsMethods) {
       if (fsMethods === void 0) {
@@ -10388,12 +10388,12 @@ var require_settings = __commonJS({
   "../../node_modules/@nodelib/fs.stat/out/settings.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var fs = require_fs2();
+    var fs2 = require_fs2();
     var Settings = class {
       constructor(_options = {}) {
         this._options = _options;
         this.followSymbolicLink = this._getValue(this._options.followSymbolicLink, true);
-        this.fs = fs.createFileSystemAdapter(this._options.fs);
+        this.fs = fs2.createFileSystemAdapter(this._options.fs);
         this.markSymbolicLink = this._getValue(this._options.markSymbolicLink, false);
         this.throwErrorOnBrokenSymbolicLink = this._getValue(this._options.throwErrorOnBrokenSymbolicLink, true);
       }
@@ -10415,17 +10415,17 @@ var require_out = __commonJS({
     var sync = require_sync();
     var settings_1 = require_settings();
     exports2.Settings = settings_1.default;
-    function stat(path2, optionsOrSettingsOrCallback, callback) {
+    function stat(path3, optionsOrSettingsOrCallback, callback) {
       if (typeof optionsOrSettingsOrCallback === "function") {
-        async.read(path2, getSettings(), optionsOrSettingsOrCallback);
+        async.read(path3, getSettings(), optionsOrSettingsOrCallback);
         return;
       }
-      async.read(path2, getSettings(optionsOrSettingsOrCallback), callback);
+      async.read(path3, getSettings(optionsOrSettingsOrCallback), callback);
     }
     exports2.stat = stat;
-    function statSync(path2, optionsOrSettings) {
+    function statSync(path3, optionsOrSettings) {
       const settings = getSettings(optionsOrSettings);
-      return sync.read(path2, settings);
+      return sync.read(path3, settings);
     }
     exports2.statSync = statSync;
     function getSettings(settingsOrOptions = {}) {
@@ -10548,8 +10548,8 @@ var require_utils5 = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.fs = void 0;
-    var fs = require_fs3();
-    exports2.fs = fs;
+    var fs2 = require_fs3();
+    exports2.fs = fs2;
   }
 });
 
@@ -10585,7 +10585,7 @@ var require_async2 = __commonJS({
         readdirWithFileTypes(directory, settings, callback);
         return;
       }
-      readdir2(directory, settings, callback);
+      readdir3(directory, settings, callback);
     }
     exports2.read = read;
     function readdirWithFileTypes(directory, settings, callback) {
@@ -10634,23 +10634,23 @@ var require_async2 = __commonJS({
         });
       };
     }
-    function readdir2(directory, settings, callback) {
+    function readdir3(directory, settings, callback) {
       settings.fs.readdir(directory, (readdirError, names) => {
         if (readdirError !== null) {
           callFailureCallback(callback, readdirError);
           return;
         }
         const tasks = names.map((name) => {
-          const path2 = common.joinPathSegments(directory, name, settings.pathSegmentSeparator);
+          const path3 = common.joinPathSegments(directory, name, settings.pathSegmentSeparator);
           return (done) => {
-            fsStat.stat(path2, settings.fsStatSettings, (error48, stats) => {
+            fsStat.stat(path3, settings.fsStatSettings, (error48, stats) => {
               if (error48 !== null) {
                 done(error48);
                 return;
               }
               const entry = {
                 name,
-                path: path2,
+                path: path3,
                 dirent: utils.fs.createDirentFromStats(name, stats)
               };
               if (settings.stats) {
@@ -10669,7 +10669,7 @@ var require_async2 = __commonJS({
         });
       });
     }
-    exports2.readdir = readdir2;
+    exports2.readdir = readdir3;
     function callFailureCallback(callback, error48) {
       callback(error48);
     }
@@ -10693,7 +10693,7 @@ var require_sync2 = __commonJS({
       if (!settings.stats && constants_1.IS_SUPPORT_READDIR_WITH_FILE_TYPES) {
         return readdirWithFileTypes(directory, settings);
       }
-      return readdir2(directory, settings);
+      return readdir3(directory, settings);
     }
     exports2.read = read;
     function readdirWithFileTypes(directory, settings) {
@@ -10718,7 +10718,7 @@ var require_sync2 = __commonJS({
       });
     }
     exports2.readdirWithFileTypes = readdirWithFileTypes;
-    function readdir2(directory, settings) {
+    function readdir3(directory, settings) {
       const names = settings.fs.readdirSync(directory);
       return names.map((name) => {
         const entryPath = common.joinPathSegments(directory, name, settings.pathSegmentSeparator);
@@ -10734,7 +10734,7 @@ var require_sync2 = __commonJS({
         return entry;
       });
     }
-    exports2.readdir = readdir2;
+    exports2.readdir = readdir3;
   }
 });
 
@@ -10744,14 +10744,14 @@ var require_fs4 = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.createFileSystemAdapter = exports2.FILE_SYSTEM_ADAPTER = void 0;
-    var fs = require("fs");
+    var fs2 = require("fs");
     exports2.FILE_SYSTEM_ADAPTER = {
-      lstat: fs.lstat,
-      stat: fs.stat,
-      lstatSync: fs.lstatSync,
-      statSync: fs.statSync,
-      readdir: fs.readdir,
-      readdirSync: fs.readdirSync
+      lstat: fs2.lstat,
+      stat: fs2.stat,
+      lstatSync: fs2.lstatSync,
+      statSync: fs2.statSync,
+      readdir: fs2.readdir,
+      readdirSync: fs2.readdirSync
     };
     function createFileSystemAdapter(fsMethods) {
       if (fsMethods === void 0) {
@@ -10768,15 +10768,15 @@ var require_settings2 = __commonJS({
   "../../node_modules/@nodelib/fs.scandir/out/settings.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var path2 = require("path");
+    var path3 = require("path");
     var fsStat = require_out();
-    var fs = require_fs4();
+    var fs2 = require_fs4();
     var Settings = class {
       constructor(_options = {}) {
         this._options = _options;
         this.followSymbolicLinks = this._getValue(this._options.followSymbolicLinks, false);
-        this.fs = fs.createFileSystemAdapter(this._options.fs);
-        this.pathSegmentSeparator = this._getValue(this._options.pathSegmentSeparator, path2.sep);
+        this.fs = fs2.createFileSystemAdapter(this._options.fs);
+        this.pathSegmentSeparator = this._getValue(this._options.pathSegmentSeparator, path3.sep);
         this.stats = this._getValue(this._options.stats, false);
         this.throwErrorOnBrokenSymbolicLink = this._getValue(this._options.throwErrorOnBrokenSymbolicLink, true);
         this.fsStatSettings = new fsStat.Settings({
@@ -10803,17 +10803,17 @@ var require_out2 = __commonJS({
     var sync = require_sync2();
     var settings_1 = require_settings2();
     exports2.Settings = settings_1.default;
-    function scandir(path2, optionsOrSettingsOrCallback, callback) {
+    function scandir(path3, optionsOrSettingsOrCallback, callback) {
       if (typeof optionsOrSettingsOrCallback === "function") {
-        async.read(path2, getSettings(), optionsOrSettingsOrCallback);
+        async.read(path3, getSettings(), optionsOrSettingsOrCallback);
         return;
       }
-      async.read(path2, getSettings(optionsOrSettingsOrCallback), callback);
+      async.read(path3, getSettings(optionsOrSettingsOrCallback), callback);
     }
     exports2.scandir = scandir;
-    function scandirSync(path2, optionsOrSettings) {
+    function scandirSync(path3, optionsOrSettings) {
       const settings = getSettings(optionsOrSettings);
-      return sync.read(path2, settings);
+      return sync.read(path3, settings);
     }
     exports2.scandirSync = scandirSync;
     function getSettings(settingsOrOptions = {}) {
@@ -11460,7 +11460,7 @@ var require_settings3 = __commonJS({
   "../../node_modules/@nodelib/fs.walk/out/settings.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var path2 = require("path");
+    var path3 = require("path");
     var fsScandir = require_out2();
     var Settings = class {
       constructor(_options = {}) {
@@ -11470,7 +11470,7 @@ var require_settings3 = __commonJS({
         this.deepFilter = this._getValue(this._options.deepFilter, null);
         this.entryFilter = this._getValue(this._options.entryFilter, null);
         this.errorFilter = this._getValue(this._options.errorFilter, null);
-        this.pathSegmentSeparator = this._getValue(this._options.pathSegmentSeparator, path2.sep);
+        this.pathSegmentSeparator = this._getValue(this._options.pathSegmentSeparator, path3.sep);
         this.fsScandirSettings = new fsScandir.Settings({
           followSymbolicLinks: this._options.followSymbolicLinks,
           fs: this._options.fs,
@@ -11532,7 +11532,7 @@ var require_reader2 = __commonJS({
   "../../node_modules/fast-glob/out/readers/reader.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var path2 = require("path");
+    var path3 = require("path");
     var fsStat = require_out();
     var utils = require_utils4();
     var Reader = class {
@@ -11545,7 +11545,7 @@ var require_reader2 = __commonJS({
         });
       }
       _getFullEntryPath(filepath) {
-        return path2.resolve(this._settings.cwd, filepath);
+        return path3.resolve(this._settings.cwd, filepath);
       }
       _makeEntry(stats, pattern) {
         const entry = {
@@ -11961,7 +11961,7 @@ var require_provider = __commonJS({
   "../../node_modules/fast-glob/out/providers/provider.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var path2 = require("path");
+    var path3 = require("path");
     var deep_1 = require_deep();
     var entry_1 = require_entry();
     var error_1 = require_error();
@@ -11975,7 +11975,7 @@ var require_provider = __commonJS({
         this.entryTransformer = new entry_2.default(this._settings);
       }
       _getRootDirectory(task) {
-        return path2.resolve(this._settings.cwd, task.base);
+        return path3.resolve(this._settings.cwd, task.base);
       }
       _getReaderOptions(task) {
         const basePath = task.base === "." ? "" : task.base;
@@ -12156,16 +12156,16 @@ var require_settings4 = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.DEFAULT_FILE_SYSTEM_ADAPTER = void 0;
-    var fs = require("fs");
+    var fs2 = require("fs");
     var os = require("os");
     var CPU_COUNT = Math.max(os.cpus().length, 1);
     exports2.DEFAULT_FILE_SYSTEM_ADAPTER = {
-      lstat: fs.lstat,
-      lstatSync: fs.lstatSync,
-      stat: fs.stat,
-      statSync: fs.statSync,
-      readdir: fs.readdir,
-      readdirSync: fs.readdirSync
+      lstat: fs2.lstat,
+      lstatSync: fs2.lstatSync,
+      stat: fs2.stat,
+      statSync: fs2.statSync,
+      readdir: fs2.readdir,
+      readdirSync: fs2.readdirSync
     };
     var Settings = class {
       constructor(_options = {}) {
@@ -12670,8 +12670,8 @@ function getErrorMap() {
 
 // ../../node_modules/zod/v3/helpers/parseUtil.js
 var makeIssue = (params) => {
-  const { data, path: path2, errorMaps, issueData } = params;
-  const fullPath = [...path2, ...issueData.path || []];
+  const { data, path: path3, errorMaps, issueData } = params;
+  const fullPath = [...path3, ...issueData.path || []];
   const fullIssue = {
     ...issueData,
     path: fullPath
@@ -12786,11 +12786,11 @@ var errorUtil;
 
 // ../../node_modules/zod/v3/types.js
 var ParseInputLazyPath = class {
-  constructor(parent, value, path2, key) {
+  constructor(parent, value, path3, key) {
     this._cachedPath = [];
     this.parent = parent;
     this.data = value;
-    this._path = path2;
+    this._path = path3;
     this._key = key;
   }
   get path() {
@@ -16714,10 +16714,10 @@ function mergeDefs(...defs) {
 function cloneDef(schema) {
   return mergeDefs(schema._zod.def);
 }
-function getElementAtPath(obj, path2) {
-  if (!path2)
+function getElementAtPath(obj, path3) {
+  if (!path3)
     return obj;
-  return path2.reduce((acc, key) => acc?.[key], obj);
+  return path3.reduce((acc, key) => acc?.[key], obj);
 }
 function promiseAllObject(promisesObj) {
   const keys = Object.keys(promisesObj);
@@ -17100,11 +17100,11 @@ function aborted(x, startIndex = 0) {
   }
   return false;
 }
-function prefixIssues(path2, issues) {
+function prefixIssues(path3, issues) {
   return issues.map((iss) => {
     var _a2;
     (_a2 = iss).path ?? (_a2.path = []);
-    iss.path.unshift(path2);
+    iss.path.unshift(path3);
     return iss;
   });
 }
@@ -17287,7 +17287,7 @@ function formatError(error48, mapper = (issue2) => issue2.message) {
 }
 function treeifyError(error48, mapper = (issue2) => issue2.message) {
   const result = { errors: [] };
-  const processError = (error49, path2 = []) => {
+  const processError = (error49, path3 = []) => {
     var _a2, _b;
     for (const issue2 of error49.issues) {
       if (issue2.code === "invalid_union" && issue2.errors.length) {
@@ -17297,7 +17297,7 @@ function treeifyError(error48, mapper = (issue2) => issue2.message) {
       } else if (issue2.code === "invalid_element") {
         processError({ issues: issue2.issues }, issue2.path);
       } else {
-        const fullpath = [...path2, ...issue2.path];
+        const fullpath = [...path3, ...issue2.path];
         if (fullpath.length === 0) {
           result.errors.push(mapper(issue2));
           continue;
@@ -17329,8 +17329,8 @@ function treeifyError(error48, mapper = (issue2) => issue2.message) {
 }
 function toDotPath(_path) {
   const segs = [];
-  const path2 = _path.map((seg) => typeof seg === "object" ? seg.key : seg);
-  for (const seg of path2) {
+  const path3 = _path.map((seg) => typeof seg === "object" ? seg.key : seg);
+  for (const seg of path3) {
     if (typeof seg === "number")
       segs.push(`[${seg}]`);
     else if (typeof seg === "symbol")
@@ -29736,13 +29736,13 @@ function resolveRef(ref, ctx) {
   if (!ref.startsWith("#")) {
     throw new Error("External $ref is not supported, only local refs (#/...) are allowed");
   }
-  const path2 = ref.slice(1).split("/").filter(Boolean);
-  if (path2.length === 0) {
+  const path3 = ref.slice(1).split("/").filter(Boolean);
+  if (path3.length === 0) {
     return ctx.rootSchema;
   }
   const defsKey = ctx.version === "draft-2020-12" ? "$defs" : "definitions";
-  if (path2[0] === defsKey) {
-    const key = path2[1];
+  if (path3[0] === defsKey) {
+    const key = path3[1];
     if (!key || !ctx.defs[key]) {
       throw new Error(`Reference not found: ${ref}`);
     }
@@ -36108,12 +36108,12 @@ function classifyNode(input) {
 }
 
 // src/core/fractal-tree.ts
-function findParentPath(path2, allPaths) {
+function findParentPath(path3, allPaths) {
   let bestParent = null;
   let bestLen = 0;
   for (const candidate of allPaths) {
-    if (candidate === path2) continue;
-    if (path2.startsWith(candidate + "/") && candidate.length > bestLen) {
+    if (candidate === path3) continue;
+    if (path3.startsWith(candidate + "/") && candidate.length > bestLen) {
       bestParent = candidate;
       bestLen = candidate.length;
     }
@@ -36165,12 +36165,12 @@ function buildFractalTree(entries) {
   }
   return { root, nodes, depth: maxDepth, totalNodes: nodes.size };
 }
-function findNode(tree, path2) {
-  return tree.nodes.get(path2);
+function findNode(tree, path3) {
+  return tree.nodes.get(path3);
 }
-function getAncestors(tree, path2) {
+function getAncestors(tree, path3) {
   const ancestors = [];
-  const node = tree.nodes.get(path2);
+  const node = tree.nodes.get(path3);
   if (!node) return ancestors;
   let current = node.parent;
   while (current !== null) {
@@ -37381,6 +37381,387 @@ async function handleStructureValidate(args) {
   };
 }
 
+// src/mcp/tools/review-manage.ts
+var import_promises2 = __toESM(require("node:fs/promises"), 1);
+var import_node_path4 = __toESM(require("node:path"), 1);
+function normalizeBranch(branchName) {
+  let result = branchName;
+  result = result.replace(/\//g, "--");
+  result = result.replace(/[#@~^:?*[\]\\]/g, "_");
+  result = result.replace(/^[.\-]+/, "");
+  result = result.replace(/[.\-]+$/, "");
+  return result;
+}
+async function handleReviewManage(args) {
+  const input = args;
+  if (!input.action) {
+    throw new Error("action is required");
+  }
+  if (!input.projectRoot) {
+    throw new Error("projectRoot is required");
+  }
+  switch (input.action) {
+    case "normalize-branch": {
+      if (!input.branchName) {
+        throw new Error("branchName is required for normalize-branch action");
+      }
+      const normalized = normalizeBranch(input.branchName);
+      return { normalized };
+    }
+    case "ensure-dir": {
+      if (!input.branchName) {
+        throw new Error("branchName is required for ensure-dir action");
+      }
+      const normalized = normalizeBranch(input.branchName);
+      const dirPath = import_node_path4.default.join(input.projectRoot, ".filid", "review", normalized);
+      let created = false;
+      try {
+        await import_promises2.default.access(dirPath);
+      } catch {
+        await import_promises2.default.mkdir(dirPath, { recursive: true });
+        created = true;
+      }
+      return { path: dirPath, created };
+    }
+    case "checkpoint": {
+      if (!input.branchName) {
+        throw new Error("branchName is required for checkpoint action");
+      }
+      const normalized = normalizeBranch(input.branchName);
+      const reviewDir = import_node_path4.default.join(input.projectRoot, ".filid", "review", normalized);
+      const fileNames = ["session.md", "verification.md", "review-report.md"];
+      const existingFiles = [];
+      for (const fileName of fileNames) {
+        try {
+          await import_promises2.default.access(import_node_path4.default.join(reviewDir, fileName));
+          existingFiles.push(fileName);
+        } catch {
+        }
+      }
+      const hasSession = existingFiles.includes("session.md");
+      const hasVerification = existingFiles.includes("verification.md");
+      const hasReport = existingFiles.includes("review-report.md");
+      let phase;
+      if (!hasSession) {
+        phase = "A";
+      } else if (!hasVerification) {
+        phase = "B";
+      } else if (!hasReport) {
+        phase = "C";
+      } else {
+        phase = "DONE";
+      }
+      const result = { phase, files: existingFiles };
+      return result;
+    }
+    case "elect-committee": {
+      if (input.changedFilesCount === void 0) {
+        throw new Error("changedFilesCount is required for elect-committee action");
+      }
+      if (input.changedFractalsCount === void 0) {
+        throw new Error("changedFractalsCount is required for elect-committee action");
+      }
+      if (input.hasInterfaceChanges === void 0) {
+        throw new Error("hasInterfaceChanges is required for elect-committee action");
+      }
+      const { changedFilesCount, changedFractalsCount, hasInterfaceChanges } = input;
+      let complexity;
+      if (changedFilesCount <= 3 && changedFractalsCount <= 1 && !hasInterfaceChanges) {
+        complexity = "LOW";
+      } else if (changedFilesCount > 10 || changedFractalsCount >= 4) {
+        complexity = "HIGH";
+      } else {
+        complexity = "MEDIUM";
+      }
+      let committee;
+      if (complexity === "LOW") {
+        committee = ["engineering-architect", "operations-sre"];
+      } else if (complexity === "MEDIUM") {
+        committee = ["engineering-architect", "knowledge-manager", "business-driver", "operations-sre"];
+      } else {
+        committee = [
+          "engineering-architect",
+          "knowledge-manager",
+          "operations-sre",
+          "business-driver",
+          "product-manager",
+          "design-hci"
+        ];
+      }
+      const adversarialPairs = [];
+      if (committee.includes("business-driver")) {
+        const challengers = [];
+        if (committee.includes("knowledge-manager")) challengers.push("knowledge-manager");
+        if (committee.includes("operations-sre")) challengers.push("operations-sre");
+        if (challengers.length > 0) {
+          adversarialPairs.push(["business-driver", challengers]);
+        }
+      }
+      if (committee.includes("product-manager")) {
+        const challengers = [];
+        if (committee.includes("engineering-architect")) challengers.push("engineering-architect");
+        if (challengers.length > 0) {
+          adversarialPairs.push(["product-manager", challengers]);
+        }
+      }
+      if (committee.includes("design-hci")) {
+        const challengers = [];
+        if (committee.includes("engineering-architect")) challengers.push("engineering-architect");
+        if (challengers.length > 0) {
+          adversarialPairs.push(["design-hci", challengers]);
+        }
+      }
+      const result = { complexity, committee, adversarialPairs };
+      return result;
+    }
+    case "cleanup": {
+      if (!input.branchName) {
+        throw new Error("branchName is required for cleanup action");
+      }
+      const normalized = normalizeBranch(input.branchName);
+      const reviewDir = import_node_path4.default.join(input.projectRoot, ".filid", "review", normalized);
+      await import_promises2.default.rm(reviewDir, { recursive: true, force: true });
+      return { deleted: true };
+    }
+    default: {
+      throw new Error(`Unknown action: ${input.action}`);
+    }
+  }
+}
+
+// src/mcp/tools/debt-manage.ts
+var import_node_crypto = require("node:crypto");
+var import_promises3 = require("node:fs/promises");
+var import_node_path5 = require("node:path");
+
+// src/types/debt.ts
+var DEBT_WEIGHT_CAP = 16;
+var DEBT_BASE_WEIGHT = 1;
+
+// src/mcp/tools/debt-manage.ts
+function getDebtDir(projectRoot) {
+  return (0, import_node_path5.join)(projectRoot, ".filid", "debt");
+}
+function normalizeId(fractalPath, content) {
+  const normalized = fractalPath.replace(/\//g, "-");
+  const hash2 = (0, import_node_crypto.createHash)("sha256").update(content).digest("hex").slice(0, 6);
+  return `${normalized}-${hash2}`;
+}
+function serializeFrontmatter(item) {
+  const fields = [
+    "id",
+    "fractal_path",
+    "file_path",
+    "created_at",
+    "review_branch",
+    "original_fix_id",
+    "severity",
+    "weight",
+    "touch_count",
+    "last_review_commit",
+    "rule_violated",
+    "metric_value"
+  ];
+  const lines = fields.map((key) => {
+    const value = item[key];
+    if (value === null || value === void 0) {
+      return `${key}: null`;
+    }
+    if (typeof value === "string" && (value.includes(":") || value.includes("\n") || value.includes("'"))) {
+      return `${key}: "${value.replace(/"/g, '\\"')}"`;
+    }
+    return `${key}: ${value}`;
+  });
+  return `---
+${lines.join("\n")}
+---`;
+}
+function buildMarkdownBody(item) {
+  return `# \uAE30\uC220 \uBD80\uCC44: ${item.title}
+## \uC6D0\uB798 \uC218\uC815 \uC694\uCCAD
+${item.original_request}
+## \uAC1C\uBC1C\uC790 \uC18C\uBA85
+${item.developer_justification}
+## \uC815\uC81C\uB41C ADR
+${item.refined_adr}`;
+}
+function parseFrontmatter(content) {
+  const match = /^---\n([\s\S]*?)\n---/.exec(content);
+  if (!match) return {};
+  const result = {};
+  for (const line of match[1].split("\n")) {
+    const colonIdx = line.indexOf(":");
+    if (colonIdx === -1) continue;
+    const key = line.slice(0, colonIdx).trim();
+    let value = line.slice(colonIdx + 1).trim();
+    if (value === "null") {
+      result[key] = null;
+    } else if (/^\d+(\.\d+)?$/.test(value)) {
+      result[key] = Number(value);
+    } else if (value.startsWith('"') && value.endsWith('"')) {
+      result[key] = value.slice(1, -1).replace(/\\"/g, '"');
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+function determineBiasLevel(totalScore) {
+  if (totalScore <= 5) return "LOW_PRESSURE";
+  if (totalScore <= 15) return "MODERATE_PRESSURE";
+  if (totalScore <= 30) return "HIGH_PRESSURE";
+  return "CRITICAL_PRESSURE";
+}
+async function handleCreate(projectRoot, debtItem) {
+  const content = JSON.stringify(debtItem);
+  const id = normalizeId(debtItem.fractal_path, content);
+  const item = {
+    ...debtItem,
+    id,
+    weight: DEBT_BASE_WEIGHT,
+    touch_count: 0,
+    last_review_commit: null
+  };
+  const debtDir = getDebtDir(projectRoot);
+  await (0, import_promises3.mkdir)(debtDir, { recursive: true });
+  const filePath = (0, import_node_path5.join)(debtDir, `${id}.md`);
+  const fileContent = `${serializeFrontmatter(item)}
+
+${buildMarkdownBody(item)}
+`;
+  await (0, import_promises3.writeFile)(filePath, fileContent, "utf-8");
+  return { filePath, id };
+}
+async function handleList(projectRoot, fractalPath) {
+  const debtDir = getDebtDir(projectRoot);
+  let files;
+  try {
+    files = await (0, import_promises3.readdir)(debtDir);
+  } catch {
+    return { debts: [], totalWeight: 0 };
+  }
+  const mdFiles = files.filter((f) => f.endsWith(".md"));
+  if (mdFiles.length === 0) {
+    return { debts: [], totalWeight: 0 };
+  }
+  const debts = [];
+  for (const file2 of mdFiles) {
+    const filePath = (0, import_node_path5.join)(debtDir, file2);
+    const content = await (0, import_promises3.readFile)(filePath, "utf-8");
+    const fm = parseFrontmatter(content);
+    if (Object.keys(fm).length === 0) continue;
+    const debt = {
+      id: String(fm["id"] ?? ""),
+      fractal_path: String(fm["fractal_path"] ?? ""),
+      file_path: String(fm["file_path"] ?? ""),
+      created_at: String(fm["created_at"] ?? ""),
+      review_branch: String(fm["review_branch"] ?? ""),
+      original_fix_id: String(fm["original_fix_id"] ?? ""),
+      severity: fm["severity"] ?? "LOW",
+      weight: Number(fm["weight"] ?? 1),
+      touch_count: Number(fm["touch_count"] ?? 0),
+      last_review_commit: fm["last_review_commit"],
+      rule_violated: String(fm["rule_violated"] ?? ""),
+      metric_value: String(fm["metric_value"] ?? ""),
+      title: "",
+      original_request: "",
+      developer_justification: "",
+      refined_adr: ""
+    };
+    const titleMatch = /^# 기술 부채: (.+)$/m.exec(content);
+    if (titleMatch) debt.title = titleMatch[1].trim();
+    const orMatch = /## 원래 수정 요청\n([\s\S]*?)(?=\n##|$)/.exec(content);
+    if (orMatch) debt.original_request = orMatch[1].trim();
+    const djMatch = /## 개발자 소명\n([\s\S]*?)(?=\n##|$)/.exec(content);
+    if (djMatch) debt.developer_justification = djMatch[1].trim();
+    const adrMatch = /## 정제된 ADR\n([\s\S]*?)(?=\n##|$)/.exec(content);
+    if (adrMatch) debt.refined_adr = adrMatch[1].trim();
+    debts.push(debt);
+  }
+  const filtered = fractalPath ? debts.filter((d) => d.fractal_path === fractalPath) : debts;
+  const totalWeight = filtered.reduce((sum, d) => sum + d.weight, 0);
+  return { debts: filtered, totalWeight };
+}
+async function handleResolve(projectRoot, debtId) {
+  const filePath = (0, import_node_path5.join)(getDebtDir(projectRoot), `${debtId}.md`);
+  try {
+    await (0, import_promises3.unlink)(filePath);
+    return { deleted: true };
+  } catch {
+    return { deleted: false };
+  }
+}
+function handleCalculateBias(debts, changedFractalPaths, currentCommitSha) {
+  const changedSet = new Set(changedFractalPaths);
+  const updatedDebts = debts.map((debt) => {
+    if (!changedSet.has(debt.fractal_path)) {
+      return { ...debt };
+    }
+    if (debt.last_review_commit === currentCommitSha) {
+      return { ...debt };
+    }
+    const newTouchCount = debt.touch_count + 1;
+    const newWeight = Math.min(
+      DEBT_BASE_WEIGHT * Math.pow(2, newTouchCount),
+      DEBT_WEIGHT_CAP
+    );
+    return {
+      ...debt,
+      touch_count: newTouchCount,
+      weight: newWeight,
+      last_review_commit: currentCommitSha
+    };
+  });
+  const totalScore = updatedDebts.reduce((sum, d) => sum + d.weight, 0);
+  const biasLevel = determineBiasLevel(totalScore);
+  return { biasLevel, totalScore, updatedDebts };
+}
+async function handleDebtManage(args) {
+  const input = args;
+  if (!input.action) {
+    throw new Error("action is required");
+  }
+  if (!input.projectRoot) {
+    throw new Error("projectRoot is required");
+  }
+  switch (input.action) {
+    case "create": {
+      if (!input.debtItem) {
+        throw new Error("debtItem is required for create action");
+      }
+      return handleCreate(input.projectRoot, input.debtItem);
+    }
+    case "list": {
+      return handleList(input.projectRoot, input.fractalPath);
+    }
+    case "resolve": {
+      if (!input.debtId) {
+        throw new Error("debtId is required for resolve action");
+      }
+      return handleResolve(input.projectRoot, input.debtId);
+    }
+    case "calculate-bias": {
+      if (!input.debts) {
+        throw new Error("debts is required for calculate-bias action");
+      }
+      if (!input.changedFractalPaths) {
+        throw new Error("changedFractalPaths is required for calculate-bias action");
+      }
+      if (!input.currentCommitSha) {
+        throw new Error("currentCommitSha is required for calculate-bias action");
+      }
+      return handleCalculateBias(
+        input.debts,
+        input.changedFractalPaths,
+        input.currentCommitSha
+      );
+    }
+    default: {
+      throw new Error(`Unknown action: ${input.action}`);
+    }
+  }
+}
+
 // src/mcp/server.ts
 function mapReplacer(_key, value) {
   if (value instanceof Map) {
@@ -37594,6 +37975,84 @@ function createServer() {
     async (args) => {
       try {
         const result = await handleStructureValidate(args);
+        return toolResult(result);
+      } catch (error48) {
+        return toolError(error48);
+      }
+    }
+  );
+  server.registerTool(
+    "review-manage",
+    {
+      description: "\uCF54\uB4DC \uB9AC\uBDF0 \uAC70\uBC84\uB10C\uC2A4 \uC138\uC158\uC744 \uAD00\uB9AC\uD55C\uB2E4. action='normalize-branch': \uBE0C\uB79C\uCE58\uBA85\uC744 \uD30C\uC77C\uC2DC\uC2A4\uD15C \uC548\uC804 \uBB38\uC790\uC5F4\uB85C \uBCC0\uD658. action='ensure-dir': \uB9AC\uBDF0 \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131(.filid/review/<normalized>). action='checkpoint': \uB9AC\uBDF0 \uC9C4\uD589 \uB2E8\uACC4(A/B/C/DONE) \uAC10\uC9C0. action='elect-committee': \uBCC0\uACBD \uBCF5\uC7A1\uB3C4 \uAE30\uBC18 \uC704\uC6D0\uD68C \uC120\uCD9C. action='cleanup': \uB9AC\uBDF0 \uB514\uB809\uD1A0\uB9AC \uC0AD\uC81C.",
+      inputSchema: external_exports3.object({
+        action: external_exports3.enum(["normalize-branch", "ensure-dir", "checkpoint", "elect-committee", "cleanup"]).describe("\uC218\uD589\uD560 \uB3D9\uC791"),
+        projectRoot: external_exports3.string().describe("\uD504\uB85C\uC81D\uD2B8 \uB8E8\uD2B8 \uB514\uB809\uD1A0\uB9AC \uC808\uB300 \uACBD\uB85C"),
+        branchName: external_exports3.string().describe("normalize-branch / ensure-dir / checkpoint / cleanup \uC561\uC158\uC5D0\uC11C \uC0AC\uC6A9\uD560 \uBE0C\uB79C\uCE58\uBA85").optional(),
+        changedFilesCount: external_exports3.number().describe("elect-committee \uC561\uC158\uC5D0\uC11C \uC0AC\uC6A9\uD560 \uBCC0\uACBD \uD30C\uC77C \uC218").optional(),
+        changedFractalsCount: external_exports3.number().describe("elect-committee \uC561\uC158\uC5D0\uC11C \uC0AC\uC6A9\uD560 \uBCC0\uACBD \uD504\uB799\uD0C8 \uC218").optional(),
+        hasInterfaceChanges: external_exports3.boolean().describe("elect-committee \uC561\uC158\uC5D0\uC11C \uC0AC\uC6A9\uD560 \uC778\uD130\uD398\uC774\uC2A4 \uBCC0\uACBD \uC5EC\uBD80").optional()
+      })
+    },
+    async (args) => {
+      try {
+        const result = await handleReviewManage(args);
+        return toolResult(result);
+      } catch (error48) {
+        return toolError(error48);
+      }
+    }
+  );
+  server.registerTool(
+    "debt-manage",
+    {
+      description: "\uAE30\uC220 \uBD80\uCC44 \uD56D\uBAA9\uC744 \uAD00\uB9AC\uD55C\uB2E4. action='create': \uC0C8 \uBD80\uCC44 \uD56D\uBAA9\uC744 .filid/debt/<id>.md \uD30C\uC77C\uB85C \uC0DD\uC131. action='list': \uBD80\uCC44 \uBAA9\uB85D \uC870\uD68C (fractalPath\uB85C \uD544\uD130 \uAC00\uB2A5). action='resolve': \uBD80\uCC44 \uD56D\uBAA9 \uD30C\uC77C \uC0AD\uC81C(\uD574\uACB0 \uCC98\uB9AC). action='calculate-bias': \uBCC0\uACBD\uB41C \uD504\uB799\uD0C8 \uACBD\uB85C \uAE30\uBC18\uC73C\uB85C \uAC00\uC911\uCE58 \uC7AC\uACC4\uC0B0 \uBC0F \uBC14\uC774\uC5B4\uC2A4 \uC218\uC900 \uC0B0\uCD9C.",
+      inputSchema: external_exports3.object({
+        action: external_exports3.enum(["create", "list", "resolve", "calculate-bias"]).describe("\uC218\uD589\uD560 \uB3D9\uC791"),
+        projectRoot: external_exports3.string().describe("\uD504\uB85C\uC81D\uD2B8 \uB8E8\uD2B8 \uB514\uB809\uD1A0\uB9AC \uC808\uB300 \uACBD\uB85C"),
+        debtItem: external_exports3.object({
+          fractal_path: external_exports3.string(),
+          file_path: external_exports3.string(),
+          created_at: external_exports3.string(),
+          review_branch: external_exports3.string(),
+          original_fix_id: external_exports3.string(),
+          severity: external_exports3.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]),
+          rule_violated: external_exports3.string(),
+          metric_value: external_exports3.string(),
+          title: external_exports3.string(),
+          original_request: external_exports3.string(),
+          developer_justification: external_exports3.string(),
+          refined_adr: external_exports3.string()
+        }).describe("action='create'\uC77C \uB54C \uC0DD\uC131\uD560 \uBD80\uCC44 \uD56D\uBAA9").optional(),
+        fractalPath: external_exports3.string().describe("action='list'\uC77C \uB54C \uD544\uD130\uB9C1\uD560 \uD504\uB799\uD0C8 \uACBD\uB85C").optional(),
+        debtId: external_exports3.string().describe("action='resolve'\uC77C \uB54C \uC0AD\uC81C\uD560 \uBD80\uCC44 ID").optional(),
+        debts: external_exports3.array(
+          external_exports3.object({
+            id: external_exports3.string(),
+            fractal_path: external_exports3.string(),
+            file_path: external_exports3.string(),
+            created_at: external_exports3.string(),
+            review_branch: external_exports3.string(),
+            original_fix_id: external_exports3.string(),
+            severity: external_exports3.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]),
+            weight: external_exports3.number(),
+            touch_count: external_exports3.number(),
+            last_review_commit: external_exports3.string().nullable(),
+            rule_violated: external_exports3.string(),
+            metric_value: external_exports3.string(),
+            title: external_exports3.string(),
+            original_request: external_exports3.string(),
+            developer_justification: external_exports3.string(),
+            refined_adr: external_exports3.string()
+          })
+        ).describe("action='calculate-bias'\uC77C \uB54C \uD3C9\uAC00\uD560 \uBD80\uCC44 \uBAA9\uB85D").optional(),
+        changedFractalPaths: external_exports3.array(external_exports3.string()).describe("action='calculate-bias'\uC77C \uB54C \uBCC0\uACBD\uB41C \uD504\uB799\uD0C8 \uACBD\uB85C \uBAA9\uB85D").optional(),
+        currentCommitSha: external_exports3.string().describe("action='calculate-bias'\uC77C \uB54C \uD604\uC7AC \uCEE4\uBC0B SHA (\uBA71\uB4F1\uC131 \uBCF4\uD638)").optional()
+      })
+    },
+    async (args) => {
+      try {
+        const result = await handleDebtManage(args);
         return toolResult(result);
       } catch (error48) {
         return toolError(error48);
