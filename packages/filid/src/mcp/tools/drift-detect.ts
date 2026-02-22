@@ -17,12 +17,7 @@ export interface McpDriftReport {
   syncPlan?: SyncPlan;
 }
 
-const SEVERITY_ORDER: Record<DriftSeverity, number> = {
-  critical: 0,
-  high: 1,
-  medium: 2,
-  low: 3,
-};
+import { SEVERITY_ORDER } from '../../core/drift-detector.js';
 
 /**
  * Handle drift-detect MCP tool calls.

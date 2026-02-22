@@ -40,7 +40,7 @@ const RULE_TO_SEVERITY: Record<string, DriftSeverity> = {
   'naming-convention': 'low',
 };
 
-const SEVERITY_ORDER: Record<DriftSeverity, number> = {
+export const SEVERITY_ORDER: Record<DriftSeverity, number> = {
   critical: 0,
   high: 1,
   medium: 2,
