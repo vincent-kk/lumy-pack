@@ -39,7 +39,7 @@ describe('handleAstAnalyze', () => {
     });
 
     expect(result.imports).toBeDefined();
-    expect(result.imports.length).toBeGreaterThan(0);
+    expect((result.imports as unknown[]).length).toBeGreaterThan(0);
     expect(result.exports).toBeDefined();
     expect(result.calls).toBeDefined();
   });
@@ -83,7 +83,7 @@ describe('handleAstAnalyze', () => {
     });
 
     expect(result.hasSemanticChanges).toBe(true);
-    expect(result.changes.length).toBeGreaterThan(0);
+    expect((result.changes as unknown[]).length).toBeGreaterThan(0);
   });
 
   it('should run full analysis combining all types', () => {

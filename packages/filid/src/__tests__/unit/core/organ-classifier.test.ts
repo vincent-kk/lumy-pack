@@ -290,4 +290,71 @@ describe('organ-classifier', () => {
       ).toBe('fractal');
     });
   });
+
+  describe('classifyNode — hasIndex rule', () => {
+    it('should classify as fractal when hasIndex=true and not known organ name', () => {
+      expect(
+        classifyNode({
+          dirName: 'login',
+          hasClaudeMd: false,
+          hasSpecMd: false,
+          hasFractalChildren: false,
+          isLeafDirectory: true,
+          hasIndex: true,
+        }),
+      ).toBe('fractal');
+    });
+
+    it('should classify as organ when hasIndex=true but dirName is known organ (helpers)', () => {
+      expect(
+        classifyNode({
+          dirName: 'helpers',
+          hasClaudeMd: false,
+          hasSpecMd: false,
+          hasFractalChildren: false,
+          isLeafDirectory: true,
+          hasIndex: true,
+        }),
+      ).toBe('organ');
+    });
+
+    it('should classify as organ when hasIndex=true but dirName is infra pattern (__tests__)', () => {
+      expect(
+        classifyNode({
+          dirName: '__tests__',
+          hasClaudeMd: false,
+          hasSpecMd: false,
+          hasFractalChildren: false,
+          isLeafDirectory: true,
+          hasIndex: true,
+        }),
+      ).toBe('organ');
+    });
+
+    it('should classify as organ when hasIndex=false and leaf', () => {
+      expect(
+        classifyNode({
+          dirName: 'login',
+          hasClaudeMd: false,
+          hasSpecMd: false,
+          hasFractalChildren: false,
+          isLeafDirectory: true,
+          hasIndex: false,
+        }),
+      ).toBe('organ');
+    });
+
+    it('should classify as organ when hasIndex=undefined and leaf (fallback)', () => {
+      expect(
+        classifyNode({
+          dirName: 'login',
+          hasClaudeMd: false,
+          hasSpecMd: false,
+          hasFractalChildren: false,
+          isLeafDirectory: true,
+          // hasIndex 미전달 → undefined → false fallback
+        }),
+      ).toBe('organ');
+    });
+  });
 });

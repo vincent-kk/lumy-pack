@@ -8,14 +8,14 @@ describe('fractal-navigate tool', () => {
     {
       name: 'src',
       path: '/app/src',
-      type: 'directory',
+      type: 'fractal',
       hasClaudeMd: true,
       hasSpecMd: false,
     },
     {
       name: 'auth',
       path: '/app/src/auth',
-      type: 'directory',
+      type: 'fractal',
       hasClaudeMd: true,
       hasSpecMd: true,
     },
@@ -77,6 +77,68 @@ describe('fractal-navigate tool', () => {
       expect(result.tree).toBeDefined();
       expect(result.tree!.root).toBe('/app/src');
       expect(result.tree!.nodes.size).toBeGreaterThan(0);
+    });
+  });
+
+  describe('handleFractalNavigate — classify action (bug fix)', () => {
+    it('should classify as fractal when entry has fractal children', () => {
+      const result = handleFractalNavigate({
+        action: 'classify',
+        path: '/project/auth',
+        entries: [
+          {
+            path: '/project/auth',
+            name: 'auth',
+            type: 'fractal',
+            hasClaudeMd: false,
+            hasSpecMd: false,
+          },
+          {
+            path: '/project/auth/login',
+            name: 'login',
+            type: 'fractal',
+            hasClaudeMd: false,
+            hasSpecMd: false,
+            hasIndex: true,
+          },
+        ],
+      });
+      expect(result.classification).toBe('fractal');
+    });
+
+    it('should classify as organ when entry is leaf with no fractal children', () => {
+      const result = handleFractalNavigate({
+        action: 'classify',
+        path: '/project/auth/utils',
+        entries: [
+          {
+            path: '/project/auth/utils',
+            name: 'utils',
+            type: 'organ',
+            hasClaudeMd: false,
+            hasSpecMd: false,
+          },
+        ],
+      });
+      expect(result.classification).toBe('organ');
+    });
+
+    it('should classify as fractal when entry hasIndex=true and non-organ name', () => {
+      const result = handleFractalNavigate({
+        action: 'classify',
+        path: '/project/auth/login',
+        entries: [
+          {
+            path: '/project/auth/login',
+            name: 'login',
+            type: 'fractal',
+            hasClaudeMd: false,
+            hasSpecMd: false,
+            hasIndex: true,
+          },
+        ],
+      });
+      expect(result.classification).toBe('fractal');
     });
   });
 

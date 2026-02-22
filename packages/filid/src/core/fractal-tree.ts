@@ -236,7 +236,10 @@ export async function scanProject(
     const hasSpecMd = existsSync(join(absPath, 'SPEC.md'));
     const hasIndex =
       existsSync(join(absPath, 'index.ts')) ||
-      existsSync(join(absPath, 'index.js'));
+      existsSync(join(absPath, 'index.tsx')) ||
+      existsSync(join(absPath, 'index.js')) ||
+      existsSync(join(absPath, 'index.mjs')) ||
+      existsSync(join(absPath, 'index.cjs'));
     const hasMain =
       existsSync(join(absPath, 'main.ts')) ||
       existsSync(join(absPath, 'main.js'));
@@ -266,6 +269,7 @@ export async function scanProject(
       hasSpecMd,
       hasFractalChildren,
       isLeafDirectory,
+      hasIndex, // NEW: index 파일 여부 전달
     });
 
     nodeEntries.push({
@@ -277,6 +281,47 @@ export async function scanProject(
       hasIndex,
       hasMain,
     });
+  }
+
+  // Post-correction: bottom-up으로 실제 fractal 자손 기반 타입 재확정
+  // 목적: 단일 패스에서 잘못 계산된 hasFractalChildren을 수정
+  const typeMap = new Map<string, string>(
+    nodeEntries.map((e) => [e.path, e.type]),
+  );
+
+  // 깊이 역순 정렬 (deepest first = bottom-up)
+  const sortedByDepth = [...nodeEntries].sort(
+    (a, b) => b.path.split('/').length - a.path.split('/').length,
+  );
+
+  for (const entry of sortedByDepth) {
+    const immediateChildren = nodeEntries.filter(
+      (other) =>
+        other.path !== entry.path &&
+        other.path.startsWith(entry.path + '/') &&
+        other.path.replace(entry.path + '/', '').indexOf('/') === -1,
+    );
+
+    const hasFractalChildrenActual = immediateChildren.some(
+      (child) =>
+        typeMap.get(child.path) === 'fractal' ||
+        typeMap.get(child.path) === 'pure-function',
+    );
+    const isLeafActual = immediateChildren.length === 0;
+
+    const newType = classifyNode({
+      dirName: entry.name,
+      hasClaudeMd: entry.hasClaudeMd,
+      hasSpecMd: entry.hasSpecMd,
+      hasFractalChildren: hasFractalChildrenActual,
+      isLeafDirectory: isLeafActual,
+      hasIndex: entry.hasIndex ?? false,
+    });
+
+    if (newType !== entry.type) {
+      entry.type = newType;
+      typeMap.set(entry.path, newType);
+    }
   }
 
   return buildFractalTree(nodeEntries);

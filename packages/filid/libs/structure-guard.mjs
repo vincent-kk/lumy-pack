@@ -35,6 +35,8 @@ function classifyNode(input) {
   if (input.hasSpecMd) return "fractal";
   if (isInfraOrgDirectoryByPattern(input.dirName)) return "organ";
   if (KNOWN_ORGAN_DIR_NAMES.includes(input.dirName)) return "organ";
+  if ((input.hasIndex ?? false) && !KNOWN_ORGAN_DIR_NAMES.includes(input.dirName) && !isInfraOrgDirectoryByPattern(input.dirName))
+    return "fractal";
   if (!input.hasFractalChildren && input.isLeafDirectory) return "organ";
   const hasSideEffects = input.hasSideEffects ?? true;
   if (!hasSideEffects) return "pure-function";

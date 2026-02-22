@@ -51111,6 +51111,8 @@ function classifyNode(input) {
   if (input.hasSpecMd) return "fractal";
   if (isInfraOrgDirectoryByPattern(input.dirName)) return "organ";
   if (KNOWN_ORGAN_DIR_NAMES.includes(input.dirName)) return "organ";
+  if ((input.hasIndex ?? false) && !KNOWN_ORGAN_DIR_NAMES.includes(input.dirName) && !isInfraOrgDirectoryByPattern(input.dirName))
+    return "fractal";
   if (!input.hasFractalChildren && input.isLeafDirectory) return "organ";
   const hasSideEffects = input.hasSideEffects ?? true;
   if (!hasSideEffects) return "pure-function";
@@ -51235,7 +51237,7 @@ async function scanProject(rootPath, options) {
     const name = absPath === rootPath ? rootPath.split("/").pop() ?? "" : absPath.split("/").pop() ?? "";
     const hasClaudeMd = (0, import_node_fs.existsSync)((0, import_node_path2.join)(absPath, "CLAUDE.md"));
     const hasSpecMd = (0, import_node_fs.existsSync)((0, import_node_path2.join)(absPath, "SPEC.md"));
-    const hasIndex = (0, import_node_fs.existsSync)((0, import_node_path2.join)(absPath, "index.ts")) || (0, import_node_fs.existsSync)((0, import_node_path2.join)(absPath, "index.js"));
+    const hasIndex = (0, import_node_fs.existsSync)((0, import_node_path2.join)(absPath, "index.ts")) || (0, import_node_fs.existsSync)((0, import_node_path2.join)(absPath, "index.tsx")) || (0, import_node_fs.existsSync)((0, import_node_path2.join)(absPath, "index.js")) || (0, import_node_fs.existsSync)((0, import_node_path2.join)(absPath, "index.mjs")) || (0, import_node_fs.existsSync)((0, import_node_path2.join)(absPath, "index.cjs"));
     const hasMain = (0, import_node_fs.existsSync)((0, import_node_path2.join)(absPath, "main.ts")) || (0, import_node_fs.existsSync)((0, import_node_path2.join)(absPath, "main.js"));
     const hasFractalChildren = allDirs.some(
       (d) => d !== absPath && d.startsWith(absPath + "/") && d.replace(absPath + "/", "").indexOf("/") === -1 && dirSet.has(d)
@@ -51248,7 +51250,9 @@ async function scanProject(rootPath, options) {
       hasClaudeMd,
       hasSpecMd,
       hasFractalChildren,
-      isLeafDirectory
+      isLeafDirectory,
+      hasIndex
+      // NEW: index 파일 여부 전달
     });
     nodeEntries.push({
       path: absPath,
@@ -51259,6 +51263,31 @@ async function scanProject(rootPath, options) {
       hasIndex,
       hasMain
     });
+  }
+  const typeMap = new Map(nodeEntries.map((e) => [e.path, e.type]));
+  const sortedByDepth = [...nodeEntries].sort(
+    (a, b) => b.path.split("/").length - a.path.split("/").length
+  );
+  for (const entry of sortedByDepth) {
+    const immediateChildren = nodeEntries.filter(
+      (other) => other.path !== entry.path && other.path.startsWith(entry.path + "/") && other.path.replace(entry.path + "/", "").indexOf("/") === -1
+    );
+    const hasFractalChildrenActual = immediateChildren.some(
+      (child) => typeMap.get(child.path) === "fractal" || typeMap.get(child.path) === "pure-function"
+    );
+    const isLeafActual = immediateChildren.length === 0;
+    const newType = classifyNode({
+      dirName: entry.name,
+      hasClaudeMd: entry.hasClaudeMd,
+      hasSpecMd: entry.hasSpecMd,
+      hasFractalChildren: hasFractalChildrenActual,
+      isLeafDirectory: isLeafActual,
+      hasIndex: entry.hasIndex ?? false
+    });
+    if (newType !== entry.type) {
+      entry.type = newType;
+      typeMap.set(entry.path, newType);
+    }
   }
   return buildFractalTree(nodeEntries);
 }
@@ -51606,12 +51635,21 @@ function handleClassify(input) {
   const dirName = input.path.split("/").filter((s) => s.length > 0).pop() ?? "";
   const hasClaudeMd = entry?.hasClaudeMd ?? false;
   const hasSpecMd = entry?.hasSpecMd ?? false;
+  const hasIndex = entry?.hasIndex ?? false;
+  const immediateChildren = input.entries.filter(
+    (e) => e.path !== input.path && e.path.startsWith(input.path + "/") && e.path.replace(input.path + "/", "").indexOf("/") === -1
+  );
+  const hasFractalChildren = immediateChildren.some(
+    (c) => c.type === "fractal" || c.type === "pure-function"
+  );
+  const isLeafDirectory = immediateChildren.length === 0;
   const classifyInput = {
     dirName,
     hasClaudeMd,
     hasSpecMd,
-    hasFractalChildren: false,
-    isLeafDirectory: true
+    hasFractalChildren,
+    isLeafDirectory,
+    hasIndex
   };
   const result = classifyNode(classifyInput);
   return { classification: result };

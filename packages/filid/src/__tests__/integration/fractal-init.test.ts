@@ -167,4 +167,149 @@ describe('fractal-init pipeline', () => {
       expect(utils.hasClaudeMd).toBe(false);
     }
   });
+
+  describe('post-correction loop — hasIndex nested fractal detection', () => {
+    it('fractal → organ → fractal: organ 내부 hasIndex=true 디렉토리는 fractal로 분류', () => {
+      // auth(fractal) → helpers(organ) → login(hasIndex=true) → fractal
+      const nestedEntries = [
+        {
+          name: 'auth',
+          path: '/project2/auth',
+          type: 'fractal' as const,
+          hasClaudeMd: true,
+          hasSpecMd: false,
+        },
+        {
+          name: 'helpers',
+          path: '/project2/auth/helpers',
+          type: 'organ' as const,
+          hasClaudeMd: false,
+          hasSpecMd: false,
+        },
+        {
+          name: 'login',
+          path: '/project2/auth/helpers/login',
+          type: 'fractal' as const,
+          hasClaudeMd: false,
+          hasSpecMd: false,
+          hasIndex: true,
+        },
+      ];
+
+      const tree = buildFractalTree(nestedEntries);
+      const login = tree.nodes.get('/project2/auth/helpers/login');
+      expect(login).toBeDefined();
+      expect(login!.type).toBe('fractal');
+    });
+
+    it('fractal → organ → organ → fractal: 깊은 중첩에서 hasIndex=true 디렉토리는 fractal로 분류', () => {
+      const deepEntries = [
+        {
+          name: 'auth',
+          path: '/project3/auth',
+          type: 'fractal' as const,
+          hasClaudeMd: true,
+          hasSpecMd: false,
+        },
+        {
+          name: 'helpers',
+          path: '/project3/auth/helpers',
+          type: 'organ' as const,
+          hasClaudeMd: false,
+          hasSpecMd: false,
+        },
+        {
+          name: 'impl',
+          path: '/project3/auth/helpers/impl',
+          type: 'organ' as const,
+          hasClaudeMd: false,
+          hasSpecMd: false,
+        },
+        {
+          name: 'login',
+          path: '/project3/auth/helpers/impl/login',
+          type: 'fractal' as const,
+          hasClaudeMd: false,
+          hasSpecMd: false,
+          hasIndex: true,
+        },
+      ];
+
+      const tree = buildFractalTree(deepEntries);
+      const login = tree.nodes.get('/project3/auth/helpers/impl/login');
+      expect(login).toBeDefined();
+      expect(login!.type).toBe('fractal');
+    });
+
+    it('organ 내부 non-fractal 디렉토리: 자손에 fractal 없고 hasIndex=false → organ 유지', () => {
+      const organOnlyEntries = [
+        {
+          name: 'auth',
+          path: '/project4/auth',
+          type: 'fractal' as const,
+          hasClaudeMd: true,
+          hasSpecMd: false,
+        },
+        {
+          name: 'utils',
+          path: '/project4/auth/utils',
+          type: 'organ' as const,
+          hasClaudeMd: false,
+          hasSpecMd: false,
+        },
+        {
+          name: 'string-helpers',
+          path: '/project4/auth/utils/string-helpers',
+          type: 'organ' as const,
+          hasClaudeMd: false,
+          hasSpecMd: false,
+          hasIndex: false,
+        },
+      ];
+
+      const tree = buildFractalTree(organOnlyEntries);
+      const stringHelpers = tree.nodes.get(
+        '/project4/auth/utils/string-helpers',
+      );
+      expect(stringHelpers).toBeDefined();
+      expect(stringHelpers!.type).toBe('organ');
+    });
+
+    it('깊은 중첩 CLAUDE.md 생성 대상에 nested fractal 포함 확인', () => {
+      // hasIndex=true leaf가 fractal이면, getDescendants가 이를 포함해야 함
+      const mixedEntries = [
+        {
+          name: 'root',
+          path: '/project5',
+          type: 'fractal' as const,
+          hasClaudeMd: true,
+          hasSpecMd: false,
+        },
+        {
+          name: 'feature',
+          path: '/project5/feature',
+          type: 'fractal' as const,
+          hasClaudeMd: false,
+          hasSpecMd: false,
+          hasIndex: true,
+        },
+        {
+          name: 'sub',
+          path: '/project5/feature/sub',
+          type: 'fractal' as const,
+          hasClaudeMd: false,
+          hasSpecMd: false,
+          hasIndex: true,
+        },
+      ];
+
+      const tree = buildFractalTree(mixedEntries);
+      const descendants = getDescendants(tree, '/project5');
+      // feature와 sub 모두 fractal descendants로 포함되어야 함
+      expect(descendants.length).toBeGreaterThanOrEqual(2);
+      const paths = descendants.map((d) => d.path);
+      expect(paths).toContain('/project5/feature');
+      expect(paths).toContain('/project5/feature/sub');
+    });
+  });
 });

@@ -43,6 +43,8 @@ export interface ClassifyInput {
   isLeafDirectory: boolean;
   /** Whether side effects exist (defaults to true if unspecified) */
   hasSideEffects?: boolean;
+  /** index.ts/js/mjs/cjs 파일 존재 여부. 존재 시 fractal 모듈 진입점으로 간주 */
+  hasIndex?: boolean;
 }
 
 /**
@@ -76,6 +78,13 @@ export function classifyNode(input: ClassifyInput): CategoryType {
   if (input.hasSpecMd) return 'fractal';
   if (isInfraOrgDirectoryByPattern(input.dirName)) return 'organ';
   if (KNOWN_ORGAN_DIR_NAMES.includes(input.dirName)) return 'organ';
+  // NEW: index 파일이 있는 non-organ, non-infra 디렉토리 = 프렉탈 모듈 진입점
+  if (
+    (input.hasIndex ?? false) &&
+    !KNOWN_ORGAN_DIR_NAMES.includes(input.dirName) &&
+    !isInfraOrgDirectoryByPattern(input.dirName)
+  )
+    return 'fractal';
   if (!input.hasFractalChildren && input.isLeafDirectory) return 'organ';
   const hasSideEffects = input.hasSideEffects ?? true;
   if (!hasSideEffects) return 'pure-function';
