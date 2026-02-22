@@ -1,7 +1,7 @@
 ---
 name: fca-review
 user_invocable: true
-description: Multi-persona consensus-based code review governance. Delegates analysis (Phase A) and verification (Phase B) to subagents, then executes political consensus (Phase C) directly as chairperson using a state machine with up to 5 deliberation rounds.
+description: Multi-persona consensus-based code review governance. Delegates structure check (Phase A), analysis (Phase B), and verification (Phase C) to subagents, then executes political consensus (Phase D) directly as chairperson using a state machine with up to 5 deliberation rounds.
 version: 1.0.0
 complexity: complex
 ---
@@ -9,12 +9,13 @@ complexity: complex
 # fca-review — AI Code Review Governance
 
 Execute the multi-persona consensus-based code review governance pipeline.
-The chairperson delegates Phase A (analysis) and Phase B (verification) to
-subagents, then directly conducts Phase C (political consensus) using elected
-committee personas and a state machine.
+The chairperson delegates Phase A (structure check), Phase B (analysis &
+committee election), and Phase C (technical verification) to subagents, then
+directly conducts Phase D (political consensus) using elected committee personas
+and a state machine.
 
 > **References**: `state-machine.md` (deliberation rules), `reference.md`
-> (output templates, MCP tool map), `personas/*.md` (loaded in Phase C only).
+> (output templates, MCP tool map), `personas/*.md` (loaded in Phase D only).
 
 ## When to Use
 
