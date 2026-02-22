@@ -1,39 +1,33 @@
 /**
- * TypeScript/JavaScript source parser using TypeScript Compiler API
+ * Shared AST utilities using @babel/parser (TypeScript-capable, pure JS, bundleable).
  */
 import { readFileSync } from 'node:fs';
 
-import ts from 'typescript';
+import { parse } from '@babel/parser';
 
-/**
- * Parse source code string into a TypeScript SourceFile AST.
- * @param source - The source code to parse
- * @param filePath - Virtual file path (determines JS vs TS parsing)
- */
-export function parseSource(
-  source: string,
-  filePath: string = 'anonymous.ts',
-): ts.SourceFile {
-  const scriptKind =
-    filePath.endsWith('.js') || filePath.endsWith('.mjs')
-      ? ts.ScriptKind.JS
-      : ts.ScriptKind.TS;
-
-  return ts.createSourceFile(
-    filePath,
-    source,
-    ts.ScriptTarget.Latest,
-    /* setParentNodes */ true,
-    scriptKind,
-  );
+export function parseSource(source: string) {
+  return parse(source, {
+    sourceType: 'module',
+    plugins: ['typescript'],
+    errorRecovery: true,
+  });
 }
 
-/**
- * Parse a file from disk into a TypeScript SourceFile AST.
- * @param filePath - Absolute path to the file
- * @throws Error if the file does not exist
- */
-export function parseFile(filePath: string): ts.SourceFile {
+export function parseFile(filePath: string) {
   const source = readFileSync(filePath, 'utf-8');
-  return parseSource(source, filePath);
+  return parseSource(source);
+}
+
+/** Recursive AST node visitor */
+export function walk(node: any, fn: (n: any) => void): void {
+  if (!node || typeof node !== 'object') return;
+  if (node.type) fn(node);
+  for (const key of Object.keys(node)) {
+    const val = node[key];
+    if (Array.isArray(val)) {
+      for (const item of val) walk(item, fn);
+    } else if (val && typeof val === 'object' && val.type) {
+      walk(val, fn);
+    }
+  }
 }

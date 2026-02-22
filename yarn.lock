@@ -1036,6 +1036,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@lumy-pack/filid@workspace:packages/filid"
   dependencies:
+    "@babel/parser": "npm:^7.29.0"
     "@modelcontextprotocol/sdk": "npm:^1.26.0"
     "@types/node": "npm:^20.11.0"
     "@vitest/coverage-v8": "npm:^3.2.4"

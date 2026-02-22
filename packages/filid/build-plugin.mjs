@@ -29,7 +29,7 @@ await build({
   target: 'node20',
   format: 'cjs',
   outfile: resolve(__dirname, 'libs/server.cjs'),
-  external: ['typescript'],
+  external: [],
   minify: false,
   sourcemap: false,
 });

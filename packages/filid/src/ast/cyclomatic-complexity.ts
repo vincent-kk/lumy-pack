@@ -1,122 +1,95 @@
 /**
- * Cyclomatic Complexity (CC) calculator using TypeScript Compiler API.
+ * Cyclomatic Complexity (CC) calculator using @babel/parser.
  *
  * CC = 1 (base) + number of decision points per function.
  * Decision points: if, for, while, do-while, case (non-default),
  * conditional (?:), && and ||.
  */
-import ts from 'typescript';
-
 import type { CyclomaticComplexityResult } from '../types/metrics.js';
 
-import { parseSource } from './parser.js';
+import { parseSource, walk } from './parser.js';
 
-/**
- * Calculate cyclomatic complexity for all functions in source code.
- */
+function computeCC(body: any): number {
+  let cc = 1;
+  walk(body, (node) => {
+    switch (node.type) {
+      case 'IfStatement':
+      case 'ForStatement':
+      case 'ForInStatement':
+      case 'ForOfStatement':
+      case 'WhileStatement':
+      case 'DoWhileStatement':
+      case 'ConditionalExpression':
+        cc++;
+        break;
+      case 'SwitchCase':
+        if (node.test !== null) cc++; // non-default case
+        break;
+      case 'LogicalExpression':
+        if (node.operator === '&&' || node.operator === '||') cc++;
+        break;
+    }
+  });
+  return cc;
+}
+
 export function calculateCC(
   source: string,
-  filePath: string = 'analysis.ts',
+  _filePath = 'analysis.ts',
 ): CyclomaticComplexityResult {
-  const sourceFile = parseSource(source, filePath);
+  const ast = parseSource(source);
   const perFunction = new Map<string, number>();
 
-  function visitRoot(node: ts.Node): void {
-    // Function declarations
-    if (ts.isFunctionDeclaration(node) && node.name && node.body) {
-      perFunction.set(node.name.text, computeCC(node.body));
+  for (const stmt of ast.program.body) {
+    // function foo() {}
+    if (stmt.type === 'FunctionDeclaration' && stmt.id && stmt.body) {
+      perFunction.set(stmt.id.name, computeCC(stmt.body));
     }
 
-    // Variable declarations with arrow functions: const fn = (...) => { ... }
-    if (ts.isVariableStatement(node)) {
-      for (const decl of node.declarationList.declarations) {
-        if (
-          ts.isIdentifier(decl.name) &&
-          decl.initializer &&
-          ts.isArrowFunction(decl.initializer) &&
-          decl.initializer.body
-        ) {
-          const body = ts.isBlock(decl.initializer.body)
-            ? decl.initializer.body
-            : decl.initializer.body;
-          perFunction.set(decl.name.text, computeCC(body));
+    // const foo = () => {} or const foo = function() {}
+    if (stmt.type === 'VariableDeclaration') {
+      for (const decl of stmt.declarations) {
+        if (decl.id?.type === 'Identifier' && decl.init) {
+          const init = decl.init;
+          if (
+            (init.type === 'ArrowFunctionExpression' ||
+              init.type === 'FunctionExpression') &&
+            init.body
+          ) {
+            perFunction.set(decl.id.name, computeCC(init.body));
+          }
         }
       }
     }
 
-    // Class declarations — extract method CCs
-    if (ts.isClassDeclaration(node)) {
-      for (const member of node.members) {
+    // class Foo { method() {} }
+    const classNode =
+      stmt.type === 'ClassDeclaration'
+        ? stmt
+        : stmt.type === 'ExportNamedDeclaration' &&
+            stmt.declaration?.type === 'ClassDeclaration'
+          ? stmt.declaration
+          : null;
+
+    if (classNode?.body) {
+      for (const member of classNode.body.body) {
         if (
-          ts.isMethodDeclaration(member) &&
-          member.name &&
-          ts.isIdentifier(member.name) &&
+          member.type === 'ClassMethod' &&
+          member.key?.type === 'Identifier' &&
           member.body
         ) {
-          perFunction.set(member.name.text, computeCC(member.body));
+          perFunction.set(member.key.name, computeCC(member.body));
         }
       }
     }
-
-    ts.forEachChild(node, visitRoot);
   }
 
-  // Only visit top-level statements (don't recurse into nested functions twice)
-  for (const statement of sourceFile.statements) {
-    visitRoot(statement);
+  if (perFunction.size === 0) {
+    perFunction.set('(file)', 1);
   }
 
   let fileTotal = 0;
-  for (const cc of perFunction.values()) {
-    fileTotal += cc;
-  }
+  for (const cc of perFunction.values()) fileTotal += cc;
 
-  return {
-    value: fileTotal,
-    perFunction,
-    fileTotal,
-  };
-}
-
-/**
- * Compute CC for a function/method body node.
- * Starts at 1 (base complexity) and increments for each decision point.
- */
-function computeCC(body: ts.Node): number {
-  let cc = 1;
-
-  function visit(node: ts.Node): void {
-    switch (node.kind) {
-      case ts.SyntaxKind.IfStatement:
-      case ts.SyntaxKind.ForStatement:
-      case ts.SyntaxKind.ForInStatement:
-      case ts.SyntaxKind.ForOfStatement:
-      case ts.SyntaxKind.WhileStatement:
-      case ts.SyntaxKind.DoStatement:
-      case ts.SyntaxKind.ConditionalExpression: // ternary
-        cc++;
-        break;
-
-      case ts.SyntaxKind.CaseClause:
-        // Count non-default case clauses
-        cc++;
-        break;
-
-      case ts.SyntaxKind.BinaryExpression: {
-        const binary = node as ts.BinaryExpression;
-        if (
-          binary.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken ||
-          binary.operatorToken.kind === ts.SyntaxKind.BarBarToken
-        ) {
-          cc++;
-        }
-        break;
-      }
-    }
-
-    ts.forEachChild(node, visit);
-  }
-
-  visit(body);
-  return cc;
+  return { value: fileTotal, perFunction, fileTotal };
 }
