@@ -59,6 +59,8 @@ See [reference.md Section 5](./reference.md#section-5--validation-and-report-for
 
 ## Options
 
+> Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well.
+
 ```
 /filid:init [path]
 ```

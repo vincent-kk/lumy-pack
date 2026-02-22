@@ -56,6 +56,8 @@ See [reference.md Section 5](./reference.md#section-5--3-prompt-limit-protocol).
 
 ## Options
 
+> Options are LLM-interpreted hints, not strict CLI flags. Just ask your question naturally.
+
 ```
 /filid:context-query <question>
 ```

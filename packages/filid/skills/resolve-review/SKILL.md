@@ -99,6 +99,8 @@ Delta baseline). See `reference.md` for the full output template.
 
 ## Options
 
+> Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well.
+
 ```
 /filid:resolve-review
 ```

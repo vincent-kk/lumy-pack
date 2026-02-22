@@ -77,6 +77,8 @@ When `--scope=pr`: check `gh auth status` (Bash), if authenticated post
 
 ## Options
 
+> Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well (e.g., "review this PR" instead of `--scope=pr`).
+
 ```
 /filid:code-review [--scope=branch|pr|commit] [--base=<ref>] [--force] [--verbose]
 ```

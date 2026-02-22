@@ -59,6 +59,8 @@ See [reference.md Section 5](./reference.md#section-5--validation-and-migration)
 
 ## Options
 
+> Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well (e.g., "60일 기준으로 해줘" instead of `--days=60`).
+
 ```
 /filid:promote [path] [--days=90]
 ```

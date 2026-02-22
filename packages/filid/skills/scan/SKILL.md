@@ -57,6 +57,8 @@ See [reference.md Section 5](./reference.md#section-5--report-formats).
 
 ## Options
 
+> Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well (e.g., "고칠 수 있는 건 고쳐줘" instead of `--fix`).
+
 ```
 /filid:scan [path] [--fix]
 ```

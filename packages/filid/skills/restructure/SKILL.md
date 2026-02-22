@@ -60,6 +60,8 @@ See [reference.md Section 4](./reference.md#section-4--validation).
 
 ## Options
 
+> Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well (e.g., "바뀌는 것만 보여줘" instead of `--dry-run`).
+
 ```
 /filid:restructure [path] [--dry-run] [--auto-approve]
 ```

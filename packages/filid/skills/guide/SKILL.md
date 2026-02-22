@@ -55,6 +55,8 @@ See [reference.md Section 4](./reference.md#section-4--guide-document-output).
 
 ## Options
 
+> Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well.
+
 ```
 /filid:guide [path]
 ```

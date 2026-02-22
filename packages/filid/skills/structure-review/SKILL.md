@@ -61,6 +61,8 @@ See [reference.md Section 6](./reference.md#section-6--summary-report-format).
 
 ## Options
 
+> Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well (e.g., "3단계만 해줘" instead of `--stage=3`).
+
 ```
 /filid:structure-review [--stage=1-6] [--verbose]
 ```

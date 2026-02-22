@@ -60,6 +60,8 @@ See [reference.md Section 4](./reference.md#section-4--correction-execution).
 
 ## Options
 
+> Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well (e.g., "critical만 처리해줘" instead of `--severity critical`).
+
 ```
 /filid:sync [path] [--severity critical|high|medium|low] [--dry-run] [--auto-approve]
 ```

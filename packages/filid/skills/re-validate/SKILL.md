@@ -105,6 +105,8 @@ Post verdict to PR if GitHub CLI is available:
 
 ## Options
 
+> Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well.
+
 ```
 /filid:re-validate
 ```
