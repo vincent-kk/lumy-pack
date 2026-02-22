@@ -74,18 +74,20 @@ CLAUDE.md 100줄 초과, 3-tier 경계 섹션 누락, organ 디렉토리 내 CLA
 
 코드 변경으로 인한 구조적 drift를 감지하고, 해당 모듈의 CLAUDE.md/SPEC.md를 갱신합니다. 내부적으로 `drift-detect` MCP 도구를 사용합니다.
 
-### PR 올리기 전 구조 검증
+### 전체 프로젝트 구조 점검
 
 ```
 /filid:fca-structure-review
 /filid:fca-structure-review 3단계만 실행해줘
 ```
 
-경계 검사 → 문서 검증 → 의존성 분석 → 테스트 메트릭 → 복잡도 평가 → 최종 판정 순서로 진행됩니다.
+**전체 프로젝트**를 대상으로 6단계 구조 검증을 실행합니다: 경계 검사 → 문서 검증 → 의존성 분석 → 테스트 메트릭 → 복잡도 평가 → 최종 판정.
 
-### AI 코드 리뷰
+> 주기적인 구조 건강 점검이나 대규모 리팩토링 전후에 사용하세요. PR마다 매번 실행하면 비용이 크게 증가합니다.
 
-가장 강력한 기능입니다. 다중 페르소나 합의체가 3단계로 코드를 리뷰합니다.
+### AI 코드 리뷰 (PR 단위)
+
+가장 강력한 기능입니다. 다중 페르소나 합의체가 **이번 PR에서 변경된 파일만** 대상으로 리뷰합니다.
 
 ```
 # 현재 브랜치 리뷰
@@ -106,11 +108,15 @@ CLAUDE.md 100줄 초과, 3-tier 경계 섹션 누락, organ 디렉토리 내 CLA
 
 **흐름:**
 
-1. **`/filid:fca-review`** — 위원회 선출 → 기술 검증 → 합의 → 리뷰 보고서 생성
+1. **`/filid:fca-review`** — 구조 검사(diff) → 위원회 선출 → 기술 검증 → 합의 → 리뷰 보고서 생성
 2. **`/filid:fca-resolve`** — 각 수정 요청에 대해 수용 또는 거부(사유 입력) 선택
 3. **`/filid:fca-revalidate`** — 수정 사항 반영 후 PASS/FAIL 최종 판정
 
 산출물은 `.filid/review/<branch>/`에, 기술 부채는 `.filid/debt/`에 저장됩니다.
+
+> **`fca-structure-review` vs `fca-review` 요약:**
+> - `fca-structure-review` — 전체 프로젝트 스캔 (주기적 점검용)
+> - `fca-review` — 변경된 파일만 검사 + 다중 페르소나 리뷰 (PR마다 사용)
 
 ### FCA-AI가 뭔지 잘 모르겠을 때
 
@@ -146,19 +152,19 @@ CLAUDE.md 100줄 초과, 3-tier 경계 섹션 누락, organ 디렉토리 내 CLA
 
 ## 전체 스킬 목록
 
-| 스킬                      | 설명                                     |
-| ------------------------- | ---------------------------------------- |
-| `/filid:fca-init`             | 프로젝트 FCA-AI 초기화                   |
-| `/filid:fca-scan`             | 규칙 위반 검출 (자동 수정 가능)          |
-| `/filid:fca-sync`             | 코드-문서 동기화                         |
-| `/filid:fca-structure-review` | PR 구조 검증 (6단계)                     |
-| `/filid:fca-promote`          | 안정된 테스트를 spec으로 승격            |
-| `/filid:fca-context-query`    | 구조 관련 질의응답                       |
-| `/filid:fca-guide`            | FCA-AI 가이드                            |
-| `/filid:fca-restructure`      | 모듈 리팩토링 가이드 + 마이그레이션 단계 |
-| `/filid:fca-review`           | 다중 페르소나 거버넌스 코드 리뷰         |
-| `/filid:fca-resolve`          | 수정 요청 해결                           |
-| `/filid:fca-revalidate`       | 수정 후 재검증 (PASS/FAIL)               |
+| 스킬                          | 범위            | 설명                                               |
+| ----------------------------- | --------------- | -------------------------------------------------- |
+| `/filid:fca-init`             | —               | 프로젝트 FCA-AI 초기화                             |
+| `/filid:fca-scan`             | 전체 프로젝트   | 규칙 위반 검출 (자동 수정 가능)                    |
+| `/filid:fca-sync`             | 전체 프로젝트   | 코드-문서 동기화                                   |
+| `/filid:fca-structure-review` | **전체 프로젝트** | 구조 건강 점검 (6단계) — 주기적 점검 / 리팩토링 전후 |
+| `/filid:fca-promote`          | —               | 안정된 테스트를 spec으로 승격                      |
+| `/filid:fca-context-query`    | —               | 구조 관련 질의응답                                 |
+| `/filid:fca-guide`            | —               | FCA-AI 가이드                                      |
+| `/filid:fca-restructure`      | —               | 모듈 리팩토링 가이드 + 마이그레이션 단계           |
+| `/filid:fca-review`           | **변경 파일만** | 다중 페르소나 거버넌스 코드 리뷰 — PR마다 사용     |
+| `/filid:fca-resolve`          | —               | 수정 요청 해결                                     |
+| `/filid:fca-revalidate`       | —               | 수정 후 재검증 (PASS/FAIL)                         |
 
 ---
 

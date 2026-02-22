@@ -74,18 +74,20 @@ Detects CLAUDE.md exceeding 100 lines, missing boundary sections, CLAUDE.md in o
 
 Detects structural drift and updates the affected CLAUDE.md/SPEC.md files. Uses `drift-detect` MCP tool internally.
 
-### Verify Structure Before a PR
+### Full Project Structure Check
 
 ```
 /filid:fca-structure-review
 /filid:fca-structure-review 3단계만 실행해줘
 ```
 
-Runs 6 stages: boundary check -> document validation -> dependency analysis -> test metrics -> complexity assessment -> final verdict.
+Scans the **entire project** across 6 stages: boundary check → document validation → dependency analysis → test metrics → complexity assessment → final verdict.
 
-### AI Code Review
+> Use for periodic structural health checks or before/after large refactors. Running this on every PR is expensive — use `fca-review` instead.
 
-The most powerful feature. A multi-persona consensus committee reviews code in three phases.
+### AI Code Review (per PR)
+
+The most powerful feature. A multi-persona consensus committee reviews only the **files changed in this PR**.
 
 ```
 # Review current branch
@@ -106,11 +108,15 @@ The most powerful feature. A multi-persona consensus committee reviews code in t
 
 **Flow:**
 
-1. **`/filid:fca-review`** — Committee election -> technical verification -> consensus -> review report
+1. **`/filid:fca-review`** — Structure check (diff) → committee election → technical verification → consensus → review report
 2. **`/filid:fca-resolve`** — Accept or reject each fix request (with justification for rejections)
 3. **`/filid:fca-revalidate`** — Final PASS/FAIL verdict after fixes
 
 Outputs go to `.filid/review/<branch>/`, technical debt to `.filid/debt/`.
+
+> **`fca-structure-review` vs `fca-review` at a glance:**
+> - `fca-structure-review` — full project scan (periodic health check)
+> - `fca-review` — changed files only + multi-persona review (use on every PR)
 
 ### Learn About FCA-AI
 
@@ -146,19 +152,19 @@ When a block occurs, a message explaining the reason is displayed. No action nee
 
 ## Skills Reference
 
-| Skill                     | What it does                                    |
-| ------------------------- | ----------------------------------------------- |
-| `/filid:fca-init`             | Initialize FCA-AI in a project                  |
-| `/filid:fca-scan`             | Detect rule violations (with optional auto-fix) |
-| `/filid:fca-sync`             | Sync documentation with code changes            |
-| `/filid:fca-structure-review` | 6-stage PR structure verification               |
-| `/filid:fca-promote`          | Promote stable tests to spec                    |
-| `/filid:fca-context-query`    | Q&A about project structure                     |
-| `/filid:fca-guide`            | FCA-AI guidance on any topic                    |
-| `/filid:fca-restructure`      | Module refactoring guide with migration steps   |
-| `/filid:fca-review`           | Multi-persona governance code review            |
-| `/filid:fca-resolve`          | Resolve fix requests from a review              |
-| `/filid:fca-revalidate`       | Post-fix re-validation (PASS/FAIL)              |
+| Skill                         | Scope               | What it does                                                     |
+| ----------------------------- | ------------------- | ---------------------------------------------------------------- |
+| `/filid:fca-init`             | —                   | Initialize FCA-AI in a project                                   |
+| `/filid:fca-scan`             | Full project        | Detect rule violations (with optional auto-fix)                  |
+| `/filid:fca-sync`             | Full project        | Sync documentation with code changes                             |
+| `/filid:fca-structure-review` | **Full project**    | 6-stage structural health check — periodic or pre-refactor       |
+| `/filid:fca-promote`          | —                   | Promote stable tests to spec                                     |
+| `/filid:fca-context-query`    | —                   | Q&A about project structure                                      |
+| `/filid:fca-guide`            | —                   | FCA-AI guidance on any topic                                     |
+| `/filid:fca-restructure`      | —                   | Module refactoring guide with migration steps                    |
+| `/filid:fca-review`           | **Changed files**   | Multi-persona governance code review — use on every PR           |
+| `/filid:fca-resolve`          | —                   | Resolve fix requests from a review                               |
+| `/filid:fca-revalidate`       | —                   | Post-fix re-validation (PASS/FAIL)                               |
 
 ---
 
