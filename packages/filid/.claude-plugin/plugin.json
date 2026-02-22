@@ -6,6 +6,7 @@
     "name": "Vincent K. Kelvin"
   },
   "repository": "https://github.com/vincent-kk/lumy-pack",
+  "homepage": "https://github.com/vincent-kk/lumy-pack/tree/main/packages/filid",
   "license": "MIT",
   "keywords": [
     "claude-code",
@@ -15,8 +16,7 @@
     "context-architecture",
     "structure"
   ],
-  "skills": "./skills/",
-  "agents": "./agents/",
   "hooks": "./hooks/hooks.json",
+  "skills": "./skills/",
   "mcpServers": "./.mcp.json"
 }

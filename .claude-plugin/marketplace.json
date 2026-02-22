@@ -1,8 +1,32 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "lumy-pack",
-  "displayName": "Lumy Pack — Developer Tool Plugins",
-  "description": "AI-powered developer tool plugins for environment management, backup/restore, and machine provisioning",
-  "author": "Vincent K. Kelvin",
-  "repository": "https://github.com/vincent-kk/lumy-pack",
-  "plugins": ["packages/filid"]
+  "owner": {
+    "name": "Vincent K. Kelvin"
+  },
+  "metadata": {
+    "description": "AI-powered developer tool plugins — FCA-AI structure management, environment backup/restore, machine provisioning",
+    "version": "0.0.1"
+  },
+  "plugins": [
+    {
+      "name": "filid",
+      "description": "FCA-AI rule enforcement + fractal structure management plugin for Claude Code agent workflows. Automated CLAUDE.md governance, multi-persona code review, structural drift detection.",
+      "version": "0.0.1",
+      "author": {
+        "name": "Vincent K. Kelvin"
+      },
+      "source": "./packages/filid",
+      "category": "productivity",
+      "homepage": "https://github.com/vincent-kk/lumy-pack/tree/main/packages/filid",
+      "tags": [
+        "fca-ai",
+        "fractal",
+        "structure",
+        "code-review",
+        "governance",
+        "documentation"
+      ]
+    }
+  ]
 }
