@@ -20,7 +20,7 @@ vi.mock('../../../core/cache-manager.js', () => ({
 
 describe('handleCacheManage', () => {
   describe('compute-hash', () => {
-    it('hash와 cwd를 반환한다', async () => {
+    it('returns hash and cwd', async () => {
       const result = (await handleCacheManage({
         action: 'compute-hash',
         cwd: '/some/project',
@@ -30,7 +30,7 @@ describe('handleCacheManage', () => {
       expect(result.cwd).toBe('/some/project');
     });
 
-    it('computeProjectHash가 cwd 인자로 호출된다', async () => {
+    it('calls computeProjectHash with the cwd argument', async () => {
       await handleCacheManage({ action: 'compute-hash', cwd: '/my/repo' });
 
       expect(computeProjectHash).toHaveBeenCalledWith('/my/repo');
@@ -38,7 +38,7 @@ describe('handleCacheManage', () => {
   });
 
   describe('save-hash', () => {
-    it('{ saved: true, skillName, hash }를 반환한다', async () => {
+    it('returns { saved: true, skillName, hash }', async () => {
       const result = (await handleCacheManage({
         action: 'save-hash',
         cwd: '/my/repo',
@@ -51,7 +51,7 @@ describe('handleCacheManage', () => {
       expect(result.hash).toBe('deadbeef');
     });
 
-    it('saveRunHash가 올바른 인자로 호출된다', async () => {
+    it('calls saveRunHash with the correct arguments', async () => {
       await handleCacheManage({
         action: 'save-hash',
         cwd: '/my/repo',
@@ -66,7 +66,7 @@ describe('handleCacheManage', () => {
       );
     });
 
-    it('반환된 skillName이 입력과 일치한다', async () => {
+    it('returned skillName matches the input', async () => {
       const result = (await handleCacheManage({
         action: 'save-hash',
         cwd: '/my/repo',
@@ -79,7 +79,7 @@ describe('handleCacheManage', () => {
   });
 
   describe('get-hash', () => {
-    it('hash가 있을 때 { hash, found: true }를 반환한다', async () => {
+    it('returns { hash, found: true } when hash exists', async () => {
       vi.mocked(getLastRunHash).mockReturnValueOnce('cached-hash');
 
       const result = (await handleCacheManage({
@@ -92,7 +92,7 @@ describe('handleCacheManage', () => {
       expect(result.found).toBe(true);
     });
 
-    it('hash가 없을 때 { hash: null, found: false }를 반환한다', async () => {
+    it('returns { hash: null, found: false } when hash is absent', async () => {
       vi.mocked(getLastRunHash).mockReturnValueOnce(null);
 
       const result = (await handleCacheManage({
@@ -105,7 +105,7 @@ describe('handleCacheManage', () => {
       expect(result.found).toBe(false);
     });
 
-    it('getLastRunHash가 올바른 인자로 호출된다', async () => {
+    it('calls getLastRunHash with the correct arguments', async () => {
       await handleCacheManage({
         action: 'get-hash',
         cwd: '/project/path',
@@ -116,14 +116,14 @@ describe('handleCacheManage', () => {
     });
   });
 
-  describe('에러 케이스', () => {
-    it('compute-hash에서 cwd 없으면 Error를 던진다', async () => {
+  describe('error cases', () => {
+    it('throws when cwd is empty for compute-hash', async () => {
       await expect(
         handleCacheManage({ action: 'compute-hash', cwd: '' }),
       ).rejects.toThrow('cwd is required');
     });
 
-    it('save-hash에서 skillName 없으면 Error를 던진다', async () => {
+    it('throws when skillName is missing for save-hash', async () => {
       await expect(
         handleCacheManage({
           action: 'save-hash',
@@ -133,7 +133,7 @@ describe('handleCacheManage', () => {
       ).rejects.toThrow('skillName is required');
     });
 
-    it('save-hash에서 hash 없으면 Error를 던진다', async () => {
+    it('throws when hash is missing for save-hash', async () => {
       await expect(
         handleCacheManage({
           action: 'save-hash',
@@ -143,25 +143,25 @@ describe('handleCacheManage', () => {
       ).rejects.toThrow('hash is required');
     });
 
-    it('get-hash에서 skillName 없으면 Error를 던진다', async () => {
+    it('throws when skillName is missing for get-hash', async () => {
       await expect(
         handleCacheManage({ action: 'get-hash', cwd: '/my/repo' }),
       ).rejects.toThrow('skillName is required');
     });
 
-    it('action 없으면 Error를 던진다', async () => {
+    it('throws when action is missing', async () => {
       await expect(
         handleCacheManage({ cwd: '/my/repo' } as never),
       ).rejects.toThrow('action is required');
     });
 
-    it('cwd 없으면 Error를 던진다', async () => {
+    it('throws when cwd is missing', async () => {
       await expect(
         handleCacheManage({ action: 'compute-hash' } as never),
       ).rejects.toThrow('cwd is required');
     });
 
-    it('unknown action은 Error를 던진다', async () => {
+    it('throws for unknown action', async () => {
       await expect(
         handleCacheManage({
           action: 'unknown-action',

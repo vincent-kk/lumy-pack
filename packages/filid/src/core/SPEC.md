@@ -9,6 +9,7 @@
 - CLAUDE.md/SPEC.md의 100줄 제한과 3-tier 경계 섹션을 검증해야 한다
 - 두 모듈의 Lowest Common Ancestor(LCA)를 계산해야 한다
 - 프로젝트 건강도 점수와 리포트를 생성해야 한다
+- 스킬 실행 해시를 캐시 디렉토리에 저장·조회하고 프로젝트 변경 해시를 계산해야 한다
 
 ## API Contracts
 
@@ -20,6 +21,9 @@
 - `validateClaudeMd(content: string): ValidationResult` — 100줄 초과 또는 3-tier 누락 시 오류
 - `findLCA(tree: FractalTree, pathA: string, pathB: string): FractalNode | null` — LCA 없으면 null
 - `buildDAG(tree: FractalTree): DAG` — 의존성 DAG; 사이클 존재 시 `detectCycles`로 확인
+- `saveRunHash(cwd, skillName, hash): void` — `run-{skillName}.hash` 파일에 저장; I/O 실패 시 무시
+- `getLastRunHash(cwd, skillName): string | null` — 저장된 해시 반환; 없으면 null
+- `computeProjectHash(cwd): Promise<string>` — `**/*.{ts,tsx,js,jsx,md}` 파일 경로+mtime 기반 16자 SHA256
 
 ## Last Updated
 
