@@ -5,8 +5,8 @@
  * so the plugin works from git clone without a separate tsc build step.
  *
  * Outputs:
- *   mcp/server.cjs        — MCP server (CJS, single file)
- *   scripts/<name>.mjs     — Hook scripts (ESM, self-contained)
+ *   libs/server.cjs        — MCP server (CJS, single file)
+ *   libs/<name>.mjs        — Hook scripts (ESM, self-contained)
  */
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -17,9 +17,8 @@ import { build } from 'esbuild';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Ensure output directories exist
+// Ensure output directory exists
 mkdirSync(resolve(__dirname, 'libs'), { recursive: true });
-mkdirSync(resolve(__dirname, 'scripts'), { recursive: true });
 
 // 1. MCP server bundle (CJS for broad node compatibility)
 await build({
@@ -53,7 +52,7 @@ await Promise.all(
       platform: 'node',
       target: 'node20',
       format: 'esm',
-      outfile: resolve(__dirname, `scripts/${name}.mjs`),
+      outfile: resolve(__dirname, `libs/${name}.mjs`),
       external: [],
       minify: false,
       sourcemap: false,
@@ -61,5 +60,5 @@ await Promise.all(
   ),
 );
 
-console.log(`  Hook scripts (${hookEntries.length}) -> scripts/*.mjs`);
+console.log(`  Hook scripts (${hookEntries.length}) -> libs/*.mjs`);
 console.log('Plugin build complete.');

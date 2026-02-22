@@ -50158,6 +50158,9 @@ var StdioServerTransport = class {
   }
 };
 
+// src/version.ts
+var VERSION = "0.0.5";
+
 // src/ast/parser.ts
 var import_parser = __toESM(require_lib(), 1);
 function parseSource(source, filePath = "anonymous.ts") {
@@ -52349,7 +52352,7 @@ function toolError(error48) {
   };
 }
 function createServer() {
-  const server = new McpServer({ name: "filid", version: "0.0.1" });
+  const server = new McpServer({ name: "filid", version: VERSION });
   server.registerTool(
     "ast-analyze",
     {
