@@ -6,11 +6,10 @@ const chunks: Buffer[] = [];
 for await (const chunk of process.stdin) {
   chunks.push(chunk as Buffer);
 }
-const input = JSON.parse(
-  Buffer.concat(chunks).toString('utf-8'),
-) as SubagentStartInput;
+const raw = Buffer.concat(chunks).toString('utf-8');
 let result;
 try {
+  const input = JSON.parse(raw) as SubagentStartInput;
   result = enforceAgentRole(input);
 } catch {
   result = { continue: true };

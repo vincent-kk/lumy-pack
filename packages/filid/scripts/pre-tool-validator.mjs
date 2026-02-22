@@ -71,18 +71,18 @@ function validateSpecMd(content, oldContent) {
 }
 
 // src/hooks/shared.ts
-function isClaudeMd(filePath2) {
-  return filePath2.endsWith("/CLAUDE.md") || filePath2 === "CLAUDE.md";
+function isClaudeMd(filePath) {
+  return filePath.endsWith("/CLAUDE.md") || filePath === "CLAUDE.md";
 }
-function isSpecMd(filePath2) {
-  return filePath2.endsWith("/SPEC.md") || filePath2 === "SPEC.md";
+function isSpecMd(filePath) {
+  return filePath.endsWith("/SPEC.md") || filePath === "SPEC.md";
 }
 
 // src/hooks/pre-tool-validator.ts
-function validatePreToolUse(input2, oldSpecContent2) {
-  const filePath2 = input2.tool_input.file_path ?? input2.tool_input.path ?? "";
-  if (input2.tool_name === "Edit" && isClaudeMd(filePath2)) {
-    const newString = input2.tool_input.new_string ?? "";
+function validatePreToolUse(input, oldSpecContent) {
+  const filePath = input.tool_input.file_path ?? input.tool_input.path ?? "";
+  if (input.tool_name === "Edit" && isClaudeMd(filePath)) {
+    const newString = input.tool_input.new_string ?? "";
     const lineCount = newString.split("\n").length;
     if (lineCount > 20) {
       return {
@@ -94,11 +94,11 @@ function validatePreToolUse(input2, oldSpecContent2) {
     }
     return { continue: true };
   }
-  const content = input2.tool_input.content;
-  if (input2.tool_name !== "Write" || !content) {
+  const content = input.tool_input.content;
+  if (input.tool_name !== "Write" || !content) {
     return { continue: true };
   }
-  if (isClaudeMd(filePath2)) {
+  if (isClaudeMd(filePath)) {
     const result2 = validateClaudeMd(content);
     if (!result2.valid) {
       const errorMessages = result2.violations.filter((v) => v.severity === "error").map((v) => v.message).join("; ");
@@ -120,8 +120,8 @@ function validatePreToolUse(input2, oldSpecContent2) {
     }
     return { continue: true };
   }
-  if (isSpecMd(filePath2) && oldSpecContent2 !== void 0) {
-    const result2 = validateSpecMd(content, oldSpecContent2);
+  if (isSpecMd(filePath) && oldSpecContent !== void 0) {
+    const result2 = validateSpecMd(content, oldSpecContent);
     if (!result2.valid) {
       const errorMessages = result2.violations.filter((v) => v.severity === "error").map((v) => v.message).join("; ");
       return {
@@ -140,19 +140,18 @@ var chunks = [];
 for await (const chunk of process.stdin) {
   chunks.push(chunk);
 }
-var input = JSON.parse(
-  Buffer.concat(chunks).toString("utf-8")
-);
-var filePath = input.tool_input.file_path ?? input.tool_input.path ?? "";
-var oldSpecContent;
-if (input.tool_name === "Write" && isSpecMd(filePath)) {
-  try {
-    oldSpecContent = readFileSync(filePath, "utf-8");
-  } catch {
-  }
-}
+var raw = Buffer.concat(chunks).toString("utf-8");
 var result;
 try {
+  const input = JSON.parse(raw);
+  const filePath = input.tool_input.file_path ?? input.tool_input.path ?? "";
+  let oldSpecContent;
+  if (input.tool_name === "Write" && isSpecMd(filePath)) {
+    try {
+      oldSpecContent = readFileSync(filePath, "utf-8");
+    } catch {
+    }
+  }
   result = validatePreToolUse(input, oldSpecContent);
 } catch {
   result = { continue: true };

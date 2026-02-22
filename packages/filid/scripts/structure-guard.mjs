@@ -16,11 +16,11 @@ var LEGACY_ORGAN_DIR_NAMES = [
   "assets",
   "constants"
 ];
-function classifyNode(input2) {
-  if (input2.hasClaudeMd) return "fractal";
-  if (input2.hasSpecMd) return "fractal";
-  if (!input2.hasFractalChildren && input2.isLeafDirectory) return "organ";
-  const hasSideEffects = input2.hasSideEffects ?? true;
+function classifyNode(input) {
+  if (input.hasClaudeMd) return "fractal";
+  if (input.hasSpecMd) return "fractal";
+  if (!input.hasFractalChildren && input.isLeafDirectory) return "organ";
+  const hasSideEffects = input.hasSideEffects ?? true;
   if (!hasSideEffects) return "pure-function";
   return "fractal";
 }
@@ -87,17 +87,17 @@ function isAncestorPath(filePath, importPath, cwd) {
   const fileAbsolute = path.resolve(cwd, filePath);
   return fileAbsolute.startsWith(resolvedImport + path.sep);
 }
-function guardStructure(input2) {
-  if (input2.tool_name !== "Write" && input2.tool_name !== "Edit") {
+function guardStructure(input) {
+  if (input.tool_name !== "Write" && input.tool_name !== "Edit") {
     return { continue: true };
   }
-  const filePath = input2.tool_input.file_path ?? input2.tool_input.path ?? "";
+  const filePath = input.tool_input.file_path ?? input.tool_input.path ?? "";
   if (!filePath) {
     return { continue: true };
   }
-  const cwd = input2.cwd;
+  const cwd = input.cwd;
   const segments = getParentSegments(filePath);
-  if (input2.tool_name === "Write" && isClaudeMd(filePath)) {
+  if (input.tool_name === "Write" && isClaudeMd(filePath)) {
     let dirSoFar = cwd;
     for (const segment of segments) {
       dirSoFar = path.join(dirSoFar, segment);
@@ -130,7 +130,7 @@ function guardStructure(input2) {
       `organ \uB514\uB809\uD1A0\uB9AC "${organSegment}" \uB0B4\uBD80\uC5D0 \uD558\uC704 \uB514\uB809\uD1A0\uB9AC\uB97C \uC0DD\uC131\uD558\uB824 \uD569\uB2C8\uB2E4. Organ \uB514\uB809\uD1A0\uB9AC\uB294 flat leaf \uAD6C\uD68D\uC73C\uB85C \uC911\uCCA9 \uB514\uB809\uD1A0\uB9AC\uB97C \uAC00\uC838\uC11C\uB294 \uC548 \uB429\uB2C8\uB2E4.`
     );
   }
-  const content = input2.tool_input.content ?? input2.tool_input.new_string ?? "";
+  const content = input.tool_input.content ?? input.tool_input.new_string ?? "";
   if (content) {
     const importPaths = extractImportPaths(content);
     const circularCandidates = importPaths.filter(
@@ -158,11 +158,10 @@ var chunks = [];
 for await (const chunk of process.stdin) {
   chunks.push(chunk);
 }
-var input = JSON.parse(
-  Buffer.concat(chunks).toString("utf-8")
-);
+var raw = Buffer.concat(chunks).toString("utf-8");
 var result;
 try {
+  const input = JSON.parse(raw);
   result = guardStructure(input);
 } catch {
   result = { continue: true };

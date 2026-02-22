@@ -11,12 +11,10 @@ const chunks: Buffer[] = [];
 for await (const chunk of process.stdin) {
   chunks.push(chunk as Buffer);
 }
-const input = JSON.parse(
-  Buffer.concat(chunks).toString('utf-8'),
-) as PostToolUseInput;
-
+const raw = Buffer.concat(chunks).toString('utf-8');
 let result;
 try {
+  const input = JSON.parse(raw) as PostToolUseInput;
   result = trackChange(input, stubQueue as any);
 } catch {
   result = { continue: true };

@@ -278,8 +278,8 @@ function buildFcaContext(cwd) {
     "- LCOM4 >= 2 \u2192 split module, CC > 15 \u2192 compress/abstract"
   ].join("\n");
 }
-async function injectContext(input2) {
-  const cwd = input2.cwd;
+async function injectContext(input) {
+  const cwd = input.cwd;
   if (!isFcaProject(cwd)) {
     return { continue: true };
   }
@@ -320,11 +320,10 @@ var chunks = [];
 for await (const chunk of process.stdin) {
   chunks.push(chunk);
 }
-var input = JSON.parse(
-  Buffer.concat(chunks).toString("utf-8")
-);
+var raw = Buffer.concat(chunks).toString("utf-8");
 var result;
 try {
+  const input = JSON.parse(raw);
   result = await injectContext(input);
 } catch {
   result = { continue: true };

@@ -9,8 +9,8 @@ var ROLE_RESTRICTIONS = {
   "drift-analyzer": "ROLE RESTRICTION: You are a Drift Analyzer agent. You MUST NOT use Write or Edit tools. You are read-only \u2014 detect drift, classify severity, and produce correction plans only.",
   restructurer: "ROLE RESTRICTION: You are a Restructurer agent. You may only execute actions from an approved restructuring plan. Do not make structural decisions or modify business logic."
 };
-function enforceAgentRole(input2) {
-  const agentType = input2.agent_type ?? "";
+function enforceAgentRole(input) {
+  const agentType = input.agent_type ?? "";
   const restriction = ROLE_RESTRICTIONS[agentType];
   if (!restriction) {
     return { continue: true };
@@ -28,11 +28,10 @@ var chunks = [];
 for await (const chunk of process.stdin) {
   chunks.push(chunk);
 }
-var input = JSON.parse(
-  Buffer.concat(chunks).toString("utf-8")
-);
+var raw = Buffer.concat(chunks).toString("utf-8");
 var result;
 try {
+  const input = JSON.parse(raw);
   result = enforceAgentRole(input);
 } catch {
   result = { continue: true };

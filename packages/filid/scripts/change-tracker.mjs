@@ -16,11 +16,11 @@ var LEGACY_ORGAN_DIR_NAMES = [
   "assets",
   "constants"
 ];
-function classifyNode(input2) {
-  if (input2.hasClaudeMd) return "fractal";
-  if (input2.hasSpecMd) return "fractal";
-  if (!input2.hasFractalChildren && input2.isLeafDirectory) return "organ";
-  const hasSideEffects = input2.hasSideEffects ?? true;
+function classifyNode(input) {
+  if (input.hasClaudeMd) return "fractal";
+  if (input.hasSpecMd) return "fractal";
+  if (!input.hasFractalChildren && input.isLeafDirectory) return "organ";
+  const hasSideEffects = input.hasSideEffects ?? true;
   if (!hasSideEffects) return "pure-function";
   return "fractal";
 }
@@ -83,16 +83,16 @@ function appendChangeLog(cwd, entry) {
   } catch {
   }
 }
-function trackChange(input2, queue) {
-  if (input2.tool_name !== "Write" && input2.tool_name !== "Edit") {
+function trackChange(input, queue) {
+  if (input.tool_name !== "Write" && input.tool_name !== "Edit") {
     return { continue: true };
   }
-  const filePath = input2.tool_input.file_path ?? input2.tool_input.path ?? "";
+  const filePath = input.tool_input.file_path ?? input.tool_input.path ?? "";
   if (!filePath) {
     return { continue: true };
   }
-  const cwd = input2.cwd;
-  const toolName = input2.tool_name;
+  const cwd = input.cwd;
+  const toolName = input.tool_name;
   const changeType = toolName === "Write" ? "created" : "modified";
   queue.enqueue({ filePath, changeType });
   const category = classifyPathCategory(filePath, cwd);
@@ -102,7 +102,7 @@ function trackChange(input2, queue) {
     action: toolName,
     path: filePath,
     category,
-    sessionId: input2.session_id
+    sessionId: input.session_id
   };
   appendChangeLog(cwd, entry);
   if (process.env["FILID_DEBUG"] === "1") {
@@ -124,11 +124,10 @@ var chunks = [];
 for await (const chunk of process.stdin) {
   chunks.push(chunk);
 }
-var input = JSON.parse(
-  Buffer.concat(chunks).toString("utf-8")
-);
+var raw = Buffer.concat(chunks).toString("utf-8");
 var result;
 try {
+  const input = JSON.parse(raw);
   result = trackChange(input, stubQueue);
 } catch {
   result = { continue: true };
