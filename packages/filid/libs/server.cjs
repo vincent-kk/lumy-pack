@@ -50160,11 +50160,15 @@ var StdioServerTransport = class {
 
 // src/ast/parser.ts
 var import_parser = __toESM(require_lib(), 1);
-function parseSource(source) {
-  return (0, import_parser.parse)(source, {
+function parseSource(source, filePath = "anonymous.ts") {
+  const ast = (0, import_parser.parse)(source, {
     sourceType: "module",
     plugins: ["typescript"],
     errorRecovery: true
+  });
+  return Object.assign(ast, {
+    fileName: filePath,
+    statements: ast.program.body
   });
 }
 function walk(node, fn) {
@@ -50220,6 +50224,12 @@ function calculateCC(source, _filePath = "analysis.ts") {
           }
         }
       }
+    }
+    if (stmt.type === "ExportNamedDeclaration" && stmt.declaration?.type === "FunctionDeclaration" && stmt.declaration.id && stmt.declaration.body) {
+      perFunction.set(
+        stmt.declaration.id.name,
+        computeCC(stmt.declaration.body)
+      );
     }
     const classNode = stmt.type === "ClassDeclaration" ? stmt : stmt.type === "ExportNamedDeclaration" && stmt.declaration?.type === "ClassDeclaration" ? stmt.declaration : null;
     if (classNode?.body) {
@@ -50317,8 +50327,10 @@ function extractDependencies(source, filePath = "anonymous.ts") {
       }
     }
     if (stmt.type === "ExportDefaultDeclaration") {
+      const decl = stmt.declaration;
+      const name = (decl?.type === "FunctionDeclaration" || decl?.type === "ClassDeclaration") && decl.id?.name ? decl.id.name : "default";
       exports2.push({
-        name: "default",
+        name,
         isTypeOnly: false,
         isDefault: true,
         line: stmt.loc?.start.line ?? 0

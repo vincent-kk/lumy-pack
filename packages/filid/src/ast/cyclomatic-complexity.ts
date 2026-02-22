@@ -62,6 +62,19 @@ export function calculateCC(
       }
     }
 
+    // export function foo() {}
+    if (
+      stmt.type === 'ExportNamedDeclaration' &&
+      stmt.declaration?.type === 'FunctionDeclaration' &&
+      stmt.declaration.id &&
+      stmt.declaration.body
+    ) {
+      perFunction.set(
+        stmt.declaration.id.name,
+        computeCC(stmt.declaration.body),
+      );
+    }
+
     // class Foo { method() {} }
     const classNode =
       stmt.type === 'ClassDeclaration'

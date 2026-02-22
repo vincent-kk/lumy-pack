@@ -104,8 +104,15 @@ export function extractDependencies(
 
     // export default ...
     if (stmt.type === 'ExportDefaultDeclaration') {
+      const decl = stmt.declaration as any;
+      const name =
+        (decl?.type === 'FunctionDeclaration' ||
+          decl?.type === 'ClassDeclaration') &&
+        decl.id?.name
+          ? decl.id.name
+          : 'default';
       exports.push({
-        name: 'default',
+        name,
         isTypeOnly: false,
         isDefault: true,
         line: stmt.loc?.start.line ?? 0,

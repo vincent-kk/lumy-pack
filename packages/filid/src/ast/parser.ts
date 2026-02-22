@@ -5,11 +5,15 @@ import { readFileSync } from 'node:fs';
 
 import { parse } from '@babel/parser';
 
-export function parseSource(source: string) {
-  return parse(source, {
+export function parseSource(source: string, filePath = 'anonymous.ts') {
+  const ast = parse(source, {
     sourceType: 'module',
     plugins: ['typescript'],
     errorRecovery: true,
+  });
+  return Object.assign(ast, {
+    fileName: filePath,
+    statements: ast.program.body,
   });
 }
 
