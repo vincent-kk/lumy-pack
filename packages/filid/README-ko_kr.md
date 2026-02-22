@@ -21,6 +21,7 @@ claude --plugin-dir ./packages/filid
 ```
 
 빌드하면 두 가지 산출물이 생성된다:
+
 - `libs/server.cjs` — MCP 서버 (분석 도구 11개)
 - `scripts/*.mjs` — Hook 스크립트 5개 (자동 규칙 시행)
 
@@ -92,6 +93,7 @@ CLAUDE.md 100줄 초과, 3-tier 경계 섹션 누락, organ 디렉토리 내 CLA
 ```
 
 **흐름:**
+
 1. **`/filid:code-review`** — 위원회 선출 → 기술 검증 → 합의 → 리뷰 보고서 생성
 2. **`/filid:resolve-review`** — 각 수정 요청에 대해 수용 또는 거부(사유 입력) 선택
 3. **`/filid:re-validate`** — 수정 사항 반영 후 PASS/FAIL 최종 판정
@@ -119,12 +121,12 @@ CLAUDE.md 100줄 초과, 3-tier 경계 섹션 누락, organ 디렉토리 내 CLA
 
 플러그인이 활성화되면 아래 Hook들이 **사용자 개입 없이** 자동 실행된다:
 
-| 언제 | 무엇을 | 왜 |
-|------|--------|-----|
-| 파일을 Write/Edit할 때 | CLAUDE.md 100줄 초과 검사 | 문서가 비대해지는 것을 방지 |
-| 파일을 Write/Edit할 때 | organ 디렉토리 내 CLAUDE.md 생성 차단 | 유틸리티 폴더의 불필요한 문서화 방지 |
-| 서브에이전트가 시작할 때 | 에이전트 역할 제한 주입 | architect가 코드를 수정하는 등의 월권 방지 |
-| 사용자가 프롬프트를 입력할 때 | FCA-AI 규칙 컨텍스트 주입 | 에이전트가 규칙을 인지하고 작업하도록 보장 |
+| 언제                          | 무엇을                                | 왜                                         |
+| ----------------------------- | ------------------------------------- | ------------------------------------------ |
+| 파일을 Write/Edit할 때        | CLAUDE.md 100줄 초과 검사             | 문서가 비대해지는 것을 방지                |
+| 파일을 Write/Edit할 때        | organ 디렉토리 내 CLAUDE.md 생성 차단 | 유틸리티 폴더의 불필요한 문서화 방지       |
+| 서브에이전트가 시작할 때      | 에이전트 역할 제한 주입               | architect가 코드를 수정하는 등의 월권 방지 |
+| 사용자가 프롬프트를 입력할 때 | FCA-AI 규칙 컨텍스트 주입             | 에이전트가 규칙을 인지하고 작업하도록 보장 |
 
 차단이 발생하면 이유와 함께 메시지가 표시되므로 별도 대응은 필요 없다.
 
@@ -132,19 +134,19 @@ CLAUDE.md 100줄 초과, 3-tier 경계 섹션 누락, organ 디렉토리 내 CLA
 
 ## 전체 스킬 목록
 
-| 스킬 | 설명 |
-|------|------|
-| `/filid:init` | 프로젝트 FCA-AI 초기화 |
-| `/filid:scan` | 규칙 위반 검출 (자동 수정 가능) |
-| `/filid:sync` | 코드-문서 동기화 |
-| `/filid:structure-review` | PR 구조 검증 (6단계) |
-| `/filid:promote` | 안정된 테스트를 spec으로 승격 |
-| `/filid:context-query` | 구조 관련 질의응답 |
-| `/filid:guide` | FCA-AI 가이드 |
-| `/filid:restructure` | 모듈 리팩토링 가이드 + 마이그레이션 단계 |
-| `/filid:code-review` | 다중 페르소나 거버넌스 코드 리뷰 |
-| `/filid:resolve-review` | 수정 요청 해결 |
-| `/filid:re-validate` | 수정 후 재검증 (PASS/FAIL) |
+| 스킬                      | 설명                                     |
+| ------------------------- | ---------------------------------------- |
+| `/filid:init`             | 프로젝트 FCA-AI 초기화                   |
+| `/filid:scan`             | 규칙 위반 검출 (자동 수정 가능)          |
+| `/filid:sync`             | 코드-문서 동기화                         |
+| `/filid:structure-review` | PR 구조 검증 (6단계)                     |
+| `/filid:promote`          | 안정된 테스트를 spec으로 승격            |
+| `/filid:context-query`    | 구조 관련 질의응답                       |
+| `/filid:guide`            | FCA-AI 가이드                            |
+| `/filid:restructure`      | 모듈 리팩토링 가이드 + 마이그레이션 단계 |
+| `/filid:code-review`      | 다중 페르소나 거버넌스 코드 리뷰         |
+| `/filid:resolve-review`   | 수정 요청 해결                           |
+| `/filid:re-validate`      | 수정 후 재검증 (PASS/FAIL)               |
 
 ---
 
@@ -152,14 +154,14 @@ CLAUDE.md 100줄 초과, 3-tier 경계 섹션 누락, organ 디렉토리 내 CLA
 
 filid가 시행하는 주요 규칙:
 
-| 규칙 | 기준 | 시행 방식 |
-|------|------|----------|
-| CLAUDE.md 줄 수 제한 | 100줄 이하 | Hook 자동 차단 |
-| 3-tier 경계 섹션 | "Always do" / "Ask first" / "Never do" 필수 | Hook 경고 |
-| Organ 디렉토리 보호 | `components`, `utils`, `types` 등에 CLAUDE.md 금지 | Hook 자동 차단 |
-| 테스트 밀도 | spec.ts당 최대 15개 (3 core + 12 edge) | MCP 분석 |
-| 모듈 응집도 | LCOM4 >= 2이면 분할 권고 | MCP 분석 + 의사결정 트리 |
-| 순환 의존성 | 비순환 그래프(DAG) 유지 | Core 검증 |
+| 규칙                 | 기준                                               | 시행 방식                |
+| -------------------- | -------------------------------------------------- | ------------------------ |
+| CLAUDE.md 줄 수 제한 | 100줄 이하                                         | Hook 자동 차단           |
+| 3-tier 경계 섹션     | "Always do" / "Ask first" / "Never do" 필수        | Hook 경고                |
+| Organ 디렉토리 보호  | `components`, `utils`, `types` 등에 CLAUDE.md 금지 | Hook 자동 차단           |
+| 테스트 밀도          | spec.ts당 최대 15개 (3 core + 12 edge)             | MCP 분석                 |
+| 모듈 응집도          | LCOM4 >= 2이면 분할 권고                           | MCP 분석 + 의사결정 트리 |
+| 순환 의존성          | 비순환 그래프(DAG) 유지                            | Core 검증                |
 
 ---
 
@@ -183,16 +185,16 @@ TypeScript 5.7 (+ Compiler API), @modelcontextprotocol/sdk, fast-glob, esbuild, 
 
 기술적 세부사항은 [`.metadata/`](./.metadata/) 디렉토리 참조:
 
-| 문서 | 내용 |
-|------|------|
-| [ARCHITECTURE](./.metadata/01-ARCHITECTURE.md) | 설계 철학, 4계층 아키텍처, ADR |
-| [BLUEPRINT](./.metadata/02-BLUEPRINT.md) | 30+ 모듈별 기술 청사진 |
-| [LIFECYCLE](./.metadata/03-LIFECYCLE.md) | 스킬 워크플로우, 에이전트 협업, Hook 타임라인 |
-| [USAGE](./.metadata/04-USAGE.md) | 설정 파일 구조, MCP/Hook JSON 예시, 트러블슈팅 |
-| [COST-ANALYSIS](./.metadata/05-COST-ANALYSIS.md) | Hook 오버헤드, 번들 크기, 컨텍스트 토큰 비용 |
-| [HOW-IT-WORKS](./.metadata/06-HOW-IT-WORKS.md) | AST 엔진, 의사결정 트리, MCP 라우팅 |
-| [RULES-REFERENCE](./.metadata/07-RULES-REFERENCE.md) | 전체 규칙 카탈로그, 상수, 임계값 |
-| [API-SURFACE](./.metadata/08-API-SURFACE.md) | 공개 API 레퍼런스 (33 함수 + 30 타입) |
+| 문서                                                 | 내용                                           |
+| ---------------------------------------------------- | ---------------------------------------------- |
+| [ARCHITECTURE](./.metadata/01-ARCHITECTURE.md)       | 설계 철학, 4계층 아키텍처, ADR                 |
+| [BLUEPRINT](./.metadata/02-BLUEPRINT.md)             | 30+ 모듈별 기술 청사진                         |
+| [LIFECYCLE](./.metadata/03-LIFECYCLE.md)             | 스킬 워크플로우, 에이전트 협업, Hook 타임라인  |
+| [USAGE](./.metadata/04-USAGE.md)                     | 설정 파일 구조, MCP/Hook JSON 예시, 트러블슈팅 |
+| [COST-ANALYSIS](./.metadata/05-COST-ANALYSIS.md)     | Hook 오버헤드, 번들 크기, 컨텍스트 토큰 비용   |
+| [HOW-IT-WORKS](./.metadata/06-HOW-IT-WORKS.md)       | AST 엔진, 의사결정 트리, MCP 라우팅            |
+| [RULES-REFERENCE](./.metadata/07-RULES-REFERENCE.md) | 전체 규칙 카탈로그, 상수, 임계값               |
+| [API-SURFACE](./.metadata/08-API-SURFACE.md)         | 공개 API 레퍼런스 (33 함수 + 30 타입)          |
 
 [English documentation (README.md)](./README.md) is also available.
 

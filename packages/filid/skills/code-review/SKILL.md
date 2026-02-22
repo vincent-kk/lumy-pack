@@ -83,12 +83,12 @@ When `--scope=pr`: check `gh auth status` (Bash), if authenticated post
 /filid:code-review [--scope=branch|pr|commit] [--base=<ref>] [--force] [--verbose]
 ```
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `--scope` | `branch` | Review scope (branch, pr, commit) |
-| `--base` | auto | Comparison base ref |
-| `--force` | off | Delete existing review, restart from Phase A |
-| `--verbose` | off | Show detailed deliberation process |
+| Option      | Default  | Description                                  |
+| ----------- | -------- | -------------------------------------------- |
+| `--scope`   | `branch` | Review scope (branch, pr, commit)            |
+| `--base`    | auto     | Comparison base ref                          |
+| `--force`   | off      | Delete existing review, restart from Phase A |
+| `--verbose` | off      | Show detailed deliberation process           |
 
 ## Quick Reference
 

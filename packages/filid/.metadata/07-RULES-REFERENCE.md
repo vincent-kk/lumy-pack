@@ -6,29 +6,29 @@
 
 ## 상수 테이블
 
-| 상수명 | 값 | 정의 위치 | 용도 |
-|--------|-----|-----------|------|
-| `CLAUDE_MD_LINE_LIMIT` | `100` | `core/document-validator.ts:4` | CLAUDE.md 최대 줄 수 |
-| `ORGAN_DIR_NAMES` | 9개 문자열 배열 | `core/organ-classifier.ts:4-14` | Organ 디렉토리 식별 |
-| `TEST_THRESHOLD` | `15` | `metrics/decision-tree.ts:4` | 3+12 규칙 테스트 상한 |
-| `CC_THRESHOLD` | `15` | `metrics/decision-tree.ts:7` | Cyclomatic Complexity 상한 |
-| `LCOM4_SPLIT_THRESHOLD` | `2` | `metrics/decision-tree.ts:10` | LCOM4 분할 기준 |
-| `DEFAULT_STABILITY_DAYS` | `90` | `metrics/promotion-tracker.ts:4` | 테스트 승격 안정 기간 (일) |
-| `THRESHOLD` (3+12) | `15` | `metrics/three-plus-twelve.ts:4` | spec 파일별 테스트 상한 |
+| 상수명                   | 값              | 정의 위치                        | 용도                       |
+| ------------------------ | --------------- | -------------------------------- | -------------------------- |
+| `CLAUDE_MD_LINE_LIMIT`   | `100`           | `core/document-validator.ts:4`   | CLAUDE.md 최대 줄 수       |
+| `ORGAN_DIR_NAMES`        | 9개 문자열 배열 | `core/organ-classifier.ts:4-14`  | Organ 디렉토리 식별        |
+| `TEST_THRESHOLD`         | `15`            | `metrics/decision-tree.ts:4`     | 3+12 규칙 테스트 상한      |
+| `CC_THRESHOLD`           | `15`            | `metrics/decision-tree.ts:7`     | Cyclomatic Complexity 상한 |
+| `LCOM4_SPLIT_THRESHOLD`  | `2`             | `metrics/decision-tree.ts:10`    | LCOM4 분할 기준            |
+| `DEFAULT_STABILITY_DAYS` | `90`            | `metrics/promotion-tracker.ts:4` | 테스트 승격 안정 기간 (일) |
+| `THRESHOLD` (3+12)       | `15`            | `metrics/three-plus-twelve.ts:4` | spec 파일별 테스트 상한    |
 
 ### ORGAN_DIR_NAMES 전체 목록
 
 ```typescript
 const ORGAN_DIR_NAMES: readonly string[] = [
-  'components',   // UI 컴포넌트
-  'utils',        // 유틸리티 함수
-  'types',        // 타입 정의
-  'hooks',        // React/프레임워크 훅
-  'helpers',      // 헬퍼 함수
-  'lib',          // 라이브러리 래퍼
-  'styles',       // 스타일시트
-  'assets',       // 정적 자원
-  'constants',    // 상수 정의
+  'components', // UI 컴포넌트
+  'utils', // 유틸리티 함수
+  'types', // 타입 정의
+  'hooks', // React/프레임워크 훅
+  'helpers', // 헬퍼 함수
+  'lib', // 라이브러리 래퍼
+  'styles', // 스타일시트
+  'assets', // 정적 자원
+  'constants', // 상수 정의
 ] as const;
 ```
 
@@ -38,7 +38,7 @@ const ORGAN_DIR_NAMES: readonly string[] = [
 const BOUNDARY_KEYWORDS = {
   alwaysDo: /^###?\s*(always\s*do)/im,
   askFirst: /^###?\s*(ask\s*first)/im,
-  neverDo:  /^###?\s*(never\s*do)/im,
+  neverDo: /^###?\s*(never\s*do)/im,
 } as const;
 ```
 
@@ -50,22 +50,22 @@ const BOUNDARY_KEYWORDS = {
 
 ### 문서 규칙
 
-| 규칙명 | 대상 | 조건 | 액션 | 심각도 |
-|--------|------|------|------|--------|
-| line-limit | CLAUDE.md | 줄 수 > 100 | Write 차단 | `error` |
-| missing-boundaries | CLAUDE.md | Always do/Ask first/Never do 섹션 누락 | 경고 주입 | `warning` |
-| append-only | SPEC.md | 기존 내용 유지 + 끝에만 추가 | Write 차단 | `error` |
-| structure-guard | CLAUDE.md | Organ 디렉토리 내 생성 시도 | Write 차단 | `error` (implicit) |
+| 규칙명             | 대상      | 조건                                   | 액션       | 심각도             |
+| ------------------ | --------- | -------------------------------------- | ---------- | ------------------ |
+| line-limit         | CLAUDE.md | 줄 수 > 100                            | Write 차단 | `error`            |
+| missing-boundaries | CLAUDE.md | Always do/Ask first/Never do 섹션 누락 | 경고 주입  | `warning`          |
+| append-only        | SPEC.md   | 기존 내용 유지 + 끝에만 추가           | Write 차단 | `error`            |
+| structure-guard    | CLAUDE.md | Organ 디렉토리 내 생성 시도            | Write 차단 | `error` (implicit) |
 
 ### 메트릭 규칙
 
-| 규칙명 | 대상 | 조건 | 액션 | 근거 |
-|--------|------|------|------|------|
-| 3+12 rule | `*.spec.ts` | 테스트 케이스 > 15 | 위반 보고 | basic 3 + complex 12 = 15 |
-| LCOM4 split | 클래스/모듈 | LCOM4 >= 2 | `split` 권고 | SRP 위반, 하위 프랙탈 추출 |
-| CC compress | 함수/모듈 | CC > 15 (LCOM4 = 1) | `compress` 권고 | 높은 응집도이지만 복잡한 제어 흐름 |
-| CC parameterize | 함수/모듈 | CC <= 15 (LCOM4 = 1, tests > 15) | `parameterize` 권고 | 중복 테스트 병합 |
-| promotion | `*.test.ts` | 90일 안정 + 실패 이력 없음 | `spec.ts`로 승격 | 안정된 테스트의 정규화 |
+| 규칙명          | 대상        | 조건                             | 액션                | 근거                               |
+| --------------- | ----------- | -------------------------------- | ------------------- | ---------------------------------- |
+| 3+12 rule       | `*.spec.ts` | 테스트 케이스 > 15               | 위반 보고           | basic 3 + complex 12 = 15          |
+| LCOM4 split     | 클래스/모듈 | LCOM4 >= 2                       | `split` 권고        | SRP 위반, 하위 프랙탈 추출         |
+| CC compress     | 함수/모듈   | CC > 15 (LCOM4 = 1)              | `compress` 권고     | 높은 응집도이지만 복잡한 제어 흐름 |
+| CC parameterize | 함수/모듈   | CC <= 15 (LCOM4 = 1, tests > 15) | `parameterize` 권고 | 중복 테스트 병합                   |
+| promotion       | `*.test.ts` | 90일 안정 + 실패 이력 없음       | `spec.ts`로 승격    | 안정된 테스트의 정규화             |
 
 ---
 
@@ -82,11 +82,11 @@ const BOUNDARY_KEYWORDS = {
 
 ### NodeType 분류 체계
 
-| 타입 | 의미 | 특징 |
-|------|------|------|
-| `fractal` | 독립 도메인 경계 | CLAUDE.md 보유, 하위 프랙탈/organ 포함 가능 |
-| `organ` | 리프 레벨 부속품 | CLAUDE.md 금지, 특정 디렉토리명 패턴 |
-| `pure-function` | 순수 함수 모듈 | 사이드이펙트 없음, 독립적 |
+| 타입            | 의미             | 특징                                        |
+| --------------- | ---------------- | ------------------------------------------- |
+| `fractal`       | 독립 도메인 경계 | CLAUDE.md 보유, 하위 프랙탈/organ 포함 가능 |
+| `organ`         | 리프 레벨 부속품 | CLAUDE.md 금지, 특정 디렉토리명 패턴        |
+| `pure-function` | 순수 함수 모듈   | 사이드이펙트 없음, 독립적                   |
 
 ---
 
@@ -117,12 +117,12 @@ const BOUNDARY_KEYWORDS = {
 
 ## 에이전트 역할 제한
 
-| 에이전트 | 도구 제한 | 범위 |
-|----------|-----------|------|
-| `architect` | Write, Edit, Bash **금지** | 읽기 전용 — 분석, 설계, 계획만 |
-| `qa-reviewer` | Write, Edit, Bash **금지** | 읽기 전용 — 리뷰, 분석, 보고만 |
-| `implementer` | 제한 없음 (범위 제한) | SPEC.md 범위 내 코드만 수정 |
-| `context-manager` | 제한 없음 (범위 제한) | CLAUDE.md, SPEC.md 문서만 수정 |
+| 에이전트          | 도구 제한                  | 범위                           |
+| ----------------- | -------------------------- | ------------------------------ |
+| `architect`       | Write, Edit, Bash **금지** | 읽기 전용 — 분석, 설계, 계획만 |
+| `qa-reviewer`     | Write, Edit, Bash **금지** | 읽기 전용 — 리뷰, 분석, 보고만 |
+| `implementer`     | 제한 없음 (범위 제한)      | SPEC.md 범위 내 코드만 수정    |
+| `context-manager` | 제한 없음 (범위 제한)      | CLAUDE.md, SPEC.md 문서만 수정 |
 
 ### ROLE_RESTRICTIONS 메시지 (`hooks/agent-enforcer.ts:11-20`)
 
@@ -170,17 +170,17 @@ type DecisionAction = 'split' | 'compress' | 'parameterize' | 'ok';
 
 ### basic vs complex 테스트
 
-| 분류 | 기준 | 설명 |
-|------|------|------|
-| `basic` | `describe` 깊이 <= 1 내 `it`/`test` | 최상위 describe 직하의 테스트 |
-| `complex` | `describe` 깊이 >= 2 내 `it`/`test` | 중첩 describe 내부의 테스트 |
+| 분류      | 기준                                | 설명                          |
+| --------- | ----------------------------------- | ----------------------------- |
+| `basic`   | `describe` 깊이 <= 1 내 `it`/`test` | 최상위 describe 직하의 테스트 |
+| `complex` | `describe` 깊이 >= 2 내 `it`/`test` | 중첩 describe 내부의 테스트   |
 
 ### 파일 유형 판별
 
-| 패턴 | 분류 | 3+12 규칙 적용 |
-|------|------|----------------|
-| `*.spec.ts` / `*.spec.tsx` | `spec` | O (적용) |
-| `*.test.ts` / `*.test.tsx` | `test` | X (무시) |
+| 패턴                       | 분류   | 3+12 규칙 적용 |
+| -------------------------- | ------ | -------------- |
+| `*.spec.ts` / `*.spec.tsx` | `spec` | O (적용)       |
+| `*.test.ts` / `*.test.tsx` | `test` | X (무시)       |
 
 > `check312Rule`은 `spec` 파일만 평가한다. `test` 파일은 필터링되어 제외.
 
@@ -188,10 +188,10 @@ type DecisionAction = 'split' | 'compress' | 'parameterize' | 'ok';
 
 ## 승격 기준 (test → spec)
 
-| 조건 | 기준값 | 설명 |
-|------|--------|------|
-| `stableDays` | >= 90 (기본) | 연속 안정 일수 |
-| `lastFailure` | `null` | 실패 이력 없음 |
+| 조건          | 기준값       | 설명           |
+| ------------- | ------------ | -------------- |
+| `stableDays`  | >= 90 (기본) | 연속 안정 일수 |
+| `lastFailure` | `null`       | 실패 이력 없음 |
 
 두 조건을 모두 만족해야 `eligible: true`.
 
@@ -199,12 +199,12 @@ type DecisionAction = 'split' | 'compress' | 'parameterize' | 'ok';
 
 ## Hook 이벤트별 규칙 적용
 
-| Hook 이벤트 | 적용 규칙 | 차단 가능 |
-|-------------|-----------|-----------|
-| `PreToolUse` (Write\|Edit) | CLAUDE.md 검증, Organ Guard | O |
-| `PostToolUse` (Write\|Edit) | Change Queue 기록 | X (항상 통과) |
-| `SubagentStart` (*) | 에이전트 역할 제한 주입 | X (항상 통과) |
-| `UserPromptSubmit` (*) | FCA-AI 규칙 리마인더 주입 | X (항상 통과) |
+| Hook 이벤트                 | 적용 규칙                   | 차단 가능     |
+| --------------------------- | --------------------------- | ------------- |
+| `PreToolUse` (Write\|Edit)  | CLAUDE.md 검증, Organ Guard | O             |
+| `PostToolUse` (Write\|Edit) | Change Queue 기록           | X (항상 통과) |
+| `SubagentStart` (\*)        | 에이전트 역할 제한 주입     | X (항상 통과) |
+| `UserPromptSubmit` (\*)     | FCA-AI 규칙 리마인더 주입   | X (항상 통과) |
 
 ### Context Injector 주입 내용 (~200자)
 

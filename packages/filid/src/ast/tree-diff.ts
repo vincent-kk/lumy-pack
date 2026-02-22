@@ -4,8 +4,10 @@
  * formatting-only changes.
  */
 import ts from 'typescript';
+
+import type { TreeDiffChange, TreeDiffResult } from '../types/ast.js';
+
 import { parseSource } from './parser.js';
-import type { TreeDiffResult, TreeDiffChange } from '../types/ast.js';
 
 interface DeclSignature {
   name: string;
@@ -85,7 +87,10 @@ export function computeTreeDiff(
 /**
  * Extract top-level declaration signatures from source code.
  */
-function extractDeclarations(source: string, filePath: string): DeclSignature[] {
+function extractDeclarations(
+  source: string,
+  filePath: string,
+): DeclSignature[] {
   const sourceFile = parseSource(source, filePath);
   const decls: DeclSignature[] = [];
 
@@ -95,14 +100,16 @@ function extractDeclarations(source: string, filePath: string): DeclSignature[] 
         name: stmt.name.text,
         kind: 'function',
         normalized: normalize(stmt, sourceFile),
-        line: sourceFile.getLineAndCharacterOfPosition(stmt.getStart()).line + 1,
+        line:
+          sourceFile.getLineAndCharacterOfPosition(stmt.getStart()).line + 1,
       });
     } else if (ts.isClassDeclaration(stmt) && stmt.name) {
       decls.push({
         name: stmt.name.text,
         kind: 'class',
         normalized: normalize(stmt, sourceFile),
-        line: sourceFile.getLineAndCharacterOfPosition(stmt.getStart()).line + 1,
+        line:
+          sourceFile.getLineAndCharacterOfPosition(stmt.getStart()).line + 1,
       });
     } else if (ts.isVariableStatement(stmt)) {
       for (const decl of stmt.declarationList.declarations) {
@@ -111,7 +118,9 @@ function extractDeclarations(source: string, filePath: string): DeclSignature[] 
             name: decl.name.text,
             kind: 'variable',
             normalized: normalize(decl, sourceFile),
-            line: sourceFile.getLineAndCharacterOfPosition(stmt.getStart()).line + 1,
+            line:
+              sourceFile.getLineAndCharacterOfPosition(stmt.getStart()).line +
+              1,
           });
         }
       }
@@ -120,14 +129,16 @@ function extractDeclarations(source: string, filePath: string): DeclSignature[] 
         name: stmt.name.text,
         kind: 'interface',
         normalized: normalize(stmt, sourceFile),
-        line: sourceFile.getLineAndCharacterOfPosition(stmt.getStart()).line + 1,
+        line:
+          sourceFile.getLineAndCharacterOfPosition(stmt.getStart()).line + 1,
       });
     } else if (ts.isTypeAliasDeclaration(stmt)) {
       decls.push({
         name: stmt.name.text,
         kind: 'type',
         normalized: normalize(stmt, sourceFile),
-        line: sourceFile.getLineAndCharacterOfPosition(stmt.getStart()).line + 1,
+        line:
+          sourceFile.getLineAndCharacterOfPosition(stmt.getStart()).line + 1,
       });
     }
   }
@@ -140,7 +151,5 @@ function extractDeclarations(source: string, filePath: string): DeclSignature[] 
  * This ensures formatting-only changes (spaces, newlines, indentation) are ignored.
  */
 function normalize(node: ts.Node, sourceFile: ts.SourceFile): string {
-  return node
-    .getText(sourceFile)
-    .replace(/\s+/g, '');
+  return node.getText(sourceFile).replace(/\s+/g, '');
 }

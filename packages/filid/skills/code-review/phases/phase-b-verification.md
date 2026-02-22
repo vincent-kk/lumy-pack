@@ -14,6 +14,7 @@ using MCP tools and assess existing technical debt bias. Write results to
 ### B.1 — Load Session
 
 Read `<REVIEW_DIR>/session.md` to extract:
+
 - `changed_fractals`: list of affected fractal paths
 - `committee`: elected committee members
 - `changed_files_count`: number of changed files
@@ -75,6 +76,7 @@ Record any structure drift findings.
 ### B.8 — Document Compliance
 
 Check CLAUDE.md files in affected fractals:
+
 - Line count <= 100
 - 3-tier boundary sections present
 
@@ -120,27 +122,27 @@ created_at: <ISO 8601>
 
 ## FCA-AI Structure Verification
 
-| Check | Result | Detail |
-|-------|--------|--------|
-| Fractal boundary | PASS/WARN/FAIL | ... |
-| CLAUDE.md compliance | PASS/WARN/FAIL | ... |
-| 3+12 rule | PASS/WARN/FAIL | ... |
-| LCOM4 | PASS/WARN/FAIL | ... |
-| CC | PASS/WARN/FAIL | ... |
-| Circular dependencies | PASS/WARN/FAIL | ... |
-| Structure drift | PASS/WARN/FAIL | ... |
+| Check                 | Result         | Detail |
+| --------------------- | -------------- | ------ |
+| Fractal boundary      | PASS/WARN/FAIL | ...    |
+| CLAUDE.md compliance  | PASS/WARN/FAIL | ...    |
+| 3+12 rule             | PASS/WARN/FAIL | ...    |
+| LCOM4                 | PASS/WARN/FAIL | ...    |
+| CC                    | PASS/WARN/FAIL | ...    |
+| Circular dependencies | PASS/WARN/FAIL | ...    |
+| Structure drift       | PASS/WARN/FAIL | ...    |
 
 ## Debt Status
 
-| Existing Debts | PR-Related Debts | Total Weight | Bias Level |
-|---|---|---|---|
-| N | M (fractal, weight X) | Y | <level> |
+| Existing Debts | PR-Related Debts      | Total Weight | Bias Level |
+| -------------- | --------------------- | ------------ | ---------- |
+| N              | M (fractal, weight X) | Y            | <level>    |
 
 ### Related Debt List
 
-| ID | Fractal Path | Rule Violated | Weight | Created |
-|----|-------------|---------------|--------|---------|
-| ... | ... | ... | ... | ... |
+| ID  | Fractal Path | Rule Violated | Weight | Created |
+| --- | ------------ | ------------- | ------ | ------- |
+| ... | ...          | ...           | ...    | ...     |
 ```
 
 ## Important Notes

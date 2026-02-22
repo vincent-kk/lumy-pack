@@ -1,5 +1,12 @@
-import { buildFractalTree, findNode, type NodeEntry } from '../../core/fractal-tree.js';
-import { classifyNode, type ClassifyInput } from '../../core/organ-classifier.js';
+import {
+  type NodeEntry,
+  buildFractalTree,
+  findNode,
+} from '../../core/fractal-tree.js';
+import {
+  type ClassifyInput,
+  classifyNode,
+} from '../../core/organ-classifier.js';
 import type { FractalTree } from '../../types/fractal.js';
 
 /** Input for fractal-navigate tool */
@@ -32,7 +39,9 @@ export interface FractalNavigateOutput {
  * - sibling-list: List sibling directories of a given path
  * - tree: Build the full fractal tree from entries
  */
-export function handleFractalNavigate(input: FractalNavigateInput): FractalNavigateOutput {
+export function handleFractalNavigate(
+  input: FractalNavigateInput,
+): FractalNavigateOutput {
   switch (input.action) {
     case 'classify':
       return handleClassify(input);
@@ -48,11 +57,15 @@ export function handleFractalNavigate(input: FractalNavigateInput): FractalNavig
 function handleClassify(input: FractalNavigateInput): FractalNavigateOutput {
   // First check if the entry already has a known type in the provided entries
   const entry = input.entries.find((e) => e.path === input.path);
-  if (entry && entry.type !== 'directory' as string) {
+  if (entry && entry.type !== ('directory' as string)) {
     return { classification: entry.type };
   }
 
-  const dirName = input.path.split('/').filter((s) => s.length > 0).pop() ?? '';
+  const dirName =
+    input.path
+      .split('/')
+      .filter((s) => s.length > 0)
+      .pop() ?? '';
   const hasClaudeMd = entry?.hasClaudeMd ?? false;
   const hasSpecMd = entry?.hasSpecMd ?? false;
 

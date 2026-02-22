@@ -27,31 +27,35 @@ and how the current project is classified, so new modules are placed correctly.
 ## Core Workflow
 
 ### Phase 1 — Project Scan
+
 Retrieve the full directory tree and node classifications using the `fractal-scan`
 MCP tool.
 See [reference.md Section 1](./reference.md#section-1--project-scan).
 
 ### Phase 2 — Rule Query
+
 Fetch all active rules using `rule-query` (`action: "list"`) to build the rule
 reference table included in the guide.
 See [reference.md Section 2](./reference.md#section-2--rule-query).
 
 ### Phase 3 — Classification Summary
+
 Summarise the node category distribution from the scan results.
 Include any existing violations so readers know the current health status.
 See [reference.md Section 3](./reference.md#section-3--classification-summary).
 
 ### Phase 4 — Guide Document Output
+
 Combine rules, category criteria, the classification summary, and a new-module
 checklist into a single guide document.
 See [reference.md Section 4](./reference.md#section-4--guide-document-output).
 
 ## Available MCP Tools
 
-| Tool | Action | Purpose |
-|------|--------|---------|
-| `fractal-scan` | — | Retrieve complete project hierarchy and node classifications |
-| `rule-query` | `list` | Fetch all active rules |
+| Tool           | Action | Purpose                                                      |
+| -------------- | ------ | ------------------------------------------------------------ |
+| `fractal-scan` | —      | Retrieve complete project hierarchy and node classifications |
+| `rule-query`   | `list` | Fetch all active rules                                       |
 
 ## Options
 
@@ -61,9 +65,9 @@ See [reference.md Section 4](./reference.md#section-4--guide-document-output).
 /filid:guide [path]
 ```
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `path` | string | Current working directory | Root directory to scan and document |
+| Parameter | Type   | Default                   | Description                         |
+| --------- | ------ | ------------------------- | ----------------------------------- |
+| `path`    | string | Current working directory | Root directory to scan and document |
 
 ## Quick Reference
 
@@ -82,6 +86,7 @@ hybrid        = Mix of fractal children and organ-like files
 ```
 
 Key rules:
+
 - Organ directories must not contain fractal child nodes
 - Fractal nodes must have an index.ts barrel export
 - main.ts is the primary entry point for a fractal node

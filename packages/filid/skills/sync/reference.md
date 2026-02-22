@@ -14,6 +14,7 @@ fractal-scan({ path: "<target-path>" })
 ```
 
 For each node, confirm:
+
 - `category`: current classification (fractal / organ / pure-function / hybrid)
 - `hasIndex`: index.ts barrel export present
 - `hasMain`: main.ts entry point present
@@ -31,6 +32,7 @@ drift-detect({ path: "<target-path>", severityFilter: "<level>" })
 When `--severity` is provided, only items at or above that level are returned.
 
 Each `DriftItem` fields:
+
 - `path`: node path where drift was detected
 - `driftType`: `category-mismatch` | `missing-index` | `missing-main` | `naming-violation` | `orphaned-node`
 - `severity`: `critical` | `high` | `medium` | `low`
@@ -39,6 +41,7 @@ Each `DriftItem` fields:
 - `suggestedAction`: recommended `SyncAction`
 
 `DriftSeverity` criteria:
+
 - `critical`: breaks module resolution or causes import errors
 - `high`: missing required files (index.ts, main.ts) or wrong category assignment
 - `medium`: naming convention violations or incomplete barrel exports
@@ -59,7 +62,7 @@ Correction plan format:
 ```yaml
 sync-plan:
   target: src/
-  generated: "2026-02-22T00:00:00Z"
+  generated: '2026-02-22T00:00:00Z'
   severity-filter: high
   items:
     - drift-id: D001

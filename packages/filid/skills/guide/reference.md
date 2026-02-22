@@ -12,11 +12,13 @@ fractal-scan({ path: "<target-path>" })
 ```
 
 Response fields:
+
 - `nodes`: Array of directory nodes (`path`, `category`, `hasIndex`, `hasMain`, `children`)
 - `summary`: Total node count and per-category counts
 - `violations`: Currently detected rule violations (may be empty)
 
 Build three working sets from the response:
+
 - **fractal nodes** — `category === "fractal"`
 - **organ nodes** — `category === "organ"`
 - **pure-function / hybrid nodes** — remaining categories
@@ -30,9 +32,11 @@ rule-query({ action: "list" })
 ```
 
 Response fields:
+
 - `rules`: Array of rule objects (`id`, `name`, `category`, `severity`, `description`, `examples`)
 
 Rule categories (`RuleCategory`):
+
 - `naming` — Directory and file naming conventions
 - `structure` — Node structure and hierarchy rules
 - `dependency` — Import/export dependency rules

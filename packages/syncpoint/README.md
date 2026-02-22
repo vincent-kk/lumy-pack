@@ -73,6 +73,7 @@ The fastest and easiest way to get started. AI automatically generates your conf
    ```
 
 **Tip:** If you don't have Claude Code, use `--print` to get the prompt for any LLM:
+
 ```bash
 npx @lumy-pack/syncpoint wizard --print
 ```
@@ -100,8 +101,8 @@ If you prefer to manually edit your configuration file, use this approach.
        - ~/.gitconfig
        - ~/.ssh/config
      exclude:
-       - "**/*.swp"
-     filename: "{hostname}_{datetime}"
+       - '**/*.swp'
+     filename: '{hostname}_{datetime}'
    ```
 
 3. **Create your first backup**
@@ -137,6 +138,7 @@ npx @lumy-pack/syncpoint provision my-dev-setup
 Initialize the syncpoint directory structure and create default configuration.
 
 **What it does:**
+
 - Creates `~/.syncpoint/` directory structure
 - Sets up subdirectories: `backups/`, `templates/`, `scripts/`, `logs/`
 - Generates default `config.yml`
@@ -155,6 +157,7 @@ npx @lumy-pack/syncpoint init
 Interactive LLM-powered wizard to generate personalized `config.yml` based on your home directory.
 
 **What it does:**
+
 1. Scans your home directory for common configuration files
 2. Categorizes files (shell configs, git, SSH, application configs)
 3. Invokes Claude Code to generate customized backup configuration
@@ -164,8 +167,8 @@ Interactive LLM-powered wizard to generate personalized `config.yml` based on yo
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
+| Option        | Description                                                       |
+| ------------- | ----------------------------------------------------------------- |
 | `-p, --print` | Print prompt for manual LLM usage instead of invoking Claude Code |
 
 **Usage:**
@@ -179,10 +182,12 @@ npx @lumy-pack/syncpoint wizard --print
 ```
 
 **Requirements:**
+
 - Claude Code CLI must be installed for default mode
 - Use `--print` mode if Claude Code is not available
 
 **Validation:**
+
 - Automatic AJV schema validation
 - Retry loop with error feedback to LLM
 - Session resume preserves conversation context
@@ -194,6 +199,7 @@ npx @lumy-pack/syncpoint wizard --print
 Interactive LLM-powered wizard to create custom provisioning templates.
 
 **What it does:**
+
 1. Guides you through defining provisioning requirements
 2. Invokes Claude Code to generate template YAML
 3. Validates template structure with automatic retry (max 3 attempts)
@@ -202,8 +208,8 @@ Interactive LLM-powered wizard to create custom provisioning templates.
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
+| Option        | Description                                                       |
+| ------------- | ----------------------------------------------------------------- |
 | `-p, --print` | Print prompt for manual LLM usage instead of invoking Claude Code |
 
 **Usage:**
@@ -220,6 +226,7 @@ npx @lumy-pack/syncpoint create-template --print
 ```
 
 **Template Fields:**
+
 - `name` (required) — Template name
 - `description` (optional) — Template description
 - `steps` (required) — Array of provisioning steps
@@ -227,6 +234,7 @@ npx @lumy-pack/syncpoint create-template --print
 - `sudo` (optional) — Whether sudo privilege is required
 
 **Step Fields:**
+
 - `name` (required) — Step name
 - `command` (required) — Shell command to execute
 - `description` (optional) — Step description
@@ -240,6 +248,7 @@ npx @lumy-pack/syncpoint create-template --print
 Create a compressed backup archive of your configuration files.
 
 **What it does:**
+
 1. Scans configured target files and directories
 2. Applies glob patterns and exclusions
 3. Warns about large files (>10MB) and sensitive files (SSH keys, certificates)
@@ -249,10 +258,10 @@ Create a compressed backup archive of your configuration files.
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
-| `--dry-run` | Preview files to be backed up without creating archive |
-| `--tag <name>` | Add custom tag to backup filename |
+| Option         | Description                                            |
+| -------------- | ------------------------------------------------------ |
+| `--dry-run`    | Preview files to be backed up without creating archive |
+| `--tag <name>` | Add custom tag to backup filename                      |
 
 **Usage:**
 
@@ -278,6 +287,7 @@ Backups are saved to `~/.syncpoint/backups/` (or custom destination) with filena
 Restore configuration files from a backup archive.
 
 **What it does:**
+
 1. Lists available backups (if no filename provided)
 2. Generates restore plan by comparing file hashes:
    - `create` — File doesn't exist locally
@@ -289,8 +299,8 @@ Restore configuration files from a backup archive.
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
+| Option      | Description                                  |
+| ----------- | -------------------------------------------- |
 | `--dry-run` | Show restore plan without actually restoring |
 
 **Usage:**
@@ -307,6 +317,7 @@ npx @lumy-pack/syncpoint restore --dry-run
 ```
 
 **Safety Features:**
+
 - Automatic safety backup before any file is overwritten
 - Hash-based comparison to skip identical files
 - Symlink validation to prevent directory traversal attacks
@@ -318,6 +329,7 @@ npx @lumy-pack/syncpoint restore --dry-run
 Run template-based machine provisioning to install software and configure your system.
 
 **What it does:**
+
 1. Loads template YAML from `~/.syncpoint/templates/` (by name) or from a custom path (with `--file`)
 2. Validates template structure and security
 3. Checks for sudo requirement (prompts if needed)
@@ -328,11 +340,11 @@ Run template-based machine provisioning to install software and configure your s
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
+| Option              | Description                                          |
+| ------------------- | ---------------------------------------------------- |
 | `-f, --file <path>` | Path to template file (alternative to template name) |
-| `--dry-run` | Show execution plan without running commands |
-| `--skip-restore` | Skip automatic config restore after provisioning |
+| `--dry-run`         | Show execution plan without running commands         |
+| `--skip-restore`    | Skip automatic config restore after provisioning     |
 
 **Usage:**
 
@@ -357,12 +369,14 @@ npx @lumy-pack/syncpoint provision -f ./template.yml --dry-run --skip-restore
 ```
 
 **Path Resolution:**
+
 - Supports absolute paths: `/path/to/template.yml`
 - Supports relative paths: `./template.yml`, `../templates/setup.yaml`
 - Supports tilde expansion: `~/templates/custom.yml`
 - Must have `.yml` or `.yaml` extension
 
 **Security:**
+
 - Blocks dangerous remote script patterns (`curl | bash`, `wget | sh`)
 - Sanitizes error output to mask sensitive paths and credentials
 - Validates all templates against schema
@@ -375,6 +389,7 @@ npx @lumy-pack/syncpoint provision -f ./template.yml --dry-run --skip-restore
 Browse and manage backups and templates interactively.
 
 **What it does:**
+
 - Displays interactive menu to browse backups or templates
 - Shows detailed metadata (size, date, file count, description)
 - Allows safe deletion of backups with confirmation
@@ -392,6 +407,7 @@ npx @lumy-pack/syncpoint list templates
 ```
 
 **Navigation:**
+
 - Use arrow keys to select items
 - Press Enter to view details
 - Press ESC to go back
@@ -404,6 +420,7 @@ npx @lumy-pack/syncpoint list templates
 Show status summary and manage cleanup of `~/.syncpoint/` directory.
 
 **What it does:**
+
 - Scans all subdirectories and calculates statistics
 - Displays file counts and total sizes
 - Shows backup timeline (newest and oldest)
@@ -411,8 +428,8 @@ Show status summary and manage cleanup of `~/.syncpoint/` directory.
 
 **Options:**
 
-| Option | Description |
-|--------|-------------|
+| Option      | Description                    |
+| ----------- | ------------------------------ |
 | `--cleanup` | Enter interactive cleanup mode |
 
 **Usage:**
@@ -426,6 +443,7 @@ npx @lumy-pack/syncpoint status --cleanup
 ```
 
 **Cleanup Strategies:**
+
 - Keep only 5 most recent backups
 - Remove backups older than 30 days
 - Delete all log files
@@ -457,14 +475,14 @@ backup:
   # (Required) Patterns to exclude from backup
   # Supports glob and regex patterns
   exclude:
-    - "**/*.swp"
-    - "**/.DS_Store"
-    - "**/node_modules"
+    - '**/*.swp'
+    - '**/.DS_Store'
+    - '**/node_modules'
     # Example regex: "/\\.bak$/" excludes all .bak files
 
   # (Required) Backup filename pattern
   # Available placeholders: {hostname}, {date}, {time}, {datetime}, {tag}
-  filename: "{hostname}_{datetime}"
+  filename: '{hostname}_{datetime}'
 
   # (Optional) Custom backup destination
   # Default: ~/.syncpoint/backups/
@@ -478,13 +496,13 @@ scripts:
 
 ### Filename Placeholders
 
-| Placeholder | Example | Description |
-|-------------|---------|-------------|
-| `{hostname}` | `macbook-pro` | System hostname |
-| `{date}` | `2024-01-15` | Current date (YYYY-MM-DD) |
-| `{time}` | `14-30-00` | Current time (HH-MM-SS) |
-| `{datetime}` | `2024-01-15_14-30-00` | Combined date and time |
-| `{tag}` | `before-upgrade` | Custom tag from `--tag` option |
+| Placeholder  | Example               | Description                    |
+| ------------ | --------------------- | ------------------------------ |
+| `{hostname}` | `macbook-pro`         | System hostname                |
+| `{date}`     | `2024-01-15`          | Current date (YYYY-MM-DD)      |
+| `{time}`     | `14-30-00`            | Current time (HH-MM-SS)        |
+| `{datetime}` | `2024-01-15_14-30-00` | Combined date and time         |
+| `{tag}`      | `before-upgrade`      | Custom tag from `--tag` option |
 
 ### Pattern Types
 
@@ -495,6 +513,7 @@ Syncpoint supports three types of patterns for `targets` and `exclude` fields:
 Direct file or directory paths. Tilde (`~`) is automatically expanded to home directory.
 
 **Examples:**
+
 - `~/.zshrc` — Specific file in home directory
 - `/etc/hosts` — Absolute path
 - `~/.ssh/config` — Nested file
@@ -504,6 +523,7 @@ Direct file or directory paths. Tilde (`~`) is automatically expanded to home di
 Wildcard patterns for matching multiple files. Uses standard glob syntax.
 
 **Examples:**
+
 - `*.conf` — All .conf files in current directory
 - `~/.config/*.yml` — All .yml files in ~/.config/
 - `**/*.toml` — All .toml files recursively
@@ -518,17 +538,20 @@ Regular expressions for advanced pattern matching. Must be enclosed in forward s
 **Format:** `/pattern/` (e.g., `/\.conf$/`)
 
 **Examples:**
+
 - `/\.conf$/` — Files ending with .conf
 - `/\.toml$/` — Files ending with .toml
 - `/\.(bak|tmp)$/` — Files ending with .bak or .tmp
 - `/^\.config\//` — Files starting with .config/
 
 **Limitations:**
+
 - Regex targets scan home directory (`~/`) only
 - Maximum depth: 5 levels for performance
 - No unescaped forward slashes in pattern body
 
 **When to use regex:**
+
 - Complex extension matching: `/\.(conf|toml|yaml)$/`
 - Pattern-based exclusions: `/\.(bak|tmp|cache)$/`
 - Path prefix/suffix matching
@@ -547,12 +570,12 @@ backup:
     - ~/Documents/notes
 
   exclude:
-    - "**/*.swp"
-    - "**/*.tmp"
-    - "**/.DS_Store"
-    - "**/*cache*"
+    - '**/*.swp'
+    - '**/*.tmp'
+    - '**/.DS_Store'
+    - '**/*cache*'
 
-  filename: "{hostname}_{date}_{tag}"
+  filename: '{hostname}_{date}_{tag}'
   destination: ~/Dropbox/backups
 
 scripts:
@@ -582,10 +605,10 @@ sudo: boolean
 
 # (Required) List of provisioning steps
 steps:
-  - name: string              # (Required) Step name
-    description: string       # (Optional) Step description
-    command: string           # (Required) Shell command to execute
-    skip_if: string           # (Optional) Skip if this command succeeds
+  - name: string # (Required) Step name
+    description: string # (Optional) Step description
+    command: string # (Required) Shell command to execute
+    skip_if: string # (Optional) Skip if this command succeeds
     continue_on_error: boolean # (Optional) Continue on failure (default: false)
 ```
 
@@ -671,6 +694,7 @@ After initialization, syncpoint creates the following structure:
 ### Backup Archive Contents
 
 Each backup archive contains:
+
 - Your configuration files in their relative paths
 - `_metadata.json` with backup information:
   - File hashes for comparison
@@ -810,6 +834,7 @@ Syncpoint includes multiple security layers to protect your data and system:
 **Claude Code CLI not found**
 
 If you see "Claude Code CLI not found" error:
+
 1. Install Claude Code CLI: Visit [claude.ai/code](https://claude.ai/code) for installation instructions
 2. Or use `--print` mode to get the prompt and use it with your preferred LLM
 3. Verify installation: `claude --version`
@@ -817,6 +842,7 @@ If you see "Claude Code CLI not found" error:
 **Validation errors after LLM generation**
 
 The wizard automatically retries up to 3 times when validation fails:
+
 - Each retry includes error feedback to help the LLM correct the issues
 - If all retries fail, check the validation error messages
 - Common issues:
@@ -827,6 +853,7 @@ The wizard automatically retries up to 3 times when validation fails:
 **Print mode usage**
 
 Use `--print` mode when Claude Code is not available:
+
 ```bash
 # Get the prompt
 npx @lumy-pack/syncpoint wizard --print > prompt.txt
@@ -838,6 +865,7 @@ npx @lumy-pack/syncpoint wizard --print > prompt.txt
 **Session context lost**
 
 The wizard preserves session context across retries using Claude Code's session management. If context is lost:
+
 - The wizard will start a new session on the next retry
 - Manual intervention may be needed after 3 failed attempts
 
@@ -846,6 +874,7 @@ The wizard preserves session context across retries using Claude Code's session 
 **Permission errors**
 
 If you encounter permission errors:
+
 - Ensure you have write access to `~/.syncpoint/`
 - Check file permissions: `ls -la ~/.syncpoint/`
 - Run with appropriate permissions (avoid unnecessary sudo)
@@ -853,6 +882,7 @@ If you encounter permission errors:
 **Large file warnings**
 
 Files larger than 10MB trigger warnings:
+
 - Consider excluding large files using `exclude` patterns
 - Review if these files should be in version control instead
 - Compress large files before backing up
@@ -860,6 +890,7 @@ Files larger than 10MB trigger warnings:
 **Backup restore conflicts**
 
 If restore shows many "overwrite" actions:
+
 - Use `--dry-run` to preview changes first
 - Automatic safety backup is created before overwrite
 - Review the safety backup in `~/.syncpoint/backups/` tagged with `_pre-restore_`

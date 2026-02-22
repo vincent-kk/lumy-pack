@@ -1,8 +1,7 @@
 #!/usr/bin/env node
-
 import { readFileSync, writeFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -11,7 +10,8 @@ const __dirname = dirname(__filename);
  * Semantic version regex (https://semver.org/)
  * Matches: 0.0.1, 1.2.3, 1.0.0-beta.1, 2.0.0+build.123, etc.
  */
-const SEMVER_REGEX = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
+const SEMVER_REGEX =
+  /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
 
 /**
  * Read and validate package.json version
@@ -29,8 +29,12 @@ function readPackageVersion() {
     }
 
     if (!SEMVER_REGEX.test(pkg.version)) {
-      console.error(`❌ Error: Invalid semantic version "${pkg.version}" in package.json`);
-      console.error('   Expected format: MAJOR.MINOR.PATCH (e.g., 1.2.3, 1.0.0-beta.1)');
+      console.error(
+        `❌ Error: Invalid semantic version "${pkg.version}" in package.json`,
+      );
+      console.error(
+        '   Expected format: MAJOR.MINOR.PATCH (e.g., 1.2.3, 1.0.0-beta.1)',
+      );
       process.exit(1);
     }
 

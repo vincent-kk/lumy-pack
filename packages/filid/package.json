@@ -40,8 +40,10 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && node build-plugin.mjs",
+    "clean": "rm -rf libs scripts",
+    "build": "yarn clean && tsc -p tsconfig.build.json && node build-plugin.mjs",
     "build:plugin": "node build-plugin.mjs",
+    "format": "prettier --write \"src/**/*.ts\" \"*.{json,mjs,md}\"",
     "dev": "tsc --watch",
     "lint": "eslint \"src/**/*.ts\"",
     "test": "vitest",

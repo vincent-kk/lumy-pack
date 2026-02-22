@@ -100,14 +100,14 @@ Report all files changed with absolute paths and line counts.
 
 ## MCP Tool Usage
 
-| Tool | Mode | When to Use |
-|------|------|-------------|
-| `doc-compress` | `reversible` | Compress content that may need exact recall later |
-| `doc-compress` | `lossy` | Compress historical context and aggregate stats |
-| `doc-compress` | `auto` | Let the tool choose the optimal compression strategy |
-| `fractal-navigate` | `tree` | Get the full fractal hierarchy for context |
-| `fractal-navigate` | `classify` | Identify directory types (atom/molecule/organ/system) |
-| `ast-analyze` | `dependency-graph` | Detect which modules changed and require doc sync |
+| Tool               | Mode               | When to Use                                           |
+| ------------------ | ------------------ | ----------------------------------------------------- |
+| `doc-compress`     | `reversible`       | Compress content that may need exact recall later     |
+| `doc-compress`     | `lossy`            | Compress historical context and aggregate stats       |
+| `doc-compress`     | `auto`             | Let the tool choose the optimal compression strategy  |
+| `fractal-navigate` | `tree`             | Get the full fractal hierarchy for context            |
+| `fractal-navigate` | `classify`         | Identify directory types (atom/molecule/organ/system) |
+| `ast-analyze`      | `dependency-graph` | Detect which modules changed and require doc sync     |
 
 ## ChangeQueue Protocol
 
@@ -131,12 +131,15 @@ Every CLAUDE.md must contain these sections:
 <One-line purpose statement>
 
 ## Always do
+
 - <Required behaviors and patterns>
 
 ## Ask first
+
 - <Behaviors requiring human judgment or approval>
 
 ## Never do
+
 - <Prohibited actions and anti-patterns>
 ```
 
@@ -156,6 +159,7 @@ Organ directories: `components`, `utils`, `types`, `hooks`, `helpers`, `lib`, `s
 ## Output Expectations
 
 After completing work:
+
 - List every file created or modified with absolute paths and final line counts.
 - Confirm each CLAUDE.md meets the 3-tier rule and 100-line limit.
 - Confirm each SPEC.md was restructured (not appended).

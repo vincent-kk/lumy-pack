@@ -1,31 +1,37 @@
-import { describe, it, expect } from 'vitest';
-import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import type { NodeType } from '../../../types/fractal.js';
+import { join } from 'node:path';
+
+import { describe, expect, it } from 'vitest';
+
 import {
+  type NodeEntry,
   buildFractalTree,
+  findNode,
   getAncestors,
   getDescendants,
-  findNode,
-  shouldExclude,
   scanProject,
-  type NodeEntry,
+  shouldExclude,
 } from '../../../core/fractal-tree.js';
+import type { NodeType } from '../../../types/fractal.js';
 
 const entry = (
   path: string,
   type: NodeType,
   hasClaudeMd = false,
   hasSpecMd = false,
-): NodeEntry => ({ path, name: path.split('/').pop()!, type, hasClaudeMd, hasSpecMd });
+): NodeEntry => ({
+  path,
+  name: path.split('/').pop()!,
+  type,
+  hasClaudeMd,
+  hasSpecMd,
+});
 
 describe('fractal-tree', () => {
   describe('buildFractalTree', () => {
     it('should build a tree with single root', () => {
-      const entries: NodeEntry[] = [
-        entry('/app', 'fractal', true),
-      ];
+      const entries: NodeEntry[] = [entry('/app', 'fractal', true)];
       const tree = buildFractalTree(entries);
       expect(tree.root).toBe('/app');
       expect(tree.nodes.size).toBe(1);
@@ -209,8 +215,12 @@ describe('fractal-tree', () => {
     });
 
     it('should respect custom exclude patterns', () => {
-      expect(shouldExclude('custom-dir', { exclude: ['**/custom-dir/**'] })).toBe(true);
-      expect(shouldExclude('other-dir', { exclude: ['**/custom-dir/**'] })).toBe(false);
+      expect(
+        shouldExclude('custom-dir', { exclude: ['**/custom-dir/**'] }),
+      ).toBe(true);
+      expect(
+        shouldExclude('other-dir', { exclude: ['**/custom-dir/**'] }),
+      ).toBe(false);
     });
   });
 
@@ -238,7 +248,7 @@ describe('fractal-tree', () => {
     it('should build a tree from a real directory structure', async () => {
       setup({
         '.': ['CLAUDE.md', 'index.ts'],
-        'auth': ['CLAUDE.md', 'index.ts'],
+        auth: ['CLAUDE.md', 'index.ts'],
         'auth/components': [],
       });
 
@@ -256,7 +266,7 @@ describe('fractal-tree', () => {
     it('should detect CLAUDE.md and classify as fractal', async () => {
       setup({
         '.': ['CLAUDE.md'],
-        'auth': ['CLAUDE.md'],
+        auth: ['CLAUDE.md'],
       });
 
       try {
@@ -274,7 +284,7 @@ describe('fractal-tree', () => {
     it('should classify leaf dir without CLAUDE.md as organ', async () => {
       setup({
         '.': ['CLAUDE.md'],
-        'utils': ['helper.ts'],
+        utils: ['helper.ts'],
       });
 
       try {
@@ -306,7 +316,7 @@ describe('fractal-tree', () => {
     it('should respect maxDepth option', async () => {
       setup({
         '.': ['CLAUDE.md'],
-        'level1': [],
+        level1: [],
         'level1/level2': [],
         'level1/level2/level3': [],
       });
@@ -330,7 +340,9 @@ describe('fractal-tree', () => {
       try {
         const tree = await scanProject(tmpDir);
 
-        const hasNodeModules = [...tree.nodes.keys()].some((k) => k.includes('node_modules'));
+        const hasNodeModules = [...tree.nodes.keys()].some((k) =>
+          k.includes('node_modules'),
+        );
         expect(hasNodeModules).toBe(false);
       } finally {
         teardown();
@@ -340,7 +352,7 @@ describe('fractal-tree', () => {
     it('should return correct totalNodes and depth', async () => {
       setup({
         '.': ['CLAUDE.md'],
-        'auth': ['CLAUDE.md'],
+        auth: ['CLAUDE.md'],
         'auth/login': [],
       });
 

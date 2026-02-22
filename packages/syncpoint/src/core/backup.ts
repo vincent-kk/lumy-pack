@@ -102,7 +102,10 @@ export async function scanTargets(
 
         for (const match of allFiles) {
           if (regex.test(match) && !isExcluded(match)) {
-            if (!config.backup.includeSensitiveFiles && isSensitiveFile(match)) {
+            if (
+              !config.backup.includeSensitiveFiles &&
+              isSensitiveFile(match)
+            ) {
               logger.warn(`Sensitive file excluded: ${match}`);
               continue;
             }
@@ -183,7 +186,10 @@ export async function scanTargets(
         // Apply non-glob excludes as post-filter
         for (const match of matches) {
           if (!isExcluded(match)) {
-            if (!config.backup.includeSensitiveFiles && isSensitiveFile(match)) {
+            if (
+              !config.backup.includeSensitiveFiles &&
+              isSensitiveFile(match)
+            ) {
               logger.warn(`Sensitive file excluded: ${match}`);
               continue;
             }

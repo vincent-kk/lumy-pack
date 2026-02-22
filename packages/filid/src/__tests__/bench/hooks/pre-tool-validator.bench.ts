@@ -1,10 +1,11 @@
 import { bench, describe } from 'vitest';
+
 import { validatePreToolUse } from '../../../hooks/pre-tool-validator.js';
-import {
-  generatePreToolUseInput,
-  generateClaudeMdContent,
-} from '../fixtures/generator.js';
 import type { PreToolUseInput } from '../../../types/hooks.js';
+import {
+  generateClaudeMdContent,
+  generatePreToolUseInput,
+} from '../fixtures/generator.js';
 
 // 티어별 입력 사전 생성
 const inputS = generatePreToolUseInput('S');

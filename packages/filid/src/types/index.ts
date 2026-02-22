@@ -67,9 +67,7 @@ export type {
 } from './rules.js';
 export { BUILTIN_RULE_IDS } from './rules.js';
 
-export type {
-  ScanOptions,
-} from './scan.js';
+export type { ScanOptions } from './scan.js';
 export { DEFAULT_SCAN_OPTIONS } from './scan.js';
 
 export type {

@@ -1,5 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { join } from 'node:path';
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { UserPromptSubmitInput } from '../../../types/hooks.js';
 
 // existsSync 모킹: .filid 경로에 대해 true 반환 (게이트 통과)
@@ -82,10 +84,12 @@ describe('context-injector', () => {
     expect(result.hookSpecificOutput).toBeUndefined();
 
     // 모킹 복원
-    (existsSync as ReturnType<typeof vi.fn>).mockImplementation((p: unknown) => {
-      if (typeof p === 'string' && p.endsWith('.filid')) return true;
-      return false;
-    });
+    (existsSync as ReturnType<typeof vi.fn>).mockImplementation(
+      (p: unknown) => {
+        if (typeof p === 'string' && p.endsWith('.filid')) return true;
+        return false;
+      },
+    );
   });
 
   it('should include category classification guide', async () => {

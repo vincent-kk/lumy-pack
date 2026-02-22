@@ -38,7 +38,7 @@ After analysis, `fractal-architect` generates a structured YAML proposal:
 ```yaml
 restructure-plan:
   target: src/
-  generated: "2026-02-22T00:00:00Z"
+  generated: '2026-02-22T00:00:00Z'
   actions:
     - type: move
       source: src/components/AuthModal
@@ -119,6 +119,7 @@ structure-validate({ path: "<target-path>" })
 ```
 
 Validation checks:
+
 - All imports are resolvable
 - No orphaned files (unreferenced after moves)
 - All fractal nodes have index.ts

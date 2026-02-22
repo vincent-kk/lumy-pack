@@ -10,17 +10,61 @@ export type * from './types/index.js';
 
 // Core modules
 export { validateClaudeMd, validateSpecMd } from './core/document-validator.js';
-export { classifyNode, isOrganDirectory, ORGAN_DIR_NAMES, LEGACY_ORGAN_DIR_NAMES } from './core/organ-classifier.js';
-export { buildFractalTree, findNode, getAncestors, getDescendants, scanProject, shouldExclude } from './core/fractal-tree.js';
-export { buildDAG, topologicalSort, detectCycles, getDirectDependencies } from './core/dependency-graph.js';
+export {
+  classifyNode,
+  isOrganDirectory,
+  ORGAN_DIR_NAMES,
+  LEGACY_ORGAN_DIR_NAMES,
+} from './core/organ-classifier.js';
+export {
+  buildFractalTree,
+  findNode,
+  getAncestors,
+  getDescendants,
+  scanProject,
+  shouldExclude,
+} from './core/fractal-tree.js';
+export {
+  buildDAG,
+  topologicalSort,
+  detectCycles,
+  getDirectDependencies,
+} from './core/dependency-graph.js';
 export { ChangeQueue } from './core/change-queue.js';
-export { validateStructure, validateNode, validateDependencies } from './core/fractal-validator.js';
-export { detectDrift, compareCurrent, calculateSeverity, generateSyncPlan } from './core/drift-detector.js';
-export { analyzeProject, calculateHealthScore, generateReport } from './core/project-analyzer.js';
-export { loadBuiltinRules, evaluateRules, evaluateRule, getActiveRules } from './core/rule-engine.js';
-export { analyzeModule, findEntryPoint, extractImports, extractPublicApi } from './core/module-main-analyzer.js';
+export {
+  validateStructure,
+  validateNode,
+  validateDependencies,
+} from './core/fractal-validator.js';
+export {
+  detectDrift,
+  compareCurrent,
+  calculateSeverity,
+  generateSyncPlan,
+} from './core/drift-detector.js';
+export {
+  analyzeProject,
+  calculateHealthScore,
+  generateReport,
+} from './core/project-analyzer.js';
+export {
+  loadBuiltinRules,
+  evaluateRules,
+  evaluateRule,
+  getActiveRules,
+} from './core/rule-engine.js';
+export {
+  analyzeModule,
+  findEntryPoint,
+  extractImports,
+  extractPublicApi,
+} from './core/module-main-analyzer.js';
 export { analyzeIndex, extractModuleExports } from './core/index-analyzer.js';
-export { findLCA, getModulePlacement, getAncestorPaths } from './core/lca-calculator.js';
+export {
+  findLCA,
+  getModulePlacement,
+  getAncestorPaths,
+} from './core/lca-calculator.js';
 
 // Metrics
 export { countTestCases } from './metrics/test-counter.js';
@@ -29,7 +73,10 @@ export { decide } from './metrics/decision-tree.js';
 export { checkPromotionEligibility } from './metrics/promotion-tracker.js';
 
 // Compression
-export { compactReversible, restoreFromCompacted } from './compress/reversible-compactor.js';
+export {
+  compactReversible,
+  restoreFromCompacted,
+} from './compress/reversible-compactor.js';
 export { summarizeLossy } from './compress/lossy-summarizer.js';
 
 // AST analysis

@@ -28,35 +28,39 @@ approved corrections.
 ## Core Workflow
 
 ### Stage 1 — Scan
+
 `drift-analyzer` scans the full project using `fractal-scan` to establish the
 current structural state.
 See [reference.md Section 1](./reference.md#section-1--scan).
 
 ### Stage 2 — Detect & Classify
+
 `drift-detect` identifies all drift items and classifies them by severity:
 `critical`, `high`, `medium`, `low`. The `--severity` option restricts which
 items are included in the correction plan.
 See [reference.md Section 2](./reference.md#section-2--detect--classify).
 
 ### Stage 3 — Plan & Approval
+
 `drift-analyzer` generates the correction plan. `fractal-architect` reviews
 reclassification candidates using `lca-resolve`. The plan is presented to the
 user for approval unless `--auto-approve` is set.
 See [reference.md Section 3](./reference.md#section-3--plan--approval).
 
 ### Stage 4 — Correction Execution
+
 `restructurer` executes the approved corrections and `structure-validate` confirms
 the result.
 See [reference.md Section 4](./reference.md#section-4--correction-execution).
 
 ## Available MCP Tools
 
-| Tool | Stage | Purpose |
-|------|-------|---------|
-| `fractal-scan` | 1 | Full project structure scan |
-| `drift-detect` | 2 | Identify drift items |
-| `lca-resolve` | 3 | Determine correct placement for reclassification candidates |
-| `structure-validate` | 4 | Validate post-correction structure |
+| Tool                 | Stage | Purpose                                                     |
+| -------------------- | ----- | ----------------------------------------------------------- |
+| `fractal-scan`       | 1     | Full project structure scan                                 |
+| `drift-detect`       | 2     | Identify drift items                                        |
+| `lca-resolve`        | 3     | Determine correct placement for reclassification candidates |
+| `structure-validate` | 4     | Validate post-correction structure                          |
 
 ## Options
 
@@ -66,12 +70,12 @@ See [reference.md Section 4](./reference.md#section-4--correction-execution).
 /filid:sync [path] [--severity critical|high|medium|low] [--dry-run] [--auto-approve]
 ```
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `path` | string | Current working directory | Root directory to scan |
-| `--severity` | `critical\|high\|medium\|low` | `low` (all) | Minimum severity level to correct |
-| `--dry-run` | flag | off | Print detection results and plan without applying changes |
-| `--auto-approve` | flag | off | Skip user approval step |
+| Option           | Type                          | Default                   | Description                                               |
+| ---------------- | ----------------------------- | ------------------------- | --------------------------------------------------------- |
+| `path`           | string                        | Current working directory | Root directory to scan                                    |
+| `--severity`     | `critical\|high\|medium\|low` | `low` (all)               | Minimum severity level to correct                         |
+| `--dry-run`      | flag                          | off                       | Print detection results and plan without applying changes |
+| `--auto-approve` | flag                          | off                       | Skip user approval step                                   |
 
 ## Quick Reference
 
@@ -94,6 +98,7 @@ Severity: critical > high > medium > low
 ```
 
 Key rules:
+
 - `--severity high` corrects `critical` and `high` items; `medium` and `low` are reported but skipped
 - `--dry-run` never modifies files
 - If critical drift is present, correct it before re-running builds or tests

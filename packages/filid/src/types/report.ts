@@ -5,11 +5,10 @@
  * project-analyzer는 scan → validate → drift 파이프라인을 실행하고
  * AnalysisReport를 생성한다.
  */
-
+import type { DriftResult, SyncPlan } from './drift.js';
 import type { FractalTree, ModuleInfo } from './fractal.js';
 import type { RuleEvaluationResult } from './rules.js';
 import type { ScanOptions } from './scan.js';
-import type { DriftResult, SyncPlan } from './drift.js';
 
 export interface ScanReport {
   tree: FractalTree;

@@ -8,10 +8,11 @@
  *   mcp/server.cjs        — MCP server (CJS, single file)
  *   scripts/<name>.mjs     — Hook scripts (ESM, self-contained)
  */
-import { build } from 'esbuild';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
 import { mkdirSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { build } from 'esbuild';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

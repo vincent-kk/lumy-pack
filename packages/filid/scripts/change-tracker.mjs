@@ -39,14 +39,18 @@ function classifyPathCategory(filePath, cwd) {
         continue;
       }
       const entries = fs.readdirSync(dirSoFar, { withFileTypes: true });
-      const hasClaudeMd = entries.some((e) => e.isFile() && e.name === "CLAUDE.md");
+      const hasClaudeMd = entries.some(
+        (e) => e.isFile() && e.name === "CLAUDE.md"
+      );
       const hasSpecMd = entries.some((e) => e.isFile() && e.name === "SPEC.md");
       const subdirs = entries.filter((e) => e.isDirectory());
       const isLeafDirectory = subdirs.length === 0;
       const hasFractalChildren = subdirs.some((d) => {
         try {
           const childPath = path.join(dirSoFar, d.name);
-          const childEntries = fs.readdirSync(childPath, { withFileTypes: true });
+          const childEntries = fs.readdirSync(childPath, {
+            withFileTypes: true
+          });
           return childEntries.some(
             (ce) => ce.isFile() && (ce.name === "CLAUDE.md" || ce.name === "SPEC.md")
           );
@@ -120,7 +124,9 @@ var chunks = [];
 for await (const chunk of process.stdin) {
   chunks.push(chunk);
 }
-var input = JSON.parse(Buffer.concat(chunks).toString("utf-8"));
+var input = JSON.parse(
+  Buffer.concat(chunks).toString("utf-8")
+);
 var result;
 try {
   result = trackChange(input, stubQueue);

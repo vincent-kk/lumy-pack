@@ -1,11 +1,15 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtemp, rm, readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { handleDebtManage } from '../../../mcp/tools/debt-manage.js';
-import type { DebtItemCreate, DebtItem } from '../../../types/debt.js';
 
-function makeDebtItemCreate(overrides: Partial<DebtItemCreate> = {}): DebtItemCreate {
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { handleDebtManage } from '../../../mcp/tools/debt-manage.js';
+import type { DebtItem, DebtItemCreate } from '../../../types/debt.js';
+
+function makeDebtItemCreate(
+  overrides: Partial<DebtItemCreate> = {},
+): DebtItemCreate {
   return {
     fractal_path: 'core/auth',
     file_path: 'src/core/auth.ts',
@@ -90,7 +94,9 @@ describe('handleDebtManage', () => {
     });
 
     it('id는 fractal_path의 /를 -로 변환한 접두어를 가진다', async () => {
-      const debtItem = makeDebtItemCreate({ fractal_path: 'core/auth/session' });
+      const debtItem = makeDebtItemCreate({
+        fractal_path: 'core/auth/session',
+      });
       const { id } = (await handleDebtManage({
         action: 'create',
         projectRoot: tmpDir,
@@ -156,12 +162,18 @@ describe('handleDebtManage', () => {
       await handleDebtManage({
         action: 'create',
         projectRoot: tmpDir,
-        debtItem: makeDebtItemCreate({ fractal_path: 'core/auth', title: '부채1' }),
+        debtItem: makeDebtItemCreate({
+          fractal_path: 'core/auth',
+          title: '부채1',
+        }),
       });
       await handleDebtManage({
         action: 'create',
         projectRoot: tmpDir,
-        debtItem: makeDebtItemCreate({ fractal_path: 'core/api', title: '부채2' }),
+        debtItem: makeDebtItemCreate({
+          fractal_path: 'core/api',
+          title: '부채2',
+        }),
       });
 
       const result = (await handleDebtManage({
@@ -177,12 +189,18 @@ describe('handleDebtManage', () => {
       await handleDebtManage({
         action: 'create',
         projectRoot: tmpDir,
-        debtItem: makeDebtItemCreate({ fractal_path: 'core/auth', title: '인증 부채' }),
+        debtItem: makeDebtItemCreate({
+          fractal_path: 'core/auth',
+          title: '인증 부채',
+        }),
       });
       await handleDebtManage({
         action: 'create',
         projectRoot: tmpDir,
-        debtItem: makeDebtItemCreate({ fractal_path: 'core/api', title: 'API 부채' }),
+        debtItem: makeDebtItemCreate({
+          fractal_path: 'core/api',
+          title: 'API 부채',
+        }),
       });
 
       const result = (await handleDebtManage({
@@ -199,17 +217,26 @@ describe('handleDebtManage', () => {
       await handleDebtManage({
         action: 'create',
         projectRoot: tmpDir,
-        debtItem: makeDebtItemCreate({ fractal_path: 'core/auth', title: '부채A' }),
+        debtItem: makeDebtItemCreate({
+          fractal_path: 'core/auth',
+          title: '부채A',
+        }),
       });
       await handleDebtManage({
         action: 'create',
         projectRoot: tmpDir,
-        debtItem: makeDebtItemCreate({ fractal_path: 'core/auth', title: '부채B' }),
+        debtItem: makeDebtItemCreate({
+          fractal_path: 'core/auth',
+          title: '부채B',
+        }),
       });
       await handleDebtManage({
         action: 'create',
         projectRoot: tmpDir,
-        debtItem: makeDebtItemCreate({ fractal_path: 'other/path', title: '부채C' }),
+        debtItem: makeDebtItemCreate({
+          fractal_path: 'other/path',
+          title: '부채C',
+        }),
       });
 
       const result = (await handleDebtManage({
@@ -250,7 +277,11 @@ describe('handleDebtManage', () => {
         debtItem: makeDebtItemCreate(),
       })) as { id: string; filePath: string };
 
-      await handleDebtManage({ action: 'resolve', projectRoot: tmpDir, debtId: id });
+      await handleDebtManage({
+        action: 'resolve',
+        projectRoot: tmpDir,
+        debtId: id,
+      });
 
       const result = (await handleDebtManage({
         action: 'list',
@@ -311,7 +342,11 @@ describe('handleDebtManage', () => {
         debts: [debt],
         changedFractalPaths: ['core/auth'],
         currentCommitSha: 'sha-001',
-      })) as { updatedDebts: DebtItem[]; totalScore: number; biasLevel: string };
+      })) as {
+        updatedDebts: DebtItem[];
+        totalScore: number;
+        biasLevel: string;
+      };
 
       // touch_count=0→1 이므로 weight = 1*2^1 = 2
       expect(result.updatedDebts[0].touch_count).toBe(1);
@@ -337,7 +372,11 @@ describe('handleDebtManage', () => {
     });
 
     it('weight 상한선: touch_count >= 4이면 weight는 16을 초과하지 않는다', async () => {
-      const debt = makeDebt({ touch_count: 10, weight: 16, last_review_commit: null });
+      const debt = makeDebt({
+        touch_count: 10,
+        weight: 16,
+        last_review_commit: null,
+      });
       const result = (await handleDebtManage({
         action: 'calculate-bias',
         projectRoot: tmpDir,
@@ -350,7 +389,11 @@ describe('handleDebtManage', () => {
     });
 
     it('멱등성: 동일한 commitSha로 재호출 시 변경 없음', async () => {
-      const debt = makeDebt({ touch_count: 1, weight: 2, last_review_commit: 'sha-001' });
+      const debt = makeDebt({
+        touch_count: 1,
+        weight: 2,
+        last_review_commit: 'sha-001',
+      });
       const result = (await handleDebtManage({
         action: 'calculate-bias',
         projectRoot: tmpDir,
@@ -364,7 +407,11 @@ describe('handleDebtManage', () => {
     });
 
     it('매칭되지 않는 fractalPath는 업데이트되지 않는다', async () => {
-      const debt = makeDebt({ fractal_path: 'core/api', touch_count: 0, weight: 1 });
+      const debt = makeDebt({
+        fractal_path: 'core/api',
+        touch_count: 0,
+        weight: 1,
+      });
       const result = (await handleDebtManage({
         action: 'calculate-bias',
         projectRoot: tmpDir,
@@ -393,7 +440,11 @@ describe('handleDebtManage', () => {
 
     it('biasLevel: totalScore 6-15 → MODERATE_PRESSURE', async () => {
       const debts = Array.from({ length: 10 }, (_, i) =>
-        makeDebt({ id: `debt-${i}`, weight: 1, last_review_commit: 'committed' }),
+        makeDebt({
+          id: `debt-${i}`,
+          weight: 1,
+          last_review_commit: 'committed',
+        }),
       );
       const result = (await handleDebtManage({
         action: 'calculate-bias',
@@ -409,7 +460,11 @@ describe('handleDebtManage', () => {
 
     it('biasLevel: totalScore 16-30 → HIGH_PRESSURE', async () => {
       const debts = Array.from({ length: 20 }, (_, i) =>
-        makeDebt({ id: `debt-${i}`, weight: 1, last_review_commit: 'committed' }),
+        makeDebt({
+          id: `debt-${i}`,
+          weight: 1,
+          last_review_commit: 'committed',
+        }),
       );
       const result = (await handleDebtManage({
         action: 'calculate-bias',
@@ -425,7 +480,11 @@ describe('handleDebtManage', () => {
 
     it('biasLevel: totalScore 31+ → CRITICAL_PRESSURE', async () => {
       const debts = Array.from({ length: 35 }, (_, i) =>
-        makeDebt({ id: `debt-${i}`, weight: 1, last_review_commit: 'committed' }),
+        makeDebt({
+          id: `debt-${i}`,
+          weight: 1,
+          last_review_commit: 'committed',
+        }),
       );
       const result = (await handleDebtManage({
         action: 'calculate-bias',

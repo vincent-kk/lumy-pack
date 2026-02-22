@@ -1,17 +1,18 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
+
 import { handleAstAnalyze } from './tools/ast-analyze.js';
-import { handleFractalNavigate } from './tools/fractal-navigate.js';
+import { handleDebtManage } from './tools/debt-manage.js';
 import { handleDocCompress } from './tools/doc-compress.js';
-import { handleTestMetrics } from './tools/test-metrics.js';
-import { handleFractalScan } from './tools/fractal-scan.js';
 import { handleDriftDetect } from './tools/drift-detect.js';
+import { handleFractalNavigate } from './tools/fractal-navigate.js';
+import { handleFractalScan } from './tools/fractal-scan.js';
 import { handleLcaResolve } from './tools/lca-resolve.js';
+import { handleReviewManage } from './tools/review-manage.js';
 import { handleRuleQuery } from './tools/rule-query.js';
 import { handleStructureValidate } from './tools/structure-validate.js';
-import { handleReviewManage } from './tools/review-manage.js';
-import { handleDebtManage } from './tools/debt-manage.js';
+import { handleTestMetrics } from './tools/test-metrics.js';
 
 /** JSON.stringify replacer that converts Map/Set to plain objects/arrays */
 function mapReplacer(_key: string, value: unknown): unknown {
@@ -25,12 +26,19 @@ function mapReplacer(_key: string, value: unknown): unknown {
 }
 
 function toolResult(result: unknown) {
-  return { content: [{ type: 'text' as const, text: JSON.stringify(result, mapReplacer, 2) }] };
+  return {
+    content: [
+      { type: 'text' as const, text: JSON.stringify(result, mapReplacer, 2) },
+    ],
+  };
 }
 
 function toolError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
-  return { content: [{ type: 'text' as const, text: `Error: ${message}` }], isError: true as const };
+  return {
+    content: [{ type: 'text' as const, text: `Error: ${message}` }],
+    isError: true as const,
+  };
 }
 
 /**
@@ -48,10 +56,22 @@ export function createServer(): McpServer {
         source: z.string().describe('Source code to analyze'),
         filePath: z.string().describe('Virtual file path').optional(),
         analysisType: z
-          .enum(['dependency-graph', 'lcom4', 'cyclomatic-complexity', 'tree-diff', 'full'])
+          .enum([
+            'dependency-graph',
+            'lcom4',
+            'cyclomatic-complexity',
+            'tree-diff',
+            'full',
+          ])
           .describe('Type of analysis to perform'),
-        className: z.string().describe('Class name (required for lcom4)').optional(),
-        oldSource: z.string().describe('Old source code (for tree-diff)').optional(),
+        className: z
+          .string()
+          .describe('Class name (required for lcom4)')
+          .optional(),
+        oldSource: z
+          .string()
+          .describe('Old source code (for tree-diff)')
+          .optional(),
       }),
     },
     async (args) => {
@@ -79,7 +99,13 @@ export function createServer(): McpServer {
             z.object({
               name: z.string(),
               path: z.string(),
-              type: z.enum(['fractal', 'organ', 'pure-function', 'hybrid', 'directory']),
+              type: z.enum([
+                'fractal',
+                'organ',
+                'pure-function',
+                'hybrid',
+                'directory',
+              ]),
               hasClaudeMd: z.boolean(),
               hasSpecMd: z.boolean(),
             }),
@@ -90,7 +116,9 @@ export function createServer(): McpServer {
     async (args) => {
       try {
         // 'directory' is accepted as input and resolved via classifyNode() inside the handler
-        const result = await handleFractalNavigate(args as Parameters<typeof handleFractalNavigate>[0]);
+        const result = await handleFractalNavigate(
+          args as Parameters<typeof handleFractalNavigate>[0],
+        );
         return toolResult(result);
       } catch (error) {
         return toolError(error);
@@ -108,7 +136,10 @@ export function createServer(): McpServer {
           .enum(['reversible', 'lossy', 'auto'])
           .describe('Compression mode'),
         filePath: z.string().describe('File path (for reversible)').optional(),
-        content: z.string().describe('File content (for reversible)').optional(),
+        content: z
+          .string()
+          .describe('File content (for reversible)')
+          .optional(),
         exports: z
           .array(z.string())
           .describe('Exported symbols (for reversible)')
@@ -182,8 +213,16 @@ export function createServer(): McpServer {
         'includeModuleInfo=true 설정 시 각 모듈의 진입점(index.ts, main.ts) 정보를 포함한다.',
       inputSchema: z.object({
         path: z.string().describe('스캔할 프로젝트 루트 디렉토리의 절대 경로'),
-        depth: z.number().min(1).max(20).describe('스캔할 최대 디렉토리 깊이. 기본값: 10').optional(),
-        includeModuleInfo: z.boolean().describe('모듈 진입점 분석 결과 포함 여부. 기본값: false').optional(),
+        depth: z
+          .number()
+          .min(1)
+          .max(20)
+          .describe('스캔할 최대 디렉토리 깊이. 기본값: 10')
+          .optional(),
+        includeModuleInfo: z
+          .boolean()
+          .describe('모듈 진입점 분석 결과 포함 여부. 기본값: false')
+          .optional(),
       }),
     },
     async (args) => {
@@ -205,12 +244,19 @@ export function createServer(): McpServer {
         '보정 액션 제안(SyncAction)이 포함된다. ' +
         'generatePlan=true 시 이격 해소를 위한 SyncPlan을 함께 생성한다.',
       inputSchema: z.object({
-        path: z.string().describe('이격을 검사할 프로젝트 루트 디렉토리의 절대 경로'),
+        path: z
+          .string()
+          .describe('이격을 검사할 프로젝트 루트 디렉토리의 절대 경로'),
         severity: z
           .enum(['critical', 'high', 'medium', 'low'])
-          .describe('이 severity 이상의 이격만 반환. 생략 시 모든 severity 반환')
+          .describe(
+            '이 severity 이상의 이격만 반환. 생략 시 모든 severity 반환',
+          )
           .optional(),
-        generatePlan: z.boolean().describe('이격 해소 SyncPlan 생성 여부. 기본값: false').optional(),
+        generatePlan: z
+          .boolean()
+          .describe('이격 해소 SyncPlan 생성 여부. 기본값: false')
+          .optional(),
       }),
     },
     async (args) => {
@@ -232,8 +278,16 @@ export function createServer(): McpServer {
         '각 모듈에서 LCA까지의 거리와 권장 배치 경로(suggestedPlacement)를 반환한다.',
       inputSchema: z.object({
         path: z.string().describe('프로젝트 루트 디렉토리의 절대 경로'),
-        moduleA: z.string().describe('첫 번째 모듈의 프로젝트 루트 기준 상대 경로 (예: src/features/auth)'),
-        moduleB: z.string().describe('두 번째 모듈의 프로젝트 루트 기준 상대 경로 (예: src/features/payment)'),
+        moduleA: z
+          .string()
+          .describe(
+            '첫 번째 모듈의 프로젝트 루트 기준 상대 경로 (예: src/features/auth)',
+          ),
+        moduleB: z
+          .string()
+          .describe(
+            '두 번째 모듈의 프로젝트 루트 기준 상대 경로 (예: src/features/payment)',
+          ),
       }),
     },
     async (args) => {
@@ -259,14 +313,26 @@ export function createServer(): McpServer {
           .enum(['list', 'get', 'check'])
           .describe("수행할 동작: 'list' | 'get' | 'check'"),
         path: z.string().describe('프로젝트 루트 디렉토리의 절대 경로'),
-        ruleId: z.string().describe("action='get'일 때 조회할 규칙 ID").optional(),
+        ruleId: z
+          .string()
+          .describe("action='get'일 때 조회할 규칙 ID")
+          .optional(),
         category: z
-          .enum(['naming', 'structure', 'dependency', 'documentation', 'index', 'module'])
+          .enum([
+            'naming',
+            'structure',
+            'dependency',
+            'documentation',
+            'index',
+            'module',
+          ])
           .describe("action='list'일 때 카테고리 필터")
           .optional(),
         targetPath: z
           .string()
-          .describe("action='check'일 때 검사 대상 경로 (프로젝트 루트 기준 상대 경로)")
+          .describe(
+            "action='check'일 때 검사 대상 경로 (프로젝트 루트 기준 상대 경로)",
+          )
           .optional(),
       }),
     },
@@ -289,10 +355,15 @@ export function createServer(): McpServer {
         'fix=true 설정 시 safe 등급의 위반 항목을 자동으로 수정하고 잔여 위반 항목을 재보고한다.',
       inputSchema: z.object({
         path: z.string().describe('검증할 프로젝트 루트 디렉토리의 절대 경로'),
-        rules: z.array(z.string()).describe('검사할 규칙 ID 목록. 생략 시 모든 활성 규칙 검사').optional(),
+        rules: z
+          .array(z.string())
+          .describe('검사할 규칙 ID 목록. 생략 시 모든 활성 규칙 검사')
+          .optional(),
         fix: z
           .boolean()
-          .describe('safe 등급 위반 항목 자동 수정 여부. 기본값: false (현재 미구현 — 향후 지원 예정)')
+          .describe(
+            'safe 등급 위반 항목 자동 수정 여부. 기본값: false (현재 미구현 — 향후 지원 예정)',
+          )
           .optional(),
       }),
     },
@@ -318,24 +389,32 @@ export function createServer(): McpServer {
         "action='cleanup': 리뷰 디렉토리 삭제.",
       inputSchema: z.object({
         action: z
-          .enum(['normalize-branch', 'ensure-dir', 'checkpoint', 'elect-committee', 'cleanup'])
+          .enum([
+            'normalize-branch',
+            'ensure-dir',
+            'checkpoint',
+            'elect-committee',
+            'cleanup',
+          ])
           .describe('수행할 동작'),
         projectRoot: z.string().describe('프로젝트 루트 디렉토리 절대 경로'),
         branchName: z
           .string()
-          .describe("normalize-branch / ensure-dir / checkpoint / cleanup 액션에서 사용할 브랜치명")
+          .describe(
+            'normalize-branch / ensure-dir / checkpoint / cleanup 액션에서 사용할 브랜치명',
+          )
           .optional(),
         changedFilesCount: z
           .number()
-          .describe("elect-committee 액션에서 사용할 변경 파일 수")
+          .describe('elect-committee 액션에서 사용할 변경 파일 수')
           .optional(),
         changedFractalsCount: z
           .number()
-          .describe("elect-committee 액션에서 사용할 변경 프랙탈 수")
+          .describe('elect-committee 액션에서 사용할 변경 프랙탈 수')
           .optional(),
         hasInterfaceChanges: z
           .boolean()
-          .describe("elect-committee 액션에서 사용할 인터페이스 변경 여부")
+          .describe('elect-committee 액션에서 사용할 인터페이스 변경 여부')
           .optional(),
       }),
     },

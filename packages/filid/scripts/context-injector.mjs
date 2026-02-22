@@ -2,7 +2,13 @@
 
 // src/hooks/context-injector.ts
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync
+} from "node:fs";
 import { join } from "node:path";
 
 // src/types/rules.ts
@@ -314,7 +320,9 @@ var chunks = [];
 for await (const chunk of process.stdin) {
   chunks.push(chunk);
 }
-var input = JSON.parse(Buffer.concat(chunks).toString("utf-8"));
+var input = JSON.parse(
+  Buffer.concat(chunks).toString("utf-8")
+);
 var result;
 try {
   result = await injectContext(input);

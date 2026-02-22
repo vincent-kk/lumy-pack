@@ -1,6 +1,6 @@
 import { scanProject } from '../../core/fractal-tree.js';
 import { validateStructure } from '../../core/fractal-validator.js';
-import { loadBuiltinRules, getActiveRules } from '../../core/rule-engine.js';
+import { getActiveRules, loadBuiltinRules } from '../../core/rule-engine.js';
 import type { ValidationReport } from '../../types/report.js';
 
 export interface StructureValidateInput {

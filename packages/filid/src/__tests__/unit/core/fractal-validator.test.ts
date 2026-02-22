@@ -1,7 +1,12 @@
-import { describe, it, expect } from 'vitest';
-import { validateStructure, validateNode, validateDependencies } from '../../../core/fractal-validator.js';
+import { describe, expect, it } from 'vitest';
+
 import { buildFractalTree } from '../../../core/fractal-tree.js';
 import type { NodeEntry } from '../../../core/fractal-tree.js';
+import {
+  validateDependencies,
+  validateNode,
+  validateStructure,
+} from '../../../core/fractal-validator.js';
 import type { NodeType } from '../../../types/fractal.js';
 import type { Rule, RuleContext } from '../../../types/rules.js';
 
@@ -12,12 +17,22 @@ const entry = (
   hasSpecMd = false,
   hasIndex = false,
   hasMain = false,
-): NodeEntry => ({ path, name: path.split('/').pop()!, type, hasClaudeMd, hasSpecMd, hasIndex, hasMain });
+): NodeEntry => ({
+  path,
+  name: path.split('/').pop()!,
+  type,
+  hasClaudeMd,
+  hasSpecMd,
+  hasIndex,
+  hasMain,
+});
 
 describe('fractal-validator', () => {
   describe('validateStructure', () => {
     it('should return a ValidationReport with timestamp', () => {
-      const tree = buildFractalTree([entry('/app', 'fractal', true, false, true)]);
+      const tree = buildFractalTree([
+        entry('/app', 'fractal', true, false, true),
+      ]);
       const report = validateStructure(tree);
 
       expect(report).toBeDefined();
@@ -31,11 +46,19 @@ describe('fractal-validator', () => {
     it('should detect organ with CLAUDE.md as violation', () => {
       const tree = buildFractalTree([
         entry('/app', 'fractal', true, false, true),
-        { path: '/app/utils', name: 'utils', type: 'organ', hasClaudeMd: true, hasSpecMd: false },
+        {
+          path: '/app/utils',
+          name: 'utils',
+          type: 'organ',
+          hasClaudeMd: true,
+          hasSpecMd: false,
+        },
       ]);
       const report = validateStructure(tree);
 
-      const violation = report.result.violations.find((v) => v.ruleId === 'organ-no-claudemd');
+      const violation = report.result.violations.find(
+        (v) => v.ruleId === 'organ-no-claudemd',
+      );
       expect(violation).toBeDefined();
       expect(violation!.severity).toBe('error');
       expect(violation!.path).toBe('/app/utils');
@@ -47,7 +70,9 @@ describe('fractal-validator', () => {
       ]);
       const report = validateStructure(tree);
 
-      const violation = report.result.violations.find((v) => v.ruleId === 'module-entry-point');
+      const violation = report.result.violations.find(
+        (v) => v.ruleId === 'module-entry-point',
+      );
       expect(violation).toBeDefined();
       expect(violation!.severity).toBe('warning');
     });
@@ -59,7 +84,9 @@ describe('fractal-validator', () => {
       ]);
       const report = validateStructure(tree);
 
-      const entryViolations = report.result.violations.filter((v) => v.ruleId === 'module-entry-point');
+      const entryViolations = report.result.violations.filter(
+        (v) => v.ruleId === 'module-entry-point',
+      );
       expect(entryViolations).toHaveLength(0);
     });
 
@@ -69,7 +96,9 @@ describe('fractal-validator', () => {
       ]);
       const report = validateStructure(tree);
 
-      const entryViolations = report.result.violations.filter((v) => v.ruleId === 'module-entry-point');
+      const entryViolations = report.result.violations.filter(
+        (v) => v.ruleId === 'module-entry-point',
+      );
       expect(entryViolations).toHaveLength(0);
     });
 
@@ -81,15 +110,19 @@ describe('fractal-validator', () => {
         category: 'structure',
         severity: 'warning',
         enabled: true,
-        check: (ctx: RuleContext) => [{
-          ruleId: 'custom-test-rule',
-          severity: 'warning',
-          message: 'Always fails',
-          path: ctx.node.path,
-        }],
+        check: (ctx: RuleContext) => [
+          {
+            ruleId: 'custom-test-rule',
+            severity: 'warning',
+            message: 'Always fails',
+            path: ctx.node.path,
+          },
+        ],
       };
 
-      const tree = buildFractalTree([entry('/app', 'fractal', true, false, true)]);
+      const tree = buildFractalTree([
+        entry('/app', 'fractal', true, false, true),
+      ]);
       const report = validateStructure(tree, [customRule]);
 
       expect(report.result.violations).toHaveLength(1);
@@ -104,10 +137,19 @@ describe('fractal-validator', () => {
         category: 'structure',
         severity: 'error',
         enabled: false,
-        check: () => [{ ruleId: 'disabled-rule', severity: 'error', message: 'Should not appear', path: '' }],
+        check: () => [
+          {
+            ruleId: 'disabled-rule',
+            severity: 'error',
+            message: 'Should not appear',
+            path: '',
+          },
+        ],
       };
 
-      const tree = buildFractalTree([entry('/app', 'fractal', true, false, true)]);
+      const tree = buildFractalTree([
+        entry('/app', 'fractal', true, false, true),
+      ]);
       const report = validateStructure(tree, [disabledRule]);
 
       expect(report.result.violations).toHaveLength(0);
@@ -115,7 +157,9 @@ describe('fractal-validator', () => {
     });
 
     it('should track duration', () => {
-      const tree = buildFractalTree([entry('/app', 'fractal', true, false, true)]);
+      const tree = buildFractalTree([
+        entry('/app', 'fractal', true, false, true),
+      ]);
       const report = validateStructure(tree);
 
       expect(report.result.duration).toBeGreaterThanOrEqual(0);
@@ -124,7 +168,9 @@ describe('fractal-validator', () => {
 
   describe('validateNode', () => {
     it('should validate a single node with a specific rule', () => {
-      const tree = buildFractalTree([entry('/app', 'fractal', true, false, false)]);
+      const tree = buildFractalTree([
+        entry('/app', 'fractal', true, false, false),
+      ]);
       const node = tree.nodes.get('/app')!;
       const context: RuleContext = { node, tree };
 
@@ -135,12 +181,17 @@ describe('fractal-validator', () => {
         category: 'structure',
         severity: 'error',
         enabled: true,
-        check: (ctx) => ctx.node.hasIndex ? [] : [{
-          ruleId: 'test-rule',
-          severity: 'error',
-          message: 'No index',
-          path: ctx.node.path,
-        }],
+        check: (ctx) =>
+          ctx.node.hasIndex
+            ? []
+            : [
+                {
+                  ruleId: 'test-rule',
+                  severity: 'error',
+                  message: 'No index',
+                  path: ctx.node.path,
+                },
+              ],
       };
 
       const violations = validateNode(node, context, rule);
@@ -157,7 +208,9 @@ describe('fractal-validator', () => {
 
       const violations = validateNode(node, context);
       // fractal without index.ts/main.ts should trigger module-entry-point
-      expect(violations.some((v) => v.ruleId === 'module-entry-point')).toBe(true);
+      expect(violations.some((v) => v.ruleId === 'module-entry-point')).toBe(
+        true,
+      );
     });
   });
 

@@ -49,6 +49,7 @@ Consequences: <technical debt created, future impact, estimated resolution>
 ```
 
 **Refinement rules**:
+
 1. Preserve the developer's core reasoning — do not alter intent
 2. Add structural context (rule, metric, fractal path)
 3. Include estimated resolution timeframe if mentioned
@@ -95,10 +96,10 @@ Options:
 
 ## MCP Tool Usage
 
-| Tool | Action | When |
-|------|--------|------|
-| `review-manage` | `normalize-branch` | Step 1: branch detection |
-| `debt-manage` | `create` | Step 5: for each rejected fix item |
+| Tool            | Action             | When                               |
+| --------------- | ------------------ | ---------------------------------- |
+| `review-manage` | `normalize-branch` | Step 1: branch detection           |
+| `debt-manage`   | `create`           | Step 5: for each rejected fix item |
 
 ## debt-manage(create) Input Schema
 

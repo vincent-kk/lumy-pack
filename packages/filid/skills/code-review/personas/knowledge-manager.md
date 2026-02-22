@@ -32,6 +32,7 @@ Treat documentation gaps as potential knowledge loss vectors.
 ### Evidence Sources
 
 All opinions must cite MCP tool results from `verification.md`:
+
 - `doc-compress(auto)` → document size/compression state
 - `drift-detect` → structure drift findings
 - `rule-query(list)` → active documentation rules

@@ -15,6 +15,7 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4 
 **목표**: 전체 시스템 설계를 문서화하고 합의를 도출한다.
 
 **작업 항목**:
+
 - [x] FCA-AI 코드 리뷰 보고서 분석 (`FCA-AI-code-review-report.md`)
 - [x] 페르소나 상세 연구 분석 (`FCA-AI-code-review-detail.md`)
 - [x] 기존 컴포넌트 영향 분석
@@ -23,6 +24,7 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4 
 - [x] 세부 설계 문서 작성 (상태 머신, 부채 시스템, 페르소나 등 — BLUE-PRINT.md에 통합)
 
 **완료 기준 (DoD)**:
+
 - [x] PLAN.md 리뷰 통과 (Architect: APPROVE_WITH_NOTES, Critic: APPROVE)
 - [x] BLUE-PRINT.md 리뷰 통과 (Architect: APPROVE_WITH_NOTES, Critic: APPROVE)
 - [x] 모든 설계 결정 사항에 대한 근거 문서화 완료
@@ -40,6 +42,7 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4 
 **설계 근거**: SKILL.md의 실행 모델은 프롬프트 → Task agent → Read/Write/Bash/MCP이다. 브랜치 정규화, 위원회 선출, 부채 가중치 계산 등 결정론적 연산을 LLM 추론에 맡기면 일관성이 보장되지 않으므로, MCP tool로 노출하여 subagent가 호출할 수 있게 한다.
 
 **작업 항목**:
+
 1. `review-manage` MCP tool 구현 (`src/mcp/review-manage.ts`)
    - `normalize-branch`: `/` → `--`, 특수문자 → `_` 치환 (BLUE-PRINT.md §7.3 규칙)
    - `ensure-dir`: `.filid/review/<branch>/` 디렉토리 생성
@@ -62,6 +65,7 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4 
    - `.filid/debt/` — 커밋 대상 (팀 간 부채 공유)
 
 **완료 기준 (DoD)**:
+
 - [ ] `review-manage` 5개 액션 단위 테스트 통과
 - [ ] `debt-manage` 4개 액션 단위 테스트 통과
 - [ ] 브랜치 정규화 엣지 케이스 테스트 통과 (`feature/deep/nested`, `main`, `release-v1.0`, `fix/bug#123`)
@@ -79,6 +83,7 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4 
 **목표**: 위원회 선출 → 기술 검증 → 정치적 합의 → 보고서 출력 → (선택) PR 코멘트까지의 전체 리뷰 워크플로우를 구현한다.
 
 **작업 항목**:
+
 1. `skills/code-review/SKILL.md` 작성 (~120줄 이내)
    - 의장(Chairperson) 오케스트레이터 역할
    - 체크포인트 재개 로직: `review-manage(checkpoint)` MCP tool 호출로 Phase 상태 감지
@@ -111,6 +116,7 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4 
    - 사용할 MCP tool 목록
 
 **완료 기준 (DoD)**:
+
 - [ ] 스킬 실행 시 `.filid/review/<branch>/session.md` 생성 (Phase A)
 - [ ] 스킬 실행 시 `.filid/review/<branch>/verification.md` 생성 (Phase B)
 - [ ] 스킬 실행 시 `.filid/review/<branch>/review-report.md` 생성 (Phase C)
@@ -123,7 +129,7 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4 
 - [ ] `--scope=pr` 시 `gh pr comment` 또는 `gh pr review`로 PR에 요약 게시 (환경 의존)
 - [ ] `gh` CLI 미설치/미인증 환경에서 PR 코멘트 실패 시 graceful skip 확인
 - [ ] Phase A/B subagent 위임 시 `CLAUDE_PLUGIN_ROOT` 기반 경로 해결 확인
-- [ ] SKILL.md 120줄 이내, personas/*.md 각 150줄 이내
+- [ ] SKILL.md 120줄 이내, personas/\*.md 각 150줄 이내
 
 **의존성**: Phase 1 완료
 
@@ -134,6 +140,7 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4 
 **목표**: 인간 개발자의 수정 사항 수용/거부 + 소명 + ADR 정제 워크플로우를 구현한다.
 
 **작업 항목**:
+
 1. `skills/resolve-review/SKILL.md` 작성
    - `fix-requests.md` 파싱 및 Select List 제시
    - AskUserQuestion을 통한 수용/거부 인터페이스
@@ -144,14 +151,16 @@ Phase 0 ──→ Phase 1 ──→ Phase 2 ──→ Phase 3 ──→ Phase 4 
 2. `skills/resolve-review/reference.md` 작성
 
 **`justifications.md` frontmatter 추가 필드**:
+
 ```yaml
 ---
-resolve_commit_sha: <git rev-parse HEAD 결과>  # re-validate Delta 기준점
+resolve_commit_sha: <git rev-parse HEAD 결과> # re-validate Delta 기준점
 resolved_at: <ISO 8601>
 ---
 ```
 
 **완료 기준 (DoD)**:
+
 - [ ] `fix-requests.md`에서 수정 항목을 Select List로 제시
 - [ ] 수용된 항목에 대한 자동 수정 안내 출력
 - [ ] 미수용 항목에 대한 소명 수집 완료
@@ -169,6 +178,7 @@ resolved_at: <ISO 8601>
 **목표**: Delta 기반 경량 재검증, 최종 PASS/FAIL 선언, 그리고 PR 코멘트 게시를 구현한다.
 
 **작업 항목**:
+
 1. `skills/re-validate/SKILL.md` 작성
    - `justifications.md` 로딩 — `resolve_commit_sha` frontmatter로 Delta 기준점 확보
    - Delta 추출: `git diff <resolve_commit_sha>..HEAD` + `ast-analyze(tree-diff)`
@@ -182,14 +192,17 @@ resolved_at: <ISO 8601>
    - PR 코멘트 포맷 템플릿 포함
 
 **PR 코멘트 환경 의존성**:
+
 ```
 1. `gh auth status` 실행으로 GitHub CLI 인증 상태 확인
 2. 인증 실패 또는 gh 미설치 → "PR 코멘트를 게시하려면 gh CLI 인증이 필요합니다" 안내 후 skip
 3. 인증 성공 → `gh pr comment --body "<판정 요약>"` 실행
 ```
+
 이 패턴은 Claude Code의 실행 환경(로컬/CI/원격)에 따라 GitHub 접근 가능 여부가 달라지는 현실을 반영한다. 플러그인은 `gh` CLI의 존재와 인증 상태에만 의존하며, 별도의 토큰 관리를 하지 않는다.
 
 **완료 기준 (DoD)**:
+
 - [ ] `resolve_commit_sha` 기반 Delta 추출이 정확히 동작
 - [ ] Delta 기반 재검증이 전체 재리뷰 없이 동작
 - [ ] PASS 판정 시 `re-validate.md` 생성 (리뷰 디렉토리는 유지)
@@ -208,6 +221,7 @@ resolved_at: <ISO 8601>
 **목표**: 3개 스킬의 엔드투엔드 라이프사이클과 PR 코멘트 연동을 검증한다.
 
 **작업 항목**:
+
 1. 정상 흐름 시나리오
    - code-review → resolve-review (전체 수용) → re-validate (PASS)
 2. 소명 흐름 시나리오
@@ -236,6 +250,7 @@ resolved_at: <ISO 8601>
    - `resolve_commit_sha` 이후 커밋이 0건인 상태에서 re-validate 실행
 
 **완료 기준 (DoD)**:
+
 - [ ] 모든 시나리오 정상 동작 확인
 - [ ] 스킬 간 데이터 흐름 (.filid/ 파일 기반) 정합성 확인
 - [ ] MCP tool 결정론적 연산 일관성 확인
@@ -252,6 +267,7 @@ resolved_at: <ISO 8601>
 **목표**: 완성된 거버넌스 시스템을 기존 설계 문서 아카이브에 반영한다.
 
 **작업 항목**:
+
 1. `.metadata/01-ARCHITECTURE.md` 업데이트
    - 4-layer 아키텍처 내 거버넌스 프레임워크(Governance Framework) 추가 기술
    - ADR: 확장형 아키텍처 선택 근거 (별도 Layer가 아닌 Layer 4 내부 프레임워크로 설계한 이유)
@@ -270,6 +286,7 @@ resolved_at: <ISO 8601>
    - Component 카운트 업데이트 (Skills: 8→11, MCP Tools: 9→11)
 
 **완료 기준 (DoD)**:
+
 - [ ] 모든 `.metadata` 문서가 현재 시스템 상태를 정확히 반영
 - [ ] README.md가 최신 컴포넌트 목록을 포함
 - [ ] 문서 간 상호 참조 링크 정합성 확인

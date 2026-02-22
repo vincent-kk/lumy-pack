@@ -1,10 +1,22 @@
 import { bench, describe } from 'vitest';
+
 import { enforceAgentRole } from '../../../hooks/agent-enforcer.js';
 import { generateSubagentInput } from '../fixtures/generator.js';
 
 // 알려진 역할들
-const knownRoles = ['architect', 'qa-reviewer', 'implementer', 'context-manager'];
-const unknownRoles = ['executor', 'researcher', 'unknown-role', 'custom-agent', ''];
+const knownRoles = [
+  'architect',
+  'qa-reviewer',
+  'implementer',
+  'context-manager',
+];
+const unknownRoles = [
+  'executor',
+  'researcher',
+  'unknown-role',
+  'custom-agent',
+  '',
+];
 
 // 입력 사전 생성
 const knownInputs = knownRoles.map((role) => generateSubagentInput(role));

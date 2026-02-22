@@ -1,8 +1,10 @@
 import { existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import type { NodeType, FractalNode, FractalTree } from '../types/fractal.js';
+
+import type { FractalNode, FractalTree, NodeType } from '../types/fractal.js';
 import type { ScanOptions } from '../types/scan.js';
 import { DEFAULT_SCAN_OPTIONS } from '../types/scan.js';
+
 import { classifyNode } from './organ-classifier.js';
 
 /** Input entry for buildFractalTree */
@@ -86,7 +88,8 @@ export function buildFractalTree(entries: NodeEntry[]): FractalTree {
   }
 
   // Root: shortest path among nodes with null parent
-  const root = sorted.find((e) => nodes.get(e.path)!.parent === null)?.path ?? '';
+  const root =
+    sorted.find((e) => nodes.get(e.path)!.parent === null)?.path ?? '';
 
   // Compute max depth
   let maxDepth = 0;
@@ -102,7 +105,10 @@ export function buildFractalTree(entries: NodeEntry[]): FractalTree {
 /**
  * Find a node by path.
  */
-export function findNode(tree: FractalTree, path: string): FractalNode | undefined {
+export function findNode(
+  tree: FractalTree,
+  path: string,
+): FractalNode | undefined {
   return tree.nodes.get(path);
 }
 
@@ -156,7 +162,12 @@ export function shouldExclude(relPath: string, options: ScanOptions): boolean {
   for (const pattern of excludePatterns) {
     // Strip leading **/ for simple prefix matching
     const normalized = pattern.replace(/^\*\*\//, '');
-    if (relPath === normalized || relPath.startsWith(normalized + '/') || relPath.includes('/' + normalized + '/') || relPath.endsWith('/' + normalized)) {
+    if (
+      relPath === normalized ||
+      relPath.startsWith(normalized + '/') ||
+      relPath.includes('/' + normalized + '/') ||
+      relPath.endsWith('/' + normalized)
+    ) {
       return true;
     }
     // Handle exact glob like node_modules/**
@@ -176,7 +187,10 @@ export function shouldExclude(relPath: string, options: ScanOptions): boolean {
  * @param options - Scan options (exclude patterns, maxDepth)
  * @returns Completed FractalTree
  */
-export async function scanProject(rootPath: string, options?: ScanOptions): Promise<FractalTree> {
+export async function scanProject(
+  rootPath: string,
+  options?: ScanOptions,
+): Promise<FractalTree> {
   const { glob } = await import('fast-glob');
   const opts = { ...DEFAULT_SCAN_OPTIONS, ...options };
   const maxDepth = opts.maxDepth;
@@ -214,23 +228,36 @@ export async function scanProject(rootPath: string, options?: ScanOptions): Prom
 
     if (depth > maxDepth) continue;
 
-    const name = absPath === rootPath ? rootPath.split('/').pop() ?? '' : absPath.split('/').pop() ?? '';
+    const name =
+      absPath === rootPath
+        ? (rootPath.split('/').pop() ?? '')
+        : (absPath.split('/').pop() ?? '');
     const hasClaudeMd = existsSync(join(absPath, 'CLAUDE.md'));
     const hasSpecMd = existsSync(join(absPath, 'SPEC.md'));
-    const hasIndex = existsSync(join(absPath, 'index.ts')) || existsSync(join(absPath, 'index.js'));
-    const hasMain = existsSync(join(absPath, 'main.ts')) || existsSync(join(absPath, 'main.js'));
+    const hasIndex =
+      existsSync(join(absPath, 'index.ts')) ||
+      existsSync(join(absPath, 'index.js'));
+    const hasMain =
+      existsSync(join(absPath, 'main.ts')) ||
+      existsSync(join(absPath, 'main.js'));
 
     // Check if this directory has fractal children (child dirs classified as fractal)
     // We use a two-pass approach: first collect all directories, then classify
     // For now, check if any immediate subdirectory exists in our set
     const hasFractalChildren = allDirs.some(
-      (d) => d !== absPath && d.startsWith(absPath + '/') && d.replace(absPath + '/', '').indexOf('/') === -1
-        && dirSet.has(d)
+      (d) =>
+        d !== absPath &&
+        d.startsWith(absPath + '/') &&
+        d.replace(absPath + '/', '').indexOf('/') === -1 &&
+        dirSet.has(d),
     );
 
     // isLeafDirectory: no subdirectories at all
     const isLeafDirectory = !allDirs.some(
-      (d) => d !== absPath && d.startsWith(absPath + '/') && d.replace(absPath + '/', '').indexOf('/') === -1
+      (d) =>
+        d !== absPath &&
+        d.startsWith(absPath + '/') &&
+        d.replace(absPath + '/', '').indexOf('/') === -1,
     );
 
     const type = classifyNode({

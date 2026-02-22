@@ -47,14 +47,17 @@
 ## 단계 1: /init — 프로젝트 초기화
 
 ### 트리거 조건
+
 - 프로젝트에 FCA-AI 구조가 없을 때 (최초 1회)
 - 사용자가 `/init [path]` 명령 실행
 
 ### 관여 에이전트
+
 - **architect** (주도): 디렉토리 분석 및 프랙탈 경계 설계
 - **context-manager** (보조): CLAUDE.md/SPEC.md 생성
 
 ### 사용 MCP 도구
+
 - `fractal-navigate` (action: `tree`): 전체 계층 구조 스캔
 - `fractal-navigate` (action: `classify`): 개별 디렉토리 분류
 
@@ -90,6 +93,7 @@
 ```
 
 ### 입출력
+
 - **입력**: 대상 디렉토리 경로 (기본: cwd)
 - **출력**: 초기화 보고서 (디렉토리 수, 생성 파일 수, 경고)
 
@@ -98,14 +102,17 @@
 ## 단계 2: /scan — 규칙 위반 검출
 
 ### 트리거 조건
+
 - 개발 중 수시로 실행
 - 사용자가 `/scan [path] [--fix]` 명령 실행
 
 ### 관여 에이전트
+
 - **qa-reviewer** (주도): 규칙 위반 검출 및 보고
 - **context-manager** (--fix 시): 자동 수정 가능한 위반 해결
 
 ### 사용 MCP 도구
+
 - `fractal-navigate` (action: `tree`): 프로젝트 구조 스캔
 - `test-metrics` (action: `check-312`): 3+12 규칙 검사
 
@@ -143,15 +150,18 @@
 ## 단계 3: /sync — 구조 Drift 감지 & 동기화
 
 ### 트리거 조건
+
 - 구조적 이탈이 의심될 때
 - 사용자가 `/sync [--dry-run] [--severity=<level>]` 명령 실행
 
 ### 관여 에이전트
+
 - **drift-analyzer** (Stage 1-2 주도): drift 감지 및 계획
 - **fractal-architect** (보조): 구조 분석 자문
 - **restructurer** (Stage 4): 승인된 수정 실행
 
 ### 사용 MCP 도구
+
 - `fractal-scan`: 프로젝트 구조 스캔
 - `drift-detect`: 프랙탈 원칙 이탈 감지
 - `lca-resolve`: 이동 대상 LCA 계산
@@ -198,14 +208,17 @@
 ## 단계 4: /review — 6단계 PR 검증 파이프라인
 
 ### 트리거 조건
+
 - PR 제출 시
 - 사용자가 `/review [--stage=1-6] [--verbose]` 명령 실행
 
 ### 관여 에이전트
+
 - **qa-reviewer** (주도): 전체 파이프라인 실행
 - **architect** (Stage 1, 5 보조): 구조/의존성 검증
 
 ### 사용 MCP 도구
+
 - `fractal-navigate`: Stage 1 (구조), Stage 5 (의존성)
 - `test-metrics`: Stage 3 (테스트), Stage 4 (메트릭)
 - `doc-compress`: Stage 2 (문서 크기 검사)
@@ -267,14 +280,17 @@
 ## 단계 5: /promote — 테스트 승격
 
 ### 트리거 조건
+
 - 안정화 기간(90일) 경과 후
 - 사용자가 `/promote [path] [--days=90]` 명령 실행
 
 ### 관여 에이전트
+
 - **qa-reviewer** (분석): 승격 후보 식별
 - **implementer** (실행): spec.ts 생성
 
 ### 사용 MCP 도구
+
 - `test-metrics` (action: `count`): 테스트 케이스 분석
 
 ### 워크플로우
@@ -305,13 +321,16 @@
 ## 단계 6: /query — 인터랙티브 질의
 
 ### 트리거 조건
+
 - 개발 중 수시로 실행
 - 사용자가 `/query <question>` 명령 실행
 
 ### 관여 에이전트
+
 - **architect** (질의 해석 + 응답)
 
 ### 사용 MCP 도구
+
 - `fractal-navigate`: 관련 모듈 탐색
 - `doc-compress` (mode: `auto`): 컨텍스트 과다 시 압축
 
@@ -370,16 +389,16 @@ Prompt 3 (최대): 최종 응답 생성
 
 ### 역할별 도구 접근 매트릭스
 
-| 에이전트 | Read | Glob | Grep | Write | Edit | Bash | MCP |
-|----------|------|------|------|-------|------|------|-----|
-| fractal-architect | O | O | O | X | X | X | O |
-| implementer | O | O | O | O | O | O | O |
-| context-manager | O | O | O | O* | O* | X | O |
-| qa-reviewer | O | O | O | X | X | X | O |
-| drift-analyzer | O | O | O | X | X | X | O |
-| restructurer | O | O | O | O | O | O | O |
+| 에이전트          | Read | Glob | Grep | Write | Edit | Bash | MCP |
+| ----------------- | ---- | ---- | ---- | ----- | ---- | ---- | --- |
+| fractal-architect | O    | O    | O    | X     | X    | X    | O   |
+| implementer       | O    | O    | O    | O     | O    | O    | O   |
+| context-manager   | O    | O    | O    | O\*   | O\*  | X    | O   |
+| qa-reviewer       | O    | O    | O    | X     | X    | X    | O   |
+| drift-analyzer    | O    | O    | O    | X     | X    | X    | O   |
+| restructurer      | O    | O    | O    | O     | O    | O    | O   |
 
-> *context-manager: CLAUDE.md, SPEC.md 문서만 Write/Edit 가능 (역할 제한), Bash 사용 불가
+> \*context-manager: CLAUDE.md, SPEC.md 문서만 Write/Edit 가능 (역할 제한), Bash 사용 불가
 
 ---
 

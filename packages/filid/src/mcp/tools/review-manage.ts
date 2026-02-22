@@ -5,6 +5,7 @@
  */
 import fs from 'node:fs/promises';
 import path from 'node:path';
+
 import type {
   CheckpointStatus,
   CommitteeElection,
@@ -13,7 +14,12 @@ import type {
 } from '../../types/review.js';
 
 export interface ReviewManageInput {
-  action: 'normalize-branch' | 'ensure-dir' | 'checkpoint' | 'elect-committee' | 'cleanup';
+  action:
+    | 'normalize-branch'
+    | 'ensure-dir'
+    | 'checkpoint'
+    | 'elect-committee'
+    | 'cleanup';
   projectRoot: string;
   branchName?: string;
   changedFilesCount?: number;
@@ -51,7 +57,9 @@ function normalizeBranch(branchName: string): string {
 /**
  * Handle review-manage MCP tool calls.
  */
-export async function handleReviewManage(args: unknown): Promise<Record<string, unknown>> {
+export async function handleReviewManage(
+  args: unknown,
+): Promise<Record<string, unknown>> {
   const input = args as ReviewManageInput;
 
   if (!input.action) {
@@ -75,7 +83,12 @@ export async function handleReviewManage(args: unknown): Promise<Record<string, 
         throw new Error('branchName is required for ensure-dir action');
       }
       const normalized = normalizeBranch(input.branchName);
-      const dirPath = path.join(input.projectRoot, '.filid', 'review', normalized);
+      const dirPath = path.join(
+        input.projectRoot,
+        '.filid',
+        'review',
+        normalized,
+      );
 
       let created = false;
       try {
@@ -93,7 +106,12 @@ export async function handleReviewManage(args: unknown): Promise<Record<string, 
         throw new Error('branchName is required for checkpoint action');
       }
       const normalized = normalizeBranch(input.branchName);
-      const reviewDir = path.join(input.projectRoot, '.filid', 'review', normalized);
+      const reviewDir = path.join(
+        input.projectRoot,
+        '.filid',
+        'review',
+        normalized,
+      );
 
       const fileNames = ['session.md', 'verification.md', 'review-report.md'];
       const existingFiles: string[] = [];
@@ -128,20 +146,31 @@ export async function handleReviewManage(args: unknown): Promise<Record<string, 
 
     case 'elect-committee': {
       if (input.changedFilesCount === undefined) {
-        throw new Error('changedFilesCount is required for elect-committee action');
+        throw new Error(
+          'changedFilesCount is required for elect-committee action',
+        );
       }
       if (input.changedFractalsCount === undefined) {
-        throw new Error('changedFractalsCount is required for elect-committee action');
+        throw new Error(
+          'changedFractalsCount is required for elect-committee action',
+        );
       }
       if (input.hasInterfaceChanges === undefined) {
-        throw new Error('hasInterfaceChanges is required for elect-committee action');
+        throw new Error(
+          'hasInterfaceChanges is required for elect-committee action',
+        );
       }
 
-      const { changedFilesCount, changedFractalsCount, hasInterfaceChanges } = input;
+      const { changedFilesCount, changedFractalsCount, hasInterfaceChanges } =
+        input;
 
       // Determine complexity
       let complexity: Complexity;
-      if (changedFilesCount <= 3 && changedFractalsCount <= 1 && !hasInterfaceChanges) {
+      if (
+        changedFilesCount <= 3 &&
+        changedFractalsCount <= 1 &&
+        !hasInterfaceChanges
+      ) {
         complexity = 'LOW';
       } else if (changedFilesCount > 10 || changedFractalsCount >= 4) {
         complexity = 'HIGH';
@@ -154,7 +183,12 @@ export async function handleReviewManage(args: unknown): Promise<Record<string, 
       if (complexity === 'LOW') {
         committee = ['engineering-architect', 'operations-sre'];
       } else if (complexity === 'MEDIUM') {
-        committee = ['engineering-architect', 'knowledge-manager', 'business-driver', 'operations-sre'];
+        committee = [
+          'engineering-architect',
+          'knowledge-manager',
+          'business-driver',
+          'operations-sre',
+        ];
       } else {
         committee = [
           'engineering-architect',
@@ -171,8 +205,10 @@ export async function handleReviewManage(args: unknown): Promise<Record<string, 
 
       if (committee.includes('business-driver')) {
         const challengers: PersonaId[] = [];
-        if (committee.includes('knowledge-manager')) challengers.push('knowledge-manager');
-        if (committee.includes('operations-sre')) challengers.push('operations-sre');
+        if (committee.includes('knowledge-manager'))
+          challengers.push('knowledge-manager');
+        if (committee.includes('operations-sre'))
+          challengers.push('operations-sre');
         if (challengers.length > 0) {
           adversarialPairs.push(['business-driver', challengers]);
         }
@@ -180,7 +216,8 @@ export async function handleReviewManage(args: unknown): Promise<Record<string, 
 
       if (committee.includes('product-manager')) {
         const challengers: PersonaId[] = [];
-        if (committee.includes('engineering-architect')) challengers.push('engineering-architect');
+        if (committee.includes('engineering-architect'))
+          challengers.push('engineering-architect');
         if (challengers.length > 0) {
           adversarialPairs.push(['product-manager', challengers]);
         }
@@ -188,13 +225,18 @@ export async function handleReviewManage(args: unknown): Promise<Record<string, 
 
       if (committee.includes('design-hci')) {
         const challengers: PersonaId[] = [];
-        if (committee.includes('engineering-architect')) challengers.push('engineering-architect');
+        if (committee.includes('engineering-architect'))
+          challengers.push('engineering-architect');
         if (challengers.length > 0) {
           adversarialPairs.push(['design-hci', challengers]);
         }
       }
 
-      const result: CommitteeElection = { complexity, committee, adversarialPairs };
+      const result: CommitteeElection = {
+        complexity,
+        committee,
+        adversarialPairs,
+      };
       return result as unknown as Record<string, unknown>;
     }
 
@@ -203,7 +245,12 @@ export async function handleReviewManage(args: unknown): Promise<Record<string, 
         throw new Error('branchName is required for cleanup action');
       }
       const normalized = normalizeBranch(input.branchName);
-      const reviewDir = path.join(input.projectRoot, '.filid', 'review', normalized);
+      const reviewDir = path.join(
+        input.projectRoot,
+        '.filid',
+        'review',
+        normalized,
+      );
 
       await fs.rm(reviewDir, { recursive: true, force: true });
 

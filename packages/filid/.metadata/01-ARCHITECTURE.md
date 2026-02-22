@@ -29,24 +29,24 @@ AI 에이전트가 대규모 코드베이스를 다룰 때 발생하는 핵심 �
 
 ### 이론 → 구현 매핑 테이블
 
-| FCA-AI 이론 개념 | filid 구현 | 핵심 모듈 |
-|-----------------|------------|-----------|
-| 프랙탈 단위 | `FractalNode` (type: 'fractal') | `core/fractal-tree.ts` |
-| 부속품(Organ) | `FractalNode` (type: 'organ') | `core/organ-classifier.ts` |
-| 순수 함수 모듈 | `FractalNode` (type: 'pure-function') | `core/organ-classifier.ts` |
-| CLAUDE.md 100줄 제한 | `validateClaudeMd()` | `core/document-validator.ts` |
-| 3-tier 경계 시스템 | `ThreeTierBoundary` 검증 | `core/document-validator.ts` |
-| SPEC.md append-only 금지 | `detectAppendOnly()` + `validateSpecMd()` | `core/document-validator.ts` |
-| Organ CLAUDE.md 금지 | `guardStructure()` | `hooks/structure-guard.ts` |
-| 3+12 테스트 규칙 | `check312Rule()` | `metrics/three-plus-twelve.ts` |
-| LCOM4 분할 기준 | `calculateLCOM4()` + `decide()` | `ast/lcom4.ts`, `metrics/decision-tree.ts` |
-| CC 압축 기준 | `calculateCC()` + `decide()` | `ast/cyclomatic-complexity.ts`, `metrics/decision-tree.ts` |
-| 가역적 컨텍스트 압축 | `compactReversible()` | `compress/reversible-compactor.ts` |
-| 손실 이력 압축 | `summarizeLossy()` | `compress/lossy-summarizer.ts` |
-| 에이전트 역할 제한 | `enforceAgentRole()` | `hooks/agent-enforcer.ts` |
-| 컨텍스트 규칙 주입 | `injectContext()` | `hooks/context-injector.ts` |
-| PR 시점 동기화 | `ChangeQueue` | `core/change-queue.ts` |
-| 의존성 비순환 검증 | `buildDAG()` + `detectCycles()` | `core/dependency-graph.ts` |
+| FCA-AI 이론 개념         | filid 구현                                | 핵심 모듈                                                  |
+| ------------------------ | ----------------------------------------- | ---------------------------------------------------------- |
+| 프랙탈 단위              | `FractalNode` (type: 'fractal')           | `core/fractal-tree.ts`                                     |
+| 부속품(Organ)            | `FractalNode` (type: 'organ')             | `core/organ-classifier.ts`                                 |
+| 순수 함수 모듈           | `FractalNode` (type: 'pure-function')     | `core/organ-classifier.ts`                                 |
+| CLAUDE.md 100줄 제한     | `validateClaudeMd()`                      | `core/document-validator.ts`                               |
+| 3-tier 경계 시스템       | `ThreeTierBoundary` 검증                  | `core/document-validator.ts`                               |
+| SPEC.md append-only 금지 | `detectAppendOnly()` + `validateSpecMd()` | `core/document-validator.ts`                               |
+| Organ CLAUDE.md 금지     | `guardStructure()`                        | `hooks/structure-guard.ts`                                 |
+| 3+12 테스트 규칙         | `check312Rule()`                          | `metrics/three-plus-twelve.ts`                             |
+| LCOM4 분할 기준          | `calculateLCOM4()` + `decide()`           | `ast/lcom4.ts`, `metrics/decision-tree.ts`                 |
+| CC 압축 기준             | `calculateCC()` + `decide()`              | `ast/cyclomatic-complexity.ts`, `metrics/decision-tree.ts` |
+| 가역적 컨텍스트 압축     | `compactReversible()`                     | `compress/reversible-compactor.ts`                         |
+| 손실 이력 압축           | `summarizeLossy()`                        | `compress/lossy-summarizer.ts`                             |
+| 에이전트 역할 제한       | `enforceAgentRole()`                      | `hooks/agent-enforcer.ts`                                  |
+| 컨텍스트 규칙 주입       | `injectContext()`                         | `hooks/context-injector.ts`                                |
+| PR 시점 동기화           | `ChangeQueue`                             | `core/change-queue.ts`                                     |
+| 의존성 비순환 검증       | `buildDAG()` + `detectCycles()`           | `core/dependency-graph.ts`                                 |
 
 ---
 
@@ -121,12 +121,12 @@ AI 에이전트가 대규모 코드베이스를 다룰 때 발생하는 핵심 �
 
 ### 4계층 구조: Hook → MCP → Agent → Skill
 
-| 계층 | 역할 | 실행 시점 | 인터페이스 |
-|------|------|-----------|-----------|
-| **Hook** | 규칙 시행 (차단/주입) | 자동 (이벤트 기반) | stdin/stdout JSON |
-| **MCP** | 분석 도구 제공 | 에이전트 호출 시 | JSON-RPC over stdio |
-| **Agent** | 역할별 워크플로우 | 사용자/시스템 지시 | Claude Code subagent |
-| **Skill** | 고수준 작업 단위 | 사용자 `/command` | SKILL.md 프롬프트 |
+| 계층      | 역할                  | 실행 시점          | 인터페이스           |
+| --------- | --------------------- | ------------------ | -------------------- |
+| **Hook**  | 규칙 시행 (차단/주입) | 자동 (이벤트 기반) | stdin/stdout JSON    |
+| **MCP**   | 분석 도구 제공        | 에이전트 호출 시   | JSON-RPC over stdio  |
+| **Agent** | 역할별 워크플로우     | 사용자/시스템 지시 | Claude Code subagent |
+| **Skill** | 고수준 작업 단위      | 사용자 `/command`  | SKILL.md 프롬프트    |
 
 ---
 
@@ -204,14 +204,14 @@ mcp/server-entry.ts (시작점)
 
 ### 외부 의존성
 
-| 패키지 | 버전 | 용도 |
-|--------|------|------|
-| `typescript` | ^5.7.2 | Compiler API (AST 파싱) |
-| `@modelcontextprotocol/sdk` | ^1.26.0 | MCP 서버 프레임워크 |
-| `fast-glob` | ^3.0.0 | 파일 패턴 탐색 |
-| `yaml` | ^2.0.0 | YAML 파싱 |
-| `zod` | ^3.23.8 | 스키마 검증 |
-| `esbuild` | ^0.24.0 (dev) | 번들링 |
+| 패키지                      | 버전          | 용도                    |
+| --------------------------- | ------------- | ----------------------- |
+| `typescript`                | ^5.7.2        | Compiler API (AST 파싱) |
+| `@modelcontextprotocol/sdk` | ^1.26.0       | MCP 서버 프레임워크     |
+| `fast-glob`                 | ^3.0.0        | 파일 패턴 탐색          |
+| `yaml`                      | ^2.0.0        | YAML 파싱               |
+| `zod`                       | ^3.23.8       | 스키마 검증             |
+| `esbuild`                   | ^0.24.0 (dev) | 번들링                  |
 
 ---
 
@@ -226,12 +226,14 @@ mcp/server-entry.ts (시작점)
 **결정**: TypeScript Compiler API (`ts.createSourceFile`)를 선택.
 
 **근거**:
+
 - tree-sitter: 네이티브 바인딩 필요 → `node-gyp` 의존 → 플러그인 설치 복잡도 증가
 - @swc/core: Rust 바이너리 → 플랫폼별 빌드 필요 → 이식성 저하
 - TS Compiler API: `typescript` npm 패키지만으로 동작 → 순수 JS, 크로스 플랫폼
 - filid는 TypeScript/JavaScript 소스 전용이므로 범용 파서 불필요
 
 **트레이드오프**:
+
 - TS Compiler API는 tree-sitter 대비 파싱 속도 느림
 - 번들 크기 증가 (typescript 패키지가 무거움 → `external`로 처리)
 
@@ -244,12 +246,14 @@ mcp/server-entry.ts (시작점)
 **결정**: `build-plugin.mjs`로 esbuild 번들링. MCP 서버는 CJS, Hook 스크립트는 ESM.
 
 **근거**:
+
 - `libs/server.cjs`: CJS 형식 → Node.js 호환성 극대화
 - `scripts/*.mjs`: ESM 형식 → `#!/usr/bin/env node` + `for await` 지원
 - `typescript`를 `external`로 처리 → 사용자가 `npm install` 시 자동 설치
 - 단일 파일 번들 → `dist/` 디렉토리 없이 동작
 
 **트레이드오프**:
+
 - `server.cjs`가 ~516KB로 큼 (minify 미적용 — 디버깅 우선)
 - `typescript` 패키지가 `external` → 별도 설치 필요
 
@@ -267,6 +271,7 @@ mcp/server-entry.ts (시작점)
 4. **Skill** (가장 수동): 사용자가 명시적으로 `/command` 실행
 
 **근거**:
+
 - Hook은 규칙 위반을 실시간 차단/경고 → 예방적 시행
 - MCP는 필요 시에만 호출 → 불필요한 오버헤드 회피
 - Agent는 역할 분리로 권한 최소화 원칙 적용
@@ -291,11 +296,11 @@ mcp/server-entry.ts (시작점)
 
 `/code-review`는 3-Phase 위임 패턴으로 컨텍스트 효율을 극대화한다:
 
-| Phase | 실행자 | 모델 | 역할 |
-|-------|--------|------|------|
-| A (분석) | subagent | haiku | git diff 분석, 위원회 결정론적 선출 |
-| B (검증) | subagent | sonnet | MCP tool 기반 기술 검증 |
-| C (합의) | 의장 직접 | - | 페르소나 합의 상태 머신 실행 |
+| Phase    | 실행자    | 모델   | 역할                                |
+| -------- | --------- | ------ | ----------------------------------- |
+| A (분석) | subagent  | haiku  | git diff 분석, 위원회 결정론적 선출 |
+| B (검증) | subagent  | sonnet | MCP tool 기반 기술 검증             |
+| C (합의) | 의장 직접 | -      | 페르소나 합의 상태 머신 실행        |
 
 ### 기술 부채 시스템
 
@@ -315,12 +320,14 @@ mcp/server-entry.ts (시작점)
 **결정**: Layer 4 (Skills) 내부 프레임워크로 설계.
 
 **근거**:
+
 - 거버넌스 스킬은 기존 Hook/MCP/Agent 계층을 그대로 활용 — 새 계층 불필요
 - 신규 MCP tool 2개(`review-manage`, `debt-manage`)만 추가로 충분
 - 신규 agent 0개 — 페르소나는 SKILL.md 내 프레임워크 문서로 내장
 - 기존 4계층 아키텍처의 일관성 유지
 
 **트레이드오프**:
+
 - Layer 4 스킬 수가 8→11로 증가 — 관리 범위 확대
 - 페르소나 파일이 skills/ 하위에 위치 — agents/와 분리된 관리
 

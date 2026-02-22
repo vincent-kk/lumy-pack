@@ -140,7 +140,9 @@ var chunks = [];
 for await (const chunk of process.stdin) {
   chunks.push(chunk);
 }
-var input = JSON.parse(Buffer.concat(chunks).toString("utf-8"));
+var input = JSON.parse(
+  Buffer.concat(chunks).toString("utf-8")
+);
 var filePath = input.tool_input.file_path ?? input.tool_input.path ?? "";
 var oldSpecContent;
 if (input.tool_name === "Write" && isSpecMd(filePath)) {

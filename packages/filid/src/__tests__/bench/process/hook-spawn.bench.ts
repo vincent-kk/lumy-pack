@@ -1,8 +1,9 @@
-import { bench, describe } from 'vitest';
 import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { promisify } from 'node:util';
+
+import { bench, describe } from 'vitest';
 
 const execFileAsync = promisify(execFile);
 

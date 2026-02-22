@@ -15,30 +15,30 @@ reference for the Delta re-validation skill.
 
 ## Delta Analysis
 
-| File | Change Type | Related Fix |
-|------|-------------|-------------|
-| <path> | added/modified/deleted | FIX-<ID> |
+| File   | Change Type            | Related Fix |
+| ------ | ---------------------- | ----------- |
+| <path> | added/modified/deleted | FIX-<ID>    |
 
 ## Fix Verification
 
-| Fix ID | Status | Detail |
-|--------|--------|--------|
-| FIX-001 | RESOLVED | <metric before → after> |
-| FIX-002 | DEFERRED | Justification accepted, debt created |
-| FIX-003 | UNRESOLVED | <what remains unfixed> |
-| FIX-004 | UNCONSTITUTIONAL | <non-negotiable rule violated> |
+| Fix ID  | Status           | Detail                               |
+| ------- | ---------------- | ------------------------------------ |
+| FIX-001 | RESOLVED         | <metric before → after>              |
+| FIX-002 | DEFERRED         | Justification accepted, debt created |
+| FIX-003 | UNRESOLVED       | <what remains unfixed>               |
+| FIX-004 | UNCONSTITUTIONAL | <non-negotiable rule violated>       |
 
 ## Debt Changes
 
-| Change | Debt File | Detail |
-|--------|-----------|--------|
-| CREATED | <debt-id>.md | <from resolve-review> |
-| RESOLVED | <debt-id>.md | <rule now satisfied> |
+| Change   | Debt File    | Detail                |
+| -------- | ------------ | --------------------- |
+| CREATED  | <debt-id>.md | <from resolve-review> |
+| RESOLVED | <debt-id>.md | <rule now satisfied>  |
 
 ## New Violations Check
 
-| Check | Result | Detail |
-|-------|--------|--------|
+| Check                   | Result       | Detail                |
+| ----------------------- | ------------ | --------------------- |
 | New critical violations | NONE / FOUND | <if found, list them> |
 
 ## Final Verdict
@@ -51,6 +51,7 @@ Clean up `.filid/review/<branch>/` after merge.
 
 <If FAIL>:
 Unresolved items remain. Address the following before re-running:
+
 - <list unresolved items>
 ```
 
@@ -64,9 +65,9 @@ Unresolved items remain. Address the following before re-running:
 **Branch**: <branch>
 **Delta**: <N> commits since resolution
 
-| Fix | Status |
-|-----|--------|
-| FIX-001 | RESOLVED |
+| Fix     | Status                  |
+| ------- | ----------------------- |
+| FIX-001 | RESOLVED                |
 | FIX-002 | DEFERRED (debt tracked) |
 
 All fixes resolved or validly deferred. Ready for merge.
@@ -82,9 +83,9 @@ All fixes resolved or validly deferred. Ready for merge.
 **Branch**: <branch>
 **Delta**: <N> commits since resolution
 
-| Fix | Status |
-|-----|--------|
-| FIX-001 | RESOLVED |
+| Fix     | Status     |
+| ------- | ---------- |
+| FIX-001 | RESOLVED   |
 | FIX-003 | UNRESOLVED |
 
 Action required: address unresolved items before merge.
@@ -94,15 +95,15 @@ Action required: address unresolved items before merge.
 
 ## Verification MCP Tool Map
 
-| Fix Type | Verification Tool | Pass Condition |
-|----------|------------------|----------------|
-| LCOM4 violation | `ast-analyze(lcom4)` | LCOM4 < 2 |
-| CC violation | `ast-analyze(cyclomatic-complexity)` | CC <= 15 |
-| 3+12 violation | `test-metrics(check-312)` | All files PASS |
-| Structure violation | `structure-validate` | No violations |
-| Circular dependency | `ast-analyze(dependency-graph)` | No cycles |
-| Drift | `drift-detect` | No drift |
-| Document compliance | `doc-compress(auto)` + Read | CLAUDE.md <= 100 lines |
+| Fix Type            | Verification Tool                    | Pass Condition         |
+| ------------------- | ------------------------------------ | ---------------------- |
+| LCOM4 violation     | `ast-analyze(lcom4)`                 | LCOM4 < 2              |
+| CC violation        | `ast-analyze(cyclomatic-complexity)` | CC <= 15               |
+| 3+12 violation      | `test-metrics(check-312)`            | All files PASS         |
+| Structure violation | `structure-validate`                 | No violations          |
+| Circular dependency | `ast-analyze(dependency-graph)`      | No cycles              |
+| Drift               | `drift-detect`                       | No drift               |
+| Document compliance | `doc-compress(auto)` + Read          | CLAUDE.md <= 100 lines |
 
 ## Non-Negotiable Rules (Constitutional)
 

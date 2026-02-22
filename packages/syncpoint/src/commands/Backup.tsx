@@ -46,7 +46,11 @@ const BackupView: React.FC<BackupViewProps> = ({ options }) => {
     for (const f of foundFiles) {
       if (seen.has(f.absolutePath)) continue;
       seen.add(f.absolutePath);
-      deduped.push({ id: `found-${f.absolutePath}`, type: 'found' as const, file: f });
+      deduped.push({
+        id: `found-${f.absolutePath}`,
+        type: 'found' as const,
+        file: f,
+      });
     }
     for (const p of missingFiles) {
       if (seen.has(p)) continue;
@@ -127,7 +131,8 @@ const BackupView: React.FC<BackupViewProps> = ({ options }) => {
             return (
               <Text key={item.id}>
                 {'  '}
-                <Text color="green">✓</Text> {contractTilde(item.file.absolutePath)}
+                <Text color="green">✓</Text>{' '}
+                {contractTilde(item.file.absolutePath)}
                 <Text color="gray">
                   {'    '}
                   {formatBytes(item.file.size).padStart(10)}
@@ -197,10 +202,18 @@ export function registerBackupCommand(program: Command): void {
     cmd.option(opt.flag, opt.description);
   });
 
-  cmd.action(async (opts: { dryRun: boolean; tag?: string; verbose?: boolean }) => {
-    const { waitUntilExit } = render(
-      <BackupView options={{ dryRun: opts.dryRun, tag: opts.tag, verbose: opts.verbose }} />,
-    );
-    await waitUntilExit();
-  });
+  cmd.action(
+    async (opts: { dryRun: boolean; tag?: string; verbose?: boolean }) => {
+      const { waitUntilExit } = render(
+        <BackupView
+          options={{
+            dryRun: opts.dryRun,
+            tag: opts.tag,
+            verbose: opts.verbose,
+          }}
+        />,
+      );
+      await waitUntilExit();
+    },
+  );
 }

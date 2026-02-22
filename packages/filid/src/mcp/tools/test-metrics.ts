@@ -1,6 +1,9 @@
-import { countTestCases, type RawTestFile } from '../../metrics/test-counter.js';
-import { check312Rule } from '../../metrics/three-plus-twelve.js';
 import { decide } from '../../metrics/decision-tree.js';
+import {
+  type RawTestFile,
+  countTestCases,
+} from '../../metrics/test-counter.js';
+import { check312Rule } from '../../metrics/three-plus-twelve.js';
 import type { DecisionResult } from '../../types/metrics.js';
 
 /** File content for test analysis */
@@ -94,7 +97,9 @@ function handleCheck312(files: TestFileInput[]): TestMetricsOutput {
     const count = countTestCases(raw);
     return {
       filePath: f.filePath,
-      fileType: f.filePath.includes('.spec.') ? 'spec' as const : 'test' as const,
+      fileType: f.filePath.includes('.spec.')
+        ? ('spec' as const)
+        : ('test' as const),
       total: count.total,
       basic: count.total,
       complex: 0,
@@ -103,14 +108,16 @@ function handleCheck312(files: TestFileInput[]): TestMetricsOutput {
 
   const result = check312Rule(testCaseCounts);
 
-  const violations: ThreePlusTwelveViolation[] = result.violatingFiles.map((fp) => {
-    const entry = testCaseCounts.find((c) => c.filePath === fp);
-    return {
-      filePath: fp,
-      testCount: entry?.total ?? 0,
-      threshold: 15,
-    };
-  });
+  const violations: ThreePlusTwelveViolation[] = result.violatingFiles.map(
+    (fp) => {
+      const entry = testCaseCounts.find((c) => c.filePath === fp);
+      return {
+        filePath: fp,
+        testCount: entry?.total ?? 0,
+        threshold: 15,
+      };
+    },
+  );
 
   return { violations };
 }

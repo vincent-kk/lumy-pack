@@ -1,6 +1,6 @@
+import metadataSchema from '../../assets/schemas/metadata.schema.json';
 import type { BackupMetadata } from '../utils/types.js';
 
-import metadataSchema from '../../assets/schemas/metadata.schema.json';
 import { ajv } from './ajv.js';
 
 const validate = ajv.compile<BackupMetadata>(metadataSchema);

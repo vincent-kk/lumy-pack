@@ -27,34 +27,39 @@ CLAUDE.md files for fractal nodes, and produces a validation report.
 ## Core Workflow
 
 ### Phase 1 — Directory Scan
+
 Retrieve the complete project hierarchy using `fractal-navigate(action: "tree")`.
 Build a working list of all directories for classification.
 See [reference.md Section 1](./reference.md#section-1--directory-scan-details).
 
 ### Phase 2 — Node Classification
+
 Classify each directory as fractal, organ, or pure-function using
 `fractal-navigate(action: "classify")` and priority-ordered decision rules.
 See [reference.md Section 2](./reference.md#section-2--node-classification-rules).
 
 ### Phase 3 — CLAUDE.md Generation
+
 Generate CLAUDE.md (≤100 lines, 3-tier boundaries) for each fractal directory
 that lacks one. Organ directories are skipped.
 See [reference.md Section 3](./reference.md#section-3--claudemd-generation-template).
 
 ### Phase 4 — SPEC.md Scaffolding
+
 Create SPEC.md scaffolds for fractal modules with public APIs that lack
 formal specifications.
 See [reference.md Section 4](./reference.md#section-4--specmd-scaffolding).
 
 ### Phase 5 — Validation and Report
+
 Validate all generated files against FCA-AI rules and emit a summary report.
 See [reference.md Section 5](./reference.md#section-5--validation-and-report-format).
 
 ## Available MCP Tools
 
-| Tool | Action | Purpose |
-|------|--------|---------|
-| `fractal-navigate` | `tree` | Retrieve complete project directory hierarchy |
+| Tool               | Action     | Purpose                                                        |
+| ------------------ | ---------- | -------------------------------------------------------------- |
+| `fractal-navigate` | `tree`     | Retrieve complete project directory hierarchy                  |
 | `fractal-navigate` | `classify` | Classify a single directory as fractal / organ / pure-function |
 
 ## Options
@@ -65,9 +70,9 @@ See [reference.md Section 5](./reference.md#section-5--validation-and-report-for
 /filid:init [path]
 ```
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `path` | string | Current working directory | Root directory to initialize |
+| Parameter | Type   | Default                   | Description                  |
+| --------- | ------ | ------------------------- | ---------------------------- |
+| `path`    | string | Current working directory | Root directory to initialize |
 
 ## Quick Reference
 
@@ -86,6 +91,7 @@ CLAUDE_MD_LIMIT   = 100 lines
 ```
 
 Key rules:
+
 - Organ directories must never receive a CLAUDE.md
 - CLAUDE.md must not exceed 100 lines
 - All three boundary sections are required in every CLAUDE.md

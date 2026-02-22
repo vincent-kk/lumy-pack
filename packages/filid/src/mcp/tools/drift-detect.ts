@@ -1,7 +1,8 @@
+import { detectDrift, generateSyncPlan } from '../../core/drift-detector.js';
+import { SEVERITY_ORDER } from '../../core/drift-detector.js';
 import { scanProject } from '../../core/fractal-tree.js';
 import { validateStructure } from '../../core/fractal-validator.js';
-import { detectDrift, generateSyncPlan } from '../../core/drift-detector.js';
-import type { DriftSeverity, DriftItem, SyncPlan } from '../../types/drift.js';
+import type { DriftItem, DriftSeverity, SyncPlan } from '../../types/drift.js';
 
 export interface DriftDetectInput {
   path: string;
@@ -17,8 +18,6 @@ export interface McpDriftReport {
   syncPlan?: SyncPlan;
 }
 
-import { SEVERITY_ORDER } from '../../core/drift-detector.js';
-
 /**
  * Handle drift-detect MCP tool calls.
  *
@@ -26,7 +25,9 @@ import { SEVERITY_ORDER } from '../../core/drift-detector.js';
  * fractal principles. Optionally filters by severity and generates
  * a SyncPlan for correcting the detected drift items.
  */
-export async function handleDriftDetect(args: unknown): Promise<McpDriftReport> {
+export async function handleDriftDetect(
+  args: unknown,
+): Promise<McpDriftReport> {
   const input = args as DriftDetectInput;
 
   if (!input.path) {

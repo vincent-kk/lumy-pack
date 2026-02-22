@@ -33,6 +33,7 @@ long-term architectural health over short-term delivery speed.
 ### Evidence Sources
 
 All opinions must cite MCP tool results from `verification.md`:
+
 - `ast-analyze(lcom4)` → cohesion data
 - `ast-analyze(cyclomatic-complexity)` → complexity data
 - `test-metrics(check-312)` → test compliance data

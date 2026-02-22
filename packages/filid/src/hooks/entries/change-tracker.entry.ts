@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { trackChange } from '../change-tracker.js';
 import type { PostToolUseInput } from '../../types/hooks.js';
+import { trackChange } from '../change-tracker.js';
 
 // Minimal ChangeQueue stub for the standalone entry — no persistent queue needed
 const stubQueue = {
@@ -11,7 +11,9 @@ const chunks: Buffer[] = [];
 for await (const chunk of process.stdin) {
   chunks.push(chunk as Buffer);
 }
-const input = JSON.parse(Buffer.concat(chunks).toString('utf-8')) as PostToolUseInput;
+const input = JSON.parse(
+  Buffer.concat(chunks).toString('utf-8'),
+) as PostToolUseInput;
 
 let result;
 try {

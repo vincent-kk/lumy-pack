@@ -77,7 +77,12 @@ export interface SpecMdValidation {
 /** Document rule violation */
 export interface DocumentViolation {
   /** Violated rule */
-  rule: 'line-limit' | 'deduplication' | 'append-only' | 'missing-boundaries' | 'missing-section';
+  rule:
+    | 'line-limit'
+    | 'deduplication'
+    | 'append-only'
+    | 'missing-boundaries'
+    | 'missing-section';
   /** Violation description */
   message: string;
   /** Severity level */

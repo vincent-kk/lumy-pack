@@ -1,12 +1,14 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { mkdtemp, writeFile, mkdir, rm } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import {
-  findEntryPoint,
+  analyzeModule,
   extractImports,
   extractPublicApi,
-  analyzeModule,
+  findEntryPoint,
 } from '../../../core/module-main-analyzer.js';
 
 let tmpDir: string;
@@ -43,7 +45,10 @@ describe('module-main-analyzer', () => {
     it('should find single .ts file as entry point', async () => {
       const dir = join(tmpDir, 'ep-single');
       await mkdir(dir, { recursive: true });
-      await writeFile(join(dir, 'calculator.ts'), 'export function add(a: number, b: number) { return a + b; }');
+      await writeFile(
+        join(dir, 'calculator.ts'),
+        'export function add(a: number, b: number) { return a + b; }',
+      );
 
       const result = await findEntryPoint(dir);
       expect(result).toBe(join(dir, 'calculator.ts'));
@@ -71,11 +76,14 @@ describe('module-main-analyzer', () => {
   describe('extractImports', () => {
     it('should extract static import paths', async () => {
       const file = join(tmpDir, 'imports-test.ts');
-      await writeFile(file, `
+      await writeFile(
+        file,
+        `
 import { foo } from './foo.js';
 import type { Bar } from './bar.js';
 import * as utils from '../utils.js';
-`);
+`,
+      );
       const result = await extractImports(file);
       expect(result).toContain('./foo.js');
       expect(result).toContain('./bar.js');
@@ -98,12 +106,15 @@ import * as utils from '../utils.js';
   describe('extractPublicApi', () => {
     it('should extract functions and classes from entry point', async () => {
       const file = join(tmpDir, 'api-test.ts');
-      await writeFile(file, `
+      await writeFile(
+        file,
+        `
 export function myFunction() {}
 export class MyClass {}
 export type MyType = string;
 export interface MyInterface { id: number; }
-`);
+`,
+      );
       const result = await extractPublicApi(file);
       expect(result.functions).toContain('myFunction');
       expect(result.classes).toContain('MyClass');
@@ -124,10 +135,13 @@ export interface MyInterface { id: number; }
     it('should analyze module with index.ts entry point', async () => {
       const dir = join(tmpDir, 'module-full');
       await mkdir(dir, { recursive: true });
-      await writeFile(join(dir, 'index.ts'), `
+      await writeFile(
+        join(dir, 'index.ts'),
+        `
 export { doStuff } from './impl.js';
 import { helper } from './helper.js';
-`);
+`,
+      );
 
       const result = await analyzeModule(dir);
       expect(result.path).toBe(dir);

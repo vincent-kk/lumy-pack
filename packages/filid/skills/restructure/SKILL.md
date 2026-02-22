@@ -28,35 +28,39 @@ moves, renames, index.ts creations, and import path updates.
 ## Core Workflow
 
 ### Stage 1 — Analysis & Proposal
+
 `fractal-architect` performs a full structure scan, identifies rule violations and
 structural improvements, and generates a concrete restructuring proposal.
 See [reference.md Section 1](./reference.md#section-1--analysis--proposal).
 
 ### Stage 2 — Plan Review & Approval
+
 The restructuring plan is presented to the user with a summary of affected files.
 Explicit approval is required before any changes are made.
 `--auto-approve` skips this stage.
 See [reference.md Section 2](./reference.md#section-2--plan-review--approval).
 
 ### Stage 3 — Execution
+
 `restructurer` applies the approved plan in priority order: file moves, renames,
 index.ts creation, and import path updates.
 See [reference.md Section 3](./reference.md#section-3--execution).
 
 ### Stage 4 — Validation
+
 `fractal-architect` validates the result using `structure-validate` and reports any
 remaining violations.
 See [reference.md Section 4](./reference.md#section-4--validation).
 
 ## Available MCP Tools
 
-| Tool | Stage | Purpose |
-|------|-------|---------|
-| `fractal-scan` | 1 | Full structure scan |
-| `drift-detect` | 1 | Detect fractal principle deviations |
-| `lca-resolve` | 1 | Resolve move targets via LCA |
-| `rule-query` | 1 | Fetch active rules |
-| `structure-validate` | 4 | Validate post-execution structure |
+| Tool                 | Stage | Purpose                             |
+| -------------------- | ----- | ----------------------------------- |
+| `fractal-scan`       | 1     | Full structure scan                 |
+| `drift-detect`       | 1     | Detect fractal principle deviations |
+| `lca-resolve`        | 1     | Resolve move targets via LCA        |
+| `rule-query`         | 1     | Fetch active rules                  |
+| `structure-validate` | 4     | Validate post-execution structure   |
 
 ## Options
 
@@ -66,11 +70,11 @@ See [reference.md Section 4](./reference.md#section-4--validation).
 /filid:restructure [path] [--dry-run] [--auto-approve]
 ```
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `path` | string | Current working directory | Root directory to restructure |
-| `--dry-run` | flag | off | Preview plan without making any changes |
-| `--auto-approve` | flag | off | Skip user approval (CI / automation environments) |
+| Option           | Type   | Default                   | Description                                       |
+| ---------------- | ------ | ------------------------- | ------------------------------------------------- |
+| `path`           | string | Current working directory | Root directory to restructure                     |
+| `--dry-run`      | flag   | off                       | Preview plan without making any changes           |
+| `--auto-approve` | flag   | off                       | Skip user approval (CI / automation environments) |
 
 ## Quick Reference
 
@@ -93,6 +97,7 @@ Dry-run: Prints plan then exits — no file changes
 ```
 
 Key rules:
+
 - Always run with `--dry-run` first to review the plan before applying
 - `--auto-approve` is recommended only in validated CI environments
 - If an out-of-scope change is discovered mid-execution, execution stops and reports

@@ -5,14 +5,15 @@
  * TypeScript AST 파싱 없이 정규식 기반으로 export 구문을 분석한다.
  * re-export, named export, default export, type export를 구분한다.
  */
-
-import type { ModuleExportInfo, BarrelPattern } from '../types/fractal.js';
+import type { BarrelPattern, ModuleExportInfo } from '../types/fractal.js';
 
 // 정규식 패턴
 const RE_NAMED_REEXPORT = /^export\s+\{[^}]*\}\s+from\s+['"][^'"]+['"]/gm;
-const RE_STAR_REEXPORT = /^export\s+\*\s+(?:as\s+\w+\s+)?from\s+['"][^'"]+['"]/gm;
+const RE_STAR_REEXPORT =
+  /^export\s+\*\s+(?:as\s+\w+\s+)?from\s+['"][^'"]+['"]/gm;
 const RE_TYPE_REEXPORT = /^export\s+type\s+\{[^}]*\}\s+from\s+['"][^'"]+['"]/gm;
-const RE_NAMED_DECL = /^export\s+(?:const|function|class|interface|enum|abstract\s+class)\s+(\w+)/gm;
+const RE_NAMED_DECL =
+  /^export\s+(?:const|function|class|interface|enum|abstract\s+class)\s+(\w+)/gm;
 const RE_DEFAULT_EXPORT = /^export\s+default\s+/gm;
 const RE_TYPE_DECL = /^export\s+type\s+(\w+)\s*[=<{]/gm;
 
@@ -39,7 +40,14 @@ export function extractModuleExports(content: string): ModuleExportInfo[] {
     if (namesMatch) {
       const names = namesMatch[1]
         .split(',')
-        .map((n) => n.trim().split(/\s+as\s+/).pop()?.trim() ?? '')
+        .map(
+          (n) =>
+            n
+              .trim()
+              .split(/\s+as\s+/)
+              .pop()
+              ?.trim() ?? '',
+        )
         .filter(Boolean);
       for (const name of names) {
         exports.push({ name, kind: 're-export', source });
@@ -59,7 +67,14 @@ export function extractModuleExports(content: string): ModuleExportInfo[] {
     if (namesMatch) {
       const names = namesMatch[1]
         .split(',')
-        .map((n) => n.trim().split(/\s+as\s+/).pop()?.trim() ?? '')
+        .map(
+          (n) =>
+            n
+              .trim()
+              .split(/\s+as\s+/)
+              .pop()
+              ?.trim() ?? '',
+        )
         .filter(Boolean);
       for (const name of names) {
         exports.push({ name, kind: 're-export', source });

@@ -10,9 +10,11 @@
  * - 0 = no methods to analyze
  */
 import ts from 'typescript';
-import { parseSource } from './parser.js';
-import type { LCOM4Result } from '../types/metrics.js';
+
 import type { ClassInfo, MethodInfo } from '../types/ast.js';
+import type { LCOM4Result } from '../types/metrics.js';
+
+import { parseSource } from './parser.js';
 
 /**
  * Extract class structure (fields, methods, field access) from source code.
@@ -41,12 +43,20 @@ export function extractClassInfo(
 
   for (const member of (classDecl as ts.ClassDeclaration).members) {
     // Collect property declarations as fields
-    if (ts.isPropertyDeclaration(member) && member.name && ts.isIdentifier(member.name)) {
+    if (
+      ts.isPropertyDeclaration(member) &&
+      member.name &&
+      ts.isIdentifier(member.name)
+    ) {
       fields.push(member.name.text);
     }
 
     // Collect method declarations
-    if (ts.isMethodDeclaration(member) && member.name && ts.isIdentifier(member.name)) {
+    if (
+      ts.isMethodDeclaration(member) &&
+      member.name &&
+      ts.isIdentifier(member.name)
+    ) {
       const methodName = member.name.text;
       const accessedFields = findFieldAccesses(member);
       methods.push({ name: methodName, accessedFields });
@@ -59,10 +69,7 @@ export function extractClassInfo(
 /**
  * Calculate LCOM4 for a class in source code.
  */
-export function calculateLCOM4(
-  source: string,
-  className: string,
-): LCOM4Result {
+export function calculateLCOM4(source: string, className: string): LCOM4Result {
   const info = extractClassInfo(source, className);
 
   if (!info || info.methods.length === 0) {
@@ -75,7 +82,7 @@ export function calculateLCOM4(
   }
 
   // Build undirected graph: methods connected if they share a field
-  const methodNames = info.methods.map(m => m.name);
+  const methodNames = info.methods.map((m) => m.name);
   const adjacency = new Map<string, Set<string>>();
 
   for (const name of methodNames) {
@@ -86,7 +93,7 @@ export function calculateLCOM4(
     for (let j = i + 1; j < info.methods.length; j++) {
       const a = info.methods[i];
       const b = info.methods[j];
-      const shared = a.accessedFields.some(f => b.accessedFields.includes(f));
+      const shared = a.accessedFields.some((f) => b.accessedFields.includes(f));
       if (shared) {
         adjacency.get(a.name)!.add(b.name);
         adjacency.get(b.name)!.add(a.name);

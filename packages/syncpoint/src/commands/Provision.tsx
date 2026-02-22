@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from "react";
-import { Text, Box, useApp } from "ink";
-import { Command } from "commander";
-import { render } from "ink";
+import { Command } from 'commander';
+import { Box, Text, useApp } from 'ink';
+import { render } from 'ink';
+import React, { useEffect, useState } from 'react';
 
+import { StepRunner } from '../components/StepRunner.js';
+import { listTemplates, loadTemplate } from '../core/provision.js';
+import { runProvision } from '../core/provision.js';
+import { getBackupList, restoreBackup } from '../core/restore.js';
+import { fileExists, resolveTargetPath } from '../utils/paths.js';
+import { ensureSudo } from '../utils/sudo.js';
 import type {
-  TemplateConfig,
-  StepResult,
   ProvisionOptions,
-} from "../utils/types.js";
-import { loadTemplate, listTemplates } from "../core/provision.js";
-import { runProvision } from "../core/provision.js";
-import { getBackupList, restoreBackup } from "../core/restore.js";
-import { ensureSudo } from "../utils/sudo.js";
-import { resolveTargetPath, fileExists } from "../utils/paths.js";
-import { StepRunner } from "../components/StepRunner.js";
+  StepResult,
+  TemplateConfig,
+} from '../utils/types.js';
 
-type Phase = "running" | "done" | "error";
+type Phase = 'running' | 'done' | 'error';
 
 interface ProvisionViewProps {
   template: TemplateConfig;
@@ -29,11 +29,13 @@ const ProvisionView: React.FC<ProvisionViewProps> = ({
   options,
 }) => {
   const { exit } = useApp();
-  const [phase, setPhase] = useState<Phase>(options.dryRun ? "done" : "running");
+  const [phase, setPhase] = useState<Phase>(
+    options.dryRun ? 'done' : 'running',
+  );
   const [steps, setSteps] = useState<StepResult[]>(
     template.steps.map((s) => ({
       name: s.name,
-      status: "pending" as const,
+      status: 'pending' as const,
       output: s.description,
     })),
   );
@@ -59,9 +61,9 @@ const ProvisionView: React.FC<ProvisionViewProps> = ({
             return updated;
           });
           if (
-            result.status === "success" ||
-            result.status === "skipped" ||
-            result.status === "failed"
+            result.status === 'success' ||
+            result.status === 'skipped' ||
+            result.status === 'failed'
           ) {
             stepIdx++;
           }
@@ -71,8 +73,8 @@ const ProvisionView: React.FC<ProvisionViewProps> = ({
         if (template.backup && !options.skipRestore) {
           try {
             const backups = await getBackupList();
-            const match = backups.find(
-              (b) => b.filename.includes(template.backup!)
+            const match = backups.find((b) =>
+              b.filename.includes(template.backup!),
             );
             if (match) {
               await restoreBackup(match.path);
@@ -82,17 +84,17 @@ const ProvisionView: React.FC<ProvisionViewProps> = ({
           }
         }
 
-        setPhase("done");
+        setPhase('done');
         setTimeout(() => exit(), 100);
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
-        setPhase("error");
+        setPhase('error');
         exit();
       }
     })();
   }, []);
 
-  if (phase === "error" || error) {
+  if (phase === 'error' || error) {
     return (
       <Box flexDirection="column">
         <Text color="red">✗ {error}</Text>
@@ -100,9 +102,9 @@ const ProvisionView: React.FC<ProvisionViewProps> = ({
     );
   }
 
-  const successCount = steps.filter((s) => s.status === "success").length;
-  const skippedCount = steps.filter((s) => s.status === "skipped").length;
-  const failedCount = steps.filter((s) => s.status === "failed").length;
+  const successCount = steps.filter((s) => s.status === 'success').length;
+  const skippedCount = steps.filter((s) => s.status === 'skipped').length;
+  const failedCount = steps.filter((s) => s.status === 'failed').length;
 
   return (
     <Box flexDirection="column">
@@ -110,38 +112,43 @@ const ProvisionView: React.FC<ProvisionViewProps> = ({
       <Box flexDirection="column" marginBottom={1}>
         <Text bold>▸ {template.name}</Text>
         {template.description && (
-          <Text color="gray">{"  "}{template.description}</Text>
+          <Text color="gray">
+            {'  '}
+            {template.description}
+          </Text>
         )}
       </Box>
 
       {/* Dry-run notice */}
-      {options.dryRun && phase === "done" && (
+      {options.dryRun && phase === 'done' && (
         <Box flexDirection="column">
-          <Text color="yellow">
-            (dry-run) Showing execution plan only
-          </Text>
+          <Text color="yellow">(dry-run) Showing execution plan only</Text>
           {template.sudo && (
             <Text color="yellow">
-              {"  "}⚠ This template requires sudo privileges (will prompt on actual run)
+              {'  '}⚠ This template requires sudo privileges (will prompt on
+              actual run)
             </Text>
           )}
           <Box flexDirection="column" marginTop={1}>
             {template.steps.map((step, idx) => (
               <Box key={idx} flexDirection="column" marginBottom={1}>
                 <Text>
-                  {"  "}
+                  {'  '}
                   <Text bold>
                     Step {idx + 1}/{template.steps.length}
                   </Text>
-                  {"  "}
+                  {'  '}
                   {step.name}
                 </Text>
                 {step.description && (
-                  <Text color="gray">{"            "}{step.description}</Text>
+                  <Text color="gray">
+                    {'            '}
+                    {step.description}
+                  </Text>
                 )}
                 {step.skip_if && (
                   <Text color="blue">
-                    {"            "}Skip condition: {step.skip_if}
+                    {'            '}Skip condition: {step.skip_if}
                   </Text>
                 )}
               </Box>
@@ -151,7 +158,7 @@ const ProvisionView: React.FC<ProvisionViewProps> = ({
       )}
 
       {/* Step execution */}
-      {(phase === "running" || (phase === "done" && !options.dryRun)) && (
+      {(phase === 'running' || (phase === 'done' && !options.dryRun)) && (
         <StepRunner
           steps={steps}
           currentStep={currentStep}
@@ -160,22 +167,20 @@ const ProvisionView: React.FC<ProvisionViewProps> = ({
       )}
 
       {/* Summary */}
-      {phase === "done" && !options.dryRun && (
+      {phase === 'done' && !options.dryRun && (
         <Box flexDirection="column" marginTop={1}>
-          <Text color="gray">{"  "}────────────────────</Text>
+          <Text color="gray">{'  '}────────────────────</Text>
           <Text>
-            {"  "}Result: <Text color="green">{successCount} succeeded</Text> ·{" "}
-            <Text color="blue">{skippedCount} skipped</Text> ·{" "}
+            {'  '}Result: <Text color="green">{successCount} succeeded</Text> ·{' '}
+            <Text color="blue">{skippedCount} skipped</Text> ·{' '}
             <Text color="red">{failedCount} failed</Text>
           </Text>
 
           {template.backup && !options.skipRestore && (
             <Box flexDirection="column" marginTop={1}>
-              <Text bold>
-                ▸ Proceeding with config file restore...
-              </Text>
+              <Text bold>▸ Proceeding with config file restore...</Text>
               <Text color="gray">
-                {"  "}Backup link: {template.backup}
+                {'  '}Backup link: {template.backup}
               </Text>
             </Box>
           )}
@@ -187,11 +192,15 @@ const ProvisionView: React.FC<ProvisionViewProps> = ({
 
 export function registerProvisionCommand(program: Command): void {
   program
-    .command("provision [template]")
-    .description("Run template-based machine provisioning")
-    .option("--dry-run", "Show plan without execution", false)
-    .option("--skip-restore", "Skip automatic restore after template completion", false)
-    .option("-f, --file <path>", "Path to template file")
+    .command('provision [template]')
+    .description('Run template-based machine provisioning')
+    .option('--dry-run', 'Show plan without execution', false)
+    .option(
+      '--skip-restore',
+      'Skip automatic restore after template completion',
+      false,
+    )
+    .option('-f, --file <path>', 'Path to template file')
     .action(
       async (
         templateName: string | undefined,
@@ -211,8 +220,13 @@ export function registerProvisionCommand(program: Command): void {
           }
 
           // 확장자 확인
-          if (!templatePath.endsWith('.yml') && !templatePath.endsWith('.yaml')) {
-            console.error(`Template file must have .yml or .yaml extension: ${opts.file}`);
+          if (
+            !templatePath.endsWith('.yml') &&
+            !templatePath.endsWith('.yaml')
+          ) {
+            console.error(
+              `Template file must have .yml or .yaml extension: ${opts.file}`,
+            );
             process.exit(1);
           }
         } else if (templateName) {
@@ -233,7 +247,9 @@ export function registerProvisionCommand(program: Command): void {
           templatePath = match.path;
         } else {
           // 둘 다 없으면 에러
-          console.error('Error: Either <template> name or --file option must be provided');
+          console.error(
+            'Error: Either <template> name or --file option must be provided',
+          );
           console.error('Usage: syncpoint provision <template> [options]');
           console.error('       syncpoint provision --file <path> [options]');
           process.exit(1);

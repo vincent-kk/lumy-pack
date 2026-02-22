@@ -7,7 +7,11 @@
 export type DebtSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
 /** 바이어스 수준 */
-export type BiasLevel = 'LOW_PRESSURE' | 'MODERATE_PRESSURE' | 'HIGH_PRESSURE' | 'CRITICAL_PRESSURE';
+export type BiasLevel =
+  | 'LOW_PRESSURE'
+  | 'MODERATE_PRESSURE'
+  | 'HIGH_PRESSURE'
+  | 'CRITICAL_PRESSURE';
 
 /** 부채 항목 */
 export interface DebtItem {
@@ -46,7 +50,10 @@ export interface DebtItem {
 }
 
 /** 부채 생성 시 입력 (id, weight, touch_count, last_review_commit는 자동 생성) */
-export type DebtItemCreate = Omit<DebtItem, 'id' | 'weight' | 'touch_count' | 'last_review_commit'>;
+export type DebtItemCreate = Omit<
+  DebtItem,
+  'id' | 'weight' | 'touch_count' | 'last_review_commit'
+>;
 
 /** 바이어스 계산 결과 */
 export interface BiasResult {

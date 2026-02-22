@@ -1,5 +1,5 @@
-import React from "react";
-import { Text } from "ink";
+import { Text } from 'ink';
+import React from 'react';
 
 interface ProgressBarProps {
   percent: number;
@@ -15,8 +15,8 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   const empty = width - filled;
   return (
     <Text>
-      <Text color="green">{"█".repeat(filled)}</Text>
-      <Text color="gray">{"░".repeat(empty)}</Text>
+      <Text color="green">{'█'.repeat(filled)}</Text>
+      <Text color="gray">{'░'.repeat(empty)}</Text>
       <Text> {clamped}%</Text>
     </Text>
   );

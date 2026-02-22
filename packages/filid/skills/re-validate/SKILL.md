@@ -42,6 +42,7 @@ git diff <resolve_commit_sha>..HEAD --stat
 ```
 
 For semantic analysis on changed files:
+
 ```
 ast-analyze(source: <new>, oldSource: <old>, analysisType: "tree-diff")
 ```
@@ -77,17 +78,20 @@ debt-manage(action: "list", projectRoot: <project_root>)
 ```
 
 For each debt item whose `file_path` is in the Delta:
+
 1. Re-run the relevant MCP tool to check if the rule is now satisfied
 2. If satisfied: `debt-manage(action: "resolve", projectRoot: <root>, debtId: <id>)`
 
 ### Step 6 — Render Verdict
 
 **PASS conditions** (all must be true):
+
 - All accepted fixes are RESOLVED
 - All justifications are constitutionally valid (DEFERRED, not UNCONSTITUTIONAL)
 - No new critical violations introduced in the Delta
 
 **FAIL conditions** (any triggers FAIL):
+
 - One or more accepted fixes remain UNRESOLVED
 - A justification is UNCONSTITUTIONAL (non-negotiable rule violated)
 - New critical violations found in Delta changes

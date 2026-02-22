@@ -32,6 +32,7 @@ function checkPromotionEligibility(metrics, stabilityThreshold):
 ```
 
 Ineligibility reasons:
+
 - `stableDays < threshold` — file has not been stable long enough
 - `lastFailure !== null` — file has a recent recorded failure
 
@@ -75,6 +76,7 @@ for each eligible file:
 ```
 
 **3+12 rule:**
+
 - `basic` cases: ≤ 3 — straightforward happy-path or single-condition tests
 - `complex` cases: ≤ 12 — multi-condition, parameterized, or integration-level tests
 - `total`: ≤ 15 — hard ceiling enforced before writing
@@ -113,6 +115,7 @@ Promotion complete (2/3 eligible files promoted):
 ## MCP Tool Examples
 
 **test-metrics count:**
+
 ```
 test-metrics(action: "count", files: ["src/core/test.ts"])
 // Returns:
@@ -127,6 +130,7 @@ test-metrics(action: "count", files: ["src/core/test.ts"])
 ```
 
 **test-metrics check-312:**
+
 ```
 test-metrics(action: "check-312", files: ["src/core/spec.ts"])
 // Returns:

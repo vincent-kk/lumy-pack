@@ -27,37 +27,43 @@ documents, tests, metrics, and dependencies, then emit a consolidated verdict.
 ## Core Workflow
 
 ### Stage 1 — Structure Verification
+
 Validate directory classifications respect FCA-AI fractal/organ boundaries.
 See [reference.md Section 1](./reference.md#section-1--structure-verification-details).
 
 ### Stage 2 — Document Compliance
+
 Verify CLAUDE.md (≤100 lines, 3-tier sections) and SPEC.md (no append-only).
 See [reference.md Section 2](./reference.md#section-2--document-compliance-details).
 
 ### Stage 3 — Test Compliance
+
 Validate `*.spec.ts` files against the 3+12 rule (≤15 cases) via `test-metrics`.
 See [reference.md Section 3](./reference.md#section-3--test-compliance-details).
 
 ### Stage 4 — Metric Analysis
+
 Measure LCOM4 (split at ≥2) and CC (compress at >15) via `ast-analyze`.
 See [reference.md Section 4](./reference.md#section-4--metric-analysis-details).
 
 ### Stage 5 — Dependency Verification
+
 Build the dependency DAG and verify acyclicity via `ast-analyze`.
 See [reference.md Section 5](./reference.md#section-5--dependency-verification-details).
 
 ### Stage 6 — Summary Report
+
 Aggregate all stage results into a structured pass/fail verdict.
 See [reference.md Section 6](./reference.md#section-6--summary-report-format).
 
 ## Available MCP Tools
 
-| Tool | Stage | Purpose |
-|------|-------|---------|
-| `fractal-navigate` | 1, 5 | Module tree and directory classification |
-| `doc-compress` | 2 | Document size checking |
-| `test-metrics` | 3, 4 | 3+12 rule validation and decision recommendation |
-| `ast-analyze` | 4, 5 | LCOM4, CC metrics, dependency DAG |
+| Tool               | Stage | Purpose                                          |
+| ------------------ | ----- | ------------------------------------------------ |
+| `fractal-navigate` | 1, 5  | Module tree and directory classification         |
+| `doc-compress`     | 2     | Document size checking                           |
+| `test-metrics`     | 3, 4  | 3+12 rule validation and decision recommendation |
+| `ast-analyze`      | 4, 5  | LCOM4, CC metrics, dependency DAG                |
 
 ## Options
 
@@ -67,10 +73,10 @@ See [reference.md Section 6](./reference.md#section-6--summary-report-format).
 /filid:structure-review [--stage=1-6] [--verbose]
 ```
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `--stage=N` | integer (1–6) | all | Run only the specified stage |
-| `--verbose` | flag | off | Include per-file detail in each stage report |
+| Option      | Type          | Default | Description                                  |
+| ----------- | ------------- | ------- | -------------------------------------------- |
+| `--stage=N` | integer (1–6) | all     | Run only the specified stage                 |
+| `--verbose` | flag          | off     | Include per-file detail in each stage report |
 
 ## Quick Reference
 

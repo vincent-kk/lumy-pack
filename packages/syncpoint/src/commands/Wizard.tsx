@@ -1,4 +1,10 @@
-import { copyFile, readFile, rename, unlink, writeFile } from 'node:fs/promises';
+import {
+  copyFile,
+  readFile,
+  rename,
+  unlink,
+  writeFile,
+} from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { Command } from 'commander';

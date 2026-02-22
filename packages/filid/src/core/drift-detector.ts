@@ -4,19 +4,17 @@
  *
  * RuleViolation을 DriftItem으로 변환하고 SyncPlan을 생성한다.
  */
-
-import type { FractalTree } from '../types/fractal.js';
-import type { RuleViolation, RuleEvaluationResult } from '../types/rules.js';
 import type {
+  DetectDriftOptions,
   DriftItem,
   DriftResult,
   DriftSeverity,
   SyncAction,
   SyncPlan,
   SyncPlanAction,
-  DetectDriftOptions,
 } from '../types/drift.js';
-
+import type { FractalTree } from '../types/fractal.js';
+import type { RuleEvaluationResult, RuleViolation } from '../types/rules.js';
 
 /** RuleViolation의 ruleId → SyncAction 매핑 */
 const RULE_TO_ACTION: Record<string, SyncAction> = {
@@ -59,10 +57,14 @@ export function calculateSeverity(violation: RuleViolation): DriftSeverity {
 
   // severity 기반 fallback
   switch (violation.severity) {
-    case 'error': return 'high';
-    case 'warning': return 'medium';
-    case 'info': return 'low';
-    default: return 'low';
+    case 'error':
+      return 'high';
+    case 'warning':
+      return 'medium';
+    case 'info':
+      return 'low';
+    default:
+      return 'low';
   }
 }
 
@@ -73,7 +75,10 @@ export function calculateSeverity(violation: RuleViolation): DriftSeverity {
  * @param rules - 규칙 평가 결과
  * @returns DriftItem 배열 (심각도 내림차순 정렬)
  */
-export function compareCurrent(_tree: FractalTree, rules: RuleEvaluationResult): DriftItem[] {
+export function compareCurrent(
+  _tree: FractalTree,
+  rules: RuleEvaluationResult,
+): DriftItem[] {
   const items: DriftItem[] = rules.violations.map((violation) => {
     const severity = calculateSeverity(violation);
     const action = RULE_TO_ACTION[violation.ruleId] ?? 'reclassify';
@@ -88,7 +93,9 @@ export function compareCurrent(_tree: FractalTree, rules: RuleEvaluationResult):
   });
 
   // 심각도 내림차순 정렬
-  return items.sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
+  return items.sort(
+    (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity],
+  );
 }
 
 /**
@@ -119,7 +126,9 @@ export function detectDrift(
   });
 
   // 심각도 내림차순 정렬
-  items = items.sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
+  items = items.sort(
+    (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity],
+  );
 
   if (options?.criticalOnly) {
     items = items.filter((item) => item.severity === 'critical');
@@ -160,17 +169,20 @@ export function generateSyncPlan(drifts: DriftItem[]): SyncPlan {
     merge: 6,
   };
 
-  const actions: SyncPlanAction[] = drifts.map((item): SyncPlanAction => ({
-    action: item.suggestedAction,
-    source: item.path,
-    reason: item.actual,
-    riskLevel: item.severity,
-    reversible: isReversible(item.suggestedAction),
-  }));
+  const actions: SyncPlanAction[] = drifts.map(
+    (item): SyncPlanAction => ({
+      action: item.suggestedAction,
+      source: item.path,
+      reason: item.actual,
+      riskLevel: item.severity,
+      reversible: isReversible(item.suggestedAction),
+    }),
+  );
 
   // 정렬: 심각도 → reversible 우선 → action 순서
   actions.sort((a, b) => {
-    const severityDiff = SEVERITY_ORDER[a.riskLevel] - SEVERITY_ORDER[b.riskLevel];
+    const severityDiff =
+      SEVERITY_ORDER[a.riskLevel] - SEVERITY_ORDER[b.riskLevel];
     if (severityDiff !== 0) return severityDiff;
     // reversible 먼저
     if (a.reversible !== b.reversible) return a.reversible ? -1 : 1;

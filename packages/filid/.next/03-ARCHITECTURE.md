@@ -66,12 +66,12 @@ code-review 스킬은 단일 SKILL.md가 모든 작업을 직접 수행하는 �
 
 의장-위임 패턴은 Phase A/B의 컨텍스트를 subagent에 격리하여 의장의 윈도우를 합의 추론에 전용으로 확보한다.
 
-| 항목 | 단일 실행 (기존) | 의장-위임 (개선) |
-|------|------------------|------------------|
-| 의장 윈도우에 git diff 원본 | 있음 | **없음** (Phase A에서 처리) |
-| 의장 윈도우에 MCP 원시 출력 | 12개 누적 | **없음** (Phase B에서 처리) |
-| 의장에게 전달되는 것 | 모든 것 | session.md(30줄) + verification.md(50줄) + 페르소나 + 부채 |
-| HIGH 최악 케이스 추정 | 2,500줄+ | **~1,130줄** |
+| 항목                        | 단일 실행 (기존) | 의장-위임 (개선)                                           |
+| --------------------------- | ---------------- | ---------------------------------------------------------- |
+| 의장 윈도우에 git diff 원본 | 있음             | **없음** (Phase A에서 처리)                                |
+| 의장 윈도우에 MCP 원시 출력 | 12개 누적        | **없음** (Phase B에서 처리)                                |
+| 의장에게 전달되는 것        | 모든 것          | session.md(30줄) + verification.md(50줄) + 페르소나 + 부채 |
+| HIGH 최악 케이스 추정       | 2,500줄+         | **~1,130줄**                                               |
 
 ```
 사용자: /filid:code-review
@@ -150,54 +150,54 @@ code-review 스킬은 단일 SKILL.md가 모든 작업을 직접 수행하는 �
 
 ### 2.1 매핑 테이블
 
-| 페르소나 | 거버넌스 역할 | 기존 agent 재사용 | 실행 형태 | 사용 MCP Tools |
-|---|---|---|---|---|
-| 엔지니어링 아키텍트 | 입법부 | fractal-architect + qa-reviewer | 의장이 MCP tool 직접 호출 | `ast-analyze`, `test-metrics`, `fractal-scan`, `structure-validate` |
-| 지식 관리자 | 사법부 | context-manager + drift-analyzer | 의장이 MCP tool 직접 호출 | `doc-compress`, `drift-detect`, `fractal-navigate`, `rule-query` |
-| 운영/SRE | 사법부 | — (신규 페르소나) | SKILL.md 내장 프레임워크 | `ast-analyze` (dependency-graph) |
-| 비즈니스 드라이버 | 행정부 | — (신규 페르소나) | SKILL.md 내장 프레임워크 | 없음 (순수 LLM 추론) |
-| 프로덕트 매니저 | 번역가 | — (신규 페르소나) | SKILL.md 내장 프레임워크 | 없음 (순수 LLM 추론) |
-| 디자인/HCI | 인본주의자 | — (신규 페르소나) | SKILL.md 내장 프레임워크 | 없음 (순수 LLM 추론) |
+| 페르소나            | 거버넌스 역할 | 기존 agent 재사용                | 실행 형태                 | 사용 MCP Tools                                                      |
+| ------------------- | ------------- | -------------------------------- | ------------------------- | ------------------------------------------------------------------- |
+| 엔지니어링 아키텍트 | 입법부        | fractal-architect + qa-reviewer  | 의장이 MCP tool 직접 호출 | `ast-analyze`, `test-metrics`, `fractal-scan`, `structure-validate` |
+| 지식 관리자         | 사법부        | context-manager + drift-analyzer | 의장이 MCP tool 직접 호출 | `doc-compress`, `drift-detect`, `fractal-navigate`, `rule-query`    |
+| 운영/SRE            | 사법부        | — (신규 페르소나)                | SKILL.md 내장 프레임워크  | `ast-analyze` (dependency-graph)                                    |
+| 비즈니스 드라이버   | 행정부        | — (신규 페르소나)                | SKILL.md 내장 프레임워크  | 없음 (순수 LLM 추론)                                                |
+| 프로덕트 매니저     | 번역가        | — (신규 페르소나)                | SKILL.md 내장 프레임워크  | 없음 (순수 LLM 추론)                                                |
+| 디자인/HCI          | 인본주의자    | — (신규 페르소나)                | SKILL.md 내장 프레임워크  | 없음 (순수 LLM 추론)                                                |
 
 ### 2.2 기존 agent 재사용 경계 분석
 
 #### fractal-architect 재사용 범위
 
-| 기존 기능 | code-review에서 재사용 | 방식 |
-|---|---|---|
-| LCOM4 분석 → split 권고 | ✅ | `ast-analyze(lcom4)` 직접 호출 |
-| CC 분석 → compress 권고 | ✅ | `ast-analyze(cyclomatic-complexity)` 직접 호출 |
-| 프랙탈 구조 스캔 | ✅ | `fractal-scan` 직접 호출 |
-| 구조 규칙 검증 | ✅ | `structure-validate` 직접 호출 |
-| SPEC.md 초안 작성 | ❌ | code-review 범위 밖 |
-| 리스트럭처링 제안 | ❌ | code-review 범위 밖 |
+| 기존 기능               | code-review에서 재사용 | 방식                                           |
+| ----------------------- | ---------------------- | ---------------------------------------------- |
+| LCOM4 분석 → split 권고 | ✅                     | `ast-analyze(lcom4)` 직접 호출                 |
+| CC 분석 → compress 권고 | ✅                     | `ast-analyze(cyclomatic-complexity)` 직접 호출 |
+| 프랙탈 구조 스캔        | ✅                     | `fractal-scan` 직접 호출                       |
+| 구조 규칙 검증          | ✅                     | `structure-validate` 직접 호출                 |
+| SPEC.md 초안 작성       | ❌                     | code-review 범위 밖                            |
+| 리스트럭처링 제안       | ❌                     | code-review 범위 밖                            |
 
 #### qa-reviewer 재사용 범위
 
-| 기존 기능 | code-review에서 재사용 | 방식 |
-|---|---|---|
-| 3+12 규칙 검증 | ✅ | `test-metrics(check-312)` 직접 호출 |
-| 테스트 카운트 | ✅ | `test-metrics(count)` 직접 호출 |
-| 의사결정 트리 | ✅ | `test-metrics(decide)` 직접 호출 |
-| CLAUDE.md 라인 수 검증 | ✅ | 의장이 Read로 직접 확인 |
-| 6-stage 파이프라인 전체 | ❌ | structure-review 전용 |
+| 기존 기능               | code-review에서 재사용 | 방식                                |
+| ----------------------- | ---------------------- | ----------------------------------- |
+| 3+12 규칙 검증          | ✅                     | `test-metrics(check-312)` 직접 호출 |
+| 테스트 카운트           | ✅                     | `test-metrics(count)` 직접 호출     |
+| 의사결정 트리           | ✅                     | `test-metrics(decide)` 직접 호출    |
+| CLAUDE.md 라인 수 검증  | ✅                     | 의장이 Read로 직접 확인             |
+| 6-stage 파이프라인 전체 | ❌                     | structure-review 전용               |
 
 #### context-manager 재사용 범위
 
-| 기존 기능 | code-review에서 재사용 | 방식 |
-|---|---|---|
-| CLAUDE.md 무결성 검사 | ✅ | 의장이 Read로 3-tier 구조 확인 |
-| SPEC.md append-only 감지 | ✅ | 의장이 Read로 직접 확인 |
-| 문서 압축 상태 검증 | ✅ | `doc-compress(auto)` 직접 호출 |
-| CLAUDE.md/SPEC.md 수정 | ❌ | code-review는 수정 안 함 (리포트만 출력) |
+| 기존 기능                | code-review에서 재사용 | 방식                                     |
+| ------------------------ | ---------------------- | ---------------------------------------- |
+| CLAUDE.md 무결성 검사    | ✅                     | 의장이 Read로 3-tier 구조 확인           |
+| SPEC.md append-only 감지 | ✅                     | 의장이 Read로 직접 확인                  |
+| 문서 압축 상태 검증      | ✅                     | `doc-compress(auto)` 직접 호출           |
+| CLAUDE.md/SPEC.md 수정   | ❌                     | code-review는 수정 안 함 (리포트만 출력) |
 
 #### drift-analyzer 재사용 범위
 
-| 기존 기능 | code-review에서 재사용 | 방식 |
-|---|---|---|
-| 구조 드리프트 감지 | ✅ | `drift-detect` 직접 호출 |
-| 드리프트 심각도 분류 | ✅ | 의장이 결과 해석 |
-| 교정 계획 생성 | ❌ | code-review 범위 밖 |
+| 기존 기능            | code-review에서 재사용 | 방식                     |
+| -------------------- | ---------------------- | ------------------------ |
+| 구조 드리프트 감지   | ✅                     | `drift-detect` 직접 호출 |
+| 드리프트 심각도 분류 | ✅                     | 의장이 결과 해석         |
+| 교정 계획 생성       | ❌                     | code-review 범위 밖      |
 
 ### 2.3 신규 페르소나 설계 원칙
 

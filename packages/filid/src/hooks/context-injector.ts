@@ -1,8 +1,15 @@
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { join } from 'node:path';
-import type { UserPromptSubmitInput, HookOutput } from '../types/hooks.js';
-import { loadBuiltinRules, getActiveRules } from '../core/rule-engine.js';
+
+import { getActiveRules, loadBuiltinRules } from '../core/rule-engine.js';
+import type { HookOutput, UserPromptSubmitInput } from '../types/hooks.js';
 
 // 5min TTL — 구조 변경(CLAUDE.md Write)은 드물게 발생하므로 안전.
 // 필요 시 Write hook에서 캐시 무효화를 추가할 수 있다.
@@ -87,7 +94,9 @@ function buildFcaContext(cwd: string): string {
  *
  * Never blocks user prompts (always continue: true).
  */
-export async function injectContext(input: UserPromptSubmitInput): Promise<HookOutput> {
+export async function injectContext(
+  input: UserPromptSubmitInput,
+): Promise<HookOutput> {
   const cwd = input.cwd;
 
   // 게이트: FCA-AI 프로젝트가 아니면 즉시 반환
@@ -111,7 +120,9 @@ export async function injectContext(input: UserPromptSubmitInput): Promise<HookO
   let fractalSection = '';
   try {
     const rules = getActiveRules(loadBuiltinRules());
-    const rulesText = rules.map((r) => `- ${r.id}: ${r.description}`).join('\n');
+    const rulesText = rules
+      .map((r) => `- ${r.id}: ${r.description}`)
+      .join('\n');
 
     fractalSection = [
       '',

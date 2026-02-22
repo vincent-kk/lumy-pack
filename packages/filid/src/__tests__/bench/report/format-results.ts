@@ -56,20 +56,29 @@ export function parseBenchOutput(jsonPath: string): BenchResult[] {
     const assertionResults = suiteRecord.assertionResults;
     if (!Array.isArray(assertionResults)) continue;
 
-    const suiteName = typeof suiteRecord.testFilePath === 'string'
-      ? suiteRecord.testFilePath.split('/').pop()?.replace('.bench.ts', '') ?? ''
-      : '';
+    const suiteName =
+      typeof suiteRecord.testFilePath === 'string'
+        ? (suiteRecord.testFilePath
+            .split('/')
+            .pop()
+            ?.replace('.bench.ts', '') ?? '')
+        : '';
 
     for (const test of assertionResults) {
       if (!test || typeof test !== 'object') continue;
 
       const testRecord = test as Record<string, unknown>;
-      const benchData = testRecord.benchData as Record<string, unknown> | undefined;
+      const benchData = testRecord.benchData as
+        | Record<string, unknown>
+        | undefined;
 
       if (!benchData) continue;
 
       results.push({
-        name: typeof testRecord.fullName === 'string' ? testRecord.fullName : String(testRecord.title ?? ''),
+        name:
+          typeof testRecord.fullName === 'string'
+            ? testRecord.fullName
+            : String(testRecord.title ?? ''),
         hz: Number(benchData.hz ?? 0),
         mean: Number(benchData.mean ?? 0),
         min: Number(benchData.min ?? 0),
@@ -91,8 +100,10 @@ export function toMarkdownTable(results: BenchResult[]): string {
     return '_No benchmark results found._\n';
   }
 
-  const header = '| Benchmark | ops/sec | mean (ns) | min (ns) | max (ns) | p75 (ns) | p99 (ns) | samples |';
-  const separator = '|-----------|---------|-----------|----------|----------|----------|----------|---------|';
+  const header =
+    '| Benchmark | ops/sec | mean (ns) | min (ns) | max (ns) | p75 (ns) | p99 (ns) | samples |';
+  const separator =
+    '|-----------|---------|-----------|----------|----------|----------|----------|---------|';
 
   const rows = results.map((r) => {
     const opsPerSec = r.hz.toFixed(0);
@@ -150,9 +161,10 @@ export function compareBenchResults(
   if (regressed > 0) summaryParts.push(`${regressed} regressed`);
   if (unchanged > 0) summaryParts.push(`${unchanged} unchanged`);
 
-  const summary = summaryParts.length > 0
-    ? summaryParts.join(', ')
-    : 'No comparable benchmarks found';
+  const summary =
+    summaryParts.length > 0
+      ? summaryParts.join(', ')
+      : 'No comparable benchmarks found';
 
   return { summary, entries, improved, regressed, unchanged };
 }

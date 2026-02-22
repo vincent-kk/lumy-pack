@@ -4,15 +4,15 @@
 
 > **도메인별 분할 문서**: 이 문서의 각 섹션은 독립 파일로 분할되었습니다. 특정 영역만 참조하려면 아래 링크를 사용하세요.
 >
-> | 분할 파일 | 내용 |
-> |-----------|------|
-> | [03-ARCHITECTURE.md](./03-ARCHITECTURE.md) | §1-2: 아키텍처 + 페르소나 매핑 |
-> | [04-SKILL-INTERFACES.md](./04-SKILL-INTERFACES.md) | §3, §10: 스킬 I/O + 파일 구조 |
-> | [05-GOVERNANCE.md](./05-GOVERNANCE.md) | §4, §9: 상태 머신 + 위원회 선출 |
-> | [06-MCP-TOOLS.md](./06-MCP-TOOLS.md) | §5: MCP Tool 사용 맵 |
-> | [07-DATA-STORAGE.md](./07-DATA-STORAGE.md) | §6-7: 출력 포맷 + .filid/ 구조 |
-> | [08-DEBT-SYSTEM.md](./08-DEBT-SYSTEM.md) | §8: 기술 부채 관리 시스템 |
-> | [INDEX.md](./INDEX.md) | 전체 문서 인덱스 |
+> | 분할 파일                                          | 내용                            |
+> | -------------------------------------------------- | ------------------------------- |
+> | [03-ARCHITECTURE.md](./03-ARCHITECTURE.md)         | §1-2: 아키텍처 + 페르소나 매핑  |
+> | [04-SKILL-INTERFACES.md](./04-SKILL-INTERFACES.md) | §3, §10: 스킬 I/O + 파일 구조   |
+> | [05-GOVERNANCE.md](./05-GOVERNANCE.md)             | §4, §9: 상태 머신 + 위원회 선출 |
+> | [06-MCP-TOOLS.md](./06-MCP-TOOLS.md)               | §5: MCP Tool 사용 맵            |
+> | [07-DATA-STORAGE.md](./07-DATA-STORAGE.md)         | §6-7: 출력 포맷 + .filid/ 구조  |
+> | [08-DEBT-SYSTEM.md](./08-DEBT-SYSTEM.md)           | §8: 기술 부채 관리 시스템       |
+> | [INDEX.md](./INDEX.md)                             | 전체 문서 인덱스                |
 
 ---
 
@@ -78,12 +78,12 @@ code-review 스킬은 단일 SKILL.md가 모든 작업을 직접 수행하는 �
 
 의장-위임 패턴은 Phase A/B의 컨텍스트를 subagent에 격리하여 의장의 윈도우를 합의 추론에 전용으로 확보한다.
 
-| 항목 | 단일 실행 (기존) | 의장-위임 (개선) |
-|------|------------------|------------------|
-| 의장 윈도우에 git diff 원본 | 있음 | **없음** (Phase A에서 처리) |
-| 의장 윈도우에 MCP 원시 출력 | 12개 누적 | **없음** (Phase B에서 처리) |
-| 의장에게 전달되는 것 | 모든 것 | session.md(30줄) + verification.md(50줄) + 페르소나 + 부채 |
-| HIGH 최악 케이스 추정 | 2,500줄+ | **~1,130줄** |
+| 항목                        | 단일 실행 (기존) | 의장-위임 (개선)                                           |
+| --------------------------- | ---------------- | ---------------------------------------------------------- |
+| 의장 윈도우에 git diff 원본 | 있음             | **없음** (Phase A에서 처리)                                |
+| 의장 윈도우에 MCP 원시 출력 | 12개 누적        | **없음** (Phase B에서 처리)                                |
+| 의장에게 전달되는 것        | 모든 것          | session.md(30줄) + verification.md(50줄) + 페르소나 + 부채 |
+| HIGH 최악 케이스 추정       | 2,500줄+         | **~1,130줄**                                               |
 
 ```
 사용자: /filid:code-review
@@ -162,54 +162,54 @@ code-review 스킬은 단일 SKILL.md가 모든 작업을 직접 수행하는 �
 
 ### 2.1 매핑 테이블
 
-| 페르소나 | 거버넌스 역할 | 기존 agent 재사용 | 실행 형태 | 사용 MCP Tools |
-|---|---|---|---|---|
-| 엔지니어링 아키텍트 | 입법부 | fractal-architect + qa-reviewer | 의장이 MCP tool 직접 호출 | `ast-analyze`, `test-metrics`, `fractal-scan`, `structure-validate` |
-| 지식 관리자 | 사법부 | context-manager + drift-analyzer | 의장이 MCP tool 직접 호출 | `doc-compress`, `drift-detect`, `fractal-navigate`, `rule-query` |
-| 운영/SRE | 사법부 | — (신규 페르소나) | SKILL.md 내장 프레임워크 | `ast-analyze` (dependency-graph) |
-| 비즈니스 드라이버 | 행정부 | — (신규 페르소나) | SKILL.md 내장 프레임워크 | 없음 (순수 LLM 추론) |
-| 프로덕트 매니저 | 번역가 | — (신규 페르소나) | SKILL.md 내장 프레임워크 | 없음 (순수 LLM 추론) |
-| 디자인/HCI | 인본주의자 | — (신규 페르소나) | SKILL.md 내장 프레임워크 | 없음 (순수 LLM 추론) |
+| 페르소나            | 거버넌스 역할 | 기존 agent 재사용                | 실행 형태                 | 사용 MCP Tools                                                      |
+| ------------------- | ------------- | -------------------------------- | ------------------------- | ------------------------------------------------------------------- |
+| 엔지니어링 아키텍트 | 입법부        | fractal-architect + qa-reviewer  | 의장이 MCP tool 직접 호출 | `ast-analyze`, `test-metrics`, `fractal-scan`, `structure-validate` |
+| 지식 관리자         | 사법부        | context-manager + drift-analyzer | 의장이 MCP tool 직접 호출 | `doc-compress`, `drift-detect`, `fractal-navigate`, `rule-query`    |
+| 운영/SRE            | 사법부        | — (신규 페르소나)                | SKILL.md 내장 프레임워크  | `ast-analyze` (dependency-graph)                                    |
+| 비즈니스 드라이버   | 행정부        | — (신규 페르소나)                | SKILL.md 내장 프레임워크  | 없음 (순수 LLM 추론)                                                |
+| 프로덕트 매니저     | 번역가        | — (신규 페르소나)                | SKILL.md 내장 프레임워크  | 없음 (순수 LLM 추론)                                                |
+| 디자인/HCI          | 인본주의자    | — (신규 페르소나)                | SKILL.md 내장 프레임워크  | 없음 (순수 LLM 추론)                                                |
 
 ### 2.2 기존 agent 재사용 경계 분석
 
 #### fractal-architect 재사용 범위
 
-| 기존 기능 | code-review에서 재사용 | 방식 |
-|---|---|---|
-| LCOM4 분석 → split 권고 | ✅ | `ast-analyze(lcom4)` 직접 호출 |
-| CC 분석 → compress 권고 | ✅ | `ast-analyze(cyclomatic-complexity)` 직접 호출 |
-| 프랙탈 구조 스캔 | ✅ | `fractal-scan` 직접 호출 |
-| 구조 규칙 검증 | ✅ | `structure-validate` 직접 호출 |
-| SPEC.md 초안 작성 | ❌ | code-review 범위 밖 |
-| 리스트럭처링 제안 | ❌ | code-review 범위 밖 |
+| 기존 기능               | code-review에서 재사용 | 방식                                           |
+| ----------------------- | ---------------------- | ---------------------------------------------- |
+| LCOM4 분석 → split 권고 | ✅                     | `ast-analyze(lcom4)` 직접 호출                 |
+| CC 분석 → compress 권고 | ✅                     | `ast-analyze(cyclomatic-complexity)` 직접 호출 |
+| 프랙탈 구조 스캔        | ✅                     | `fractal-scan` 직접 호출                       |
+| 구조 규칙 검증          | ✅                     | `structure-validate` 직접 호출                 |
+| SPEC.md 초안 작성       | ❌                     | code-review 범위 밖                            |
+| 리스트럭처링 제안       | ❌                     | code-review 범위 밖                            |
 
 #### qa-reviewer 재사용 범위
 
-| 기존 기능 | code-review에서 재사용 | 방식 |
-|---|---|---|
-| 3+12 규칙 검증 | ✅ | `test-metrics(check-312)` 직접 호출 |
-| 테스트 카운트 | ✅ | `test-metrics(count)` 직접 호출 |
-| 의사결정 트리 | ✅ | `test-metrics(decide)` 직접 호출 |
-| CLAUDE.md 라인 수 검증 | ✅ | 의장이 Read로 직접 확인 |
-| 6-stage 파이프라인 전체 | ❌ | structure-review 전용 |
+| 기존 기능               | code-review에서 재사용 | 방식                                |
+| ----------------------- | ---------------------- | ----------------------------------- |
+| 3+12 규칙 검증          | ✅                     | `test-metrics(check-312)` 직접 호출 |
+| 테스트 카운트           | ✅                     | `test-metrics(count)` 직접 호출     |
+| 의사결정 트리           | ✅                     | `test-metrics(decide)` 직접 호출    |
+| CLAUDE.md 라인 수 검증  | ✅                     | 의장이 Read로 직접 확인             |
+| 6-stage 파이프라인 전체 | ❌                     | structure-review 전용               |
 
 #### context-manager 재사용 범위
 
-| 기존 기능 | code-review에서 재사용 | 방식 |
-|---|---|---|
-| CLAUDE.md 무결성 검사 | ✅ | 의장이 Read로 3-tier 구조 확인 |
-| SPEC.md append-only 감지 | ✅ | 의장이 Read로 직접 확인 |
-| 문서 압축 상태 검증 | ✅ | `doc-compress(auto)` 직접 호출 |
-| CLAUDE.md/SPEC.md 수정 | ❌ | code-review는 수정 안 함 (리포트만 출력) |
+| 기존 기능                | code-review에서 재사용 | 방식                                     |
+| ------------------------ | ---------------------- | ---------------------------------------- |
+| CLAUDE.md 무결성 검사    | ✅                     | 의장이 Read로 3-tier 구조 확인           |
+| SPEC.md append-only 감지 | ✅                     | 의장이 Read로 직접 확인                  |
+| 문서 압축 상태 검증      | ✅                     | `doc-compress(auto)` 직접 호출           |
+| CLAUDE.md/SPEC.md 수정   | ❌                     | code-review는 수정 안 함 (리포트만 출력) |
 
 #### drift-analyzer 재사용 범위
 
-| 기존 기능 | code-review에서 재사용 | 방식 |
-|---|---|---|
-| 구조 드리프트 감지 | ✅ | `drift-detect` 직접 호출 |
-| 드리프트 심각도 분류 | ✅ | 의장이 결과 해석 |
-| 교정 계획 생성 | ❌ | code-review 범위 밖 |
+| 기존 기능            | code-review에서 재사용 | 방식                     |
+| -------------------- | ---------------------- | ------------------------ |
+| 구조 드리프트 감지   | ✅                     | `drift-detect` 직접 호출 |
+| 드리프트 심각도 분류 | ✅                     | 의장이 결과 해석         |
+| 교정 계획 생성       | ❌                     | code-review 범위 밖      |
 
 ### 2.3 신규 페르소나 설계 원칙
 
@@ -232,31 +232,31 @@ code-review 스킬은 단일 SKILL.md가 모든 작업을 직접 수행하는 �
 /filid:code-review [--scope=branch|pr|commit] [--base=<ref>] [--force] [--verbose]
 ```
 
-| 옵션 | 타입 | 기본값 | 설명 |
-|---|---|---|---|
-| `--scope` | `branch\|pr\|commit` | `branch` | 리뷰 범위 |
-| `--base` | string | merge-base 자동 감지 | 비교 기준 ref |
-| `--force` | flag | off | 기존 리뷰 파일 삭제 후 Phase A 강제 재시작 |
-| `--verbose` | flag | off | 위원회 토론 과정 상세 출력 |
+| 옵션        | 타입                 | 기본값               | 설명                                       |
+| ----------- | -------------------- | -------------------- | ------------------------------------------ |
+| `--scope`   | `branch\|pr\|commit` | `branch`             | 리뷰 범위                                  |
+| `--base`    | string               | merge-base 자동 감지 | 비교 기준 ref                              |
+| `--force`   | flag                 | off                  | 기존 리뷰 파일 삭제 후 Phase A 강제 재시작 |
+| `--verbose` | flag                 | off                  | 위원회 토론 과정 상세 출력                 |
 
 #### 입력
 
-| 입력 소스 | 수집 방법 | 용도 |
-|---|---|---|
-| git diff | `git diff <base>..HEAD` (Bash) | 변경 파일/내용 분석 |
-| 현재 브랜치 이름 | `git branch --show-current` (Bash) | .filid/ 디렉토리 식별 |
-| PR 메타데이터 (scope=pr 시) | `gh pr view` (Bash) | 의도 맥락 정보 |
-| 기존 부채 목록 | `.filid/debt/*.md` (Read) | 위원회 바이어스 |
-| 프랙탈 구조 | `fractal-scan` (MCP) | 구조 분석 |
-| 코드 메트릭 | `ast-analyze`, `test-metrics` (MCP) | 기술 검증 |
+| 입력 소스                   | 수집 방법                           | 용도                  |
+| --------------------------- | ----------------------------------- | --------------------- |
+| git diff                    | `git diff <base>..HEAD` (Bash)      | 변경 파일/내용 분석   |
+| 현재 브랜치 이름            | `git branch --show-current` (Bash)  | .filid/ 디렉토리 식별 |
+| PR 메타데이터 (scope=pr 시) | `gh pr view` (Bash)                 | 의도 맥락 정보        |
+| 기존 부채 목록              | `.filid/debt/*.md` (Read)           | 위원회 바이어스       |
+| 프랙탈 구조                 | `fractal-scan` (MCP)                | 구조 분석             |
+| 코드 메트릭                 | `ast-analyze`, `test-metrics` (MCP) | 기술 검증             |
 
 #### 출력
 
-| 출력 파일 | 경로 | 내용 |
-|---|---|---|
-| 리뷰 보고서 | `.filid/review/<branch>/review-report.md` | 합의 과정, 페르소나 의견, 기술 지표, 전체 판정 |
-| 수정 요청 사항 | `.filid/review/<branch>/fix-requests.md` | 조치 필요 항목 리스트 (코드 패치 포함) |
-| PR 코멘트 (선택) | GitHub PR 코멘트 | `--scope=pr` 시 `gh` CLI로 리뷰 요약 게시 (환경 의존적, 실패 시 skip) |
+| 출력 파일        | 경로                                      | 내용                                                                  |
+| ---------------- | ----------------------------------------- | --------------------------------------------------------------------- |
+| 리뷰 보고서      | `.filid/review/<branch>/review-report.md` | 합의 과정, 페르소나 의견, 기술 지표, 전체 판정                        |
+| 수정 요청 사항   | `.filid/review/<branch>/fix-requests.md`  | 조치 필요 항목 리스트 (코드 패치 포함)                                |
+| PR 코멘트 (선택) | GitHub PR 코멘트                          | `--scope=pr` 시 `gh` CLI로 리뷰 요약 게시 (환경 의존적, 실패 시 skip) |
 
 #### 내부 워크플로우 — 의장-위임 패턴
 
@@ -306,17 +306,17 @@ Phase C: 정치적 합의 (의장 직접 실행)
 
 #### 입력
 
-| 입력 소스 | 수집 방법 | 용도 |
-|---|---|---|
-| 현재 브랜치 이름 | `git branch --show-current` (Bash) | .filid/ 디렉토리 식별 |
-| 수정 요청 사항 | `.filid/review/<branch>/fix-requests.md` (Read) | Select List 구성 |
+| 입력 소스        | 수집 방법                                       | 용도                  |
+| ---------------- | ----------------------------------------------- | --------------------- |
+| 현재 브랜치 이름 | `git branch --show-current` (Bash)              | .filid/ 디렉토리 식별 |
+| 수정 요청 사항   | `.filid/review/<branch>/fix-requests.md` (Read) | Select List 구성      |
 
 #### 출력
 
-| 출력 파일 | 경로 | 내용 |
-|---|---|---|
-| 소명 기록 | `.filid/review/<branch>/justifications.md` | 거부 항목 + 소명 + 정제된 ADR |
-| 부채 파일 (N개) | `.filid/debt/<fractal-path>-<hash>.md` | 개별 부채 항목 |
+| 출력 파일       | 경로                                       | 내용                          |
+| --------------- | ------------------------------------------ | ----------------------------- |
+| 소명 기록       | `.filid/review/<branch>/justifications.md` | 거부 항목 + 소명 + 정제된 ADR |
+| 부채 파일 (N개) | `.filid/debt/<fractal-path>-<hash>.md`     | 개별 부채 항목                |
 
 #### 내부 워크플로우
 
@@ -348,20 +348,20 @@ Phase C: 정치적 합의 (의장 직접 실행)
 
 #### 입력
 
-| 입력 소스 | 수집 방법 | 용도 |
-|---|---|---|
-| 현재 브랜치 이름 | `git branch --show-current` (Bash) | .filid/ 디렉토리 식별 |
-| 리뷰 보고서 | `.filid/review/<branch>/review-report.md` (Read) | 원래 지적 사항 참조 |
-| 수정 요청 사항 | `.filid/review/<branch>/fix-requests.md` (Read) | 원래 수정 요청 참조 |
-| 소명 기록 | `.filid/review/<branch>/justifications.md` (Read) | 소명 내용 + `resolve_commit_sha` (Delta 기준점) 참조 |
-| 코드 변경분 | `git diff <resolve_commit_sha>..HEAD` (Bash) + `ast-analyze(tree-diff)` (MCP) | Delta 추출 |
+| 입력 소스        | 수집 방법                                                                     | 용도                                                 |
+| ---------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------- |
+| 현재 브랜치 이름 | `git branch --show-current` (Bash)                                            | .filid/ 디렉토리 식별                                |
+| 리뷰 보고서      | `.filid/review/<branch>/review-report.md` (Read)                              | 원래 지적 사항 참조                                  |
+| 수정 요청 사항   | `.filid/review/<branch>/fix-requests.md` (Read)                               | 원래 수정 요청 참조                                  |
+| 소명 기록        | `.filid/review/<branch>/justifications.md` (Read)                             | 소명 내용 + `resolve_commit_sha` (Delta 기준점) 참조 |
+| 코드 변경분      | `git diff <resolve_commit_sha>..HEAD` (Bash) + `ast-analyze(tree-diff)` (MCP) | Delta 추출                                           |
 
 #### 출력
 
-| 출력 파일 | 경로 | 내용 |
-|---|---|---|
-| 재검증 결과 | `.filid/review/<branch>/re-validate.md` | PASS/FAIL + 상세 판정 |
-| PR 코멘트 (선택) | GitHub PR 코멘트 | PASS/FAIL 판정 결과를 `gh` CLI로 PR에 게시 (환경 의존적, 실패 시 skip) |
+| 출력 파일        | 경로                                    | 내용                                                                   |
+| ---------------- | --------------------------------------- | ---------------------------------------------------------------------- |
+| 재검증 결과      | `.filid/review/<branch>/re-validate.md` | PASS/FAIL + 상세 판정                                                  |
+| PR 코멘트 (선택) | GitHub PR 코멘트                        | PASS/FAIL 판정 결과를 `gh` CLI로 PR에 게시 (환경 의존적, 실패 시 skip) |
 
 #### 내부 워크플로우
 
@@ -410,29 +410,30 @@ Phase C: 정치적 합의 (의장 직접 실행)
 
 ### 4.2 상태 전이 규칙
 
-| 현재 상태 | 전이 조건 | 다음 상태 | 설명 |
-|---|---|---|---|
-| **PROPOSAL** | 의장이 코드를 상정 | DEBATE | 기술 검증 결과를 바탕으로 페르소나들이 의견 개진 시작 |
-| **DEBATE** | 치명적 결함 발견 (FCA-AI 규칙 초과, 하드코딩 시크릿 등) | VETO | 운영/지식 관리자가 절대적 거부권 행사 |
-| **DEBATE** | 합의 도달 (파레토 최적 타협점) | SYNTHESIS | 의장이 타협안을 종합하여 최종 합의안 선언 |
-| **DEBATE** | 특정 페르소나의 확신도 임계값 미달 | ABSTAIN | 해당 페르소나가 기권 선언 |
-| **VETO** | 발의자가 코드 수정 후 재제출 | PROPOSAL | 수정된 코드로 새 라운드 시작 |
-| **VETO** | 비즈니스 드라이버가 CoD 근거 타협안 제시 | DEBATE | 타협 조건 하에 논쟁 재개 |
-| **VETO** | 해소 불가능 | CONCLUSION | 리뷰 FAIL로 종료 |
-| **SYNTHESIS** | — | CONCLUSION | 합의안 확정, 리뷰 보고서 출력 |
-| **ABSTAIN** | 1명 이상 기권 | 아래 정족수 규칙 참조 | 정족수에 따라 CONCLUSION 또는 DEBATE 재진입 |
+| 현재 상태     | 전이 조건                                               | 다음 상태             | 설명                                                  |
+| ------------- | ------------------------------------------------------- | --------------------- | ----------------------------------------------------- |
+| **PROPOSAL**  | 의장이 코드를 상정                                      | DEBATE                | 기술 검증 결과를 바탕으로 페르소나들이 의견 개진 시작 |
+| **DEBATE**    | 치명적 결함 발견 (FCA-AI 규칙 초과, 하드코딩 시크릿 등) | VETO                  | 운영/지식 관리자가 절대적 거부권 행사                 |
+| **DEBATE**    | 합의 도달 (파레토 최적 타협점)                          | SYNTHESIS             | 의장이 타협안을 종합하여 최종 합의안 선언             |
+| **DEBATE**    | 특정 페르소나의 확신도 임계값 미달                      | ABSTAIN               | 해당 페르소나가 기권 선언                             |
+| **VETO**      | 발의자가 코드 수정 후 재제출                            | PROPOSAL              | 수정된 코드로 새 라운드 시작                          |
+| **VETO**      | 비즈니스 드라이버가 CoD 근거 타협안 제시                | DEBATE                | 타협 조건 하에 논쟁 재개                              |
+| **VETO**      | 해소 불가능                                             | CONCLUSION            | 리뷰 FAIL로 종료                                      |
+| **SYNTHESIS** | —                                                       | CONCLUSION            | 합의안 확정, 리뷰 보고서 출력                         |
+| **ABSTAIN**   | 1명 이상 기권                                           | 아래 정족수 규칙 참조 | 정족수에 따라 CONCLUSION 또는 DEBATE 재진입           |
 
 ### 4.3 정족수(Quorum) 규칙
 
 혼합 결과(일부 SYNTHESIS + 일부 ABSTAIN) 처리를 위한 결정론적 규칙:
 
-| 상황 | 판정 | 설명 |
-|---|---|---|
+| 상황                          | 판정                                  | 설명                                           |
+| ----------------------------- | ------------------------------------- | ---------------------------------------------- |
 | 선출 위원의 ≥ 2/3가 SYNTHESIS | CONCLUSION (APPROVED/REQUEST_CHANGES) | 다수 합의 성립. 기권자는 정족수 분모에서 제외. |
-| VETO 1건 이상 발생 | VETO (비즈니스 타협 시도 가능) | 단일 VETO가 SYNTHESIS를 무효화. |
-| SYNTHESIS < 2/3, VETO 없음 | CONCLUSION (INCONCLUSIVE) | 합의 미도달, 인간 에스컬레이션 권고. |
+| VETO 1건 이상 발생            | VETO (비즈니스 타협 시도 가능)        | 단일 VETO가 SYNTHESIS를 무효화.                |
+| SYNTHESIS < 2/3, VETO 없음    | CONCLUSION (INCONCLUSIVE)             | 합의 미도달, 인간 에스컬레이션 권고.           |
 
 **정족수 계산 예시**:
+
 - 위원 4명: SYNTHESIS 3 + ABSTAIN 1 → 유효 위원 3명, SYNTHESIS 3/3 = 100% ≥ 2/3 → **CONCLUSION**
 - 위원 6명: SYNTHESIS 3 + ABSTAIN 2 + VETO 1 → VETO 존재 → **VETO**
 - 위원 4명: SYNTHESIS 1 + ABSTAIN 3 → 유효 위원 1명, SYNTHESIS 1/1 = 100% ≥ 2/3 → **CONCLUSION** (단, 기권 과반 경고 추가)
@@ -445,11 +446,13 @@ Phase C: 정치적 합의 (의장 직접 실행)
 ## 합의 과정 (Deliberation Log)
 
 ### Round 1
+
 - **상태**: PROPOSAL
 - **상정**: 엔지니어링 아키텍트 — "LCOM4=3, split 필요"
 - **전이**: PROPOSAL → DEBATE
 
 ### Round 2
+
 - **상태**: DEBATE
 - **비즈니스 드라이버**: "split 작업은 2일 소요, CoD=$X. 다음 스프린트로 연기 제안"
 - **엔지니어링 아키텍트**: "LCOM4=3은 구조적 결함. 즉시 수정 필수"
@@ -457,6 +460,7 @@ Phase C: 정치적 합의 (의장 직접 실행)
 - **전이**: DEBATE → SYNTHESIS
 
 ### Round 3
+
 - **상태**: SYNTHESIS
 - **합의안**: "validator 모듈을 tokenValidator + inputValidator로 분할. 나머지 리팩토링은 기술 부채로 발행."
 - **전이**: SYNTHESIS → CONCLUSION
@@ -476,38 +480,38 @@ Phase C: 정치적 합의 (의장 직접 실행)
 
 의장-위임 패턴에 따라, Phase A/B의 MCP tool 호출은 **검증 Agent(Phase B subagent)**가 수행한다. 의장(Phase C)은 MCP tool을 직접 호출하지 않으며, verification.md에 정리된 결과만 Read한다.
 
-| Phase | 실행 주체 | MCP Tool | 호출 시점 | 목적 |
-|---|---|---|---|---|
-| Phase A (분석) | 분석 Agent | `fractal-navigate(classify)` | 변경된 디렉토리에 대해 | fractal/organ 분류 확인 |
-| Phase A | 분석 Agent | `fractal-scan` | 프로젝트 루트에 대해 | 전체 프랙탈 트리 구축 |
-| Phase B (검증) | 검증 Agent | `ast-analyze(lcom4)` | 변경된 클래스/모듈에 대해 | 응집도 검증 (split 필요 여부) |
-| Phase B | 검증 Agent | `ast-analyze(cyclomatic-complexity)` | 변경된 함수에 대해 | 복잡도 검증 (compress 필요 여부) |
-| Phase B | 검증 Agent | `ast-analyze(dependency-graph)` | 변경된 모듈에 대해 | 순환 의존성 검증 |
-| Phase B | 검증 Agent | `ast-analyze(tree-diff)` | 변경 전후 코드에 대해 | 의미론적 변경 분석 |
-| Phase B | 검증 Agent | `test-metrics(check-312)` | 변경된 spec.ts에 대해 | 3+12 규칙 위반 검증 |
-| Phase B | 검증 Agent | `test-metrics(count)` | 변경된 test/spec에 대해 | 테스트 케이스 수 확인 |
-| Phase B | 검증 Agent | `test-metrics(decide)` | 임계값 초과 모듈에 대해 | split/compress/parameterize 결정 |
-| Phase B | 검증 Agent | `structure-validate` | 변경된 모듈에 대해 | FCA-AI 구조 규칙 검증 |
-| Phase B | 검증 Agent | `drift-detect` | 변경된 경로에 대해 | 구조 드리프트 감지 |
-| Phase B | 검증 Agent | `doc-compress(auto)` | CLAUDE.md 검증 시 | 문서 압축 상태 검증 |
-| Phase B | 검증 Agent | `rule-query(list)` | 리뷰 시작 시 | 활성 규칙 목록 로딩 |
-| Phase C (합의) | 의장 | — | — | MCP tool 직접 호출 없음. verification.md를 Read하여 결과 참조 |
-| Phase A (분석) | 분석 Agent | `review-manage(elect-committee)` | 복잡도 판정 시 | 결정론적 위원회 선출 |
-| Phase A | 분석 Agent | `review-manage(ensure-dir)` | 리뷰 시작 시 | 리뷰 디렉토리 생성 |
-| Phase B (검증) | 검증 Agent | `debt-manage(calculate-bias)` | 부채 현황 수집 시 | 결정론적 바이어스 수준 판정 |
-| re-validate | 스킬 직접 | `ast-analyze(tree-diff)` | resolve 후 변경분에 대해 | Delta 기반 의미론적 변경 분석 |
-| re-validate | 스킬 직접 | `debt-manage(resolve)` | 부채 해소 판정 시 | 해소된 부채 파일 삭제 |
-| code-review | 의장 (SKILL.md) | `review-manage(checkpoint)` | 스킬 시작 시 | 체크포인트 상태 감지 |
-| code-review | 의장 (SKILL.md) | `review-manage(normalize-branch)` | 브랜치 정규화 시 | 브랜치명 → 디렉토리 안전 문자열 |
+| Phase          | 실행 주체       | MCP Tool                             | 호출 시점                 | 목적                                                          |
+| -------------- | --------------- | ------------------------------------ | ------------------------- | ------------------------------------------------------------- |
+| Phase A (분석) | 분석 Agent      | `fractal-navigate(classify)`         | 변경된 디렉토리에 대해    | fractal/organ 분류 확인                                       |
+| Phase A        | 분석 Agent      | `fractal-scan`                       | 프로젝트 루트에 대해      | 전체 프랙탈 트리 구축                                         |
+| Phase B (검증) | 검증 Agent      | `ast-analyze(lcom4)`                 | 변경된 클래스/모듈에 대해 | 응집도 검증 (split 필요 여부)                                 |
+| Phase B        | 검증 Agent      | `ast-analyze(cyclomatic-complexity)` | 변경된 함수에 대해        | 복잡도 검증 (compress 필요 여부)                              |
+| Phase B        | 검증 Agent      | `ast-analyze(dependency-graph)`      | 변경된 모듈에 대해        | 순환 의존성 검증                                              |
+| Phase B        | 검증 Agent      | `ast-analyze(tree-diff)`             | 변경 전후 코드에 대해     | 의미론적 변경 분석                                            |
+| Phase B        | 검증 Agent      | `test-metrics(check-312)`            | 변경된 spec.ts에 대해     | 3+12 규칙 위반 검증                                           |
+| Phase B        | 검증 Agent      | `test-metrics(count)`                | 변경된 test/spec에 대해   | 테스트 케이스 수 확인                                         |
+| Phase B        | 검증 Agent      | `test-metrics(decide)`               | 임계값 초과 모듈에 대해   | split/compress/parameterize 결정                              |
+| Phase B        | 검증 Agent      | `structure-validate`                 | 변경된 모듈에 대해        | FCA-AI 구조 규칙 검증                                         |
+| Phase B        | 검증 Agent      | `drift-detect`                       | 변경된 경로에 대해        | 구조 드리프트 감지                                            |
+| Phase B        | 검증 Agent      | `doc-compress(auto)`                 | CLAUDE.md 검증 시         | 문서 압축 상태 검증                                           |
+| Phase B        | 검증 Agent      | `rule-query(list)`                   | 리뷰 시작 시              | 활성 규칙 목록 로딩                                           |
+| Phase C (합의) | 의장            | —                                    | —                         | MCP tool 직접 호출 없음. verification.md를 Read하여 결과 참조 |
+| Phase A (분석) | 분석 Agent      | `review-manage(elect-committee)`     | 복잡도 판정 시            | 결정론적 위원회 선출                                          |
+| Phase A        | 분석 Agent      | `review-manage(ensure-dir)`          | 리뷰 시작 시              | 리뷰 디렉토리 생성                                            |
+| Phase B (검증) | 검증 Agent      | `debt-manage(calculate-bias)`        | 부채 현황 수집 시         | 결정론적 바이어스 수준 판정                                   |
+| re-validate    | 스킬 직접       | `ast-analyze(tree-diff)`             | resolve 후 변경분에 대해  | Delta 기반 의미론적 변경 분석                                 |
+| re-validate    | 스킬 직접       | `debt-manage(resolve)`               | 부채 해소 판정 시         | 해소된 부채 파일 삭제                                         |
+| code-review    | 의장 (SKILL.md) | `review-manage(checkpoint)`          | 스킬 시작 시              | 체크포인트 상태 감지                                          |
+| code-review    | 의장 (SKILL.md) | `review-manage(normalize-branch)`    | 브랜치 정규화 시          | 브랜치명 → 디렉토리 안전 문자열                               |
 
 ### 5.2 신규 MCP Tool: 2개 추가
 
 기존 9개 MCP tool은 FCA-AI 결정론적 검증을 커버한다. 거버넌스 워크플로우 고유의 **결정론적 연산**(브랜치 정규화, 위원회 선출, 부채 가중치 계산)은 LLM 추론에 맡기면 일관성이 보장되지 않으므로, 2개 신규 MCP tool을 추가한다.
 
-| MCP Tool | 설명 | 설계 근거 |
-|---|---|---|
-| `review-manage` | 리뷰 세션 관리 — 브랜치 정규화, 디렉토리 CRUD, 체크포인트 감지, 위원회 선출 | 조건부 규칙이 복잡하여 LLM 추론에 일관성이 보장되지 않음 |
-| `debt-manage` | 부채 관리 — CRUD, 가중치 계산, 바이어스 수준 판정, touch_count 업데이트 | 가중치 공식과 멱등성 보호는 결정론적 연산이므로 코드로 보장 |
+| MCP Tool        | 설명                                                                        | 설계 근거                                                   |
+| --------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `review-manage` | 리뷰 세션 관리 — 브랜치 정규화, 디렉토리 CRUD, 체크포인트 감지, 위원회 선출 | 조건부 규칙이 복잡하여 LLM 추론에 일관성이 보장되지 않음    |
+| `debt-manage`   | 부채 관리 — CRUD, 가중치 계산, 바이어스 수준 판정, touch_count 업데이트     | 가중치 공식과 멱등성 보호는 결정론적 연산이므로 코드로 보장 |
 
 ---
 
@@ -525,40 +529,45 @@ Phase C: 정치적 합의 (의장 직접 실행)
 
 ## 위원회 구성
 
-| 페르소나 | 선출 근거 | 최종 입장 |
-|---|---|---|
-| 엔지니어링 아키텍트 | LCOM4 검증 필요 (클래스 변경 감지) | SYNTHESIS |
-| 지식 관리자 | CLAUDE.md 변경 감지 | SYNTHESIS |
-| 비즈니스 드라이버 | 기능 추가 PR | SYNTHESIS |
-| 운영/SRE | 보안 관련 코드 변경 | VETO → SYNTHESIS |
+| 페르소나            | 선출 근거                          | 최종 입장        |
+| ------------------- | ---------------------------------- | ---------------- |
+| 엔지니어링 아키텍트 | LCOM4 검증 필요 (클래스 변경 감지) | SYNTHESIS        |
+| 지식 관리자         | CLAUDE.md 변경 감지                | SYNTHESIS        |
+| 비즈니스 드라이버   | 기능 추가 PR                       | SYNTHESIS        |
+| 운영/SRE            | 보안 관련 코드 변경                | VETO → SYNTHESIS |
 
 ## 기술 검증 결과
 
 ### FCA-AI 구조 검증
-| 검증 항목 | 결과 | 상세 |
-|---|---|---|
-| 프랙탈 경계 | PASS | 모든 변경이 올바른 프랙탈 내 |
-| CLAUDE.md 규정 | WARN | src/auth/CLAUDE.md — 95줄 (한도 100줄) |
-| 3+12 규칙 | FAIL | src/auth/auth.spec.ts — 18 케이스 (한도 15) |
-| LCOM4 | FAIL | src/auth/validator.ts — LCOM4=3 (한도 2) |
-| CC | PASS | 최대 CC=12 (한도 15) |
-| 순환 의존성 | PASS | 사이클 없음 |
-| 구조 드리프트 | PASS | 드리프트 없음 |
+
+| 검증 항목      | 결과 | 상세                                        |
+| -------------- | ---- | ------------------------------------------- |
+| 프랙탈 경계    | PASS | 모든 변경이 올바른 프랙탈 내                |
+| CLAUDE.md 규정 | WARN | src/auth/CLAUDE.md — 95줄 (한도 100줄)      |
+| 3+12 규칙      | FAIL | src/auth/auth.spec.ts — 18 케이스 (한도 15) |
+| LCOM4          | FAIL | src/auth/validator.ts — LCOM4=3 (한도 2)    |
+| CC             | PASS | 최대 CC=12 (한도 15)                        |
+| 순환 의존성    | PASS | 사이클 없음                                 |
+| 구조 드리프트  | PASS | 드리프트 없음                               |
 
 ### 부채 현황
-| 기존 부채 수 | 이번 PR 관련 부채 | 가중치 합계 |
-|---|---|---|
-| 3건 | 1건 (src/auth 관련, 가중치 2) | 5.0 |
+
+| 기존 부채 수 | 이번 PR 관련 부채             | 가중치 합계 |
+| ------------ | ----------------------------- | ----------- |
+| 3건          | 1건 (src/auth 관련, 가중치 2) | 5.0         |
 
 ## 합의 과정 (Deliberation Log)
 
 ### Round 1 — PROPOSAL
+
 [상세 기록...]
 
 ### Round 2 — DEBATE
+
 [상세 기록...]
 
 ### Round N — CONCLUSION
+
 [최종 합의안...]
 
 ## 최종 판정
@@ -569,7 +578,7 @@ Phase C: 정치적 합의 (의장 직접 실행)
 
 ### 6.2 수정 요청 사항 (`fix-requests.md`)
 
-```markdown
+````markdown
 # Fix Requests — <branch name>
 
 **Generated**: <ISO 8601>
@@ -591,6 +600,7 @@ Phase C: 정치적 합의 (의장 직접 실행)
   // auth-happy.spec.ts: 기본 동작 3건
   // auth-edge.spec.ts: 엣지 케이스 12건 이하
   ```
+````
 
 ---
 
@@ -610,7 +620,8 @@ Phase C: 정치적 합의 (의장 직접 실행)
   ```
 
 ---
-```
+
+````
 
 ### 6.3 소명 기록 (`justifications.md`)
 
@@ -637,7 +648,7 @@ resolved_at: <ISO 8601>
 - **Debt Created**: `.filid/debt/src-auth-validator-a1b2c3.md`
 
 ---
-```
+````
 
 ### 6.4 재검증 결과 (`re-validate.md`)
 
@@ -649,22 +660,22 @@ resolved_at: <ISO 8601>
 
 ## Delta 분석
 
-| 파일 | 변경 유형 | 관련 Fix |
-|---|---|---|
-| src/auth/auth.spec.ts | modified (18→12 케이스) | FIX-001 해소 |
-| src/auth/auth-edge.spec.ts | added (6 케이스) | FIX-001 해소 |
+| 파일                       | 변경 유형               | 관련 Fix     |
+| -------------------------- | ----------------------- | ------------ |
+| src/auth/auth.spec.ts      | modified (18→12 케이스) | FIX-001 해소 |
+| src/auth/auth-edge.spec.ts | added (6 케이스)        | FIX-001 해소 |
 
 ## 검증 결과
 
-| Fix ID | 상태 | 상세 |
-|---|---|---|
-| FIX-001 | ✅ RESOLVED | spec.ts가 12케이스, edge.spec.ts가 6케이스로 분할 |
-| FIX-002 | ⏳ DEFERRED (부채) | 소명 수용됨, 부채 발행 완료 |
+| Fix ID  | 상태               | 상세                                              |
+| ------- | ------------------ | ------------------------------------------------- |
+| FIX-001 | ✅ RESOLVED        | spec.ts가 12케이스, edge.spec.ts가 6케이스로 분할 |
+| FIX-002 | ⏳ DEFERRED (부채) | 소명 수용됨, 부채 발행 완료                       |
 
 ## 부채 변동
 
-| 변동 | 부채 파일 | 상세 |
-|---|---|---|
+| 변동 | 부채 파일                    | 상세            |
+| ---- | ---------------------------- | --------------- |
 | 신규 | src-auth-validator-a1b2c3.md | LCOM4 분할 연기 |
 
 ## 최종 판정
@@ -720,10 +731,10 @@ created_at: <ISO 8601>
 
 ## 변경 파일 요약
 
-| 파일 | 변경 유형 | 프랙탈 | 줄 수 변경 |
-|------|-----------|--------|------------|
-| src/features/auth/validator.ts | modified | src/features/auth | +45 -12 |
-| ... | | | |
+| 파일                           | 변경 유형 | 프랙탈            | 줄 수 변경 |
+| ------------------------------ | --------- | ----------------- | ---------- |
+| src/features/auth/validator.ts | modified  | src/features/auth | +45 -12    |
+| ...                            |           |                   |            |
 
 ## 복잡도 판정 근거
 
@@ -755,44 +766,45 @@ created_at: <ISO 8601>
 
 ## FCA-AI 구조 검증
 
-| 검증 항목 | 결과 | 상세 |
-|-----------|------|------|
-| 프랙탈 경계 | PASS/WARN/FAIL | ... |
-| CLAUDE.md 규정 | PASS/WARN/FAIL | ... |
-| 3+12 규칙 | PASS/WARN/FAIL | ... |
-| LCOM4 | PASS/WARN/FAIL | ... |
-| CC | PASS/WARN/FAIL | ... |
-| 순환 의존성 | PASS/WARN/FAIL | ... |
-| 구조 드리프트 | PASS/WARN/FAIL | ... |
+| 검증 항목      | 결과           | 상세 |
+| -------------- | -------------- | ---- |
+| 프랙탈 경계    | PASS/WARN/FAIL | ...  |
+| CLAUDE.md 규정 | PASS/WARN/FAIL | ...  |
+| 3+12 규칙      | PASS/WARN/FAIL | ...  |
+| LCOM4          | PASS/WARN/FAIL | ...  |
+| CC             | PASS/WARN/FAIL | ...  |
+| 순환 의존성    | PASS/WARN/FAIL | ...  |
+| 구조 드리프트  | PASS/WARN/FAIL | ...  |
 
 ## 부채 현황
 
-| 기존 부채 수 | 이번 PR 관련 부채 | 가중치 합계 | 바이어스 수준 |
-|---|---|---|---|
-| N건 | M건 (관련 프랙탈, 가중치 X) | Y | <바이어스 수준> |
+| 기존 부채 수 | 이번 PR 관련 부채           | 가중치 합계 | 바이어스 수준   |
+| ------------ | --------------------------- | ----------- | --------------- |
+| N건          | M건 (관련 프랙탈, 가중치 X) | Y           | <바이어스 수준> |
 
 ### 관련 부채 목록
 
-| ID | 프랙탈 경로 | 규칙 위반 | 가중치 | 생성일 |
-|---|---|---|---|---|
-| ... | | | | |
+| ID  | 프랙탈 경로 | 규칙 위반 | 가중치 | 생성일 |
+| --- | ----------- | --------- | ------ | ------ |
+| ... |             |           |        |        |
 ```
 
 **필수 frontmatter 필드**: `session_ref`, `all_passed`, `critical_failures`, `debt_bias_level`, `created_at`
 
 ### 7.3 브랜치 이름 정규화 규칙
 
-| 원본 브랜치 이름 | 정규화 결과 | 규칙 |
-|---|---|---|
-| `feature/issue-6` | `feature--issue-6` | `/` → `--` |
-| `feature/deep/nested/path` | `feature--deep--nested--path` | 모든 `/` → `--` |
-| `main` | `main` | 변환 없음 |
-| `release-v1.0` | `release-v1.0` | 변환 없음 |
-| `fix/bug#123` | `fix--bug_123` | `/` → `--`, `#` → `_` |
-| `user@feature` | `user_feature` | `@` → `_` |
-| `feature/--special` | `feature----special` | `/` → `--`, 연속 `--` 유지 (충돌 방지) |
+| 원본 브랜치 이름           | 정규화 결과                   | 규칙                                   |
+| -------------------------- | ----------------------------- | -------------------------------------- |
+| `feature/issue-6`          | `feature--issue-6`            | `/` → `--`                             |
+| `feature/deep/nested/path` | `feature--deep--nested--path` | 모든 `/` → `--`                        |
+| `main`                     | `main`                        | 변환 없음                              |
+| `release-v1.0`             | `release-v1.0`                | 변환 없음                              |
+| `fix/bug#123`              | `fix--bug_123`                | `/` → `--`, `#` → `_`                  |
+| `user@feature`             | `user_feature`                | `@` → `_`                              |
+| `feature/--special`        | `feature----special`          | `/` → `--`, 연속 `--` 유지 (충돌 방지) |
 
 **정규화 규칙**:
+
 1. `/` → `--` (가장 핵심, 디렉토리 구분자 충돌 방지)
 2. `#`, `@`, `~`, `^`, `:`, `?`, `*`, `[`, `]`, `\` → `_` (파일시스템 안전 문자)
 3. 선행/후행 `.`, `-` 제거
@@ -803,14 +815,15 @@ created_at: <ISO 8601>
 
 ### 7.4 라이프사이클 자동 정리
 
-| 트리거 | 동작 | 메커니즘 |
-|---|---|---|
-| `re-validate` PASS | 유지 (PR에 리뷰 이력 보존) | — |
-| `re-validate` FAIL | 유지 (재수정 후 재검증 필요) | — |
-| PR 머지 후 | `.filid/review/<branch>/` 디렉토리 삭제 | **수동** (개발자가 머지 후 정리) |
-| 브랜치 삭제 후 | `.filid/review/<branch>/` 디렉토리 잔존 가능 | **수동** 정리 또는 `--gc` |
+| 트리거             | 동작                                         | 메커니즘                         |
+| ------------------ | -------------------------------------------- | -------------------------------- |
+| `re-validate` PASS | 유지 (PR에 리뷰 이력 보존)                   | —                                |
+| `re-validate` FAIL | 유지 (재수정 후 재검증 필요)                 | —                                |
+| PR 머지 후         | `.filid/review/<branch>/` 디렉토리 삭제      | **수동** (개발자가 머지 후 정리) |
+| 브랜치 삭제 후     | `.filid/review/<branch>/` 디렉토리 잔존 가능 | **수동** 정리 또는 `--gc`        |
 
 **설계 결정**: re-validate PASS에서 자동 삭제하지 않는 이유:
+
 1. 리뷰 파일이 커밋되어 PR에 감사 추적(audit trail)이 남아야 함
 2. PR 머지 전에 삭제하면 팀원이 리뷰 결과를 확인할 수 없음
 3. PR 머지 후에는 git 히스토리에 이력이 남으므로 디렉토리 삭제 가능
@@ -834,6 +847,7 @@ created_at: <ISO 8601>
 ### 8.1 부채 파일 스키마
 
 파일명: `<fractal-path-normalized>-<hash>.md`
+
 - `<fractal-path-normalized>`: 프랙탈 경로의 `/` → `-` 치환 (예: `src-features-auth`)
 - `<hash>`: 부채 내용의 첫 6자리 SHA-256 해시 (고유성 보장)
 
@@ -850,7 +864,7 @@ weight: 1
 touch_count: 0
 last_review_commit: null
 rule_violated: LCOM4 >= 2
-metric_value: "LCOM4=3"
+metric_value: 'LCOM4=3'
 ---
 
 # 기술 부채: validator.ts LCOM4 임계값 초과
@@ -879,10 +893,10 @@ ADR-2026-02-22: validator.ts 모듈 분할을 다음 스프린트로 연기.
 weight(debt) = base_weight × 2^(touch_count)
 ```
 
-| 변수 | 설명 | 초기값 |
-|---|---|---|
-| `base_weight` | 부채 생성 시 기본 가중치 | 1 |
-| `touch_count` | 해당 프랙탈에 대한 후속 수정 횟수 | 0 |
+| 변수          | 설명                              | 초기값 |
+| ------------- | --------------------------------- | ------ |
+| `base_weight` | 부채 생성 시 기본 가중치          | 1      |
+| `touch_count` | 해당 프랙탈에 대한 후속 수정 횟수 | 0      |
 
 #### 가중치 증가 규칙
 
@@ -917,12 +931,12 @@ total_debt_score = Σ weight(debt_i)  for all debt_i in .filid/debt/
 
 ### 부채 목록
 
-| ID | 프랙탈 경로 | 규칙 위반 | 가중치 | 생성일 |
-|---|---|---|---|---|
-| src-auth-validator-a1b2c3 | src/features/auth | LCOM4≥2 | 4 | 2026-01-15 |
-| src-auth-flow-d4e5f6 | src/features/auth | CC>15 | 2 | 2026-02-01 |
-| src-user-model-g7h8i9 | src/features/user | 3+12 규칙 | 1 | 2026-02-10 |
-| ... | | | | |
+| ID                        | 프랙탈 경로       | 규칙 위반 | 가중치 | 생성일     |
+| ------------------------- | ----------------- | --------- | ------ | ---------- |
+| src-auth-validator-a1b2c3 | src/features/auth | LCOM4≥2   | 4      | 2026-01-15 |
+| src-auth-flow-d4e5f6      | src/features/auth | CC>15     | 2      | 2026-02-01 |
+| src-user-model-g7h8i9     | src/features/user | 3+12 규칙 | 1      | 2026-02-10 |
+| ...                       |                   |           |        |            |
 
 ### 이번 PR 관련 부채
 
@@ -932,6 +946,7 @@ total_debt_score = Σ weight(debt_i)  for all debt_i in .filid/debt/
 ### 위원회 지침
 
 부채 점수에 따른 바이어스 수준:
+
 - 0~5: LOW_PRESSURE — 일반적 리뷰
 - 6~15: MODERATE_PRESSURE — 부채 상환 강력 권고
 - 16~30: HIGH_PRESSURE — 신규 부채 발행 거의 불허
@@ -940,12 +955,12 @@ total_debt_score = Σ weight(debt_i)  for all debt_i in .filid/debt/
 
 #### 바이어스 수준별 위원회 행동
 
-| 바이어스 수준 | 위원회 행동 | 비즈니스 드라이버 영향 |
-|---|---|---|
-| LOW_PRESSURE | 일반 리뷰, 부채 발행 허용 | CoD 주장 수용 가능 |
+| 바이어스 수준     | 위원회 행동                                             | 비즈니스 드라이버 영향      |
+| ----------------- | ------------------------------------------------------- | --------------------------- |
+| LOW_PRESSURE      | 일반 리뷰, 부채 발행 허용                               | CoD 주장 수용 가능          |
 | MODERATE_PRESSURE | 부채 상환 강력 권고, 신규 부채 발행 시 엄격한 소명 요구 | CoD 주장에 정량적 근거 필수 |
-| HIGH_PRESSURE | 신규 부채 발행 거의 불허, 기존 부채 1건 이상 상환 요구 | CoD 주장 사실상 기각 |
-| CRITICAL_PRESSURE | 부채 상환 없이는 PR 승인 불가 | VETO 기본 |
+| HIGH_PRESSURE     | 신규 부채 발행 거의 불허, 기존 부채 1건 이상 상환 요구  | CoD 주장 사실상 기각        |
+| CRITICAL_PRESSURE | 부채 상환 없이는 PR 승인 불가                           | VETO 기본                   |
 
 ### 8.4 부채 해소 판정 기준
 
@@ -1009,6 +1024,7 @@ code-review 실행 시:
 ```
 
 매핑 방식:
+
 1. 파일명에서 프랙탈 경로 추출: `src-features-auth-validator-a1b2c3` → frontmatter의 `fractal_path` 읽기
 2. 파일명 자체는 **고유 식별자** 역할만 수행 (역변환에 사용하지 않음)
 3. 프랙탈 경로 매핑은 항상 frontmatter의 `fractal_path` 필드를 기준으로 수행
@@ -1019,27 +1035,27 @@ code-review 실행 시:
 
 ### 9.1 복잡도 등급
 
-| 등급 | 조건 | 최소 위원 수 |
-|---|---|---|
-| **LOW** | 변경 파일 ≤ 3, 단일 프랙탈, 인터페이스 변경 없음 | 2 |
-| **MEDIUM** | 변경 파일 4~10, 2~3개 프랙탈, 인터페이스 변경 있음 | 4 |
-| **HIGH** | 변경 파일 > 10, 4개+ 프랙탈, 아키텍처 변경 | 6 (전원) |
+| 등급       | 조건                                               | 최소 위원 수 |
+| ---------- | -------------------------------------------------- | ------------ |
+| **LOW**    | 변경 파일 ≤ 3, 단일 프랙탈, 인터페이스 변경 없음   | 2            |
+| **MEDIUM** | 변경 파일 4~10, 2~3개 프랙탈, 인터페이스 변경 있음 | 4            |
+| **HIGH**   | 변경 파일 > 10, 4개+ 프랙탈, 아키텍처 변경         | 6 (전원)     |
 
 ### 9.2 등급별 필수 선출
 
-| 등급 | 필수 선출 | 선택적 선출 |
-|---|---|---|
-| LOW | 엔지니어링 아키텍트 + 운영/SRE | — |
+| 등급   | 필수 선출                                               | 선택적 선출      |
+| ------ | ------------------------------------------------------- | ---------------- |
+| LOW    | 엔지니어링 아키텍트 + 운영/SRE                          | —                |
 | MEDIUM | 엔지니어링 + 지식 관리자 + 비즈니스 드라이버 + 운영/SRE | 프로덕트, 디자인 |
-| HIGH | 전원 (6명) | — |
+| HIGH   | 전원 (6명)                                              | —                |
 
 ### 9.3 적대적 짝짓기 규칙
 
-| 선출 조건 | 반드시 동시 선출 | 이유 |
-|---|---|---|
-| 비즈니스 드라이버 선출 | + 지식 관리자 + 운영/SRE | 속도 vs 안정성 견제 |
-| 프로덕트 매니저 선출 | + 엔지니어링 아키텍트 | 요구사항 vs 구현 현실 견제 |
-| 디자인/HCI 선출 | + 엔지니어링 아키텍트 | 사용성 vs 기술적 제약 견제 |
+| 선출 조건              | 반드시 동시 선출         | 이유                       |
+| ---------------------- | ------------------------ | -------------------------- |
+| 비즈니스 드라이버 선출 | + 지식 관리자 + 운영/SRE | 속도 vs 안정성 견제        |
+| 프로덕트 매니저 선출   | + 엔지니어링 아키텍트    | 요구사항 vs 구현 현실 견제 |
+| 디자인/HCI 선출        | + 엔지니어링 아키텍트    | 사용성 vs 기술적 제약 견제 |
 
 ---
 
@@ -1066,24 +1082,24 @@ skills/code-review/
 
 ### 10.2 파일별 책임 분리
 
-| 파일 | 책임 | 로딩 시점 | 로딩 주체 |
-|------|------|-----------|-----------|
-| `SKILL.md` | 의장 정체성, 오케스트레이션 절차, Phase C 합의 지침, 체크포인트 재개 | 스킬 실행 시 자동 | Claude Code |
-| `reference.md` | review-report.md / fix-requests.md 출력 포맷 템플릿, 예시 | Phase C에서 의장이 Read | 의장 |
-| `state-machine.md` | 상태 전이 규칙 (4.1~4.5절의 요약), 정족수 계산 | Phase C에서 의장이 Read | 의장 |
-| `phases/phase-a-analysis.md` | git diff 수집, 프랙탈 경로 식별, 복잡도 판정, 위원회 선출, session.md 스키마 | Phase A에서 분석 agent가 Read | 분석 Agent |
-| `phases/phase-b-verification.md` | MCP tool 호출 목록, 검증 테이블 포맷, 부채 현황 수집, verification.md 스키마 | Phase B에서 검증 agent가 Read | 검증 Agent |
-| `personas/*.md` | 각 페르소나의 전문지식, 행동양식, 행동 원칙 | Phase C에서 선출된 것만 의장이 Read | 의장 |
+| 파일                             | 책임                                                                         | 로딩 시점                           | 로딩 주체   |
+| -------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------- | ----------- |
+| `SKILL.md`                       | 의장 정체성, 오케스트레이션 절차, Phase C 합의 지침, 체크포인트 재개         | 스킬 실행 시 자동                   | Claude Code |
+| `reference.md`                   | review-report.md / fix-requests.md 출력 포맷 템플릿, 예시                    | Phase C에서 의장이 Read             | 의장        |
+| `state-machine.md`               | 상태 전이 규칙 (4.1~4.5절의 요약), 정족수 계산                               | Phase C에서 의장이 Read             | 의장        |
+| `phases/phase-a-analysis.md`     | git diff 수집, 프랙탈 경로 식별, 복잡도 판정, 위원회 선출, session.md 스키마 | Phase A에서 분석 agent가 Read       | 분석 Agent  |
+| `phases/phase-b-verification.md` | MCP tool 호출 목록, 검증 테이블 포맷, 부채 현황 수집, verification.md 스키마 | Phase B에서 검증 agent가 Read       | 검증 Agent  |
+| `personas/*.md`                  | 각 페르소나의 전문지식, 행동양식, 행동 원칙                                  | Phase C에서 선출된 것만 의장이 Read | 의장        |
 
 ### 10.3 SKILL.md 크기 제한
 
-| 파일 | 최대 줄 수 | 근거 |
-|------|-----------|------|
-| `SKILL.md` | **120줄** | 오케스트레이션 + 체크포인트 재개 + `--force` + PR 코멘트 로직 포함 |
-| `reference.md` | **100줄** | 출력 포맷 템플릿. 예시는 최소화 |
-| `state-machine.md` | **50줄** | 전이 규칙 테이블 + 정족수 규칙 |
-| `phases/*.md` | **각 80줄** | 한 Phase의 지침. subagent가 단독 실행 |
-| `personas/*.md` | **각 150줄** | 전문지식 + 행동양식 + 행동 원칙의 3섹션 구조 |
+| 파일               | 최대 줄 수   | 근거                                                               |
+| ------------------ | ------------ | ------------------------------------------------------------------ |
+| `SKILL.md`         | **120줄**    | 오케스트레이션 + 체크포인트 재개 + `--force` + PR 코멘트 로직 포함 |
+| `reference.md`     | **100줄**    | 출력 포맷 템플릿. 예시는 최소화                                    |
+| `state-machine.md` | **50줄**     | 전이 규칙 테이블 + 정족수 규칙                                     |
+| `phases/*.md`      | **각 80줄**  | 한 Phase의 지침. subagent가 단독 실행                              |
+| `personas/*.md`    | **각 150줄** | 전문지식 + 행동양식 + 행동 원칙의 3섹션 구조                       |
 
 ### 10.4 의장의 Task tool 위임 방식
 

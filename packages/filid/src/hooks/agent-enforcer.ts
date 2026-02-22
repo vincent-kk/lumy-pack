@@ -1,4 +1,4 @@
-import type { SubagentStartInput, HookOutput } from '../types/hooks.js';
+import type { HookOutput, SubagentStartInput } from '../types/hooks.js';
 
 /**
  * FCA-AI agent role definitions with tool restrictions.

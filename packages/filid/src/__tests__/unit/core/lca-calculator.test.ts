@@ -1,13 +1,16 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import {
   findLCA,
   getAncestorPaths,
   getModulePlacement,
 } from '../../../core/lca-calculator.js';
-import type { FractalTree, FractalNode } from '../../../types/fractal.js';
+import type { FractalNode, FractalTree } from '../../../types/fractal.js';
 
 // 헬퍼: FractalNode 생성
-function makeNode(overrides: Partial<FractalNode> & { path: string; name: string }): FractalNode {
+function makeNode(
+  overrides: Partial<FractalNode> & { path: string; name: string },
+): FractalNode {
   return {
     type: 'fractal',
     parent: null,
@@ -31,12 +34,45 @@ function makeNode(overrides: Partial<FractalNode> & { path: string; name: string
 //  └── /root/b
 //      └── /root/b/z
 function buildTestTree(): FractalTree {
-  const root = makeNode({ path: '/root', name: 'root', depth: 0, parent: null, children: ['/root/a', '/root/b'] });
-  const a = makeNode({ path: '/root/a', name: 'a', depth: 1, parent: '/root', children: ['/root/a/x', '/root/a/y'] });
-  const b = makeNode({ path: '/root/b', name: 'b', depth: 1, parent: '/root', children: ['/root/b/z'] });
-  const ax = makeNode({ path: '/root/a/x', name: 'x', depth: 2, parent: '/root/a' });
-  const ay = makeNode({ path: '/root/a/y', name: 'y', depth: 2, parent: '/root/a' });
-  const bz = makeNode({ path: '/root/b/z', name: 'z', depth: 2, parent: '/root/b' });
+  const root = makeNode({
+    path: '/root',
+    name: 'root',
+    depth: 0,
+    parent: null,
+    children: ['/root/a', '/root/b'],
+  });
+  const a = makeNode({
+    path: '/root/a',
+    name: 'a',
+    depth: 1,
+    parent: '/root',
+    children: ['/root/a/x', '/root/a/y'],
+  });
+  const b = makeNode({
+    path: '/root/b',
+    name: 'b',
+    depth: 1,
+    parent: '/root',
+    children: ['/root/b/z'],
+  });
+  const ax = makeNode({
+    path: '/root/a/x',
+    name: 'x',
+    depth: 2,
+    parent: '/root/a',
+  });
+  const ay = makeNode({
+    path: '/root/a/y',
+    name: 'y',
+    depth: 2,
+    parent: '/root/a',
+  });
+  const bz = makeNode({
+    path: '/root/b/z',
+    name: 'z',
+    depth: 2,
+    parent: '/root/b',
+  });
 
   const nodes = new Map<string, FractalNode>([
     ['/root', root],
@@ -102,7 +138,7 @@ describe('lca-calculator', () => {
       expect(lca).toBeNull();
     });
 
-    it('should return root as LCA of root\'s direct children', () => {
+    it("should return root as LCA of root's direct children", () => {
       const tree = buildTestTree();
       const lca = findLCA(tree, '/root/a', '/root/b');
       expect(lca?.path).toBe('/root');
@@ -140,7 +176,11 @@ describe('lca-calculator', () => {
     it('should handle three dependencies correctly', () => {
       const tree = buildTestTree();
       // x, y are under /a, z is under /b → deepest pairwise LCA = /root/a (for x,y pair)
-      const result = getModulePlacement(tree, ['/root/a/x', '/root/a/y', '/root/b/z']);
+      const result = getModulePlacement(tree, [
+        '/root/a/x',
+        '/root/a/y',
+        '/root/b/z',
+      ]);
       expect(result.suggestedParent).toBe('/root/a');
     });
   });

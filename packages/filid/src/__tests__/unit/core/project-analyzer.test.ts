@@ -1,7 +1,11 @@
-import { describe, it, expect } from 'vitest';
-import { calculateHealthScore, generateReport } from '../../../core/project-analyzer.js';
+import { describe, expect, it } from 'vitest';
+
 import { buildFractalTree } from '../../../core/fractal-tree.js';
 import type { NodeEntry } from '../../../core/fractal-tree.js';
+import {
+  calculateHealthScore,
+  generateReport,
+} from '../../../core/project-analyzer.js';
 import type { NodeType } from '../../../types/fractal.js';
 import type { AnalysisReport } from '../../../types/report.js';
 
@@ -11,15 +15,29 @@ const entry = (
   hasClaudeMd = false,
   hasSpecMd = false,
   hasIndex = false,
-): NodeEntry => ({ path, name: path.split('/').pop()!, type, hasClaudeMd, hasSpecMd, hasIndex });
+): NodeEntry => ({
+  path,
+  name: path.split('/').pop()!,
+  type,
+  hasClaudeMd,
+  hasSpecMd,
+  hasIndex,
+});
 
-function makeReport(overrides: Partial<{
-  errorCount: number;
-  warningCount: number;
-  criticalDrifts: number;
-  highDrifts: number;
-}>): AnalysisReport {
-  const { errorCount = 0, warningCount = 0, criticalDrifts = 0, highDrifts = 0 } = overrides;
+function makeReport(
+  overrides: Partial<{
+    errorCount: number;
+    warningCount: number;
+    criticalDrifts: number;
+    highDrifts: number;
+  }>,
+): AnalysisReport {
+  const {
+    errorCount = 0,
+    warningCount = 0,
+    criticalDrifts = 0,
+    highDrifts = 0,
+  } = overrides;
 
   const tree = buildFractalTree([entry('/app', 'fractal', true, false, true)]);
 
@@ -118,13 +136,23 @@ describe('project-analyzer', () => {
     });
 
     it('should not go below 0', () => {
-      const report = makeReport({ errorCount: 20, warningCount: 20, criticalDrifts: 5, highDrifts: 6 });
+      const report = makeReport({
+        errorCount: 20,
+        warningCount: 20,
+        criticalDrifts: 5,
+        highDrifts: 6,
+      });
       expect(calculateHealthScore(report)).toBe(0);
     });
 
     it('should combine all deductions', () => {
       // 2 errors (-10) + 2 warnings (-4) + 1 critical (-10) + 1 high (-5) = -29 → 71
-      const report = makeReport({ errorCount: 2, warningCount: 2, criticalDrifts: 1, highDrifts: 1 });
+      const report = makeReport({
+        errorCount: 2,
+        warningCount: 2,
+        criticalDrifts: 1,
+        highDrifts: 1,
+      });
       expect(calculateHealthScore(report)).toBe(71);
     });
   });

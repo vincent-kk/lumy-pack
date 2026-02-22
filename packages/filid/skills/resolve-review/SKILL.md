@@ -32,6 +32,7 @@ them into ADRs, and create technical debt records.
 ### Step 2 — Parse Fix Requests
 
 Parse `fix-requests.md` to extract fix items. Each item has:
+
 - Fix ID (e.g., `FIX-001`)
 - Title, severity, file path, rule violated
 - Recommended action and code patch
@@ -54,6 +55,7 @@ For each fix item:
 ### Step 4 — Process Accepted Items
 
 For each accepted fix:
+
 - Output the recommended code patch with file path
 - Provide guidance: "Apply the patch above to <path>, then commit."
 

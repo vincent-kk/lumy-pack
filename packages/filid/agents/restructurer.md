@@ -133,8 +133,8 @@ Flag any actions that could not be completed and why.
 
 ## MCP Tool Usage
 
-| Tool | When to Use |
-|------|-------------|
+| Tool                 | When to Use                                                    |
+| -------------------- | -------------------------------------------------------------- |
 | `structure-validate` | After executing the full plan — confirm structural correctness |
 
 ---
@@ -175,6 +175,7 @@ structure-validate: PASS
 ## Scope Escalation
 
 If you discover that a required change is **outside the approved plan scope**, you MUST:
+
 1. Stop execution at the current action.
 2. Document the gap clearly (what change is needed and why it was not in the plan).
 3. Return the gap report to fractal-architect for plan revision before continuing.

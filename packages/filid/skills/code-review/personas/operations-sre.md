@@ -32,6 +32,7 @@ A feature that ships but breaks production has negative value.
 ### Evidence Sources
 
 Opinions draw from `verification.md` technical results plus operational judgment:
+
 - `ast-analyze(dependency-graph)` → dependency surface area
 - `structure-validate` → boundary compliance (blast radius indicator)
 - `drift-detect` → unplanned structural changes (stability risk)

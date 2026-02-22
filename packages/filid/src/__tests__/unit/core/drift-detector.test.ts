@@ -1,19 +1,38 @@
-import { describe, it, expect } from 'vitest';
-import { detectDrift, calculateSeverity, compareCurrent, generateSyncPlan } from '../../../core/drift-detector.js';
+import { describe, expect, it } from 'vitest';
+
+import {
+  calculateSeverity,
+  compareCurrent,
+  detectDrift,
+  generateSyncPlan,
+} from '../../../core/drift-detector.js';
 import { buildFractalTree } from '../../../core/fractal-tree.js';
 import type { NodeEntry } from '../../../core/fractal-tree.js';
-import type { NodeType } from '../../../types/fractal.js';
-import type { RuleViolation, RuleEvaluationResult } from '../../../types/rules.js';
 import type { DriftItem } from '../../../types/drift.js';
+import type { NodeType } from '../../../types/fractal.js';
+import type {
+  RuleEvaluationResult,
+  RuleViolation,
+} from '../../../types/rules.js';
 
 const entry = (
   path: string,
   type: NodeType,
   hasClaudeMd = false,
   hasSpecMd = false,
-): NodeEntry => ({ path, name: path.split('/').pop()!, type, hasClaudeMd, hasSpecMd });
+): NodeEntry => ({
+  path,
+  name: path.split('/').pop()!,
+  type,
+  hasClaudeMd,
+  hasSpecMd,
+});
 
-const makeViolation = (ruleId: string, severity: 'error' | 'warning' | 'info', path = '/app'): RuleViolation => ({
+const makeViolation = (
+  ruleId: string,
+  severity: 'error' | 'warning' | 'info',
+  path = '/app',
+): RuleViolation => ({
   ruleId,
   severity,
   message: `Violation of ${ruleId}`,
@@ -24,37 +43,57 @@ const makeViolation = (ruleId: string, severity: 'error' | 'warning' | 'info', p
 describe('drift-detector', () => {
   describe('calculateSeverity', () => {
     it('should map circular-dependency to critical', () => {
-      expect(calculateSeverity(makeViolation('circular-dependency', 'error'))).toBe('critical');
+      expect(
+        calculateSeverity(makeViolation('circular-dependency', 'error')),
+      ).toBe('critical');
     });
 
     it('should map pure-function-isolation to critical', () => {
-      expect(calculateSeverity(makeViolation('pure-function-isolation', 'error'))).toBe('critical');
+      expect(
+        calculateSeverity(makeViolation('pure-function-isolation', 'error')),
+      ).toBe('critical');
     });
 
     it('should map max-depth to high', () => {
-      expect(calculateSeverity(makeViolation('max-depth', 'error'))).toBe('high');
+      expect(calculateSeverity(makeViolation('max-depth', 'error'))).toBe(
+        'high',
+      );
     });
 
     it('should map organ-no-claudemd to high', () => {
-      expect(calculateSeverity(makeViolation('organ-no-claudemd', 'error'))).toBe('high');
+      expect(
+        calculateSeverity(makeViolation('organ-no-claudemd', 'error')),
+      ).toBe('high');
     });
 
     it('should map index-barrel-pattern to medium', () => {
-      expect(calculateSeverity(makeViolation('index-barrel-pattern', 'warning'))).toBe('medium');
+      expect(
+        calculateSeverity(makeViolation('index-barrel-pattern', 'warning')),
+      ).toBe('medium');
     });
 
     it('should map module-entry-point to medium', () => {
-      expect(calculateSeverity(makeViolation('module-entry-point', 'warning'))).toBe('medium');
+      expect(
+        calculateSeverity(makeViolation('module-entry-point', 'warning')),
+      ).toBe('medium');
     });
 
     it('should map naming-convention to low', () => {
-      expect(calculateSeverity(makeViolation('naming-convention', 'warning'))).toBe('low');
+      expect(
+        calculateSeverity(makeViolation('naming-convention', 'warning')),
+      ).toBe('low');
     });
 
     it('should fallback on severity for unknown ruleId', () => {
-      expect(calculateSeverity(makeViolation('unknown-rule', 'error'))).toBe('high');
-      expect(calculateSeverity(makeViolation('unknown-rule', 'warning'))).toBe('medium');
-      expect(calculateSeverity(makeViolation('unknown-rule', 'info'))).toBe('low');
+      expect(calculateSeverity(makeViolation('unknown-rule', 'error'))).toBe(
+        'high',
+      );
+      expect(calculateSeverity(makeViolation('unknown-rule', 'warning'))).toBe(
+        'medium',
+      );
+      expect(calculateSeverity(makeViolation('unknown-rule', 'info'))).toBe(
+        'low',
+      );
     });
   });
 
@@ -188,9 +227,30 @@ describe('drift-detector', () => {
 
     it('should set overall riskLevel to highest drift severity', () => {
       const drifts: DriftItem[] = [
-        { path: '/a', rule: 'r1', expected: '', actual: '', severity: 'low', suggestedAction: 'rename' },
-        { path: '/b', rule: 'r2', expected: '', actual: '', severity: 'critical', suggestedAction: 'move' },
-        { path: '/c', rule: 'r3', expected: '', actual: '', severity: 'medium', suggestedAction: 'create-index' },
+        {
+          path: '/a',
+          rule: 'r1',
+          expected: '',
+          actual: '',
+          severity: 'low',
+          suggestedAction: 'rename',
+        },
+        {
+          path: '/b',
+          rule: 'r2',
+          expected: '',
+          actual: '',
+          severity: 'critical',
+          suggestedAction: 'move',
+        },
+        {
+          path: '/c',
+          rule: 'r3',
+          expected: '',
+          actual: '',
+          severity: 'medium',
+          suggestedAction: 'create-index',
+        },
       ];
 
       const plan = generateSyncPlan(drifts);
@@ -200,8 +260,22 @@ describe('drift-detector', () => {
 
     it('should sort reversible actions before non-reversible at same severity', () => {
       const drifts: DriftItem[] = [
-        { path: '/a', rule: 'r1', expected: '', actual: '', severity: 'high', suggestedAction: 'move' },
-        { path: '/b', rule: 'r2', expected: '', actual: '', severity: 'high', suggestedAction: 'rename' },
+        {
+          path: '/a',
+          rule: 'r1',
+          expected: '',
+          actual: '',
+          severity: 'high',
+          suggestedAction: 'move',
+        },
+        {
+          path: '/b',
+          rule: 'r2',
+          expected: '',
+          actual: '',
+          severity: 'high',
+          suggestedAction: 'rename',
+        },
       ];
 
       const plan = generateSyncPlan(drifts);
@@ -213,8 +287,22 @@ describe('drift-detector', () => {
 
     it('should sort by severity (critical first)', () => {
       const drifts: DriftItem[] = [
-        { path: '/a', rule: 'r1', expected: '', actual: '', severity: 'low', suggestedAction: 'rename' },
-        { path: '/b', rule: 'r2', expected: '', actual: '', severity: 'critical', suggestedAction: 'move' },
+        {
+          path: '/a',
+          rule: 'r1',
+          expected: '',
+          actual: '',
+          severity: 'low',
+          suggestedAction: 'rename',
+        },
+        {
+          path: '/b',
+          rule: 'r2',
+          expected: '',
+          actual: '',
+          severity: 'critical',
+          suggestedAction: 'move',
+        },
       ];
 
       const plan = generateSyncPlan(drifts);

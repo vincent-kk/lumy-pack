@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
+import { ChangeQueue } from '../../../core/change-queue.js';
 import { trackChange } from '../../../hooks/change-tracker.js';
 import type { PostToolUseInput } from '../../../types/hooks.js';
-import { ChangeQueue } from '../../../core/change-queue.js';
 
 const baseInput: PostToolUseInput = {
   cwd: '/workspace',
@@ -29,7 +30,11 @@ describe('change-tracker', () => {
     const input: PostToolUseInput = {
       ...baseInput,
       tool_name: 'Edit',
-      tool_input: { file_path: '/app/src/auth/login.ts', old_string: 'a', new_string: 'b' },
+      tool_input: {
+        file_path: '/app/src/auth/login.ts',
+        old_string: 'a',
+        new_string: 'b',
+      },
     };
     const result = trackChange(input, queue);
     expect(result.continue).toBe(true);
@@ -50,44 +55,70 @@ describe('change-tracker', () => {
 
   it('should track multiple changes to different files', () => {
     const queue = new ChangeQueue();
-    trackChange({
-      ...baseInput,
-      tool_input: { file_path: '/app/a.ts', content: '1' },
-    }, queue);
-    trackChange({
-      ...baseInput,
-      tool_input: { file_path: '/app/b.ts', content: '2' },
-    }, queue);
+    trackChange(
+      {
+        ...baseInput,
+        tool_input: { file_path: '/app/a.ts', content: '1' },
+      },
+      queue,
+    );
+    trackChange(
+      {
+        ...baseInput,
+        tool_input: { file_path: '/app/b.ts', content: '2' },
+      },
+      queue,
+    );
     expect(queue.size()).toBe(2);
   });
 
   it('should track multiple changes to the same file', () => {
     const queue = new ChangeQueue();
-    trackChange({
-      ...baseInput,
-      tool_input: { file_path: '/app/a.ts', content: '1' },
-    }, queue);
-    trackChange({
-      ...baseInput,
-      tool_name: 'Edit',
-      tool_input: { file_path: '/app/a.ts', old_string: '1', new_string: '2' },
-    }, queue);
+    trackChange(
+      {
+        ...baseInput,
+        tool_input: { file_path: '/app/a.ts', content: '1' },
+      },
+      queue,
+    );
+    trackChange(
+      {
+        ...baseInput,
+        tool_name: 'Edit',
+        tool_input: {
+          file_path: '/app/a.ts',
+          old_string: '1',
+          new_string: '2',
+        },
+      },
+      queue,
+    );
     expect(queue.size()).toBe(2);
     expect(queue.getChangesByPath().get('/app/a.ts')).toHaveLength(2);
   });
 
   it('should record correct changeType based on tool name', () => {
     const queue = new ChangeQueue();
-    trackChange({
-      ...baseInput,
-      tool_name: 'Write',
-      tool_input: { file_path: '/app/x.ts', content: 'new' },
-    }, queue);
-    trackChange({
-      ...baseInput,
-      tool_name: 'Edit',
-      tool_input: { file_path: '/app/y.ts', old_string: 'a', new_string: 'b' },
-    }, queue);
+    trackChange(
+      {
+        ...baseInput,
+        tool_name: 'Write',
+        tool_input: { file_path: '/app/x.ts', content: 'new' },
+      },
+      queue,
+    );
+    trackChange(
+      {
+        ...baseInput,
+        tool_name: 'Edit',
+        tool_input: {
+          file_path: '/app/y.ts',
+          old_string: 'a',
+          new_string: 'b',
+        },
+      },
+      queue,
+    );
     const all = queue.peek();
     expect(all[0].changeType).toBe('created');
     expect(all[1].changeType).toBe('modified');

@@ -5,15 +5,26 @@
  * 모듈 디렉토리의 진입점을 탐색하고 public API를 추출한다.
  * index-analyzer를 활용하여 barrel export를 분석한다.
  */
+import { access, readFile, readdir } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
 
-import { readFile, readdir, access } from 'node:fs/promises';
-import { join, resolve, dirname } from 'node:path';
-import type { ModuleInfo, PublicApi, ModuleExportInfo } from '../types/fractal.js';
+import type {
+  ModuleExportInfo,
+  ModuleInfo,
+  PublicApi,
+} from '../types/fractal.js';
+
 import { extractModuleExports } from './index-analyzer.js';
 
-const ENTRY_CANDIDATES = ['index.ts', 'index.js', 'main.ts', 'main.js'] as const;
+const ENTRY_CANDIDATES = [
+  'index.ts',
+  'index.js',
+  'main.ts',
+  'main.js',
+] as const;
 
-const RE_IMPORT = /^(?:import|export)\s+(?:type\s+)?(?:\{[^}]*\}|\*(?:\s+as\s+\w+)?|\w+(?:\s*,\s*\{[^}]*\})?)\s+from\s+['"]([^'"]+)['"]/gm;
+const RE_IMPORT =
+  /^(?:import|export)\s+(?:type\s+)?(?:\{[^}]*\}|\*(?:\s+as\s+\w+)?|\w+(?:\s*,\s*\{[^}]*\})?)\s+from\s+['"]([^'"]+)['"]/gm;
 const RE_DYNAMIC_IMPORT = /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/gm;
 const RE_REQUIRE = /\brequire\s*\(\s*['"]([^'"]+)['"]\s*\)/gm;
 
@@ -42,7 +53,9 @@ async function fileExists(filePath: string): Promise<boolean> {
  * @param modulePath - 탐색할 디렉토리의 절대 경로
  * @returns 진입점 파일의 절대 경로 또는 null
  */
-export async function findEntryPoint(modulePath: string): Promise<string | null> {
+export async function findEntryPoint(
+  modulePath: string,
+): Promise<string | null> {
   // 1. 후보 파일을 순서대로 확인
   for (const candidate of ENTRY_CANDIDATES) {
     const full = join(modulePath, candidate);
@@ -53,7 +66,10 @@ export async function findEntryPoint(modulePath: string): Promise<string | null>
   try {
     const entries = await readdir(modulePath, { withFileTypes: true });
     const tsFiles = entries
-      .filter((e) => e.isFile() && e.name.endsWith('.ts') && !e.name.endsWith('.d.ts'))
+      .filter(
+        (e) =>
+          e.isFile() && e.name.endsWith('.ts') && !e.name.endsWith('.d.ts'),
+      )
       .map((e) => e.name);
     if (tsFiles.length === 1) {
       return join(modulePath, tsFiles[0]);

@@ -4,9 +4,13 @@
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import type { PostToolUseInput, HookOutput } from '../types/hooks.js';
+
 import type { ChangeQueue, ChangeRecord } from '../core/change-queue.js';
-import { classifyNode, LEGACY_ORGAN_DIR_NAMES } from '../core/organ-classifier.js';
+import {
+  LEGACY_ORGAN_DIR_NAMES,
+  classifyNode,
+} from '../core/organ-classifier.js';
+import type { HookOutput, PostToolUseInput } from '../types/hooks.js';
 
 interface ChangeLogEntry {
   timestamp: string;
@@ -17,7 +21,10 @@ interface ChangeLogEntry {
 }
 
 function classifyPathCategory(filePath: string, cwd: string): string {
-  const segments = filePath.replace(/\\/g, '/').split('/').filter((p) => p.length > 0);
+  const segments = filePath
+    .replace(/\\/g, '/')
+    .split('/')
+    .filter((p) => p.length > 0);
 
   // CLAUDE.md 또는 SPEC.md를 포함하면 fractal
   const fileName = segments[segments.length - 1] ?? '';
@@ -34,16 +41,21 @@ function classifyPathCategory(filePath: string, cwd: string): string {
         continue;
       }
       const entries = fs.readdirSync(dirSoFar, { withFileTypes: true });
-      const hasClaudeMd = entries.some((e) => e.isFile() && e.name === 'CLAUDE.md');
+      const hasClaudeMd = entries.some(
+        (e) => e.isFile() && e.name === 'CLAUDE.md',
+      );
       const hasSpecMd = entries.some((e) => e.isFile() && e.name === 'SPEC.md');
       const subdirs = entries.filter((e) => e.isDirectory());
       const isLeafDirectory = subdirs.length === 0;
       const hasFractalChildren = subdirs.some((d) => {
         try {
           const childPath = path.join(dirSoFar, d.name);
-          const childEntries = fs.readdirSync(childPath, { withFileTypes: true });
+          const childEntries = fs.readdirSync(childPath, {
+            withFileTypes: true,
+          });
           return childEntries.some(
-            (ce) => ce.isFile() && (ce.name === 'CLAUDE.md' || ce.name === 'SPEC.md'),
+            (ce) =>
+              ce.isFile() && (ce.name === 'CLAUDE.md' || ce.name === 'SPEC.md'),
           );
         } catch {
           return false;

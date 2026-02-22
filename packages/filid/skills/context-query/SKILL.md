@@ -27,32 +27,37 @@ within a strict 3-Prompt Limit.
 ## Core Workflow
 
 ### Phase 1 — Question Parsing
+
 Identify target module, relevant paths, and query type from the question.
 See [reference.md Section 1](./reference.md#section-1--question-parsing).
 
 ### Phase 2 — Navigation (Prompt 1)
+
 Locate the target module using `fractal-navigate(action: "tree")`.
 See [reference.md Section 2](./reference.md#section-2--navigation-details).
 
 ### Phase 3 — Context Loading
+
 Load the CLAUDE.md chain from leaf node to project root.
 See [reference.md Section 3](./reference.md#section-3--context-chain-loading).
 
 ### Phase 4 — Compression (if needed)
+
 Apply `doc-compress(mode: "auto")` when chain exceeds context limits.
 See [reference.md Section 4](./reference.md#section-4--compression-strategy).
 
 ### Phase 5 — Response (Prompt 2–3 max)
+
 Generate answer within the 3-Prompt budget.
 See [reference.md Section 5](./reference.md#section-5--3-prompt-limit-protocol).
 
 ## Available MCP Tools
 
-| Tool | Action | Purpose |
-|------|--------|---------|
-| `fractal-navigate` | `tree` | Scan project hierarchy to locate the target module |
-| `fractal-navigate` | `classify` | Resolve ambiguous module classification |
-| `doc-compress` | `auto` | Compress CLAUDE.md chain when it exceeds context limits |
+| Tool               | Action     | Purpose                                                 |
+| ------------------ | ---------- | ------------------------------------------------------- |
+| `fractal-navigate` | `tree`     | Scan project hierarchy to locate the target module      |
+| `fractal-navigate` | `classify` | Resolve ambiguous module classification                 |
+| `doc-compress`     | `auto`     | Compress CLAUDE.md chain when it exceeds context limits |
 
 ## Options
 
@@ -62,9 +67,9 @@ See [reference.md Section 5](./reference.md#section-5--3-prompt-limit-protocol).
 /filid:context-query <question>
 ```
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `question` | string | Yes | The question to answer from the FCA-AI context |
+| Parameter  | Type   | Required | Description                                    |
+| ---------- | ------ | -------- | ---------------------------------------------- |
+| `question` | string | Yes      | The question to answer from the FCA-AI context |
 
 ## Quick Reference
 

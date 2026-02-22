@@ -4,7 +4,6 @@
  *
  * Rule은 순수 함수 `check`를 통해 RuleViolation[] 을 반환하는 구조이다.
  */
-
 import type { FractalNode, FractalTree } from './fractal.js';
 import type { ScanOptions } from './scan.js';
 
@@ -12,7 +11,13 @@ import type { ScanOptions } from './scan.js';
 export type RuleSeverity = 'error' | 'warning' | 'info';
 
 /** 규칙이 다루는 관심 영역 분류. */
-export type RuleCategory = 'naming' | 'structure' | 'dependency' | 'documentation' | 'index' | 'module';
+export type RuleCategory =
+  | 'naming'
+  | 'structure'
+  | 'dependency'
+  | 'documentation'
+  | 'index'
+  | 'module';
 
 /** 단일 규칙의 검사 컨텍스트. `Rule.check` 함수에 전달된다. */
 export interface RuleContext {
@@ -68,4 +73,5 @@ export const BUILTIN_RULE_IDS = {
   PURE_FUNCTION_ISOLATION: 'pure-function-isolation',
 } as const;
 
-export type BuiltinRuleId = (typeof BUILTIN_RULE_IDS)[keyof typeof BUILTIN_RULE_IDS];
+export type BuiltinRuleId =
+  (typeof BUILTIN_RULE_IDS)[keyof typeof BUILTIN_RULE_IDS];

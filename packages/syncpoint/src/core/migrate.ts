@@ -7,6 +7,7 @@ import { validateConfig } from '../schemas/config.schema.js';
 import { readAsset } from '../utils/assets.js';
 import { fileExists } from '../utils/paths.js';
 import type { MigrateResult } from '../utils/types.js';
+
 import { getConfigPath } from './config.js';
 
 /**
@@ -38,10 +39,7 @@ function extractSchemaPaths(
 /**
  * Extract all leaf field paths from a plain config object.
  */
-function extractDataPaths(
-  data: unknown,
-  prefix: string[] = [],
-): string[][] {
+function extractDataPaths(data: unknown, prefix: string[] = []): string[][] {
   const paths: string[][] = [];
   if (!data || typeof data !== 'object' || Array.isArray(data)) return paths;
 

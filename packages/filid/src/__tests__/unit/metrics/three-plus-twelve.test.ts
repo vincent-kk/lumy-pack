@@ -1,8 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { check312Rule } from '../../../metrics/three-plus-twelve.js';
 import type { TestCaseCount } from '../../../types/metrics.js';
 
-const specFile = (filePath: string, total: number, basic = 3, complex = total - 3): TestCaseCount => ({
+const specFile = (
+  filePath: string,
+  total: number,
+  basic = 3,
+  complex = total - 3,
+): TestCaseCount => ({
   filePath,
   fileType: 'spec',
   total,
@@ -51,7 +57,13 @@ describe('three-plus-twelve', () => {
 
   it('should only check spec files, ignore test files', () => {
     const files: TestCaseCount[] = [
-      { filePath: '/app/a.test.ts', fileType: 'test', total: 50, basic: 10, complex: 40 },
+      {
+        filePath: '/app/a.test.ts',
+        fileType: 'test',
+        total: 50,
+        basic: 10,
+        complex: 40,
+      },
       specFile('/app/b.spec.ts', 5),
     ];
     const result = check312Rule(files);

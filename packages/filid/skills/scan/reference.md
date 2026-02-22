@@ -12,6 +12,7 @@ fractal-navigate({ action: "tree", path: "<target-path>", entries: [] })
 ```
 
 Partition the result into three working sets:
+
 - **fractal nodes** — directories with `hasClaudeMd: true` or classified as fractal
 - **organ nodes** — directory names matching `ORGAN_DIR_NAMES`
 - **spec files** — files matching `*.spec.ts` pattern
@@ -24,28 +25,29 @@ For every fractal node that has a CLAUDE.md, perform two checks:
 
 Read the CLAUDE.md content and count lines.
 
-| Condition | Severity | Violation ID |
-|-----------|----------|--------------|
+| Condition         | Severity | Violation ID           |
+| ----------------- | -------- | ---------------------- |
 | `lineCount > 100` | critical | `CLAUDE_MD_LINE_LIMIT` |
 
 **Check 2b — 3-tier boundary sections**
 
 Verify that all three required headings are present:
+
 - `### Always do`
 - `### Ask first`
 - `### Never do`
 
-| Condition | Severity | Violation ID |
-|-----------|----------|--------------|
-| Any section missing | high | `CLAUDE_MD_MISSING_BOUNDARIES` |
+| Condition           | Severity | Violation ID                   |
+| ------------------- | -------- | ------------------------------ |
+| Any section missing | high     | `CLAUDE_MD_MISSING_BOUNDARIES` |
 
 ## Section 3 — Organ Directory Validation
 
 For every directory whose name matches `ORGAN_DIR_NAMES`, check that no
 CLAUDE.md is present inside it.
 
-| Condition | Severity | Violation ID | Auto-fixable |
-|-----------|----------|--------------|--------------|
+| Condition                     | Severity | Violation ID              | Auto-fixable |
+| ----------------------------- | -------- | ------------------------- | ------------ |
 | CLAUDE.md exists in organ dir | critical | `ORGAN_CLAUDE_MD_PRESENT` | Yes (delete) |
 
 `ORGAN_DIR_NAMES` = `components`, `utils`, `types`, `hooks`, `helpers`,
@@ -65,9 +67,9 @@ test-metrics({
 The 3+12 rule: each `*.spec.ts` file must have at most **15 test cases**
 total, with a recommended distribution of 3 basic + 12 complex.
 
-| Condition | Severity | Violation ID |
-|-----------|----------|--------------|
-| `total > 15` in any spec file | high | `TEST_312_EXCEEDED` |
+| Condition                     | Severity | Violation ID        |
+| ----------------------------- | -------- | ------------------- |
+| `total > 15` in any spec file | high     | `TEST_312_EXCEEDED` |
 
 Note: `*.test.ts` files are excluded from this check.
 
@@ -103,9 +105,9 @@ Run with --fix to apply automatic remediations.
 
 ### With `--fix` — apply remediations then re-validate
 
-| Violation | Auto-fix Action |
-|-----------|----------------|
-| `ORGAN_CLAUDE_MD_PRESENT` | Delete the CLAUDE.md from the organ directory |
+| Violation                      | Auto-fix Action                               |
+| ------------------------------ | --------------------------------------------- |
+| `ORGAN_CLAUDE_MD_PRESENT`      | Delete the CLAUDE.md from the organ directory |
 | `CLAUDE_MD_MISSING_BOUNDARIES` | Append skeleton boundary sections to the file |
 
 Violations that require human judgement (line limit, test count) are
@@ -121,9 +123,9 @@ Skipped : <n> (require manual remediation)
 
 ## Violation Quick Lookup
 
-| ID | Severity | Auto-fix |
-|----|----------|---------|
-| `CLAUDE_MD_LINE_LIMIT` | critical | No |
-| `CLAUDE_MD_MISSING_BOUNDARIES` | high | Yes |
-| `ORGAN_CLAUDE_MD_PRESENT` | critical | Yes |
-| `TEST_312_EXCEEDED` | high | No |
+| ID                             | Severity | Auto-fix |
+| ------------------------------ | -------- | -------- |
+| `CLAUDE_MD_LINE_LIMIT`         | critical | No       |
+| `CLAUDE_MD_MISSING_BOUNDARIES` | high     | Yes      |
+| `ORGAN_CLAUDE_MD_PRESENT`      | critical | Yes      |
+| `TEST_312_EXCEEDED`            | high     | No       |

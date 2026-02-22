@@ -5,13 +5,20 @@
  * scan → validate → drift → report 파이프라인을 실행하고
  * AnalysisReport를 생성한다.
  */
-
-import type { ModuleInfo } from '../types/fractal.js';
-import type { AnalysisReport, AnalyzeOptions, RenderedReport, ScanReport, ValidationReport, DriftReport } from '../types/report.js';
 import type { SyncPlan } from '../types/drift.js';
+import type { ModuleInfo } from '../types/fractal.js';
+import type {
+  AnalysisReport,
+  AnalyzeOptions,
+  DriftReport,
+  RenderedReport,
+  ScanReport,
+  ValidationReport,
+} from '../types/report.js';
+
+import { detectDrift, generateSyncPlan } from './drift-detector.js';
 import { scanProject } from './fractal-tree.js';
 import { validateStructure } from './fractal-validator.js';
-import { detectDrift, generateSyncPlan } from './drift-detector.js';
 import { analyzeModule } from './module-main-analyzer.js';
 
 /**
@@ -65,11 +72,9 @@ export async function analyzeProject(
   // 3. 이격 감지
   let driftReport: DriftReport;
   if (opts.includeDrift) {
-    const driftResult = detectDrift(
-      tree,
-      validationReport.result.violations,
-      { generatePlan: opts.generateSyncPlan },
-    );
+    const driftResult = detectDrift(tree, validationReport.result.violations, {
+      generatePlan: opts.generateSyncPlan,
+    });
     const syncPlan: SyncPlan | null = opts.generateSyncPlan
       ? generateSyncPlan(driftResult.items)
       : null;
@@ -118,7 +123,9 @@ export function calculateHealthScore(report: AnalysisReport): number {
 
   const { violations } = report.validation.result;
   const errorCount = violations.filter((v) => v.severity === 'error').length;
-  const warningCount = violations.filter((v) => v.severity === 'warning').length;
+  const warningCount = violations.filter(
+    (v) => v.severity === 'warning',
+  ).length;
 
   score -= Math.min(errorCount * 5, 50);
   score -= Math.min(warningCount * 2, 20);
@@ -145,7 +152,14 @@ export function generateReport(
       content = JSON.stringify(
         {
           ...analysis,
-          scan: { ...analysis.scan, tree: { root: analysis.scan.tree.root, totalNodes: analysis.scan.tree.totalNodes, depth: analysis.scan.tree.depth } },
+          scan: {
+            ...analysis.scan,
+            tree: {
+              root: analysis.scan.tree.root,
+              totalNodes: analysis.scan.tree.totalNodes,
+              depth: analysis.scan.tree.depth,
+            },
+          },
         },
         null,
         2,
@@ -196,7 +210,9 @@ export function renderTextReport(
   if (drift.drift.items.length > 0) {
     lines.push('', 'Drifts', '───────────────────────────────────────');
     for (const item of drift.drift.items) {
-      lines.push(`[${item.severity.toUpperCase()}] ${item.path} — ${item.rule}`);
+      lines.push(
+        `[${item.severity.toUpperCase()}] ${item.path} — ${item.rule}`,
+      );
       lines.push(`  Expected: ${item.expected}`);
       lines.push(`  Actual:   ${item.actual}`);
       lines.push(`  Action:   ${item.suggestedAction}`);

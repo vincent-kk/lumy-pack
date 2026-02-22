@@ -7,6 +7,7 @@
 ### 8.1 부채 파일 스키마
 
 파일명: `<fractal-path-normalized>-<hash>.md`
+
 - `<fractal-path-normalized>`: 프랙탈 경로의 `/` → `-` 치환 (예: `src-features-auth`)
 - `<hash>`: 부채 내용의 첫 6자리 SHA-256 해시 (고유성 보장)
 
@@ -23,7 +24,7 @@ weight: 1
 touch_count: 0
 last_review_commit: null
 rule_violated: LCOM4 >= 2
-metric_value: "LCOM4=3"
+metric_value: 'LCOM4=3'
 ---
 
 # 기술 부채: validator.ts LCOM4 임계값 초과
@@ -52,10 +53,10 @@ ADR-2026-02-22: validator.ts 모듈 분할을 다음 스프린트로 연기.
 weight(debt) = base_weight × 2^(touch_count)
 ```
 
-| 변수 | 설명 | 초기값 |
-|---|---|---|
-| `base_weight` | 부채 생성 시 기본 가중치 | 1 |
-| `touch_count` | 해당 프랙탈에 대한 후속 수정 횟수 | 0 |
+| 변수          | 설명                              | 초기값 |
+| ------------- | --------------------------------- | ------ |
+| `base_weight` | 부채 생성 시 기본 가중치          | 1      |
+| `touch_count` | 해당 프랙탈에 대한 후속 수정 횟수 | 0      |
 
 #### 가중치 증가 규칙
 
@@ -90,12 +91,12 @@ total_debt_score = Σ weight(debt_i)  for all debt_i in .filid/debt/
 
 ### 부채 목록
 
-| ID | 프랙탈 경로 | 규칙 위반 | 가중치 | 생성일 |
-|---|---|---|---|---|
-| src-auth-validator-a1b2c3 | src/features/auth | LCOM4≥2 | 4 | 2026-01-15 |
-| src-auth-flow-d4e5f6 | src/features/auth | CC>15 | 2 | 2026-02-01 |
-| src-user-model-g7h8i9 | src/features/user | 3+12 규칙 | 1 | 2026-02-10 |
-| ... | | | | |
+| ID                        | 프랙탈 경로       | 규칙 위반 | 가중치 | 생성일     |
+| ------------------------- | ----------------- | --------- | ------ | ---------- |
+| src-auth-validator-a1b2c3 | src/features/auth | LCOM4≥2   | 4      | 2026-01-15 |
+| src-auth-flow-d4e5f6      | src/features/auth | CC>15     | 2      | 2026-02-01 |
+| src-user-model-g7h8i9     | src/features/user | 3+12 규칙 | 1      | 2026-02-10 |
+| ...                       |                   |           |        |            |
 
 ### 이번 PR 관련 부채
 
@@ -105,6 +106,7 @@ total_debt_score = Σ weight(debt_i)  for all debt_i in .filid/debt/
 ### 위원회 지침
 
 부채 점수에 따른 바이어스 수준:
+
 - 0~5: LOW_PRESSURE — 일반적 리뷰
 - 6~15: MODERATE_PRESSURE — 부채 상환 강력 권고
 - 16~30: HIGH_PRESSURE — 신규 부채 발행 거의 불허
@@ -113,12 +115,12 @@ total_debt_score = Σ weight(debt_i)  for all debt_i in .filid/debt/
 
 #### 바이어스 수준별 위원회 행동
 
-| 바이어스 수준 | 위원회 행동 | 비즈니스 드라이버 영향 |
-|---|---|---|
-| LOW_PRESSURE | 일반 리뷰, 부채 발행 허용 | CoD 주장 수용 가능 |
+| 바이어스 수준     | 위원회 행동                                             | 비즈니스 드라이버 영향      |
+| ----------------- | ------------------------------------------------------- | --------------------------- |
+| LOW_PRESSURE      | 일반 리뷰, 부채 발행 허용                               | CoD 주장 수용 가능          |
 | MODERATE_PRESSURE | 부채 상환 강력 권고, 신규 부채 발행 시 엄격한 소명 요구 | CoD 주장에 정량적 근거 필수 |
-| HIGH_PRESSURE | 신규 부채 발행 거의 불허, 기존 부채 1건 이상 상환 요구 | CoD 주장 사실상 기각 |
-| CRITICAL_PRESSURE | 부채 상환 없이는 PR 승인 불가 | VETO 기본 |
+| HIGH_PRESSURE     | 신규 부채 발행 거의 불허, 기존 부채 1건 이상 상환 요구  | CoD 주장 사실상 기각        |
+| CRITICAL_PRESSURE | 부채 상환 없이는 PR 승인 불가                           | VETO 기본                   |
 
 ### 8.4 부채 해소 판정 기준
 
@@ -182,6 +184,7 @@ code-review 실행 시:
 ```
 
 매핑 방식:
+
 1. 파일명에서 프랙탈 경로 추출: `src-features-auth-validator-a1b2c3` → frontmatter의 `fractal_path` 읽기
 2. 파일명 자체는 **고유 식별자** 역할만 수행 (역변환에 사용하지 않음)
 3. 프랙탈 경로 매핑은 항상 frontmatter의 `fractal_path` 필드를 기준으로 수행

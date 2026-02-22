@@ -6,6 +6,7 @@ the context query skill. For the quick-start guide, see [SKILL.md](./SKILL.md).
 ## Section 1 — Question Parsing
 
 Identify from the question:
+
 - **Target module or concept** — e.g., "payments", "retry logic", "auth"
 - **Relevant file paths** — any paths mentioned explicitly
 - **Query type** — boundary rule lookup | ownership question | structural question
@@ -61,13 +62,14 @@ Apply compression only when necessary. Skip if the chain fits in context.
 
 ## Section 5 — 3-Prompt Limit Protocol
 
-| Prompt | Purpose |
-|--------|---------|
-| 1 | Module location via `fractal-navigate` |
-| 2 | Detailed analysis or additional context loading if required |
-| 3 (maximum) | Final response generation |
+| Prompt      | Purpose                                                     |
+| ----------- | ----------------------------------------------------------- |
+| 1           | Module location via `fractal-navigate`                      |
+| 2           | Detailed analysis or additional context loading if required |
+| 3 (maximum) | Final response generation                                   |
 
 If the question cannot be answered within 3 prompts, respond with:
+
 1. What is known from the loaded context
 2. Which additional CLAUDE.md files or information would be needed
 3. The specific path or module the user should consult directly

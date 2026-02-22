@@ -21,6 +21,7 @@ claude --plugin-dir ./packages/filid
 ```
 
 Building produces two outputs:
+
 - `libs/server.cjs` — MCP server (11 analysis tools)
 - `scripts/*.mjs` — 5 hook scripts (automatic rule enforcement)
 
@@ -92,6 +93,7 @@ The most powerful feature. A multi-persona consensus committee reviews code in t
 ```
 
 **Flow:**
+
 1. **`/filid:code-review`** — Committee election -> technical verification -> consensus -> review report
 2. **`/filid:resolve-review`** — Accept or reject each fix request (with justification for rejections)
 3. **`/filid:re-validate`** — Final PASS/FAIL verdict after fixes
@@ -119,12 +121,12 @@ Outputs go to `.filid/review/<branch>/`, technical debt to `.filid/debt/`.
 
 With the plugin active, these hooks fire **without user intervention**:
 
-| When | What | Why |
-|------|------|-----|
-| Writing/editing a file | Checks CLAUDE.md 100-line limit | Prevents document bloat |
-| Writing/editing a file | Blocks CLAUDE.md in organ directories | Prevents unnecessary docs in utility folders |
-| Sub-agent starting | Injects role restrictions | Prevents agents from overstepping (e.g., architect editing code) |
-| User submits a prompt | Injects FCA-AI rule context | Ensures agents are aware of rules while working |
+| When                   | What                                  | Why                                                              |
+| ---------------------- | ------------------------------------- | ---------------------------------------------------------------- |
+| Writing/editing a file | Checks CLAUDE.md 100-line limit       | Prevents document bloat                                          |
+| Writing/editing a file | Blocks CLAUDE.md in organ directories | Prevents unnecessary docs in utility folders                     |
+| Sub-agent starting     | Injects role restrictions             | Prevents agents from overstepping (e.g., architect editing code) |
+| User submits a prompt  | Injects FCA-AI rule context           | Ensures agents are aware of rules while working                  |
 
 When a block occurs, a message explaining the reason is displayed. No action needed.
 
@@ -132,19 +134,19 @@ When a block occurs, a message explaining the reason is displayed. No action nee
 
 ## Skills Reference
 
-| Skill | What it does |
-|-------|-------------|
-| `/filid:init` | Initialize FCA-AI in a project |
-| `/filid:scan` | Detect rule violations (with optional auto-fix) |
-| `/filid:sync` | Sync documentation with code changes |
-| `/filid:structure-review` | 6-stage PR structure verification |
-| `/filid:promote` | Promote stable tests to spec |
-| `/filid:context-query` | Q&A about project structure |
-| `/filid:guide` | FCA-AI guidance on any topic |
-| `/filid:restructure` | Module refactoring guide with migration steps |
-| `/filid:code-review` | Multi-persona governance code review |
-| `/filid:resolve-review` | Resolve fix requests from a review |
-| `/filid:re-validate` | Post-fix re-validation (PASS/FAIL) |
+| Skill                     | What it does                                    |
+| ------------------------- | ----------------------------------------------- |
+| `/filid:init`             | Initialize FCA-AI in a project                  |
+| `/filid:scan`             | Detect rule violations (with optional auto-fix) |
+| `/filid:sync`             | Sync documentation with code changes            |
+| `/filid:structure-review` | 6-stage PR structure verification               |
+| `/filid:promote`          | Promote stable tests to spec                    |
+| `/filid:context-query`    | Q&A about project structure                     |
+| `/filid:guide`            | FCA-AI guidance on any topic                    |
+| `/filid:restructure`      | Module refactoring guide with migration steps   |
+| `/filid:code-review`      | Multi-persona governance code review            |
+| `/filid:resolve-review`   | Resolve fix requests from a review              |
+| `/filid:re-validate`      | Post-fix re-validation (PASS/FAIL)              |
 
 ---
 
@@ -152,14 +154,14 @@ When a block occurs, a message explaining the reason is displayed. No action nee
 
 Core rules enforced by filid:
 
-| Rule | Threshold | Enforcement |
-|------|-----------|-------------|
-| CLAUDE.md line limit | 100 lines max | Hook (auto-block) |
-| 3-tier boundary sections | "Always do" / "Ask first" / "Never do" required | Hook (warning) |
-| Organ directory protection | No CLAUDE.md in `components`, `utils`, `types`, etc. | Hook (auto-block) |
-| Test density | Max 15 per spec.ts (3 core + 12 edge) | MCP analysis |
-| Module cohesion | LCOM4 >= 2 triggers split recommendation | MCP + decision tree |
-| Circular dependencies | Acyclic graph (DAG) required | Core validation |
+| Rule                       | Threshold                                            | Enforcement         |
+| -------------------------- | ---------------------------------------------------- | ------------------- |
+| CLAUDE.md line limit       | 100 lines max                                        | Hook (auto-block)   |
+| 3-tier boundary sections   | "Always do" / "Ask first" / "Never do" required      | Hook (warning)      |
+| Organ directory protection | No CLAUDE.md in `components`, `utils`, `types`, etc. | Hook (auto-block)   |
+| Test density               | Max 15 per spec.ts (3 core + 12 edge)                | MCP analysis        |
+| Module cohesion            | LCOM4 >= 2 triggers split recommendation             | MCP + decision tree |
+| Circular dependencies      | Acyclic graph (DAG) required                         | Core validation     |
 
 ---
 
@@ -183,16 +185,16 @@ TypeScript 5.7 (+ Compiler API), @modelcontextprotocol/sdk, fast-glob, esbuild, 
 
 For technical details, see the [`.metadata/`](./.metadata/) directory:
 
-| Document | Content |
-|----------|---------|
-| [ARCHITECTURE](./.metadata/01-ARCHITECTURE.md) | Design philosophy, 4-layer architecture, ADRs |
-| [BLUEPRINT](./.metadata/02-BLUEPRINT.md) | Technical blueprint for 30+ modules |
-| [LIFECYCLE](./.metadata/03-LIFECYCLE.md) | Skill workflows, agent collaboration, hook timeline |
-| [USAGE](./.metadata/04-USAGE.md) | Config file structure, MCP/Hook JSON examples, troubleshooting |
-| [COST-ANALYSIS](./.metadata/05-COST-ANALYSIS.md) | Hook overhead, bundle size, context token costs |
-| [HOW-IT-WORKS](./.metadata/06-HOW-IT-WORKS.md) | AST engine, decision tree, MCP routing |
-| [RULES-REFERENCE](./.metadata/07-RULES-REFERENCE.md) | Full rule catalog with constants and thresholds |
-| [API-SURFACE](./.metadata/08-API-SURFACE.md) | Public API reference (33 functions + 30 types) |
+| Document                                             | Content                                                        |
+| ---------------------------------------------------- | -------------------------------------------------------------- |
+| [ARCHITECTURE](./.metadata/01-ARCHITECTURE.md)       | Design philosophy, 4-layer architecture, ADRs                  |
+| [BLUEPRINT](./.metadata/02-BLUEPRINT.md)             | Technical blueprint for 30+ modules                            |
+| [LIFECYCLE](./.metadata/03-LIFECYCLE.md)             | Skill workflows, agent collaboration, hook timeline            |
+| [USAGE](./.metadata/04-USAGE.md)                     | Config file structure, MCP/Hook JSON examples, troubleshooting |
+| [COST-ANALYSIS](./.metadata/05-COST-ANALYSIS.md)     | Hook overhead, bundle size, context token costs                |
+| [HOW-IT-WORKS](./.metadata/06-HOW-IT-WORKS.md)       | AST engine, decision tree, MCP routing                         |
+| [RULES-REFERENCE](./.metadata/07-RULES-REFERENCE.md) | Full rule catalog with constants and thresholds                |
+| [API-SURFACE](./.metadata/08-API-SURFACE.md)         | Public API reference (33 functions + 30 types)                 |
 
 [Korean documentation (README-ko_kr.md)](./README-ko_kr.md) is also available.
 

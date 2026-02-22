@@ -1,4 +1,5 @@
 import { bench, describe } from 'vitest';
+
 import { injectContext } from '../../../hooks/context-injector.js';
 import { generateUserPromptInput } from '../fixtures/generator.js';
 
@@ -12,8 +13,14 @@ const inputXL = generateUserPromptInput('XL');
 const cwdInputs = [
   { label: 'shallow cwd (depth 1)', cwd: '/workspace' },
   { label: 'medium cwd (depth 4)', cwd: '/workspace/packages/filid/src' },
-  { label: 'deep cwd (depth 8)', cwd: '/workspace/packages/filid/src/hooks/utils/helpers/types/core' },
-  { label: 'very deep cwd (depth 12)', cwd: '/workspace/a/b/c/d/e/f/g/h/i/j/k/l' },
+  {
+    label: 'deep cwd (depth 8)',
+    cwd: '/workspace/packages/filid/src/hooks/utils/helpers/types/core',
+  },
+  {
+    label: 'very deep cwd (depth 12)',
+    cwd: '/workspace/a/b/c/d/e/f/g/h/i/j/k/l',
+  },
 ].map(({ label, cwd }) => ({
   label,
   input: {

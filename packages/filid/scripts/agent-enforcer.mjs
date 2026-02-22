@@ -28,7 +28,9 @@ var chunks = [];
 for await (const chunk of process.stdin) {
   chunks.push(chunk);
 }
-var input = JSON.parse(Buffer.concat(chunks).toString("utf-8"));
+var input = JSON.parse(
+  Buffer.concat(chunks).toString("utf-8")
+);
 var result;
 try {
   result = enforceAgentRole(input);

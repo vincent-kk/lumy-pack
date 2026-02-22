@@ -1,6 +1,7 @@
-import React from "react";
-import { Text, Box, useInput } from "ink";
-import { Table } from "./Table.js";
+import { Box, Text, useInput } from 'ink';
+import React from 'react';
+
+import { Table } from './Table.js';
 
 export interface ViewerSection {
   label: string;
@@ -43,7 +44,7 @@ export const Viewer: React.FC<ViewerProps> = ({
         {sections.map((section, idx) => (
           <Box key={idx}>
             <Text dimColor>{section.label.padEnd(labelWidth)}</Text>
-            <Text>  </Text>
+            <Text> </Text>
             <Text>{section.value}</Text>
           </Box>
         ))}
@@ -52,7 +53,7 @@ export const Viewer: React.FC<ViewerProps> = ({
       {/* Optional Table */}
       {table && table.rows.length > 0 && (
         <Box flexDirection="column" marginTop={1}>
-          <Text dimColor>  {table.title ?? "Details"}</Text>
+          <Text dimColor> {table.title ?? 'Details'}</Text>
           <Box marginLeft={2}>
             <Table headers={table.headers} rows={table.rows} />
           </Box>

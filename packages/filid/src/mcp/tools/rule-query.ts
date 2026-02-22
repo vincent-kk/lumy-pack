@@ -1,6 +1,11 @@
 import { resolve } from 'node:path';
-import { loadBuiltinRules, getActiveRules, evaluateRules } from '../../core/rule-engine.js';
+
 import { scanProject } from '../../core/fractal-tree.js';
+import {
+  evaluateRules,
+  getActiveRules,
+  loadBuiltinRules,
+} from '../../core/rule-engine.js';
 import type { Rule, RuleEvaluationResult } from '../../types/rules.js';
 import type { RuleCategory } from '../../types/rules.js';
 
@@ -30,7 +35,10 @@ export interface RuleListResult {
   filtered: boolean;
 }
 
-export type RuleQueryResult = RuleListResult | RuleDetail | RuleEvaluationResult;
+export type RuleQueryResult =
+  | RuleListResult
+  | RuleDetail
+  | RuleEvaluationResult;
 
 /**
  * Handle rule-query MCP tool calls.
@@ -56,7 +64,9 @@ export async function handleRuleQuery(args: unknown): Promise<RuleQueryResult> {
       const filtered = Boolean(input.category);
 
       if (input.category) {
-        rules = activeRules.filter((r) => r.category === (input.category as RuleCategory));
+        rules = activeRules.filter(
+          (r) => r.category === (input.category as RuleCategory),
+        );
       }
 
       const summaries: RuleSummary[] = rules.map((r) => ({
@@ -97,7 +107,8 @@ export async function handleRuleQuery(args: unknown): Promise<RuleQueryResult> {
       const result = evaluateRules(tree, activeRules);
       const absTargetPath = resolve(input.path, input.targetPath);
       const filteredViolations = result.violations.filter(
-        v => v.path === absTargetPath || v.path.startsWith(absTargetPath + '/')
+        (v) =>
+          v.path === absTargetPath || v.path.startsWith(absTargetPath + '/'),
       );
       return {
         ...result,

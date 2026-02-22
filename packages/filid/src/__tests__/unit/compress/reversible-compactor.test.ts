@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import {
   compactReversible,
   restoreFromCompacted,
@@ -18,7 +19,10 @@ describe('reversible-compactor', () => {
   });
 
   it('should produce significantly shorter output than input', () => {
-    const longContent = Array.from({ length: 100 }, (_, i) => `// line ${i}`).join('\n');
+    const longContent = Array.from(
+      { length: 100 },
+      (_, i) => `// line ${i}`,
+    ).join('\n');
     const result = compactReversible({
       filePath: '/app/big-module.ts',
       content: longContent,

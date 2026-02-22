@@ -59,6 +59,7 @@
 ### Hook 입출력 프로토콜
 
 **입력** (stdin JSON):
+
 ```json
 {
   "cwd": "/path/to/project",
@@ -75,11 +76,13 @@
 **출력** (stdout JSON):
 
 통과:
+
 ```json
 { "continue": true }
 ```
 
 경고 포함 통과:
+
 ```json
 {
   "continue": true,
@@ -90,6 +93,7 @@
 ```
 
 차단:
+
 ```json
 {
   "continue": false,
@@ -323,12 +327,12 @@ newMap = Map<name, DeclSignature>
 
 ### 각 액션의 의미
 
-| 액션 | 의미 | 코드 영향 | 테스트 영향 |
-|------|------|-----------|------------|
-| `ok` | 조치 불필요 | 없음 | 없음 |
-| `split` | 모듈 분할 | 하위 프랙탈 디렉토리 생성, CLAUDE.md/SPEC.md 분리 | 각 하위 프랙탈에 spec.ts 분배 |
-| `compress` | 코드 압축 | 메서드 추출, 전략 패턴, 조건 평탄화 | 기존 테스트 유지 |
-| `parameterize` | 테스트 병합 | 없음 | 중복 테스트를 `test.each`/`it.each`로 병합 |
+| 액션           | 의미        | 코드 영향                                         | 테스트 영향                                |
+| -------------- | ----------- | ------------------------------------------------- | ------------------------------------------ |
+| `ok`           | 조치 불필요 | 없음                                              | 없음                                       |
+| `split`        | 모듈 분할   | 하위 프랙탈 디렉토리 생성, CLAUDE.md/SPEC.md 분리 | 각 하위 프랙탈에 spec.ts 분배              |
+| `compress`     | 코드 압축   | 메서드 추출, 전략 패턴, 조건 평탄화               | 기존 테스트 유지                           |
+| `parameterize` | 테스트 병합 | 없음                                              | 중복 테스트를 `test.each`/`it.each`로 병합 |
 
 ---
 
@@ -355,6 +359,7 @@ Server (MCP SDK)
 ### 도구별 내부 라우팅
 
 **ast-analyze**:
+
 ```
 analysisType switch:
 ├── 'dependency-graph' → extractDependencies()
@@ -365,6 +370,7 @@ analysisType switch:
 ```
 
 **fractal-navigate**:
+
 ```
 action switch:
 ├── 'classify' → classifyNode() (경로에서 디렉토리명 추출)
@@ -373,6 +379,7 @@ action switch:
 ```
 
 **doc-compress**:
+
 ```
 mode switch:
 ├── 'reversible' → compactReversible() (filePath + content 필수)
@@ -381,6 +388,7 @@ mode switch:
 ```
 
 **test-metrics**:
+
 ```
 action switch:
 ├── 'count' → files.map(countTestCases())
@@ -433,6 +441,7 @@ function mapReplacer(_key: string, value: unknown): unknown {
 ```
 
 **특징**:
+
 - 원본 파일은 디스크에 보존 → 완전 복원 가능
 - 129줄 → 3줄 = 97.7% 크기 감소
 - 컨텍스트 창에서 모듈 존재를 인지하면서 토큰 절약
@@ -463,6 +472,7 @@ function mapReplacer(_key: string, value: unknown): unknown {
 ```
 
 **특징**:
+
 - 개별 도구 호출 이력은 복원 불가
 - 집계 통계만 보존 → 패턴 파악은 가능
 - 긴 세션의 이력이 무한히 커지는 것을 방지

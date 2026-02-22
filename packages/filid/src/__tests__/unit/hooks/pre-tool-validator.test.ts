@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { validatePreToolUse, isSpecMd } from '../../../hooks/pre-tool-validator.js';
+import { describe, expect, it } from 'vitest';
+
+import {
+  isSpecMd,
+  validatePreToolUse,
+} from '../../../hooks/pre-tool-validator.js';
 import type { PreToolUseInput } from '../../../types/hooks.js';
 
 const baseInput: PreToolUseInput = {
@@ -57,7 +61,9 @@ describe('pre-tool-validator', () => {
   });
 
   it('should warn on Edit to CLAUDE.md with >20 new lines', () => {
-    const newString = Array.from({ length: 25 }, (_, i) => `Line ${i}`).join('\n');
+    const newString = Array.from({ length: 25 }, (_, i) => `Line ${i}`).join(
+      '\n',
+    );
     const input: PreToolUseInput = {
       ...baseInput,
       tool_name: 'Edit',
@@ -68,12 +74,18 @@ describe('pre-tool-validator', () => {
     };
     const result = validatePreToolUse(input);
     expect(result.continue).toBe(true);
-    expect(result.hookSpecificOutput?.additionalContext).toContain('25 new lines');
-    expect(result.hookSpecificOutput?.additionalContext).toContain('line limit (100)');
+    expect(result.hookSpecificOutput?.additionalContext).toContain(
+      '25 new lines',
+    );
+    expect(result.hookSpecificOutput?.additionalContext).toContain(
+      'line limit (100)',
+    );
   });
 
   it('should warn on Edit to CLAUDE.md with exactly 21 new lines (boundary)', () => {
-    const newString = Array.from({ length: 21 }, (_, i) => `Line ${i}`).join('\n');
+    const newString = Array.from({ length: 21 }, (_, i) => `Line ${i}`).join(
+      '\n',
+    );
     const input: PreToolUseInput = {
       ...baseInput,
       tool_name: 'Edit',
@@ -84,11 +96,15 @@ describe('pre-tool-validator', () => {
     };
     const result = validatePreToolUse(input);
     expect(result.continue).toBe(true);
-    expect(result.hookSpecificOutput?.additionalContext).toContain('21 new lines');
+    expect(result.hookSpecificOutput?.additionalContext).toContain(
+      '21 new lines',
+    );
   });
 
   it('should pass Edit to CLAUDE.md with exactly 20 new lines (boundary)', () => {
-    const newString = Array.from({ length: 20 }, (_, i) => `Line ${i}`).join('\n');
+    const newString = Array.from({ length: 20 }, (_, i) => `Line ${i}`).join(
+      '\n',
+    );
     const input: PreToolUseInput = {
       ...baseInput,
       tool_name: 'Edit',
@@ -103,7 +119,9 @@ describe('pre-tool-validator', () => {
   });
 
   it('should pass Edit to CLAUDE.md with <=20 new lines without warning', () => {
-    const newString = Array.from({ length: 5 }, (_, i) => `Line ${i}`).join('\n');
+    const newString = Array.from({ length: 5 }, (_, i) => `Line ${i}`).join(
+      '\n',
+    );
     const input: PreToolUseInput = {
       ...baseInput,
       tool_name: 'Edit',

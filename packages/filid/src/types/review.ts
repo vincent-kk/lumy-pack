@@ -59,7 +59,13 @@ export interface ReviewSession {
 }
 
 /** 상태 머신 상태 */
-export type StateMachineState = 'PROPOSAL' | 'DEBATE' | 'VETO' | 'SYNTHESIS' | 'ABSTAIN' | 'CONCLUSION';
+export type StateMachineState =
+  | 'PROPOSAL'
+  | 'DEBATE'
+  | 'VETO'
+  | 'SYNTHESIS'
+  | 'ABSTAIN'
+  | 'CONCLUSION';
 
 /** 리뷰 최종 판정 */
 export type ReviewVerdict = 'APPROVED' | 'REQUEST_CHANGES' | 'INCONCLUSIVE';

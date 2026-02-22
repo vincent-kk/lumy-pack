@@ -1,6 +1,7 @@
-import type { PreToolUseInput, HookOutput } from '../types/hooks.js';
 import { validateClaudeMd } from '../core/document-validator.js';
 import { validateSpecMd } from '../core/document-validator.js';
+import type { HookOutput, PreToolUseInput } from '../types/hooks.js';
+
 import { isClaudeMd, isSpecMd } from './shared.js';
 
 export { isSpecMd } from './shared.js';

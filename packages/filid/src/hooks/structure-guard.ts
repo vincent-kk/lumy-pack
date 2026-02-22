@@ -1,7 +1,12 @@
 import { existsSync, readdirSync } from 'node:fs';
 import * as path from 'node:path';
-import type { PreToolUseInput, HookOutput } from '../types/hooks.js';
-import { classifyNode, LEGACY_ORGAN_DIR_NAMES } from '../core/organ-classifier.js';
+
+import {
+  LEGACY_ORGAN_DIR_NAMES,
+  classifyNode,
+} from '../core/organ-classifier.js';
+import type { HookOutput, PreToolUseInput } from '../types/hooks.js';
+
 import { isClaudeMd } from './shared.js';
 
 /**
@@ -16,7 +21,9 @@ function isOrganByStructure(dirPath: string): boolean {
       return LEGACY_ORGAN_DIR_NAMES.includes(path.basename(dirPath));
     }
     const entries = readdirSync(dirPath, { withFileTypes: true });
-    const hasClaudeMd = entries.some((e) => e.isFile() && e.name === 'CLAUDE.md');
+    const hasClaudeMd = entries.some(
+      (e) => e.isFile() && e.name === 'CLAUDE.md',
+    );
     const hasSpecMd = entries.some((e) => e.isFile() && e.name === 'SPEC.md');
     const subdirs = entries.filter((e) => e.isDirectory());
     const hasFractalChildren = subdirs.some((d) => {
@@ -24,7 +31,8 @@ function isOrganByStructure(dirPath: string): boolean {
       try {
         const childEntries = readdirSync(childPath, { withFileTypes: true });
         return childEntries.some(
-          (ce) => ce.isFile() && (ce.name === 'CLAUDE.md' || ce.name === 'SPEC.md'),
+          (ce) =>
+            ce.isFile() && (ce.name === 'CLAUDE.md' || ce.name === 'SPEC.md'),
         );
       } catch {
         return false;
@@ -62,7 +70,11 @@ function extractImportPaths(content: string): string[] {
   return paths;
 }
 
-function isAncestorPath(filePath: string, importPath: string, cwd: string): boolean {
+function isAncestorPath(
+  filePath: string,
+  importPath: string,
+  cwd: string,
+): boolean {
   if (!importPath.startsWith('.')) return false;
   const fileDir = path.dirname(path.resolve(cwd, filePath));
   const resolvedImport = path.resolve(fileDir, importPath);
@@ -137,7 +149,9 @@ export function guardStructure(input: PreToolUseInput): HookOutput {
   const content = input.tool_input.content ?? input.tool_input.new_string ?? '';
   if (content) {
     const importPaths = extractImportPaths(content);
-    const circularCandidates = importPaths.filter((p) => isAncestorPath(filePath, p, cwd));
+    const circularCandidates = importPaths.filter((p) =>
+      isAncestorPath(filePath, p, cwd),
+    );
     if (circularCandidates.length > 0) {
       warnings.push(
         `다음 import가 현재 파일의 조상 모듈을 참조합니다 (순환 의존 위험): ` +

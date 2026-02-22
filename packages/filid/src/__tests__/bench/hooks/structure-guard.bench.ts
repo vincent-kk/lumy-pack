@@ -1,7 +1,8 @@
 import { bench, describe } from 'vitest';
+
 import { guardStructure } from '../../../hooks/structure-guard.js';
-import { generateFilePath } from '../fixtures/generator.js';
 import type { PreToolUseInput } from '../../../types/hooks.js';
+import { generateFilePath } from '../fixtures/generator.js';
 
 function makeInput(filePath: string, toolName = 'Write'): PreToolUseInput {
   return {
@@ -15,7 +16,9 @@ function makeInput(filePath: string, toolName = 'Write'): PreToolUseInput {
 
 // 경로 깊이별 입력 사전 생성
 const depths = [2, 4, 6, 8, 10, 15, 20];
-const normalInputs = depths.map((d) => makeInput(generateFilePath({ depth: d })));
+const normalInputs = depths.map((d) =>
+  makeInput(generateFilePath({ depth: d })),
+);
 const organInputs = depths.map((d) =>
   makeInput(generateFilePath({ depth: d, isOrgan: true })),
 );

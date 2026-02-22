@@ -65,6 +65,7 @@ test-metrics(action: "decide", metrics: { lcom4, cc })
 ```
 
 Thresholds:
+
 - `LCOM4_SPLIT_THRESHOLD = 2` — modules with LCOM4 ≥ 2 need splitting
 - `CC_THRESHOLD = 15` — functions with CC > 15 need decomposition
 
@@ -119,12 +120,14 @@ Recommendations:
 ## MCP Tool Examples
 
 **fractal-navigate classify:**
+
 ```
 fractal-navigate(action: "classify", dir: "packages/filid/src/parser")
 // Returns: { type: "fractal" | "organ", hasClaude: boolean }
 ```
 
 **ast-analyze lcom4:**
+
 ```
 ast-analyze(action: "lcom4", files: ["src/core/index.ts", "src/parser/index.ts"])
 // Returns: [{ file: "src/core/index.ts", lcom4: 1 }, { file: "src/parser/index.ts", lcom4: 3 }]
@@ -132,13 +135,13 @@ ast-analyze(action: "lcom4", files: ["src/core/index.ts", "src/parser/index.ts"]
 
 ## MCP Tool Reference
 
-| Tool | Action / Parameters | Stage | Purpose |
-|------|---------------------|-------|---------|
-| `fractal-navigate` | `action: "tree"` | 1, 5 | Retrieve module tree; verify classifications |
-| `fractal-navigate` | `action: "classify", dir` | 1 | Classify a specific directory |
-| `doc-compress` | `mode: "check"` | 2 | Check document size |
-| `test-metrics` | `action: "check-312", files` | 3 | Validate 3+12 rule per spec.ts |
-| `test-metrics` | `action: "decide", metrics` | 4 | Generate split/compress recommendation |
-| `ast-analyze` | `action: "lcom4", files` | 4 | Compute LCOM4 cohesion metric |
-| `ast-analyze` | `action: "cyclomatic-complexity", files` | 4 | Compute cyclomatic complexity |
-| `ast-analyze` | `action: "dependency-graph", root` | 5 | Build full import dependency DAG |
+| Tool               | Action / Parameters                      | Stage | Purpose                                      |
+| ------------------ | ---------------------------------------- | ----- | -------------------------------------------- |
+| `fractal-navigate` | `action: "tree"`                         | 1, 5  | Retrieve module tree; verify classifications |
+| `fractal-navigate` | `action: "classify", dir`                | 1     | Classify a specific directory                |
+| `doc-compress`     | `mode: "check"`                          | 2     | Check document size                          |
+| `test-metrics`     | `action: "check-312", files`             | 3     | Validate 3+12 rule per spec.ts               |
+| `test-metrics`     | `action: "decide", metrics`              | 4     | Generate split/compress recommendation       |
+| `ast-analyze`      | `action: "lcom4", files`                 | 4     | Compute LCOM4 cohesion metric                |
+| `ast-analyze`      | `action: "cyclomatic-complexity", files` | 4     | Compute cyclomatic complexity                |
+| `ast-analyze`      | `action: "dependency-graph", root`       | 5     | Build full import dependency DAG             |

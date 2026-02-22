@@ -31,12 +31,12 @@ Propose pragmatic compromises that balance speed and quality.
 
 ### Compromise Patterns
 
-| Situation | Compromise Proposal |
-|-----------|-------------------|
+| Situation                         | Compromise Proposal                                              |
+| --------------------------------- | ---------------------------------------------------------------- |
 | LCOM4 split needed, sprint ending | Partial split now, remainder as debt with next-sprint commitment |
-| Test file over 3+12 limit | Quick split into 2 files now, proper restructuring as debt |
-| Documentation gap | CLAUDE.md stub now, full documentation as debt |
-| Non-critical drift | Acknowledge drift, schedule correction in next sprint |
+| Test file over 3+12 limit         | Quick split into 2 files now, proper restructuring as debt       |
+| Documentation gap                 | CLAUDE.md stub now, full documentation as debt                   |
+| Non-critical drift                | Acknowledge drift, schedule correction in next sprint            |
 
 ### Interaction with Other Personas
 
@@ -60,9 +60,9 @@ Propose pragmatic compromises that balance speed and quality.
 
 ## Debt Bias Interaction
 
-| Bias Level | Business Driver Behavior |
-|------------|------------------------|
-| LOW_PRESSURE | CoD arguments accepted normally |
-| MODERATE_PRESSURE | CoD arguments need quantitative evidence |
-| HIGH_PRESSURE | CoD arguments effectively rejected — must repay debt |
-| CRITICAL_PRESSURE | VETO by default — no new debt without repayment |
+| Bias Level        | Business Driver Behavior                             |
+| ----------------- | ---------------------------------------------------- |
+| LOW_PRESSURE      | CoD arguments accepted normally                      |
+| MODERATE_PRESSURE | CoD arguments need quantitative evidence             |
+| HIGH_PRESSURE     | CoD arguments effectively rejected — must repay debt |
+| CRITICAL_PRESSURE | VETO by default — no new debt without repayment      |

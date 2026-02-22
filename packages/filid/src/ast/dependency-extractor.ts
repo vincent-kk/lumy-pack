@@ -2,8 +2,15 @@
  * Extract import/export/call dependencies from TypeScript/JavaScript source
  */
 import ts from 'typescript';
+
+import type {
+  CallInfo,
+  DependencyInfo,
+  ExportInfo,
+  ImportInfo,
+} from '../types/ast.js';
+
 import { parseSource } from './parser.js';
-import type { DependencyInfo, ImportInfo, ExportInfo, CallInfo } from '../types/ast.js';
 
 /**
  * Extract all dependency information from source code.
@@ -47,7 +54,8 @@ export function extractDependencies(
         source: moduleSpecifier,
         specifiers,
         isTypeOnly,
-        line: sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1,
+        line:
+          sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1,
       });
     }
 
@@ -60,7 +68,9 @@ export function extractDependencies(
             name: element.name.text,
             isTypeOnly,
             isDefault: false,
-            line: sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1,
+            line:
+              sourceFile.getLineAndCharacterOfPosition(node.getStart()).line +
+              1,
           });
         }
       }
@@ -75,14 +85,16 @@ export function extractDependencies(
           name: node.name.text,
           isTypeOnly: false,
           isDefault,
-          line: sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1,
+          line:
+            sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1,
         });
       } else if (ts.isClassDeclaration(node) && node.name) {
         exports.push({
           name: node.name.text,
           isTypeOnly: false,
           isDefault,
-          line: sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1,
+          line:
+            sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1,
         });
       } else if (ts.isVariableStatement(node)) {
         for (const decl of node.declarationList.declarations) {
@@ -91,7 +103,9 @@ export function extractDependencies(
               name: decl.name.text,
               isTypeOnly: false,
               isDefault: false,
-              line: sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1,
+              line:
+                sourceFile.getLineAndCharacterOfPosition(node.getStart()).line +
+                1,
             });
           }
         }
@@ -100,14 +114,16 @@ export function extractDependencies(
           name: node.name.text,
           isTypeOnly: true,
           isDefault: false,
-          line: sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1,
+          line:
+            sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1,
         });
       } else if (ts.isInterfaceDeclaration(node)) {
         exports.push({
           name: node.name.text,
           isTypeOnly: true,
           isDefault: false,
-          line: sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1,
+          line:
+            sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1,
         });
       }
     }
@@ -118,7 +134,8 @@ export function extractDependencies(
       if (callee) {
         calls.push({
           callee,
-          line: sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1,
+          line:
+            sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1,
         });
       }
     }
@@ -134,13 +151,17 @@ export function extractDependencies(
 function hasExportModifier(node: ts.Node): boolean {
   if (!ts.canHaveModifiers(node)) return false;
   const modifiers = ts.getModifiers(node);
-  return modifiers?.some(m => m.kind === ts.SyntaxKind.ExportKeyword) ?? false;
+  return (
+    modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword) ?? false
+  );
 }
 
 function hasDefaultModifier(node: ts.Node): boolean {
   if (!ts.canHaveModifiers(node)) return false;
   const modifiers = ts.getModifiers(node);
-  return modifiers?.some(m => m.kind === ts.SyntaxKind.DefaultKeyword) ?? false;
+  return (
+    modifiers?.some((m) => m.kind === ts.SyntaxKind.DefaultKeyword) ?? false
+  );
 }
 
 function getCalleeText(expr: ts.Expression): string | null {

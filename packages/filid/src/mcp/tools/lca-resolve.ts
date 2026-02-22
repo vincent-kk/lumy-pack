@@ -1,4 +1,5 @@
 import * as path from 'node:path';
+
 import { scanProject } from '../../core/fractal-tree.js';
 import { findLCA } from '../../core/lca-calculator.js';
 import type { CategoryType } from '../../types/fractal.js';
@@ -36,7 +37,9 @@ function distanceBetween(from: string, to: string): number {
  * fractal tree and suggests the optimal placement path for a shared
  * dependency between them.
  */
-export async function handleLcaResolve(args: unknown): Promise<LcaResolveResult> {
+export async function handleLcaResolve(
+  args: unknown,
+): Promise<LcaResolveResult> {
   const input = args as LcaResolveInput;
 
   if (!input.path || !input.moduleA || !input.moduleB) {
@@ -62,7 +65,9 @@ export async function handleLcaResolve(args: unknown): Promise<LcaResolveResult>
 
   const lcaNode = findLCA(tree, absA, absB);
   if (!lcaNode) {
-    throw new Error(`Could not determine LCA for ${input.moduleA} and ${input.moduleB}`);
+    throw new Error(
+      `Could not determine LCA for ${input.moduleA} and ${input.moduleB}`,
+    );
   }
 
   const distanceA = distanceBetween(absA, lcaNode.path);

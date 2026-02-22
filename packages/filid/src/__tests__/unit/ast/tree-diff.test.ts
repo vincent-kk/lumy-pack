@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { computeTreeDiff } from '../../../ast/tree-diff.js';
 
 describe('tree-diff', () => {
@@ -19,7 +20,7 @@ describe('tree-diff', () => {
     const result = computeTreeDiff(oldSource, newSource);
 
     expect(result.hasSemanticChanges).toBe(true);
-    const added = result.changes.filter(c => c.type === 'added');
+    const added = result.changes.filter((c) => c.type === 'added');
     expect(added).toHaveLength(1);
     expect(added[0].name).toBe('bar');
     expect(added[0].kind).toBe('function');
@@ -34,7 +35,7 @@ describe('tree-diff', () => {
     const result = computeTreeDiff(oldSource, newSource);
 
     expect(result.hasSemanticChanges).toBe(true);
-    const removed = result.changes.filter(c => c.type === 'removed');
+    const removed = result.changes.filter((c) => c.type === 'removed');
     expect(removed).toHaveLength(1);
     expect(removed[0].name).toBe('bar');
   });
@@ -45,7 +46,7 @@ describe('tree-diff', () => {
     const result = computeTreeDiff(oldSource, newSource);
 
     expect(result.hasSemanticChanges).toBe(true);
-    const modified = result.changes.filter(c => c.type === 'modified');
+    const modified = result.changes.filter((c) => c.type === 'modified');
     expect(modified).toHaveLength(1);
     expect(modified[0].name).toBe('greet');
   });
@@ -72,7 +73,7 @@ describe('tree-diff', () => {
     const result = computeTreeDiff(oldSource, newSource);
 
     expect(result.hasSemanticChanges).toBe(true);
-    const added = result.changes.filter(c => c.type === 'added');
+    const added = result.changes.filter((c) => c.type === 'added');
     expect(added[0].name).toBe('Baz');
     expect(added[0].kind).toBe('class');
   });
@@ -83,7 +84,7 @@ describe('tree-diff', () => {
     const result = computeTreeDiff(oldSource, newSource);
 
     expect(result.hasSemanticChanges).toBe(true);
-    const modified = result.changes.filter(c => c.type === 'modified');
+    const modified = result.changes.filter((c) => c.type === 'modified');
     expect(modified[0].name).toBe('x');
     expect(modified[0].kind).toBe('variable');
   });

@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { guardStructure } from '../../../hooks/structure-guard.js';
 import type { PreToolUseInput } from '../../../types/hooks.js';
 
@@ -85,7 +86,9 @@ describe('structure-guard', () => {
         tool_input: { file_path: `/app/src/${dir}/CLAUDE.md`, content: '# X' },
       };
       const result = guardStructure(input);
-      expect(result.continue, `Expected block for organ dir: ${dir}`).toBe(false);
+      expect(result.continue, `Expected block for organ dir: ${dir}`).toBe(
+        false,
+      );
     }
   });
 

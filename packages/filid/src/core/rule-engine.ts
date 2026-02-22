@@ -5,11 +5,15 @@
  * 7개의 내장 규칙을 제공하고 FractalTree에 대해 규칙을 평가한다.
  * config-loader 의존 없이 동작한다.
  */
-
-import type { Rule, RuleContext, RuleViolation, RuleEvaluationResult } from '../types/rules.js';
 import type { FractalTree } from '../types/fractal.js';
-import type { ScanOptions } from '../types/scan.js';
+import type {
+  Rule,
+  RuleContext,
+  RuleEvaluationResult,
+  RuleViolation,
+} from '../types/rules.js';
 import { BUILTIN_RULE_IDS } from '../types/rules.js';
+import type { ScanOptions } from '../types/scan.js';
 import { DEFAULT_SCAN_OPTIONS } from '../types/scan.js';
 
 // kebab-case: 소문자, 숫자, 하이픈으로만 구성
@@ -68,7 +72,8 @@ export function loadBuiltinRules(): Rule[] {
               severity: 'error',
               message: `organ 디렉토리 "${node.name}"에 CLAUDE.md가 존재합니다. organ은 독립 문서화가 금지됩니다.`,
               path: node.path,
-              suggestion: 'CLAUDE.md를 제거하거나 해당 디렉토리를 fractal로 재분류하세요.',
+              suggestion:
+                'CLAUDE.md를 제거하거나 해당 디렉토리를 fractal로 재분류하세요.',
             },
           ];
         }
@@ -80,7 +85,8 @@ export function loadBuiltinRules(): Rule[] {
     {
       id: BUILTIN_RULE_IDS.INDEX_BARREL_PATTERN,
       name: 'Index Barrel Pattern',
-      description: 'fractal 노드의 index.ts는 순수 barrel(re-export만) 패턴을 따라야 한다.',
+      description:
+        'fractal 노드의 index.ts는 순수 barrel(re-export만) 패턴을 따라야 한다.',
       category: 'index',
       severity: 'warning',
       enabled: true,
@@ -95,14 +101,19 @@ export function loadBuiltinRules(): Rule[] {
           | { isPureBarrel: boolean; declarationCount: number }
           | undefined;
 
-        if (barrelPattern && !barrelPattern.isPureBarrel && barrelPattern.declarationCount > 0) {
+        if (
+          barrelPattern &&
+          !barrelPattern.isPureBarrel &&
+          barrelPattern.declarationCount > 0
+        ) {
           return [
             {
               ruleId: BUILTIN_RULE_IDS.INDEX_BARREL_PATTERN,
               severity: 'warning',
               message: `"${node.name}/index.ts"에 ${barrelPattern.declarationCount}개의 직접 선언이 있습니다. 순수 barrel 패턴을 따르지 않습니다.`,
               path: node.path,
-              suggestion: '직접 선언을 별도 파일로 분리하고 index.ts에서 re-export하세요.',
+              suggestion:
+                '직접 선언을 별도 파일로 분리하고 index.ts에서 re-export하세요.',
             },
           ];
         }
@@ -128,7 +139,8 @@ export function loadBuiltinRules(): Rule[] {
               severity: 'warning',
               message: `fractal 모듈 "${node.name}"에 진입점(index.ts 또는 main.ts)이 없습니다.`,
               path: node.path,
-              suggestion: 'index.ts 또는 main.ts를 생성하여 모듈의 공개 API를 정의하세요.',
+              suggestion:
+                'index.ts 또는 main.ts를 생성하여 모듈의 공개 API를 정의하세요.',
             },
           ];
         }
@@ -154,7 +166,8 @@ export function loadBuiltinRules(): Rule[] {
               severity: 'error',
               message: `"${node.name}"의 깊이(${node.depth})가 최대 허용 깊이(${maxDepth})를 초과합니다.`,
               path: node.path,
-              suggestion: '디렉토리 구조를 평탄화하거나 관련 모듈을 병합하세요.',
+              suggestion:
+                '디렉토리 구조를 평탄화하거나 관련 모듈을 병합하세요.',
             },
           ];
         }
@@ -181,7 +194,8 @@ export function loadBuiltinRules(): Rule[] {
     {
       id: BUILTIN_RULE_IDS.PURE_FUNCTION_ISOLATION,
       name: 'Pure Function Isolation',
-      description: 'pure-function 노드는 상위 fractal 모듈을 import하면 안 된다.',
+      description:
+        'pure-function 노드는 상위 fractal 모듈을 import하면 안 된다.',
       category: 'dependency',
       severity: 'error',
       enabled: true,
@@ -198,7 +212,10 @@ export function loadBuiltinRules(): Rule[] {
         for (const dep of deps) {
           // 의존 대상이 트리에 있고 fractal 타입이면 위반
           const depNode = tree.nodes.get(dep);
-          if (depNode && (depNode.type === 'fractal' || depNode.type === 'hybrid')) {
+          if (
+            depNode &&
+            (depNode.type === 'fractal' || depNode.type === 'hybrid')
+          ) {
             violations.push({
               ruleId: BUILTIN_RULE_IDS.PURE_FUNCTION_ISOLATION,
               severity: 'error',
@@ -232,7 +249,10 @@ export function getActiveRules(rules: Rule[]): Rule[] {
  * @param context - 규칙 컨텍스트
  * @returns 위반 목록 (없으면 빈 배열)
  */
-export function evaluateRule(rule: Rule, context: RuleContext): RuleViolation[] {
+export function evaluateRule(
+  rule: Rule,
+  context: RuleContext,
+): RuleViolation[] {
   if (!rule.enabled) return [];
   try {
     return rule.check(context);

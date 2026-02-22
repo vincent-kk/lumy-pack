@@ -198,7 +198,9 @@ const ListView: React.FC<ListViewProps> = ({ type, deleteIndex }) => {
     if (yes && deleteTarget) {
       try {
         if (!isInsideDir(deleteTarget.path, backupDir)) {
-          throw new Error(`Refusing to delete file outside backups directory: ${deleteTarget.path}`);
+          throw new Error(
+            `Refusing to delete file outside backups directory: ${deleteTarget.path}`,
+          );
         }
         unlinkSync(deleteTarget.path);
         const deletedName = deleteTarget.name;

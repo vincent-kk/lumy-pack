@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { handleTestMetrics } from '../../../mcp/tools/test-metrics.js';
 
 describe('test-metrics tool', () => {
@@ -24,8 +25,9 @@ describe('test-metrics tool', () => {
 
   describe('action: check-312', () => {
     it('should detect 3+12 rule violation', () => {
-      const lines = Array.from({ length: 16 }, (_, i) =>
-        `it('test ${i}', () => {});`
+      const lines = Array.from(
+        { length: 16 },
+        (_, i) => `it('test ${i}', () => {});`,
       ).join('\n');
       const result = handleTestMetrics({
         action: 'check-312',
@@ -36,8 +38,9 @@ describe('test-metrics tool', () => {
     });
 
     it('should pass when under threshold', () => {
-      const lines = Array.from({ length: 10 }, (_, i) =>
-        `it('test ${i}', () => {});`
+      const lines = Array.from(
+        { length: 10 },
+        (_, i) => `it('test ${i}', () => {});`,
       ).join('\n');
       const result = handleTestMetrics({
         action: 'check-312',

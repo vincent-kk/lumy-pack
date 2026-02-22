@@ -27,6 +27,7 @@ If `SCOPE=pr`, also run `gh pr view --json title,body` for intent context.
 ### A.2 — Identify Fractal Paths
 
 For each changed file directory, call:
+
 ```
 fractal-navigate(action: "classify", path: <directory>)
 ```
@@ -37,6 +38,7 @@ Detect whether any interface files (index.ts, public API) are modified.
 ### A.3 — Elect Committee
 
 Call the deterministic committee election MCP tool:
+
 ```
 review-manage(
   action: "elect-committee",
@@ -82,9 +84,9 @@ created_at: <ISO 8601>
 
 ## Changed Files Summary
 
-| File | Change Type | Fractal | Lines Changed |
-|------|-------------|---------|---------------|
-| <path> | added/modified/deleted | <fractal> | +N -M |
+| File   | Change Type            | Fractal   | Lines Changed |
+| ------ | ---------------------- | --------- | ------------- |
+| <path> | added/modified/deleted | <fractal> | +N -M         |
 
 ## Complexity Assessment
 

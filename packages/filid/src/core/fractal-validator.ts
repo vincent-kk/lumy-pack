@@ -4,10 +4,15 @@
  *
  * rule-engine을 통해 모든 노드를 검증하고 ValidationReport를 생성한다.
  */
-
-import type { FractalTree, FractalNode } from '../types/fractal.js';
-import type { Rule, RuleContext, RuleViolation, RuleEvaluationResult } from '../types/rules.js';
+import type { FractalNode, FractalTree } from '../types/fractal.js';
 import type { ValidationReport } from '../types/report.js';
+import type {
+  Rule,
+  RuleContext,
+  RuleEvaluationResult,
+  RuleViolation,
+} from '../types/rules.js';
+
 import { loadBuiltinRules } from './rule-engine.js';
 
 /**
@@ -17,7 +22,10 @@ import { loadBuiltinRules } from './rule-engine.js';
  * @param rules - 적용할 규칙 목록 (미제공 시 rule-engine의 내장 규칙 사용)
  * @returns 검증 보고서 (규칙 평가 결과 + 타임스탬프)
  */
-export function validateStructure(tree: FractalTree, rules?: Rule[]): ValidationReport {
+export function validateStructure(
+  tree: FractalTree,
+  rules?: Rule[],
+): ValidationReport {
   const start = Date.now();
   let ruleList: Rule[];
 
@@ -71,7 +79,11 @@ export function validateStructure(tree: FractalTree, rules?: Rule[]): Validation
  * @param rule - 적용할 규칙 (미제공 시 모든 기본 규칙 적용)
  * @returns 해당 노드에서 발생한 위반 목록
  */
-export function validateNode(_node: FractalNode, context: RuleContext, rule?: Rule): RuleViolation[] {
+export function validateNode(
+  _node: FractalNode,
+  context: RuleContext,
+  rule?: Rule,
+): RuleViolation[] {
   if (rule) {
     return rule.check(context);
   }
@@ -150,4 +162,3 @@ function detectCycles(tree: FractalTree): string[][] {
 
   return cycles;
 }
-

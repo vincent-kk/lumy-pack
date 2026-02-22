@@ -1,14 +1,18 @@
 import { bench, describe } from 'vitest';
+
+import { ChangeQueue } from '../../../core/change-queue.js';
+import { trackChange } from '../../../hooks/change-tracker.js';
 import { validatePreToolUse } from '../../../hooks/pre-tool-validator.js';
 import { guardStructure } from '../../../hooks/structure-guard.js';
-import { trackChange } from '../../../hooks/change-tracker.js';
+import type {
+  PostToolUseInput,
+  PreToolUseInput,
+} from '../../../types/hooks.js';
 import {
+  generateChangeQueue,
   generateClaudeMdContent,
   generateFilePath,
-  generateChangeQueue,
 } from '../fixtures/generator.js';
-import type { PreToolUseInput, PostToolUseInput } from '../../../types/hooks.js';
-import { ChangeQueue } from '../../../core/change-queue.js';
 
 // pre-tool-validator: CLAUDE.md 라인 수 스케일링
 describe('scaling: pre-tool-validator line counts', () => {
@@ -77,16 +81,39 @@ describe('scaling: change-tracker queue sizes', () => {
 // 복합 스케일링: 여러 훅 동시 실행
 describe('scaling: combined hook pipeline', () => {
   const tiers = [
-    { label: 'minimal (10 lines, depth 2, queue 0)', lineCount: 10, depth: 2, queueSize: 0 },
-    { label: 'small (25 lines, depth 4, queue 10)', lineCount: 25, depth: 4, queueSize: 10 },
-    { label: 'medium (60 lines, depth 6, queue 100)', lineCount: 60, depth: 6, queueSize: 100 },
-    { label: 'large (95 lines, depth 10, queue 500)', lineCount: 95, depth: 10, queueSize: 500 },
+    {
+      label: 'minimal (10 lines, depth 2, queue 0)',
+      lineCount: 10,
+      depth: 2,
+      queueSize: 0,
+    },
+    {
+      label: 'small (25 lines, depth 4, queue 10)',
+      lineCount: 25,
+      depth: 4,
+      queueSize: 10,
+    },
+    {
+      label: 'medium (60 lines, depth 6, queue 100)',
+      lineCount: 60,
+      depth: 6,
+      queueSize: 100,
+    },
+    {
+      label: 'large (95 lines, depth 10, queue 500)',
+      lineCount: 95,
+      depth: 10,
+      queueSize: 500,
+    },
   ];
 
   for (const tier of tiers) {
     const claudeMdContent = generateClaudeMdContent(tier.lineCount);
     const claudeMdFilePath = generateFilePath({ depth: tier.depth });
-    const organFilePath = generateFilePath({ depth: tier.depth, isOrgan: true });
+    const organFilePath = generateFilePath({
+      depth: tier.depth,
+      isOrgan: true,
+    });
 
     const preToolInput: PreToolUseInput = {
       cwd: '/workspace',

@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import { analyzeIndex, extractModuleExports } from '../../../core/index-analyzer.js';
+import { describe, expect, it } from 'vitest';
+
+import {
+  analyzeIndex,
+  extractModuleExports,
+} from '../../../core/index-analyzer.js';
 
 describe('index-analyzer', () => {
   describe('extractModuleExports', () => {

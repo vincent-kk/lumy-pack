@@ -35600,7 +35600,7 @@ var StdioServerTransport = class {
   }
 };
 
-// src/ast/dependency-extractor.ts
+// src/ast/cyclomatic-complexity.ts
 var import_typescript2 = __toESM(require("typescript"), 1);
 
 // src/ast/parser.ts
@@ -35617,14 +35617,83 @@ function parseSource(source, filePath = "anonymous.ts") {
   );
 }
 
+// src/ast/cyclomatic-complexity.ts
+function calculateCC(source, filePath = "analysis.ts") {
+  const sourceFile = parseSource(source, filePath);
+  const perFunction = /* @__PURE__ */ new Map();
+  function visitRoot(node) {
+    if (import_typescript2.default.isFunctionDeclaration(node) && node.name && node.body) {
+      perFunction.set(node.name.text, computeCC(node.body));
+    }
+    if (import_typescript2.default.isVariableStatement(node)) {
+      for (const decl of node.declarationList.declarations) {
+        if (import_typescript2.default.isIdentifier(decl.name) && decl.initializer && import_typescript2.default.isArrowFunction(decl.initializer) && decl.initializer.body) {
+          const body = import_typescript2.default.isBlock(decl.initializer.body) ? decl.initializer.body : decl.initializer.body;
+          perFunction.set(decl.name.text, computeCC(body));
+        }
+      }
+    }
+    if (import_typescript2.default.isClassDeclaration(node)) {
+      for (const member of node.members) {
+        if (import_typescript2.default.isMethodDeclaration(member) && member.name && import_typescript2.default.isIdentifier(member.name) && member.body) {
+          perFunction.set(member.name.text, computeCC(member.body));
+        }
+      }
+    }
+    import_typescript2.default.forEachChild(node, visitRoot);
+  }
+  for (const statement of sourceFile.statements) {
+    visitRoot(statement);
+  }
+  let fileTotal = 0;
+  for (const cc of perFunction.values()) {
+    fileTotal += cc;
+  }
+  return {
+    value: fileTotal,
+    perFunction,
+    fileTotal
+  };
+}
+function computeCC(body) {
+  let cc = 1;
+  function visit(node) {
+    switch (node.kind) {
+      case import_typescript2.default.SyntaxKind.IfStatement:
+      case import_typescript2.default.SyntaxKind.ForStatement:
+      case import_typescript2.default.SyntaxKind.ForInStatement:
+      case import_typescript2.default.SyntaxKind.ForOfStatement:
+      case import_typescript2.default.SyntaxKind.WhileStatement:
+      case import_typescript2.default.SyntaxKind.DoStatement:
+      case import_typescript2.default.SyntaxKind.ConditionalExpression:
+        cc++;
+        break;
+      case import_typescript2.default.SyntaxKind.CaseClause:
+        cc++;
+        break;
+      case import_typescript2.default.SyntaxKind.BinaryExpression: {
+        const binary = node;
+        if (binary.operatorToken.kind === import_typescript2.default.SyntaxKind.AmpersandAmpersandToken || binary.operatorToken.kind === import_typescript2.default.SyntaxKind.BarBarToken) {
+          cc++;
+        }
+        break;
+      }
+    }
+    import_typescript2.default.forEachChild(node, visit);
+  }
+  visit(body);
+  return cc;
+}
+
 // src/ast/dependency-extractor.ts
+var import_typescript3 = __toESM(require("typescript"), 1);
 function extractDependencies(source, filePath = "anonymous.ts") {
   const sourceFile = parseSource(source, filePath);
   const imports = [];
   const exports2 = [];
   const calls = [];
   function visit(node) {
-    if (import_typescript2.default.isImportDeclaration(node)) {
+    if (import_typescript3.default.isImportDeclaration(node)) {
       const moduleSpecifier = node.moduleSpecifier.text;
       const isTypeOnly = node.importClause?.isTypeOnly ?? false;
       const specifiers = [];
@@ -35633,12 +35702,12 @@ function extractDependencies(source, filePath = "anonymous.ts") {
           specifiers.push(node.importClause.name.text);
         }
         if (node.importClause.namedBindings) {
-          if (import_typescript2.default.isNamedImports(node.importClause.namedBindings)) {
+          if (import_typescript3.default.isNamedImports(node.importClause.namedBindings)) {
             for (const element of node.importClause.namedBindings.elements) {
               specifiers.push(element.name.text);
             }
           }
-          if (import_typescript2.default.isNamespaceImport(node.importClause.namedBindings)) {
+          if (import_typescript3.default.isNamespaceImport(node.importClause.namedBindings)) {
             specifiers.push(node.importClause.namedBindings.name.text);
           }
         }
@@ -35650,9 +35719,9 @@ function extractDependencies(source, filePath = "anonymous.ts") {
         line: sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1
       });
     }
-    if (import_typescript2.default.isExportDeclaration(node)) {
+    if (import_typescript3.default.isExportDeclaration(node)) {
       const isTypeOnly = node.isTypeOnly;
-      if (node.exportClause && import_typescript2.default.isNamedExports(node.exportClause)) {
+      if (node.exportClause && import_typescript3.default.isNamedExports(node.exportClause)) {
         for (const element of node.exportClause.elements) {
           exports2.push({
             name: element.name.text,
@@ -35665,23 +35734,23 @@ function extractDependencies(source, filePath = "anonymous.ts") {
     }
     if (hasExportModifier(node)) {
       const isDefault = hasDefaultModifier(node);
-      if (import_typescript2.default.isFunctionDeclaration(node) && node.name) {
+      if (import_typescript3.default.isFunctionDeclaration(node) && node.name) {
         exports2.push({
           name: node.name.text,
           isTypeOnly: false,
           isDefault,
           line: sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1
         });
-      } else if (import_typescript2.default.isClassDeclaration(node) && node.name) {
+      } else if (import_typescript3.default.isClassDeclaration(node) && node.name) {
         exports2.push({
           name: node.name.text,
           isTypeOnly: false,
           isDefault,
           line: sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1
         });
-      } else if (import_typescript2.default.isVariableStatement(node)) {
+      } else if (import_typescript3.default.isVariableStatement(node)) {
         for (const decl of node.declarationList.declarations) {
-          if (import_typescript2.default.isIdentifier(decl.name)) {
+          if (import_typescript3.default.isIdentifier(decl.name)) {
             exports2.push({
               name: decl.name.text,
               isTypeOnly: false,
@@ -35690,14 +35759,14 @@ function extractDependencies(source, filePath = "anonymous.ts") {
             });
           }
         }
-      } else if (import_typescript2.default.isTypeAliasDeclaration(node)) {
+      } else if (import_typescript3.default.isTypeAliasDeclaration(node)) {
         exports2.push({
           name: node.name.text,
           isTypeOnly: true,
           isDefault: false,
           line: sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1
         });
-      } else if (import_typescript2.default.isInterfaceDeclaration(node)) {
+      } else if (import_typescript3.default.isInterfaceDeclaration(node)) {
         exports2.push({
           name: node.name.text,
           isTypeOnly: true,
@@ -35706,7 +35775,7 @@ function extractDependencies(source, filePath = "anonymous.ts") {
         });
       }
     }
-    if (import_typescript2.default.isCallExpression(node)) {
+    if (import_typescript3.default.isCallExpression(node)) {
       const callee = getCalleeText(node.expression);
       if (callee) {
         calls.push({
@@ -35715,26 +35784,26 @@ function extractDependencies(source, filePath = "anonymous.ts") {
         });
       }
     }
-    import_typescript2.default.forEachChild(node, visit);
+    import_typescript3.default.forEachChild(node, visit);
   }
   visit(sourceFile);
   return { filePath, imports, exports: exports2, calls };
 }
 function hasExportModifier(node) {
-  if (!import_typescript2.default.canHaveModifiers(node)) return false;
-  const modifiers = import_typescript2.default.getModifiers(node);
-  return modifiers?.some((m) => m.kind === import_typescript2.default.SyntaxKind.ExportKeyword) ?? false;
+  if (!import_typescript3.default.canHaveModifiers(node)) return false;
+  const modifiers = import_typescript3.default.getModifiers(node);
+  return modifiers?.some((m) => m.kind === import_typescript3.default.SyntaxKind.ExportKeyword) ?? false;
 }
 function hasDefaultModifier(node) {
-  if (!import_typescript2.default.canHaveModifiers(node)) return false;
-  const modifiers = import_typescript2.default.getModifiers(node);
-  return modifiers?.some((m) => m.kind === import_typescript2.default.SyntaxKind.DefaultKeyword) ?? false;
+  if (!import_typescript3.default.canHaveModifiers(node)) return false;
+  const modifiers = import_typescript3.default.getModifiers(node);
+  return modifiers?.some((m) => m.kind === import_typescript3.default.SyntaxKind.DefaultKeyword) ?? false;
 }
 function getCalleeText(expr) {
-  if (import_typescript2.default.isIdentifier(expr)) {
+  if (import_typescript3.default.isIdentifier(expr)) {
     return expr.text;
   }
-  if (import_typescript2.default.isPropertyAccessExpression(expr)) {
+  if (import_typescript3.default.isPropertyAccessExpression(expr)) {
     const obj = getCalleeText(expr.expression);
     if (obj) return `${obj}.${expr.name.text}`;
   }
@@ -35742,12 +35811,12 @@ function getCalleeText(expr) {
 }
 
 // src/ast/lcom4.ts
-var import_typescript3 = __toESM(require("typescript"), 1);
+var import_typescript4 = __toESM(require("typescript"), 1);
 function extractClassInfo(source, className) {
   const sourceFile = parseSource(source, "analysis.ts");
   let classDecl = null;
-  import_typescript3.default.forEachChild(sourceFile, (node) => {
-    if (import_typescript3.default.isClassDeclaration(node) && node.name?.text === className) {
+  import_typescript4.default.forEachChild(sourceFile, (node) => {
+    if (import_typescript4.default.isClassDeclaration(node) && node.name?.text === className) {
       classDecl = node;
     }
   });
@@ -35755,10 +35824,10 @@ function extractClassInfo(source, className) {
   const fields = [];
   const methods = [];
   for (const member of classDecl.members) {
-    if (import_typescript3.default.isPropertyDeclaration(member) && member.name && import_typescript3.default.isIdentifier(member.name)) {
+    if (import_typescript4.default.isPropertyDeclaration(member) && member.name && import_typescript4.default.isIdentifier(member.name)) {
       fields.push(member.name.text);
     }
-    if (import_typescript3.default.isMethodDeclaration(member) && member.name && import_typescript3.default.isIdentifier(member.name)) {
+    if (import_typescript4.default.isMethodDeclaration(member) && member.name && import_typescript4.default.isIdentifier(member.name)) {
       const methodName = member.name.text;
       const accessedFields = findFieldAccesses(member);
       methods.push({ name: methodName, accessedFields });
@@ -35821,84 +35890,15 @@ function calculateLCOM4(source, className) {
 function findFieldAccesses(method) {
   const accessed = /* @__PURE__ */ new Set();
   function visit(node) {
-    if (import_typescript3.default.isPropertyAccessExpression(node) && node.expression.kind === import_typescript3.default.SyntaxKind.ThisKeyword) {
+    if (import_typescript4.default.isPropertyAccessExpression(node) && node.expression.kind === import_typescript4.default.SyntaxKind.ThisKeyword) {
       accessed.add(node.name.text);
     }
-    import_typescript3.default.forEachChild(node, visit);
+    import_typescript4.default.forEachChild(node, visit);
   }
   if (method.body) {
     visit(method.body);
   }
   return Array.from(accessed);
-}
-
-// src/ast/cyclomatic-complexity.ts
-var import_typescript4 = __toESM(require("typescript"), 1);
-function calculateCC(source, filePath = "analysis.ts") {
-  const sourceFile = parseSource(source, filePath);
-  const perFunction = /* @__PURE__ */ new Map();
-  function visitRoot(node) {
-    if (import_typescript4.default.isFunctionDeclaration(node) && node.name && node.body) {
-      perFunction.set(node.name.text, computeCC(node.body));
-    }
-    if (import_typescript4.default.isVariableStatement(node)) {
-      for (const decl of node.declarationList.declarations) {
-        if (import_typescript4.default.isIdentifier(decl.name) && decl.initializer && import_typescript4.default.isArrowFunction(decl.initializer) && decl.initializer.body) {
-          const body = import_typescript4.default.isBlock(decl.initializer.body) ? decl.initializer.body : decl.initializer.body;
-          perFunction.set(decl.name.text, computeCC(body));
-        }
-      }
-    }
-    if (import_typescript4.default.isClassDeclaration(node)) {
-      for (const member of node.members) {
-        if (import_typescript4.default.isMethodDeclaration(member) && member.name && import_typescript4.default.isIdentifier(member.name) && member.body) {
-          perFunction.set(member.name.text, computeCC(member.body));
-        }
-      }
-    }
-    import_typescript4.default.forEachChild(node, visitRoot);
-  }
-  for (const statement of sourceFile.statements) {
-    visitRoot(statement);
-  }
-  let fileTotal = 0;
-  for (const cc of perFunction.values()) {
-    fileTotal += cc;
-  }
-  return {
-    value: fileTotal,
-    perFunction,
-    fileTotal
-  };
-}
-function computeCC(body) {
-  let cc = 1;
-  function visit(node) {
-    switch (node.kind) {
-      case import_typescript4.default.SyntaxKind.IfStatement:
-      case import_typescript4.default.SyntaxKind.ForStatement:
-      case import_typescript4.default.SyntaxKind.ForInStatement:
-      case import_typescript4.default.SyntaxKind.ForOfStatement:
-      case import_typescript4.default.SyntaxKind.WhileStatement:
-      case import_typescript4.default.SyntaxKind.DoStatement:
-      case import_typescript4.default.SyntaxKind.ConditionalExpression:
-        cc++;
-        break;
-      case import_typescript4.default.SyntaxKind.CaseClause:
-        cc++;
-        break;
-      case import_typescript4.default.SyntaxKind.BinaryExpression: {
-        const binary = node;
-        if (binary.operatorToken.kind === import_typescript4.default.SyntaxKind.AmpersandAmpersandToken || binary.operatorToken.kind === import_typescript4.default.SyntaxKind.BarBarToken) {
-          cc++;
-        }
-        break;
-      }
-    }
-    import_typescript4.default.forEachChild(node, visit);
-  }
-  visit(body);
-  return cc;
 }
 
 // src/ast/tree-diff.ts
@@ -36071,9 +36071,488 @@ function handleAstAnalyze(input) {
   }
 }
 
+// src/mcp/tools/debt-manage.ts
+var import_node_crypto = require("node:crypto");
+var import_promises = require("node:fs/promises");
+var import_node_path = require("node:path");
+
+// src/types/debt.ts
+var DEBT_WEIGHT_CAP = 16;
+var DEBT_BASE_WEIGHT = 1;
+
+// src/mcp/tools/debt-manage.ts
+function getDebtDir(projectRoot) {
+  return (0, import_node_path.join)(projectRoot, ".filid", "debt");
+}
+function normalizeId(fractalPath, content) {
+  const normalized = fractalPath.replace(/\//g, "-");
+  const hash2 = (0, import_node_crypto.createHash)("sha256").update(content).digest("hex").slice(0, 6);
+  return `${normalized}-${hash2}`;
+}
+function serializeFrontmatter(item) {
+  const fields = [
+    "id",
+    "fractal_path",
+    "file_path",
+    "created_at",
+    "review_branch",
+    "original_fix_id",
+    "severity",
+    "weight",
+    "touch_count",
+    "last_review_commit",
+    "rule_violated",
+    "metric_value"
+  ];
+  const lines = fields.map((key) => {
+    const value = item[key];
+    if (value === null || value === void 0) {
+      return `${key}: null`;
+    }
+    if (typeof value === "string" && (value.includes(":") || value.includes("\n") || value.includes("'"))) {
+      return `${key}: "${value.replace(/"/g, '\\"')}"`;
+    }
+    return `${key}: ${value}`;
+  });
+  return `---
+${lines.join("\n")}
+---`;
+}
+function buildMarkdownBody(item) {
+  return `# \uAE30\uC220 \uBD80\uCC44: ${item.title}
+## \uC6D0\uB798 \uC218\uC815 \uC694\uCCAD
+${item.original_request}
+## \uAC1C\uBC1C\uC790 \uC18C\uBA85
+${item.developer_justification}
+## \uC815\uC81C\uB41C ADR
+${item.refined_adr}`;
+}
+function parseFrontmatter(content) {
+  const match = /^---\n([\s\S]*?)\n---/.exec(content);
+  if (!match) return {};
+  const result = {};
+  for (const line of match[1].split("\n")) {
+    const colonIdx = line.indexOf(":");
+    if (colonIdx === -1) continue;
+    const key = line.slice(0, colonIdx).trim();
+    let value = line.slice(colonIdx + 1).trim();
+    if (value === "null") {
+      result[key] = null;
+    } else if (/^\d+(\.\d+)?$/.test(value)) {
+      result[key] = Number(value);
+    } else if (value.startsWith('"') && value.endsWith('"')) {
+      result[key] = value.slice(1, -1).replace(/\\"/g, '"');
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+function determineBiasLevel(totalScore) {
+  if (totalScore <= 5) return "LOW_PRESSURE";
+  if (totalScore <= 15) return "MODERATE_PRESSURE";
+  if (totalScore <= 30) return "HIGH_PRESSURE";
+  return "CRITICAL_PRESSURE";
+}
+async function handleCreate(projectRoot, debtItem) {
+  const content = JSON.stringify(debtItem);
+  const id = normalizeId(debtItem.fractal_path, content);
+  const item = {
+    ...debtItem,
+    id,
+    weight: DEBT_BASE_WEIGHT,
+    touch_count: 0,
+    last_review_commit: null
+  };
+  const debtDir = getDebtDir(projectRoot);
+  await (0, import_promises.mkdir)(debtDir, { recursive: true });
+  const filePath = (0, import_node_path.join)(debtDir, `${id}.md`);
+  const fileContent = `${serializeFrontmatter(item)}
+
+${buildMarkdownBody(item)}
+`;
+  await (0, import_promises.writeFile)(filePath, fileContent, "utf-8");
+  return { filePath, id };
+}
+async function handleList(projectRoot, fractalPath) {
+  const debtDir = getDebtDir(projectRoot);
+  let files;
+  try {
+    files = await (0, import_promises.readdir)(debtDir);
+  } catch {
+    return { debts: [], totalWeight: 0 };
+  }
+  const mdFiles = files.filter((f) => f.endsWith(".md"));
+  if (mdFiles.length === 0) {
+    return { debts: [], totalWeight: 0 };
+  }
+  const debts = [];
+  for (const file2 of mdFiles) {
+    const filePath = (0, import_node_path.join)(debtDir, file2);
+    const content = await (0, import_promises.readFile)(filePath, "utf-8");
+    const fm = parseFrontmatter(content);
+    if (Object.keys(fm).length === 0) continue;
+    const debt = {
+      id: String(fm["id"] ?? ""),
+      fractal_path: String(fm["fractal_path"] ?? ""),
+      file_path: String(fm["file_path"] ?? ""),
+      created_at: String(fm["created_at"] ?? ""),
+      review_branch: String(fm["review_branch"] ?? ""),
+      original_fix_id: String(fm["original_fix_id"] ?? ""),
+      severity: fm["severity"] ?? "LOW",
+      weight: Number(fm["weight"] ?? 1),
+      touch_count: Number(fm["touch_count"] ?? 0),
+      last_review_commit: fm["last_review_commit"],
+      rule_violated: String(fm["rule_violated"] ?? ""),
+      metric_value: String(fm["metric_value"] ?? ""),
+      title: "",
+      original_request: "",
+      developer_justification: "",
+      refined_adr: ""
+    };
+    const titleMatch = /^# 기술 부채: (.+)$/m.exec(content);
+    if (titleMatch) debt.title = titleMatch[1].trim();
+    const orMatch = /## 원래 수정 요청\n([\s\S]*?)(?=\n##|$)/.exec(content);
+    if (orMatch) debt.original_request = orMatch[1].trim();
+    const djMatch = /## 개발자 소명\n([\s\S]*?)(?=\n##|$)/.exec(content);
+    if (djMatch) debt.developer_justification = djMatch[1].trim();
+    const adrMatch = /## 정제된 ADR\n([\s\S]*?)(?=\n##|$)/.exec(content);
+    if (adrMatch) debt.refined_adr = adrMatch[1].trim();
+    debts.push(debt);
+  }
+  const filtered = fractalPath ? debts.filter((d) => d.fractal_path === fractalPath) : debts;
+  const totalWeight = filtered.reduce((sum, d) => sum + d.weight, 0);
+  return { debts: filtered, totalWeight };
+}
+async function handleResolve(projectRoot, debtId) {
+  const filePath = (0, import_node_path.join)(getDebtDir(projectRoot), `${debtId}.md`);
+  try {
+    await (0, import_promises.unlink)(filePath);
+    return { deleted: true };
+  } catch {
+    return { deleted: false };
+  }
+}
+function handleCalculateBias(debts, changedFractalPaths, currentCommitSha) {
+  const changedSet = new Set(changedFractalPaths);
+  const updatedDebts = debts.map((debt) => {
+    if (!changedSet.has(debt.fractal_path)) {
+      return { ...debt };
+    }
+    if (debt.last_review_commit === currentCommitSha) {
+      return { ...debt };
+    }
+    const newTouchCount = debt.touch_count + 1;
+    const newWeight = Math.min(
+      DEBT_BASE_WEIGHT * Math.pow(2, newTouchCount),
+      DEBT_WEIGHT_CAP
+    );
+    return {
+      ...debt,
+      touch_count: newTouchCount,
+      weight: newWeight,
+      last_review_commit: currentCommitSha
+    };
+  });
+  const totalScore = updatedDebts.reduce((sum, d) => sum + d.weight, 0);
+  const biasLevel = determineBiasLevel(totalScore);
+  return { biasLevel, totalScore, updatedDebts };
+}
+async function handleDebtManage(args) {
+  const input = args;
+  if (!input.action) {
+    throw new Error("action is required");
+  }
+  if (!input.projectRoot) {
+    throw new Error("projectRoot is required");
+  }
+  switch (input.action) {
+    case "create": {
+      if (!input.debtItem) {
+        throw new Error("debtItem is required for create action");
+      }
+      return handleCreate(input.projectRoot, input.debtItem);
+    }
+    case "list": {
+      return handleList(input.projectRoot, input.fractalPath);
+    }
+    case "resolve": {
+      if (!input.debtId) {
+        throw new Error("debtId is required for resolve action");
+      }
+      return handleResolve(input.projectRoot, input.debtId);
+    }
+    case "calculate-bias": {
+      if (!input.debts) {
+        throw new Error("debts is required for calculate-bias action");
+      }
+      if (!input.changedFractalPaths) {
+        throw new Error(
+          "changedFractalPaths is required for calculate-bias action"
+        );
+      }
+      if (!input.currentCommitSha) {
+        throw new Error(
+          "currentCommitSha is required for calculate-bias action"
+        );
+      }
+      return handleCalculateBias(
+        input.debts,
+        input.changedFractalPaths,
+        input.currentCommitSha
+      );
+    }
+    default: {
+      throw new Error(`Unknown action: ${input.action}`);
+    }
+  }
+}
+
+// src/compress/lossy-summarizer.ts
+function summarizeLossy(entries) {
+  if (entries.length === 0) {
+    return {
+      summary: {
+        totalEntries: 0,
+        toolCounts: {},
+        uniqueFiles: [],
+        timeRange: { earliest: "", latest: "" }
+      },
+      recoverable: false,
+      meta: {
+        method: "lossy",
+        originalLines: 0,
+        compressedLines: 0,
+        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+        recoverable: false
+      }
+    };
+  }
+  const toolCounts = {};
+  for (const entry of entries) {
+    toolCounts[entry.tool] = (toolCounts[entry.tool] ?? 0) + 1;
+  }
+  const uniqueFiles = [...new Set(entries.map((e) => e.path))];
+  const timestamps = entries.map((e) => e.timestamp).sort();
+  const earliest = timestamps[0];
+  const latest = timestamps[timestamps.length - 1];
+  const summary = {
+    totalEntries: entries.length,
+    toolCounts,
+    uniqueFiles,
+    timeRange: { earliest, latest }
+  };
+  return {
+    summary,
+    recoverable: false,
+    meta: {
+      method: "lossy",
+      originalLines: entries.length,
+      compressedLines: 1,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      recoverable: false
+    }
+  };
+}
+
+// src/compress/reversible-compactor.ts
+function compactReversible(input) {
+  const { filePath, content, metadata } = input;
+  const originalLines = content.length === 0 ? 0 : content.split("\n").filter((l) => l.length > 0).length;
+  const exportsStr = metadata.exports.length > 0 ? metadata.exports.join(", ") : "(none)";
+  const compacted = [
+    `[REF] ${filePath}`,
+    `[EXPORTS] ${exportsStr}`,
+    `[LINES] ${metadata.lineCount}`
+  ].join("\n");
+  const compactedLines = 3;
+  return {
+    compacted,
+    recoverable: true,
+    originalLines,
+    compactedLines,
+    meta: {
+      method: "reversible",
+      originalLines,
+      compressedLines: compactedLines,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      recoverable: true
+    }
+  };
+}
+
+// src/mcp/tools/doc-compress.ts
+function handleDocCompress(input) {
+  const effectiveMode = input.mode === "auto" ? inferMode(input) : input.mode;
+  switch (effectiveMode) {
+    case "reversible":
+      return handleReversible(input);
+    case "lossy":
+      return handleLossy(input);
+    default:
+      return { error: `Cannot determine compression mode` };
+  }
+}
+function inferMode(input) {
+  if (input.content !== void 0 && input.filePath) return "reversible";
+  if (input.toolCallEntries && input.toolCallEntries.length > 0) return "lossy";
+  return "reversible";
+}
+function handleReversible(input) {
+  if (!input.content || !input.filePath) {
+    return { error: "Reversible mode requires filePath and content" };
+  }
+  const result = compactReversible({
+    filePath: input.filePath,
+    content: input.content,
+    metadata: {
+      exports: input.exports ?? [],
+      lineCount: input.content.split("\n").filter((l) => l.length > 0).length
+    }
+  });
+  return {
+    compacted: result.compacted,
+    meta: result.meta
+  };
+}
+function handleLossy(input) {
+  const entries = input.toolCallEntries ?? [];
+  const result = summarizeLossy(entries);
+  return {
+    summary: result.summary,
+    meta: result.meta
+  };
+}
+
+// src/core/drift-detector.ts
+var RULE_TO_ACTION = {
+  "naming-convention": "rename",
+  "organ-no-claudemd": "move",
+  "index-barrel-pattern": "create-index",
+  "module-entry-point": "create-index",
+  "max-depth": "merge",
+  "circular-dependency": "move",
+  "pure-function-isolation": "move"
+};
+var RULE_TO_SEVERITY = {
+  "circular-dependency": "critical",
+  "pure-function-isolation": "critical",
+  "max-depth": "high",
+  "organ-no-claudemd": "high",
+  "index-barrel-pattern": "medium",
+  "module-entry-point": "medium",
+  "naming-convention": "low"
+};
+var SEVERITY_ORDER = {
+  critical: 0,
+  high: 1,
+  medium: 2,
+  low: 3
+};
+function calculateSeverity(violation) {
+  const mapped = RULE_TO_SEVERITY[violation.ruleId];
+  if (mapped) return mapped;
+  switch (violation.severity) {
+    case "error":
+      return "high";
+    case "warning":
+      return "medium";
+    case "info":
+      return "low";
+    default:
+      return "low";
+  }
+}
+function detectDrift(_tree, violations, options) {
+  let items = violations.map((violation) => {
+    const severity = calculateSeverity(violation);
+    const action = RULE_TO_ACTION[violation.ruleId] ?? "reclassify";
+    return {
+      path: violation.path,
+      rule: violation.ruleId,
+      expected: violation.suggestion ?? "Compliant with rule",
+      actual: violation.message,
+      severity,
+      suggestedAction: action
+    };
+  });
+  items = items.sort(
+    (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]
+  );
+  if (options?.criticalOnly) {
+    items = items.filter((item) => item.severity === "critical");
+  }
+  const bySeverity = {
+    critical: 0,
+    high: 0,
+    medium: 0,
+    low: 0
+  };
+  for (const item of items) {
+    bySeverity[item.severity]++;
+  }
+  return {
+    items,
+    totalDrifts: items.length,
+    bySeverity,
+    scanTimestamp: (/* @__PURE__ */ new Date()).toISOString()
+  };
+}
+function generateSyncPlan(drifts) {
+  const ACTION_ORDER = {
+    move: 0,
+    rename: 1,
+    "create-index": 2,
+    "create-main": 3,
+    reclassify: 4,
+    split: 5,
+    merge: 6
+  };
+  const actions = drifts.map(
+    (item) => ({
+      action: item.suggestedAction,
+      source: item.path,
+      reason: item.actual,
+      riskLevel: item.severity,
+      reversible: isReversible(item.suggestedAction)
+    })
+  );
+  actions.sort((a, b) => {
+    const severityDiff = SEVERITY_ORDER[a.riskLevel] - SEVERITY_ORDER[b.riskLevel];
+    if (severityDiff !== 0) return severityDiff;
+    if (a.reversible !== b.reversible) return a.reversible ? -1 : 1;
+    return ACTION_ORDER[a.action] - ACTION_ORDER[b.action];
+  });
+  const overallRisk = computeOverallRisk(drifts);
+  return {
+    actions,
+    estimatedChanges: actions.length,
+    riskLevel: overallRisk
+  };
+}
+function isReversible(action) {
+  switch (action) {
+    case "rename":
+    case "create-index":
+    case "create-main":
+    case "reclassify":
+      return true;
+    case "move":
+    case "split":
+    case "merge":
+      return false;
+  }
+}
+function computeOverallRisk(drifts) {
+  if (drifts.some((d) => d.severity === "critical")) return "critical";
+  if (drifts.some((d) => d.severity === "high")) return "high";
+  if (drifts.some((d) => d.severity === "medium")) return "medium";
+  return "low";
+}
+
 // src/core/fractal-tree.ts
 var import_node_fs = require("node:fs");
-var import_node_path = require("node:path");
+var import_node_path2 = require("node:path");
 
 // src/types/scan.ts
 var DEFAULT_SCAN_OPTIONS = {
@@ -36210,7 +36689,7 @@ async function scanProject(rootPath, options) {
   const allDirs = [rootPath];
   for (const rel of dirPaths) {
     const clean = rel.replace(/\/$/, "");
-    const absPath = (0, import_node_path.join)(rootPath, clean);
+    const absPath = (0, import_node_path2.join)(rootPath, clean);
     const relForExclude = clean;
     if (!shouldExclude(relForExclude, opts)) {
       allDirs.push(absPath);
@@ -36219,14 +36698,14 @@ async function scanProject(rootPath, options) {
   const dirSet = new Set(allDirs);
   const nodeEntries = [];
   for (const absPath of allDirs) {
-    const rel = (0, import_node_path.relative)(rootPath, absPath);
+    const rel = (0, import_node_path2.relative)(rootPath, absPath);
     const depth = rel === "" ? 0 : rel.split("/").length;
     if (depth > maxDepth) continue;
     const name = absPath === rootPath ? rootPath.split("/").pop() ?? "" : absPath.split("/").pop() ?? "";
-    const hasClaudeMd = (0, import_node_fs.existsSync)((0, import_node_path.join)(absPath, "CLAUDE.md"));
-    const hasSpecMd = (0, import_node_fs.existsSync)((0, import_node_path.join)(absPath, "SPEC.md"));
-    const hasIndex = (0, import_node_fs.existsSync)((0, import_node_path.join)(absPath, "index.ts")) || (0, import_node_fs.existsSync)((0, import_node_path.join)(absPath, "index.js"));
-    const hasMain = (0, import_node_fs.existsSync)((0, import_node_path.join)(absPath, "main.ts")) || (0, import_node_fs.existsSync)((0, import_node_path.join)(absPath, "main.js"));
+    const hasClaudeMd = (0, import_node_fs.existsSync)((0, import_node_path2.join)(absPath, "CLAUDE.md"));
+    const hasSpecMd = (0, import_node_fs.existsSync)((0, import_node_path2.join)(absPath, "SPEC.md"));
+    const hasIndex = (0, import_node_fs.existsSync)((0, import_node_path2.join)(absPath, "index.ts")) || (0, import_node_fs.existsSync)((0, import_node_path2.join)(absPath, "index.js"));
+    const hasMain = (0, import_node_fs.existsSync)((0, import_node_path2.join)(absPath, "main.ts")) || (0, import_node_fs.existsSync)((0, import_node_path2.join)(absPath, "main.js"));
     const hasFractalChildren = allDirs.some(
       (d) => d !== absPath && d.startsWith(absPath + "/") && d.replace(absPath + "/", "").indexOf("/") === -1 && dirSet.has(d)
     );
@@ -36251,528 +36730,6 @@ async function scanProject(rootPath, options) {
     });
   }
   return buildFractalTree(nodeEntries);
-}
-
-// src/mcp/tools/fractal-navigate.ts
-function handleFractalNavigate(input) {
-  switch (input.action) {
-    case "classify":
-      return handleClassify(input);
-    case "sibling-list":
-      return handleSiblingList(input);
-    case "tree":
-      return handleTree(input);
-    default:
-      return { error: `Unknown action: ${input.action}` };
-  }
-}
-function handleClassify(input) {
-  const entry = input.entries.find((e) => e.path === input.path);
-  if (entry && entry.type !== "directory") {
-    return { classification: entry.type };
-  }
-  const dirName = input.path.split("/").filter((s) => s.length > 0).pop() ?? "";
-  const hasClaudeMd = entry?.hasClaudeMd ?? false;
-  const hasSpecMd = entry?.hasSpecMd ?? false;
-  const classifyInput = {
-    dirName,
-    hasClaudeMd,
-    hasSpecMd,
-    hasFractalChildren: false,
-    isLeafDirectory: true
-  };
-  const result = classifyNode(classifyInput);
-  return { classification: result };
-}
-function handleSiblingList(input) {
-  const tree = buildFractalTree(input.entries);
-  const lastSlash = input.path.lastIndexOf("/");
-  const parentPath = lastSlash > 0 ? input.path.slice(0, lastSlash) : "";
-  const parentNode = findNode(tree, parentPath);
-  if (!parentNode) {
-    return { siblings: [] };
-  }
-  const allChildPaths = [...parentNode.children, ...parentNode.organs];
-  const siblings = allChildPaths.filter((p) => p !== input.path).map((p) => {
-    const node = tree.nodes.get(p);
-    return node ? { name: node.name, path: node.path, type: node.type } : { name: p.split("/").pop() ?? "", path: p, type: "directory" };
-  });
-  return { siblings };
-}
-function handleTree(input) {
-  const tree = buildFractalTree(input.entries);
-  return { tree };
-}
-
-// src/compress/reversible-compactor.ts
-function compactReversible(input) {
-  const { filePath, content, metadata } = input;
-  const originalLines = content.length === 0 ? 0 : content.split("\n").filter((l) => l.length > 0).length;
-  const exportsStr = metadata.exports.length > 0 ? metadata.exports.join(", ") : "(none)";
-  const compacted = [
-    `[REF] ${filePath}`,
-    `[EXPORTS] ${exportsStr}`,
-    `[LINES] ${metadata.lineCount}`
-  ].join("\n");
-  const compactedLines = 3;
-  return {
-    compacted,
-    recoverable: true,
-    originalLines,
-    compactedLines,
-    meta: {
-      method: "reversible",
-      originalLines,
-      compressedLines: compactedLines,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      recoverable: true
-    }
-  };
-}
-
-// src/compress/lossy-summarizer.ts
-function summarizeLossy(entries) {
-  if (entries.length === 0) {
-    return {
-      summary: {
-        totalEntries: 0,
-        toolCounts: {},
-        uniqueFiles: [],
-        timeRange: { earliest: "", latest: "" }
-      },
-      recoverable: false,
-      meta: {
-        method: "lossy",
-        originalLines: 0,
-        compressedLines: 0,
-        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-        recoverable: false
-      }
-    };
-  }
-  const toolCounts = {};
-  for (const entry of entries) {
-    toolCounts[entry.tool] = (toolCounts[entry.tool] ?? 0) + 1;
-  }
-  const uniqueFiles = [...new Set(entries.map((e) => e.path))];
-  const timestamps = entries.map((e) => e.timestamp).sort();
-  const earliest = timestamps[0];
-  const latest = timestamps[timestamps.length - 1];
-  const summary = {
-    totalEntries: entries.length,
-    toolCounts,
-    uniqueFiles,
-    timeRange: { earliest, latest }
-  };
-  return {
-    summary,
-    recoverable: false,
-    meta: {
-      method: "lossy",
-      originalLines: entries.length,
-      compressedLines: 1,
-      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-      recoverable: false
-    }
-  };
-}
-
-// src/mcp/tools/doc-compress.ts
-function handleDocCompress(input) {
-  const effectiveMode = input.mode === "auto" ? inferMode(input) : input.mode;
-  switch (effectiveMode) {
-    case "reversible":
-      return handleReversible(input);
-    case "lossy":
-      return handleLossy(input);
-    default:
-      return { error: `Cannot determine compression mode` };
-  }
-}
-function inferMode(input) {
-  if (input.content !== void 0 && input.filePath) return "reversible";
-  if (input.toolCallEntries && input.toolCallEntries.length > 0) return "lossy";
-  return "reversible";
-}
-function handleReversible(input) {
-  if (!input.content || !input.filePath) {
-    return { error: "Reversible mode requires filePath and content" };
-  }
-  const result = compactReversible({
-    filePath: input.filePath,
-    content: input.content,
-    metadata: {
-      exports: input.exports ?? [],
-      lineCount: input.content.split("\n").filter((l) => l.length > 0).length
-    }
-  });
-  return {
-    compacted: result.compacted,
-    meta: result.meta
-  };
-}
-function handleLossy(input) {
-  const entries = input.toolCallEntries ?? [];
-  const result = summarizeLossy(entries);
-  return {
-    summary: result.summary,
-    meta: result.meta
-  };
-}
-
-// src/metrics/test-counter.ts
-function detectFileType(filePath) {
-  if (filePath.includes(".spec.")) return "spec";
-  return "test";
-}
-function countTestCases(file2) {
-  const { filePath, content } = file2;
-  const fileType = detectFileType(filePath);
-  let basic = 0;
-  let complex = 0;
-  let describeDepth = 0;
-  const lines = content.split("\n");
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (/^describe[\s.(]/.test(trimmed)) {
-      describeDepth++;
-    }
-    if (/^(it|test)[\s.(]/.test(trimmed)) {
-      if (describeDepth <= 1) {
-        basic++;
-      } else {
-        complex++;
-      }
-    }
-    if (/^\}\);?\s*$/.test(trimmed) && describeDepth > 0) {
-      describeDepth--;
-    }
-  }
-  return {
-    filePath,
-    fileType,
-    total: basic + complex,
-    basic,
-    complex
-  };
-}
-
-// src/metrics/three-plus-twelve.ts
-var THRESHOLD = 15;
-function check312Rule(files) {
-  const specFiles = files.filter((f) => f.fileType === "spec");
-  const violatingFiles = specFiles.filter((f) => f.total > THRESHOLD).map((f) => f.filePath);
-  return {
-    violated: violatingFiles.length > 0,
-    files: specFiles,
-    violatingFiles
-  };
-}
-
-// src/metrics/decision-tree.ts
-var TEST_THRESHOLD = 15;
-var CC_THRESHOLD = 15;
-var LCOM4_SPLIT_THRESHOLD = 2;
-function decide(input) {
-  const { testCount, lcom4, cyclomaticComplexity } = input;
-  const metrics = { testCount, lcom4, cyclomaticComplexity };
-  if (testCount <= TEST_THRESHOLD) {
-    return {
-      action: "ok",
-      reason: `Test count (${testCount}) is within the 3+12 limit.`,
-      metrics
-    };
-  }
-  if (lcom4 >= LCOM4_SPLIT_THRESHOLD) {
-    return {
-      action: "split",
-      reason: `LCOM4 = ${lcom4} indicates multiple responsibilities. Extract into sub-fractals along component boundaries.`,
-      metrics
-    };
-  }
-  if (cyclomaticComplexity > CC_THRESHOLD) {
-    return {
-      action: "compress",
-      reason: `High cyclomatic complexity (${cyclomaticComplexity}) with good cohesion. Extract methods, apply strategy pattern, or flatten conditionals.`,
-      metrics
-    };
-  }
-  return {
-    action: "parameterize",
-    reason: `Logic and cohesion are healthy but test count (${testCount}) exceeds limit. Merge redundant edge-case tests into data-driven parameterized tests.`,
-    metrics
-  };
-}
-
-// src/mcp/tools/test-metrics.ts
-function handleTestMetrics(input) {
-  switch (input.action) {
-    case "count":
-      return handleCount(input.files ?? []);
-    case "check-312":
-      return handleCheck312(input.files ?? []);
-    case "decide":
-      return handleDecide(input.decisionInput);
-    default:
-      return { error: `Unknown action: ${input.action}` };
-  }
-}
-function handleCount(files) {
-  const counts = files.map((f) => {
-    const raw = { filePath: f.filePath, content: f.content };
-    const result = countTestCases(raw);
-    return {
-      filePath: f.filePath,
-      total: result.total,
-      basic: result.basic,
-      complex: result.complex
-    };
-  });
-  return { counts };
-}
-function handleCheck312(files) {
-  const testCaseCounts = files.map((f) => {
-    const raw = { filePath: f.filePath, content: f.content };
-    const count = countTestCases(raw);
-    return {
-      filePath: f.filePath,
-      fileType: f.filePath.includes(".spec.") ? "spec" : "test",
-      total: count.total,
-      basic: count.total,
-      complex: 0
-    };
-  });
-  const result = check312Rule(testCaseCounts);
-  const violations = result.violatingFiles.map((fp) => {
-    const entry = testCaseCounts.find((c) => c.filePath === fp);
-    return {
-      filePath: fp,
-      testCount: entry?.total ?? 0,
-      threshold: 15
-    };
-  });
-  return { violations };
-}
-function handleDecide(params) {
-  if (!params) {
-    return { error: "Decision action requires decisionInput" };
-  }
-  const result = decide({
-    testCount: params.testCount,
-    lcom4: params.lcom4,
-    cyclomaticComplexity: params.cyclomaticComplexity
-  });
-  return { decision: result };
-}
-
-// src/core/module-main-analyzer.ts
-var import_promises = require("node:fs/promises");
-var import_node_path2 = require("node:path");
-
-// src/core/index-analyzer.ts
-var RE_NAMED_REEXPORT = /^export\s+\{[^}]*\}\s+from\s+['"][^'"]+['"]/gm;
-var RE_STAR_REEXPORT = /^export\s+\*\s+(?:as\s+\w+\s+)?from\s+['"][^'"]+['"]/gm;
-var RE_TYPE_REEXPORT = /^export\s+type\s+\{[^}]*\}\s+from\s+['"][^'"]+['"]/gm;
-var RE_NAMED_DECL = /^export\s+(?:const|function|class|interface|enum|abstract\s+class)\s+(\w+)/gm;
-var RE_DEFAULT_EXPORT = /^export\s+default\s+/gm;
-var RE_TYPE_DECL = /^export\s+type\s+(\w+)\s*[=<{]/gm;
-var RE_FROM_SOURCE = /from\s+['"]([^'"]+)['"]/;
-var RE_EXPORT_NAMES = /\{([^}]*)\}/;
-function extractModuleExports(content) {
-  const exports2 = [];
-  const typeReexportMatches = content.matchAll(RE_TYPE_REEXPORT);
-  for (const match of typeReexportMatches) {
-    const sourceMatch = RE_FROM_SOURCE.exec(match[0]);
-    const namesMatch = RE_EXPORT_NAMES.exec(match[0]);
-    const source = sourceMatch?.[1];
-    if (namesMatch) {
-      const names = namesMatch[1].split(",").map((n) => n.trim().split(/\s+as\s+/).pop()?.trim() ?? "").filter(Boolean);
-      for (const name of names) {
-        exports2.push({ name, kind: "re-export", source });
-      }
-    }
-  }
-  const namedReexportMatches = content.matchAll(RE_NAMED_REEXPORT);
-  for (const match of namedReexportMatches) {
-    if (/^export\s+type\s+\{/.test(match[0])) continue;
-    const sourceMatch = RE_FROM_SOURCE.exec(match[0]);
-    const namesMatch = RE_EXPORT_NAMES.exec(match[0]);
-    const source = sourceMatch?.[1];
-    if (namesMatch) {
-      const names = namesMatch[1].split(",").map((n) => n.trim().split(/\s+as\s+/).pop()?.trim() ?? "").filter(Boolean);
-      for (const name of names) {
-        exports2.push({ name, kind: "re-export", source });
-      }
-    }
-  }
-  const starReexportMatches = content.matchAll(RE_STAR_REEXPORT);
-  for (const match of starReexportMatches) {
-    const sourceMatch = RE_FROM_SOURCE.exec(match[0]);
-    const source = sourceMatch?.[1];
-    const asMatch = /export\s+\*\s+as\s+(\w+)/.exec(match[0]);
-    const name = asMatch ? asMatch[1] : "*";
-    exports2.push({ name, kind: "re-export", source });
-  }
-  const typeDeclMatches = content.matchAll(RE_TYPE_DECL);
-  for (const match of typeDeclMatches) {
-    exports2.push({ name: match[1], kind: "type" });
-  }
-  const namedDeclMatches = content.matchAll(RE_NAMED_DECL);
-  for (const match of namedDeclMatches) {
-    exports2.push({ name: match[1], kind: "named" });
-  }
-  const defaultMatches = content.matchAll(RE_DEFAULT_EXPORT);
-  for (const _match of defaultMatches) {
-    exports2.push({ name: "default", kind: "default" });
-  }
-  return exports2;
-}
-
-// src/core/module-main-analyzer.ts
-var ENTRY_CANDIDATES = ["index.ts", "index.js", "main.ts", "main.js"];
-var RE_IMPORT = /^(?:import|export)\s+(?:type\s+)?(?:\{[^}]*\}|\*(?:\s+as\s+\w+)?|\w+(?:\s*,\s*\{[^}]*\})?)\s+from\s+['"]([^'"]+)['"]/gm;
-var RE_DYNAMIC_IMPORT = /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/gm;
-var RE_REQUIRE = /\brequire\s*\(\s*['"]([^'"]+)['"]\s*\)/gm;
-async function fileExists(filePath) {
-  try {
-    await (0, import_promises.access)(filePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
-async function findEntryPoint(modulePath) {
-  for (const candidate of ENTRY_CANDIDATES) {
-    const full = (0, import_node_path2.join)(modulePath, candidate);
-    if (await fileExists(full)) return full;
-  }
-  try {
-    const entries = await (0, import_promises.readdir)(modulePath, { withFileTypes: true });
-    const tsFiles = entries.filter((e) => e.isFile() && e.name.endsWith(".ts") && !e.name.endsWith(".d.ts")).map((e) => e.name);
-    if (tsFiles.length === 1) {
-      return (0, import_node_path2.join)(modulePath, tsFiles[0]);
-    }
-  } catch {
-  }
-  return null;
-}
-async function extractImports(filePath) {
-  let content;
-  try {
-    content = await (0, import_promises.readFile)(filePath, "utf-8");
-  } catch {
-    return [];
-  }
-  const paths = /* @__PURE__ */ new Set();
-  for (const pattern of [RE_IMPORT, RE_DYNAMIC_IMPORT, RE_REQUIRE]) {
-    const regex = new RegExp(pattern.source, pattern.flags);
-    const matches = content.matchAll(regex);
-    for (const match of matches) {
-      const importPath = match[1];
-      if (importPath) paths.add(importPath);
-    }
-  }
-  return [...paths];
-}
-async function extractPublicApi(entryPoint) {
-  let content;
-  try {
-    content = await (0, import_promises.readFile)(entryPoint, "utf-8");
-  } catch {
-    return { exports: [], types: [], functions: [], classes: [] };
-  }
-  const exports2 = extractModuleExports(content);
-  const types = [];
-  const functions = [];
-  const classes = [];
-  const RE_FUNC_EXPORT = /^export\s+(?:async\s+)?function\s+(\w+)/gm;
-  const RE_CLASS_EXPORT = /^export\s+(?:abstract\s+)?class\s+(\w+)/gm;
-  const RE_TYPE_ALIAS = /^export\s+type\s+(\w+)\s*[=<{]/gm;
-  const RE_INTERFACE = /^export\s+interface\s+(\w+)/gm;
-  for (const match of content.matchAll(RE_FUNC_EXPORT)) {
-    functions.push(match[1]);
-  }
-  for (const match of content.matchAll(RE_CLASS_EXPORT)) {
-    classes.push(match[1]);
-  }
-  for (const match of content.matchAll(RE_TYPE_ALIAS)) {
-    types.push(match[1]);
-  }
-  for (const match of content.matchAll(RE_INTERFACE)) {
-    types.push(match[1]);
-  }
-  return {
-    exports: exports2,
-    types: [...new Set(types)],
-    functions: [...new Set(functions)],
-    classes: [...new Set(classes)]
-  };
-}
-async function analyzeModule(modulePath) {
-  const absPath = (0, import_node_path2.resolve)(modulePath);
-  const name = absPath.split("/").pop() ?? absPath;
-  const entryPoint = await findEntryPoint(absPath);
-  if (!entryPoint) {
-    return {
-      path: absPath,
-      name,
-      entryPoint: null,
-      exports: [],
-      imports: [],
-      dependencies: []
-    };
-  }
-  const [publicApi, rawImports] = await Promise.all([
-    extractPublicApi(entryPoint),
-    extractImports(entryPoint)
-  ]);
-  const exportNames = publicApi.exports.map((e) => e.name);
-  const entryDir = (0, import_node_path2.dirname)(entryPoint);
-  const dependencies = [];
-  const resolvedImports = [];
-  for (const importPath of rawImports) {
-    if (importPath.startsWith(".")) {
-      const resolved = (0, import_node_path2.resolve)(entryDir, importPath);
-      resolvedImports.push(resolved);
-      dependencies.push(resolved);
-    } else {
-      resolvedImports.push(importPath);
-    }
-  }
-  return {
-    path: absPath,
-    name,
-    entryPoint,
-    exports: exportNames,
-    imports: resolvedImports,
-    dependencies
-  };
-}
-
-// src/mcp/tools/fractal-scan.ts
-async function handleFractalScan(args) {
-  const input = args;
-  if (!input.path) {
-    throw new Error("path is required");
-  }
-  const startTime = Date.now();
-  const tree = await scanProject(input.path, {
-    maxDepth: input.depth ?? 10
-  });
-  let modules = [];
-  if (input.includeModuleInfo) {
-    const nodePaths = Array.from(tree.nodes.keys());
-    const results = await Promise.allSettled(
-      nodePaths.map((nodePath) => analyzeModule(nodePath))
-    );
-    modules = results.filter((r) => r.status === "fulfilled").map((r) => r.value);
-  }
-  return {
-    tree,
-    modules,
-    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-    duration: Date.now() - startTime
-  };
 }
 
 // src/types/rules.ts
@@ -37060,128 +37017,6 @@ function validateNode(_node, context, rule) {
   return violations;
 }
 
-// src/core/drift-detector.ts
-var RULE_TO_ACTION = {
-  "naming-convention": "rename",
-  "organ-no-claudemd": "move",
-  "index-barrel-pattern": "create-index",
-  "module-entry-point": "create-index",
-  "max-depth": "merge",
-  "circular-dependency": "move",
-  "pure-function-isolation": "move"
-};
-var RULE_TO_SEVERITY = {
-  "circular-dependency": "critical",
-  "pure-function-isolation": "critical",
-  "max-depth": "high",
-  "organ-no-claudemd": "high",
-  "index-barrel-pattern": "medium",
-  "module-entry-point": "medium",
-  "naming-convention": "low"
-};
-var SEVERITY_ORDER = {
-  critical: 0,
-  high: 1,
-  medium: 2,
-  low: 3
-};
-function calculateSeverity(violation) {
-  const mapped = RULE_TO_SEVERITY[violation.ruleId];
-  if (mapped) return mapped;
-  switch (violation.severity) {
-    case "error":
-      return "high";
-    case "warning":
-      return "medium";
-    case "info":
-      return "low";
-    default:
-      return "low";
-  }
-}
-function detectDrift(_tree, violations, options) {
-  let items = violations.map((violation) => {
-    const severity = calculateSeverity(violation);
-    const action = RULE_TO_ACTION[violation.ruleId] ?? "reclassify";
-    return {
-      path: violation.path,
-      rule: violation.ruleId,
-      expected: violation.suggestion ?? "Compliant with rule",
-      actual: violation.message,
-      severity,
-      suggestedAction: action
-    };
-  });
-  items = items.sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
-  if (options?.criticalOnly) {
-    items = items.filter((item) => item.severity === "critical");
-  }
-  const bySeverity = {
-    critical: 0,
-    high: 0,
-    medium: 0,
-    low: 0
-  };
-  for (const item of items) {
-    bySeverity[item.severity]++;
-  }
-  return {
-    items,
-    totalDrifts: items.length,
-    bySeverity,
-    scanTimestamp: (/* @__PURE__ */ new Date()).toISOString()
-  };
-}
-function generateSyncPlan(drifts) {
-  const ACTION_ORDER = {
-    move: 0,
-    rename: 1,
-    "create-index": 2,
-    "create-main": 3,
-    reclassify: 4,
-    split: 5,
-    merge: 6
-  };
-  const actions = drifts.map((item) => ({
-    action: item.suggestedAction,
-    source: item.path,
-    reason: item.actual,
-    riskLevel: item.severity,
-    reversible: isReversible(item.suggestedAction)
-  }));
-  actions.sort((a, b) => {
-    const severityDiff = SEVERITY_ORDER[a.riskLevel] - SEVERITY_ORDER[b.riskLevel];
-    if (severityDiff !== 0) return severityDiff;
-    if (a.reversible !== b.reversible) return a.reversible ? -1 : 1;
-    return ACTION_ORDER[a.action] - ACTION_ORDER[b.action];
-  });
-  const overallRisk = computeOverallRisk(drifts);
-  return {
-    actions,
-    estimatedChanges: actions.length,
-    riskLevel: overallRisk
-  };
-}
-function isReversible(action) {
-  switch (action) {
-    case "rename":
-    case "create-index":
-    case "create-main":
-    case "reclassify":
-      return true;
-    case "move":
-    case "split":
-    case "merge":
-      return false;
-  }
-}
-function computeOverallRisk(drifts) {
-  if (drifts.some((d) => d.severity === "critical")) return "critical";
-  if (drifts.some((d) => d.severity === "high")) return "high";
-  if (drifts.some((d) => d.severity === "medium")) return "medium";
-  return "low";
-}
-
 // src/mcp/tools/drift-detect.ts
 async function handleDriftDetect(args) {
   const input = args;
@@ -37217,6 +37052,280 @@ async function handleDriftDetect(args) {
     report.syncPlan = generateSyncPlan(items);
   }
   return report;
+}
+
+// src/mcp/tools/fractal-navigate.ts
+function handleFractalNavigate(input) {
+  switch (input.action) {
+    case "classify":
+      return handleClassify(input);
+    case "sibling-list":
+      return handleSiblingList(input);
+    case "tree":
+      return handleTree(input);
+    default:
+      return { error: `Unknown action: ${input.action}` };
+  }
+}
+function handleClassify(input) {
+  const entry = input.entries.find((e) => e.path === input.path);
+  if (entry && entry.type !== "directory") {
+    return { classification: entry.type };
+  }
+  const dirName = input.path.split("/").filter((s) => s.length > 0).pop() ?? "";
+  const hasClaudeMd = entry?.hasClaudeMd ?? false;
+  const hasSpecMd = entry?.hasSpecMd ?? false;
+  const classifyInput = {
+    dirName,
+    hasClaudeMd,
+    hasSpecMd,
+    hasFractalChildren: false,
+    isLeafDirectory: true
+  };
+  const result = classifyNode(classifyInput);
+  return { classification: result };
+}
+function handleSiblingList(input) {
+  const tree = buildFractalTree(input.entries);
+  const lastSlash = input.path.lastIndexOf("/");
+  const parentPath = lastSlash > 0 ? input.path.slice(0, lastSlash) : "";
+  const parentNode = findNode(tree, parentPath);
+  if (!parentNode) {
+    return { siblings: [] };
+  }
+  const allChildPaths = [...parentNode.children, ...parentNode.organs];
+  const siblings = allChildPaths.filter((p) => p !== input.path).map((p) => {
+    const node = tree.nodes.get(p);
+    return node ? { name: node.name, path: node.path, type: node.type } : { name: p.split("/").pop() ?? "", path: p, type: "directory" };
+  });
+  return { siblings };
+}
+function handleTree(input) {
+  const tree = buildFractalTree(input.entries);
+  return { tree };
+}
+
+// src/core/module-main-analyzer.ts
+var import_promises2 = require("node:fs/promises");
+var import_node_path3 = require("node:path");
+
+// src/core/index-analyzer.ts
+var RE_NAMED_REEXPORT = /^export\s+\{[^}]*\}\s+from\s+['"][^'"]+['"]/gm;
+var RE_STAR_REEXPORT = /^export\s+\*\s+(?:as\s+\w+\s+)?from\s+['"][^'"]+['"]/gm;
+var RE_TYPE_REEXPORT = /^export\s+type\s+\{[^}]*\}\s+from\s+['"][^'"]+['"]/gm;
+var RE_NAMED_DECL = /^export\s+(?:const|function|class|interface|enum|abstract\s+class)\s+(\w+)/gm;
+var RE_DEFAULT_EXPORT = /^export\s+default\s+/gm;
+var RE_TYPE_DECL = /^export\s+type\s+(\w+)\s*[=<{]/gm;
+var RE_FROM_SOURCE = /from\s+['"]([^'"]+)['"]/;
+var RE_EXPORT_NAMES = /\{([^}]*)\}/;
+function extractModuleExports(content) {
+  const exports2 = [];
+  const typeReexportMatches = content.matchAll(RE_TYPE_REEXPORT);
+  for (const match of typeReexportMatches) {
+    const sourceMatch = RE_FROM_SOURCE.exec(match[0]);
+    const namesMatch = RE_EXPORT_NAMES.exec(match[0]);
+    const source = sourceMatch?.[1];
+    if (namesMatch) {
+      const names = namesMatch[1].split(",").map(
+        (n) => n.trim().split(/\s+as\s+/).pop()?.trim() ?? ""
+      ).filter(Boolean);
+      for (const name of names) {
+        exports2.push({ name, kind: "re-export", source });
+      }
+    }
+  }
+  const namedReexportMatches = content.matchAll(RE_NAMED_REEXPORT);
+  for (const match of namedReexportMatches) {
+    if (/^export\s+type\s+\{/.test(match[0])) continue;
+    const sourceMatch = RE_FROM_SOURCE.exec(match[0]);
+    const namesMatch = RE_EXPORT_NAMES.exec(match[0]);
+    const source = sourceMatch?.[1];
+    if (namesMatch) {
+      const names = namesMatch[1].split(",").map(
+        (n) => n.trim().split(/\s+as\s+/).pop()?.trim() ?? ""
+      ).filter(Boolean);
+      for (const name of names) {
+        exports2.push({ name, kind: "re-export", source });
+      }
+    }
+  }
+  const starReexportMatches = content.matchAll(RE_STAR_REEXPORT);
+  for (const match of starReexportMatches) {
+    const sourceMatch = RE_FROM_SOURCE.exec(match[0]);
+    const source = sourceMatch?.[1];
+    const asMatch = /export\s+\*\s+as\s+(\w+)/.exec(match[0]);
+    const name = asMatch ? asMatch[1] : "*";
+    exports2.push({ name, kind: "re-export", source });
+  }
+  const typeDeclMatches = content.matchAll(RE_TYPE_DECL);
+  for (const match of typeDeclMatches) {
+    exports2.push({ name: match[1], kind: "type" });
+  }
+  const namedDeclMatches = content.matchAll(RE_NAMED_DECL);
+  for (const match of namedDeclMatches) {
+    exports2.push({ name: match[1], kind: "named" });
+  }
+  const defaultMatches = content.matchAll(RE_DEFAULT_EXPORT);
+  for (const _match of defaultMatches) {
+    exports2.push({ name: "default", kind: "default" });
+  }
+  return exports2;
+}
+
+// src/core/module-main-analyzer.ts
+var ENTRY_CANDIDATES = [
+  "index.ts",
+  "index.js",
+  "main.ts",
+  "main.js"
+];
+var RE_IMPORT = /^(?:import|export)\s+(?:type\s+)?(?:\{[^}]*\}|\*(?:\s+as\s+\w+)?|\w+(?:\s*,\s*\{[^}]*\})?)\s+from\s+['"]([^'"]+)['"]/gm;
+var RE_DYNAMIC_IMPORT = /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/gm;
+var RE_REQUIRE = /\brequire\s*\(\s*['"]([^'"]+)['"]\s*\)/gm;
+async function fileExists(filePath) {
+  try {
+    await (0, import_promises2.access)(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+async function findEntryPoint(modulePath) {
+  for (const candidate of ENTRY_CANDIDATES) {
+    const full = (0, import_node_path3.join)(modulePath, candidate);
+    if (await fileExists(full)) return full;
+  }
+  try {
+    const entries = await (0, import_promises2.readdir)(modulePath, { withFileTypes: true });
+    const tsFiles = entries.filter(
+      (e) => e.isFile() && e.name.endsWith(".ts") && !e.name.endsWith(".d.ts")
+    ).map((e) => e.name);
+    if (tsFiles.length === 1) {
+      return (0, import_node_path3.join)(modulePath, tsFiles[0]);
+    }
+  } catch {
+  }
+  return null;
+}
+async function extractImports(filePath) {
+  let content;
+  try {
+    content = await (0, import_promises2.readFile)(filePath, "utf-8");
+  } catch {
+    return [];
+  }
+  const paths = /* @__PURE__ */ new Set();
+  for (const pattern of [RE_IMPORT, RE_DYNAMIC_IMPORT, RE_REQUIRE]) {
+    const regex = new RegExp(pattern.source, pattern.flags);
+    const matches = content.matchAll(regex);
+    for (const match of matches) {
+      const importPath = match[1];
+      if (importPath) paths.add(importPath);
+    }
+  }
+  return [...paths];
+}
+async function extractPublicApi(entryPoint) {
+  let content;
+  try {
+    content = await (0, import_promises2.readFile)(entryPoint, "utf-8");
+  } catch {
+    return { exports: [], types: [], functions: [], classes: [] };
+  }
+  const exports2 = extractModuleExports(content);
+  const types = [];
+  const functions = [];
+  const classes = [];
+  const RE_FUNC_EXPORT = /^export\s+(?:async\s+)?function\s+(\w+)/gm;
+  const RE_CLASS_EXPORT = /^export\s+(?:abstract\s+)?class\s+(\w+)/gm;
+  const RE_TYPE_ALIAS = /^export\s+type\s+(\w+)\s*[=<{]/gm;
+  const RE_INTERFACE = /^export\s+interface\s+(\w+)/gm;
+  for (const match of content.matchAll(RE_FUNC_EXPORT)) {
+    functions.push(match[1]);
+  }
+  for (const match of content.matchAll(RE_CLASS_EXPORT)) {
+    classes.push(match[1]);
+  }
+  for (const match of content.matchAll(RE_TYPE_ALIAS)) {
+    types.push(match[1]);
+  }
+  for (const match of content.matchAll(RE_INTERFACE)) {
+    types.push(match[1]);
+  }
+  return {
+    exports: exports2,
+    types: [...new Set(types)],
+    functions: [...new Set(functions)],
+    classes: [...new Set(classes)]
+  };
+}
+async function analyzeModule(modulePath) {
+  const absPath = (0, import_node_path3.resolve)(modulePath);
+  const name = absPath.split("/").pop() ?? absPath;
+  const entryPoint = await findEntryPoint(absPath);
+  if (!entryPoint) {
+    return {
+      path: absPath,
+      name,
+      entryPoint: null,
+      exports: [],
+      imports: [],
+      dependencies: []
+    };
+  }
+  const [publicApi, rawImports] = await Promise.all([
+    extractPublicApi(entryPoint),
+    extractImports(entryPoint)
+  ]);
+  const exportNames = publicApi.exports.map((e) => e.name);
+  const entryDir = (0, import_node_path3.dirname)(entryPoint);
+  const dependencies = [];
+  const resolvedImports = [];
+  for (const importPath of rawImports) {
+    if (importPath.startsWith(".")) {
+      const resolved = (0, import_node_path3.resolve)(entryDir, importPath);
+      resolvedImports.push(resolved);
+      dependencies.push(resolved);
+    } else {
+      resolvedImports.push(importPath);
+    }
+  }
+  return {
+    path: absPath,
+    name,
+    entryPoint,
+    exports: exportNames,
+    imports: resolvedImports,
+    dependencies
+  };
+}
+
+// src/mcp/tools/fractal-scan.ts
+async function handleFractalScan(args) {
+  const input = args;
+  if (!input.path) {
+    throw new Error("path is required");
+  }
+  const startTime = Date.now();
+  const tree = await scanProject(input.path, {
+    maxDepth: input.depth ?? 10
+  });
+  let modules = [];
+  if (input.includeModuleInfo) {
+    const nodePaths = Array.from(tree.nodes.keys());
+    const results = await Promise.allSettled(
+      nodePaths.map((nodePath) => analyzeModule(nodePath))
+    );
+    modules = results.filter(
+      (r) => r.status === "fulfilled"
+    ).map((r) => r.value);
+  }
+  return {
+    tree,
+    modules,
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    duration: Date.now() - startTime
+  };
 }
 
 // src/mcp/tools/lca-resolve.ts
@@ -37265,7 +37374,9 @@ async function handleLcaResolve(args) {
   }
   const lcaNode = findLCA(tree, absA, absB);
   if (!lcaNode) {
-    throw new Error(`Could not determine LCA for ${input.moduleA} and ${input.moduleB}`);
+    throw new Error(
+      `Could not determine LCA for ${input.moduleA} and ${input.moduleB}`
+    );
   }
   const distanceA = distanceBetween(absA, lcaNode.path);
   const distanceB = distanceBetween(absB, lcaNode.path);
@@ -37292,8 +37403,190 @@ async function handleLcaResolve(args) {
   };
 }
 
+// src/mcp/tools/review-manage.ts
+var import_promises3 = __toESM(require("node:fs/promises"), 1);
+var import_node_path4 = __toESM(require("node:path"), 1);
+function normalizeBranch(branchName) {
+  let result = branchName;
+  result = result.replace(/\//g, "--");
+  result = result.replace(/[#@~^:?*[\]\\]/g, "_");
+  result = result.replace(/^[.\-]+/, "");
+  result = result.replace(/[.\-]+$/, "");
+  return result;
+}
+async function handleReviewManage(args) {
+  const input = args;
+  if (!input.action) {
+    throw new Error("action is required");
+  }
+  if (!input.projectRoot) {
+    throw new Error("projectRoot is required");
+  }
+  switch (input.action) {
+    case "normalize-branch": {
+      if (!input.branchName) {
+        throw new Error("branchName is required for normalize-branch action");
+      }
+      const normalized = normalizeBranch(input.branchName);
+      return { normalized };
+    }
+    case "ensure-dir": {
+      if (!input.branchName) {
+        throw new Error("branchName is required for ensure-dir action");
+      }
+      const normalized = normalizeBranch(input.branchName);
+      const dirPath = import_node_path4.default.join(
+        input.projectRoot,
+        ".filid",
+        "review",
+        normalized
+      );
+      let created = false;
+      try {
+        await import_promises3.default.access(dirPath);
+      } catch {
+        await import_promises3.default.mkdir(dirPath, { recursive: true });
+        created = true;
+      }
+      return { path: dirPath, created };
+    }
+    case "checkpoint": {
+      if (!input.branchName) {
+        throw new Error("branchName is required for checkpoint action");
+      }
+      const normalized = normalizeBranch(input.branchName);
+      const reviewDir = import_node_path4.default.join(
+        input.projectRoot,
+        ".filid",
+        "review",
+        normalized
+      );
+      const fileNames = ["session.md", "verification.md", "review-report.md"];
+      const existingFiles = [];
+      for (const fileName of fileNames) {
+        try {
+          await import_promises3.default.access(import_node_path4.default.join(reviewDir, fileName));
+          existingFiles.push(fileName);
+        } catch {
+        }
+      }
+      const hasSession = existingFiles.includes("session.md");
+      const hasVerification = existingFiles.includes("verification.md");
+      const hasReport = existingFiles.includes("review-report.md");
+      let phase;
+      if (!hasSession) {
+        phase = "A";
+      } else if (!hasVerification) {
+        phase = "B";
+      } else if (!hasReport) {
+        phase = "C";
+      } else {
+        phase = "DONE";
+      }
+      const result = { phase, files: existingFiles };
+      return result;
+    }
+    case "elect-committee": {
+      if (input.changedFilesCount === void 0) {
+        throw new Error(
+          "changedFilesCount is required for elect-committee action"
+        );
+      }
+      if (input.changedFractalsCount === void 0) {
+        throw new Error(
+          "changedFractalsCount is required for elect-committee action"
+        );
+      }
+      if (input.hasInterfaceChanges === void 0) {
+        throw new Error(
+          "hasInterfaceChanges is required for elect-committee action"
+        );
+      }
+      const { changedFilesCount, changedFractalsCount, hasInterfaceChanges } = input;
+      let complexity;
+      if (changedFilesCount <= 3 && changedFractalsCount <= 1 && !hasInterfaceChanges) {
+        complexity = "LOW";
+      } else if (changedFilesCount > 10 || changedFractalsCount >= 4) {
+        complexity = "HIGH";
+      } else {
+        complexity = "MEDIUM";
+      }
+      let committee;
+      if (complexity === "LOW") {
+        committee = ["engineering-architect", "operations-sre"];
+      } else if (complexity === "MEDIUM") {
+        committee = [
+          "engineering-architect",
+          "knowledge-manager",
+          "business-driver",
+          "operations-sre"
+        ];
+      } else {
+        committee = [
+          "engineering-architect",
+          "knowledge-manager",
+          "operations-sre",
+          "business-driver",
+          "product-manager",
+          "design-hci"
+        ];
+      }
+      const adversarialPairs = [];
+      if (committee.includes("business-driver")) {
+        const challengers = [];
+        if (committee.includes("knowledge-manager"))
+          challengers.push("knowledge-manager");
+        if (committee.includes("operations-sre"))
+          challengers.push("operations-sre");
+        if (challengers.length > 0) {
+          adversarialPairs.push(["business-driver", challengers]);
+        }
+      }
+      if (committee.includes("product-manager")) {
+        const challengers = [];
+        if (committee.includes("engineering-architect"))
+          challengers.push("engineering-architect");
+        if (challengers.length > 0) {
+          adversarialPairs.push(["product-manager", challengers]);
+        }
+      }
+      if (committee.includes("design-hci")) {
+        const challengers = [];
+        if (committee.includes("engineering-architect"))
+          challengers.push("engineering-architect");
+        if (challengers.length > 0) {
+          adversarialPairs.push(["design-hci", challengers]);
+        }
+      }
+      const result = {
+        complexity,
+        committee,
+        adversarialPairs
+      };
+      return result;
+    }
+    case "cleanup": {
+      if (!input.branchName) {
+        throw new Error("branchName is required for cleanup action");
+      }
+      const normalized = normalizeBranch(input.branchName);
+      const reviewDir = import_node_path4.default.join(
+        input.projectRoot,
+        ".filid",
+        "review",
+        normalized
+      );
+      await import_promises3.default.rm(reviewDir, { recursive: true, force: true });
+      return { deleted: true };
+    }
+    default: {
+      throw new Error(`Unknown action: ${input.action}`);
+    }
+  }
+}
+
 // src/mcp/tools/rule-query.ts
-var import_node_path3 = require("node:path");
+var import_node_path5 = require("node:path");
 async function handleRuleQuery(args) {
   const input = args;
   if (!input.action || !input.path) {
@@ -37306,7 +37599,9 @@ async function handleRuleQuery(args) {
       let rules = activeRules;
       const filtered = Boolean(input.category);
       if (input.category) {
-        rules = activeRules.filter((r) => r.category === input.category);
+        rules = activeRules.filter(
+          (r) => r.category === input.category
+        );
       }
       const summaries = rules.map((r) => ({
         id: r.id,
@@ -37340,7 +37635,7 @@ async function handleRuleQuery(args) {
       }
       const tree = await scanProject(input.path);
       const result = evaluateRules(tree, activeRules);
-      const absTargetPath = (0, import_node_path3.resolve)(input.path, input.targetPath);
+      const absTargetPath = (0, import_node_path5.resolve)(input.path, input.targetPath);
       const filteredViolations = result.violations.filter(
         (v) => v.path === absTargetPath || v.path.startsWith(absTargetPath + "/")
       );
@@ -37381,385 +37676,151 @@ async function handleStructureValidate(args) {
   };
 }
 
-// src/mcp/tools/review-manage.ts
-var import_promises2 = __toESM(require("node:fs/promises"), 1);
-var import_node_path4 = __toESM(require("node:path"), 1);
-function normalizeBranch(branchName) {
-  let result = branchName;
-  result = result.replace(/\//g, "--");
-  result = result.replace(/[#@~^:?*[\]\\]/g, "_");
-  result = result.replace(/^[.\-]+/, "");
-  result = result.replace(/[.\-]+$/, "");
-  return result;
-}
-async function handleReviewManage(args) {
-  const input = args;
-  if (!input.action) {
-    throw new Error("action is required");
-  }
-  if (!input.projectRoot) {
-    throw new Error("projectRoot is required");
-  }
-  switch (input.action) {
-    case "normalize-branch": {
-      if (!input.branchName) {
-        throw new Error("branchName is required for normalize-branch action");
-      }
-      const normalized = normalizeBranch(input.branchName);
-      return { normalized };
-    }
-    case "ensure-dir": {
-      if (!input.branchName) {
-        throw new Error("branchName is required for ensure-dir action");
-      }
-      const normalized = normalizeBranch(input.branchName);
-      const dirPath = import_node_path4.default.join(input.projectRoot, ".filid", "review", normalized);
-      let created = false;
-      try {
-        await import_promises2.default.access(dirPath);
-      } catch {
-        await import_promises2.default.mkdir(dirPath, { recursive: true });
-        created = true;
-      }
-      return { path: dirPath, created };
-    }
-    case "checkpoint": {
-      if (!input.branchName) {
-        throw new Error("branchName is required for checkpoint action");
-      }
-      const normalized = normalizeBranch(input.branchName);
-      const reviewDir = import_node_path4.default.join(input.projectRoot, ".filid", "review", normalized);
-      const fileNames = ["session.md", "verification.md", "review-report.md"];
-      const existingFiles = [];
-      for (const fileName of fileNames) {
-        try {
-          await import_promises2.default.access(import_node_path4.default.join(reviewDir, fileName));
-          existingFiles.push(fileName);
-        } catch {
-        }
-      }
-      const hasSession = existingFiles.includes("session.md");
-      const hasVerification = existingFiles.includes("verification.md");
-      const hasReport = existingFiles.includes("review-report.md");
-      let phase;
-      if (!hasSession) {
-        phase = "A";
-      } else if (!hasVerification) {
-        phase = "B";
-      } else if (!hasReport) {
-        phase = "C";
-      } else {
-        phase = "DONE";
-      }
-      const result = { phase, files: existingFiles };
-      return result;
-    }
-    case "elect-committee": {
-      if (input.changedFilesCount === void 0) {
-        throw new Error("changedFilesCount is required for elect-committee action");
-      }
-      if (input.changedFractalsCount === void 0) {
-        throw new Error("changedFractalsCount is required for elect-committee action");
-      }
-      if (input.hasInterfaceChanges === void 0) {
-        throw new Error("hasInterfaceChanges is required for elect-committee action");
-      }
-      const { changedFilesCount, changedFractalsCount, hasInterfaceChanges } = input;
-      let complexity;
-      if (changedFilesCount <= 3 && changedFractalsCount <= 1 && !hasInterfaceChanges) {
-        complexity = "LOW";
-      } else if (changedFilesCount > 10 || changedFractalsCount >= 4) {
-        complexity = "HIGH";
-      } else {
-        complexity = "MEDIUM";
-      }
-      let committee;
-      if (complexity === "LOW") {
-        committee = ["engineering-architect", "operations-sre"];
-      } else if (complexity === "MEDIUM") {
-        committee = ["engineering-architect", "knowledge-manager", "business-driver", "operations-sre"];
-      } else {
-        committee = [
-          "engineering-architect",
-          "knowledge-manager",
-          "operations-sre",
-          "business-driver",
-          "product-manager",
-          "design-hci"
-        ];
-      }
-      const adversarialPairs = [];
-      if (committee.includes("business-driver")) {
-        const challengers = [];
-        if (committee.includes("knowledge-manager")) challengers.push("knowledge-manager");
-        if (committee.includes("operations-sre")) challengers.push("operations-sre");
-        if (challengers.length > 0) {
-          adversarialPairs.push(["business-driver", challengers]);
-        }
-      }
-      if (committee.includes("product-manager")) {
-        const challengers = [];
-        if (committee.includes("engineering-architect")) challengers.push("engineering-architect");
-        if (challengers.length > 0) {
-          adversarialPairs.push(["product-manager", challengers]);
-        }
-      }
-      if (committee.includes("design-hci")) {
-        const challengers = [];
-        if (committee.includes("engineering-architect")) challengers.push("engineering-architect");
-        if (challengers.length > 0) {
-          adversarialPairs.push(["design-hci", challengers]);
-        }
-      }
-      const result = { complexity, committee, adversarialPairs };
-      return result;
-    }
-    case "cleanup": {
-      if (!input.branchName) {
-        throw new Error("branchName is required for cleanup action");
-      }
-      const normalized = normalizeBranch(input.branchName);
-      const reviewDir = import_node_path4.default.join(input.projectRoot, ".filid", "review", normalized);
-      await import_promises2.default.rm(reviewDir, { recursive: true, force: true });
-      return { deleted: true };
-    }
-    default: {
-      throw new Error(`Unknown action: ${input.action}`);
-    }
-  }
-}
-
-// src/mcp/tools/debt-manage.ts
-var import_node_crypto = require("node:crypto");
-var import_promises3 = require("node:fs/promises");
-var import_node_path5 = require("node:path");
-
-// src/types/debt.ts
-var DEBT_WEIGHT_CAP = 16;
-var DEBT_BASE_WEIGHT = 1;
-
-// src/mcp/tools/debt-manage.ts
-function getDebtDir(projectRoot) {
-  return (0, import_node_path5.join)(projectRoot, ".filid", "debt");
-}
-function normalizeId(fractalPath, content) {
-  const normalized = fractalPath.replace(/\//g, "-");
-  const hash2 = (0, import_node_crypto.createHash)("sha256").update(content).digest("hex").slice(0, 6);
-  return `${normalized}-${hash2}`;
-}
-function serializeFrontmatter(item) {
-  const fields = [
-    "id",
-    "fractal_path",
-    "file_path",
-    "created_at",
-    "review_branch",
-    "original_fix_id",
-    "severity",
-    "weight",
-    "touch_count",
-    "last_review_commit",
-    "rule_violated",
-    "metric_value"
-  ];
-  const lines = fields.map((key) => {
-    const value = item[key];
-    if (value === null || value === void 0) {
-      return `${key}: null`;
-    }
-    if (typeof value === "string" && (value.includes(":") || value.includes("\n") || value.includes("'"))) {
-      return `${key}: "${value.replace(/"/g, '\\"')}"`;
-    }
-    return `${key}: ${value}`;
-  });
-  return `---
-${lines.join("\n")}
----`;
-}
-function buildMarkdownBody(item) {
-  return `# \uAE30\uC220 \uBD80\uCC44: ${item.title}
-## \uC6D0\uB798 \uC218\uC815 \uC694\uCCAD
-${item.original_request}
-## \uAC1C\uBC1C\uC790 \uC18C\uBA85
-${item.developer_justification}
-## \uC815\uC81C\uB41C ADR
-${item.refined_adr}`;
-}
-function parseFrontmatter(content) {
-  const match = /^---\n([\s\S]*?)\n---/.exec(content);
-  if (!match) return {};
-  const result = {};
-  for (const line of match[1].split("\n")) {
-    const colonIdx = line.indexOf(":");
-    if (colonIdx === -1) continue;
-    const key = line.slice(0, colonIdx).trim();
-    let value = line.slice(colonIdx + 1).trim();
-    if (value === "null") {
-      result[key] = null;
-    } else if (/^\d+(\.\d+)?$/.test(value)) {
-      result[key] = Number(value);
-    } else if (value.startsWith('"') && value.endsWith('"')) {
-      result[key] = value.slice(1, -1).replace(/\\"/g, '"');
-    } else {
-      result[key] = value;
-    }
-  }
-  return result;
-}
-function determineBiasLevel(totalScore) {
-  if (totalScore <= 5) return "LOW_PRESSURE";
-  if (totalScore <= 15) return "MODERATE_PRESSURE";
-  if (totalScore <= 30) return "HIGH_PRESSURE";
-  return "CRITICAL_PRESSURE";
-}
-async function handleCreate(projectRoot, debtItem) {
-  const content = JSON.stringify(debtItem);
-  const id = normalizeId(debtItem.fractal_path, content);
-  const item = {
-    ...debtItem,
-    id,
-    weight: DEBT_BASE_WEIGHT,
-    touch_count: 0,
-    last_review_commit: null
-  };
-  const debtDir = getDebtDir(projectRoot);
-  await (0, import_promises3.mkdir)(debtDir, { recursive: true });
-  const filePath = (0, import_node_path5.join)(debtDir, `${id}.md`);
-  const fileContent = `${serializeFrontmatter(item)}
-
-${buildMarkdownBody(item)}
-`;
-  await (0, import_promises3.writeFile)(filePath, fileContent, "utf-8");
-  return { filePath, id };
-}
-async function handleList(projectRoot, fractalPath) {
-  const debtDir = getDebtDir(projectRoot);
-  let files;
-  try {
-    files = await (0, import_promises3.readdir)(debtDir);
-  } catch {
-    return { debts: [], totalWeight: 0 };
-  }
-  const mdFiles = files.filter((f) => f.endsWith(".md"));
-  if (mdFiles.length === 0) {
-    return { debts: [], totalWeight: 0 };
-  }
-  const debts = [];
-  for (const file2 of mdFiles) {
-    const filePath = (0, import_node_path5.join)(debtDir, file2);
-    const content = await (0, import_promises3.readFile)(filePath, "utf-8");
-    const fm = parseFrontmatter(content);
-    if (Object.keys(fm).length === 0) continue;
-    const debt = {
-      id: String(fm["id"] ?? ""),
-      fractal_path: String(fm["fractal_path"] ?? ""),
-      file_path: String(fm["file_path"] ?? ""),
-      created_at: String(fm["created_at"] ?? ""),
-      review_branch: String(fm["review_branch"] ?? ""),
-      original_fix_id: String(fm["original_fix_id"] ?? ""),
-      severity: fm["severity"] ?? "LOW",
-      weight: Number(fm["weight"] ?? 1),
-      touch_count: Number(fm["touch_count"] ?? 0),
-      last_review_commit: fm["last_review_commit"],
-      rule_violated: String(fm["rule_violated"] ?? ""),
-      metric_value: String(fm["metric_value"] ?? ""),
-      title: "",
-      original_request: "",
-      developer_justification: "",
-      refined_adr: ""
-    };
-    const titleMatch = /^# 기술 부채: (.+)$/m.exec(content);
-    if (titleMatch) debt.title = titleMatch[1].trim();
-    const orMatch = /## 원래 수정 요청\n([\s\S]*?)(?=\n##|$)/.exec(content);
-    if (orMatch) debt.original_request = orMatch[1].trim();
-    const djMatch = /## 개발자 소명\n([\s\S]*?)(?=\n##|$)/.exec(content);
-    if (djMatch) debt.developer_justification = djMatch[1].trim();
-    const adrMatch = /## 정제된 ADR\n([\s\S]*?)(?=\n##|$)/.exec(content);
-    if (adrMatch) debt.refined_adr = adrMatch[1].trim();
-    debts.push(debt);
-  }
-  const filtered = fractalPath ? debts.filter((d) => d.fractal_path === fractalPath) : debts;
-  const totalWeight = filtered.reduce((sum, d) => sum + d.weight, 0);
-  return { debts: filtered, totalWeight };
-}
-async function handleResolve(projectRoot, debtId) {
-  const filePath = (0, import_node_path5.join)(getDebtDir(projectRoot), `${debtId}.md`);
-  try {
-    await (0, import_promises3.unlink)(filePath);
-    return { deleted: true };
-  } catch {
-    return { deleted: false };
-  }
-}
-function handleCalculateBias(debts, changedFractalPaths, currentCommitSha) {
-  const changedSet = new Set(changedFractalPaths);
-  const updatedDebts = debts.map((debt) => {
-    if (!changedSet.has(debt.fractal_path)) {
-      return { ...debt };
-    }
-    if (debt.last_review_commit === currentCommitSha) {
-      return { ...debt };
-    }
-    const newTouchCount = debt.touch_count + 1;
-    const newWeight = Math.min(
-      DEBT_BASE_WEIGHT * Math.pow(2, newTouchCount),
-      DEBT_WEIGHT_CAP
-    );
+// src/metrics/decision-tree.ts
+var TEST_THRESHOLD = 15;
+var CC_THRESHOLD = 15;
+var LCOM4_SPLIT_THRESHOLD = 2;
+function decide(input) {
+  const { testCount, lcom4, cyclomaticComplexity } = input;
+  const metrics = { testCount, lcom4, cyclomaticComplexity };
+  if (testCount <= TEST_THRESHOLD) {
     return {
-      ...debt,
-      touch_count: newTouchCount,
-      weight: newWeight,
-      last_review_commit: currentCommitSha
+      action: "ok",
+      reason: `Test count (${testCount}) is within the 3+12 limit.`,
+      metrics
+    };
+  }
+  if (lcom4 >= LCOM4_SPLIT_THRESHOLD) {
+    return {
+      action: "split",
+      reason: `LCOM4 = ${lcom4} indicates multiple responsibilities. Extract into sub-fractals along component boundaries.`,
+      metrics
+    };
+  }
+  if (cyclomaticComplexity > CC_THRESHOLD) {
+    return {
+      action: "compress",
+      reason: `High cyclomatic complexity (${cyclomaticComplexity}) with good cohesion. Extract methods, apply strategy pattern, or flatten conditionals.`,
+      metrics
+    };
+  }
+  return {
+    action: "parameterize",
+    reason: `Logic and cohesion are healthy but test count (${testCount}) exceeds limit. Merge redundant edge-case tests into data-driven parameterized tests.`,
+    metrics
+  };
+}
+
+// src/metrics/test-counter.ts
+function detectFileType(filePath) {
+  if (filePath.includes(".spec.")) return "spec";
+  return "test";
+}
+function countTestCases(file2) {
+  const { filePath, content } = file2;
+  const fileType = detectFileType(filePath);
+  let basic = 0;
+  let complex = 0;
+  let describeDepth = 0;
+  const lines = content.split("\n");
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/^describe[\s.(]/.test(trimmed)) {
+      describeDepth++;
+    }
+    if (/^(it|test)[\s.(]/.test(trimmed)) {
+      if (describeDepth <= 1) {
+        basic++;
+      } else {
+        complex++;
+      }
+    }
+    if (/^\}\);?\s*$/.test(trimmed) && describeDepth > 0) {
+      describeDepth--;
+    }
+  }
+  return {
+    filePath,
+    fileType,
+    total: basic + complex,
+    basic,
+    complex
+  };
+}
+
+// src/metrics/three-plus-twelve.ts
+var THRESHOLD = 15;
+function check312Rule(files) {
+  const specFiles = files.filter((f) => f.fileType === "spec");
+  const violatingFiles = specFiles.filter((f) => f.total > THRESHOLD).map((f) => f.filePath);
+  return {
+    violated: violatingFiles.length > 0,
+    files: specFiles,
+    violatingFiles
+  };
+}
+
+// src/mcp/tools/test-metrics.ts
+function handleTestMetrics(input) {
+  switch (input.action) {
+    case "count":
+      return handleCount(input.files ?? []);
+    case "check-312":
+      return handleCheck312(input.files ?? []);
+    case "decide":
+      return handleDecide(input.decisionInput);
+    default:
+      return { error: `Unknown action: ${input.action}` };
+  }
+}
+function handleCount(files) {
+  const counts = files.map((f) => {
+    const raw = { filePath: f.filePath, content: f.content };
+    const result = countTestCases(raw);
+    return {
+      filePath: f.filePath,
+      total: result.total,
+      basic: result.basic,
+      complex: result.complex
     };
   });
-  const totalScore = updatedDebts.reduce((sum, d) => sum + d.weight, 0);
-  const biasLevel = determineBiasLevel(totalScore);
-  return { biasLevel, totalScore, updatedDebts };
+  return { counts };
 }
-async function handleDebtManage(args) {
-  const input = args;
-  if (!input.action) {
-    throw new Error("action is required");
+function handleCheck312(files) {
+  const testCaseCounts = files.map((f) => {
+    const raw = { filePath: f.filePath, content: f.content };
+    const count = countTestCases(raw);
+    return {
+      filePath: f.filePath,
+      fileType: f.filePath.includes(".spec.") ? "spec" : "test",
+      total: count.total,
+      basic: count.total,
+      complex: 0
+    };
+  });
+  const result = check312Rule(testCaseCounts);
+  const violations = result.violatingFiles.map(
+    (fp) => {
+      const entry = testCaseCounts.find((c) => c.filePath === fp);
+      return {
+        filePath: fp,
+        testCount: entry?.total ?? 0,
+        threshold: 15
+      };
+    }
+  );
+  return { violations };
+}
+function handleDecide(params) {
+  if (!params) {
+    return { error: "Decision action requires decisionInput" };
   }
-  if (!input.projectRoot) {
-    throw new Error("projectRoot is required");
-  }
-  switch (input.action) {
-    case "create": {
-      if (!input.debtItem) {
-        throw new Error("debtItem is required for create action");
-      }
-      return handleCreate(input.projectRoot, input.debtItem);
-    }
-    case "list": {
-      return handleList(input.projectRoot, input.fractalPath);
-    }
-    case "resolve": {
-      if (!input.debtId) {
-        throw new Error("debtId is required for resolve action");
-      }
-      return handleResolve(input.projectRoot, input.debtId);
-    }
-    case "calculate-bias": {
-      if (!input.debts) {
-        throw new Error("debts is required for calculate-bias action");
-      }
-      if (!input.changedFractalPaths) {
-        throw new Error("changedFractalPaths is required for calculate-bias action");
-      }
-      if (!input.currentCommitSha) {
-        throw new Error("currentCommitSha is required for calculate-bias action");
-      }
-      return handleCalculateBias(
-        input.debts,
-        input.changedFractalPaths,
-        input.currentCommitSha
-      );
-    }
-    default: {
-      throw new Error(`Unknown action: ${input.action}`);
-    }
-  }
+  const result = decide({
+    testCount: params.testCount,
+    lcom4: params.lcom4,
+    cyclomaticComplexity: params.cyclomaticComplexity
+  });
+  return { decision: result };
 }
 
 // src/mcp/server.ts
@@ -37773,11 +37834,18 @@ function mapReplacer(_key, value) {
   return value;
 }
 function toolResult(result) {
-  return { content: [{ type: "text", text: JSON.stringify(result, mapReplacer, 2) }] };
+  return {
+    content: [
+      { type: "text", text: JSON.stringify(result, mapReplacer, 2) }
+    ]
+  };
 }
 function toolError(error48) {
   const message = error48 instanceof Error ? error48.message : String(error48);
-  return { content: [{ type: "text", text: `Error: ${message}` }], isError: true };
+  return {
+    content: [{ type: "text", text: `Error: ${message}` }],
+    isError: true
+  };
 }
 function createServer() {
   const server = new McpServer({ name: "filid", version: "0.0.1" });
@@ -37788,7 +37856,13 @@ function createServer() {
       inputSchema: external_exports3.object({
         source: external_exports3.string().describe("Source code to analyze"),
         filePath: external_exports3.string().describe("Virtual file path").optional(),
-        analysisType: external_exports3.enum(["dependency-graph", "lcom4", "cyclomatic-complexity", "tree-diff", "full"]).describe("Type of analysis to perform"),
+        analysisType: external_exports3.enum([
+          "dependency-graph",
+          "lcom4",
+          "cyclomatic-complexity",
+          "tree-diff",
+          "full"
+        ]).describe("Type of analysis to perform"),
         className: external_exports3.string().describe("Class name (required for lcom4)").optional(),
         oldSource: external_exports3.string().describe("Old source code (for tree-diff)").optional()
       })
@@ -37813,7 +37887,13 @@ function createServer() {
           external_exports3.object({
             name: external_exports3.string(),
             path: external_exports3.string(),
-            type: external_exports3.enum(["fractal", "organ", "pure-function", "hybrid", "directory"]),
+            type: external_exports3.enum([
+              "fractal",
+              "organ",
+              "pure-function",
+              "hybrid",
+              "directory"
+            ]),
             hasClaudeMd: external_exports3.boolean(),
             hasSpecMd: external_exports3.boolean()
           })
@@ -37822,7 +37902,9 @@ function createServer() {
     },
     async (args) => {
       try {
-        const result = await handleFractalNavigate(args);
+        const result = await handleFractalNavigate(
+          args
+        );
         return toolResult(result);
       } catch (error48) {
         return toolError(error48);
@@ -37909,7 +37991,9 @@ function createServer() {
       description: "\uD604\uC7AC \uD504\uB85C\uC81D\uD2B8 \uAD6C\uC870\uC640 filid \uD504\uB799\uD0C8 \uAD6C\uC870 \uADDC\uCE59 \uC0AC\uC774\uC758 \uC774\uACA9(drift)\uC744 \uAC10\uC9C0\uD55C\uB2E4. \uAC01 \uC774\uACA9 \uD56D\uBAA9\uC5D0\uB294 \uAE30\uB300\uAC12, \uC2E4\uC81C\uAC12, severity(critical/high/medium/low), \uBCF4\uC815 \uC561\uC158 \uC81C\uC548(SyncAction)\uC774 \uD3EC\uD568\uB41C\uB2E4. generatePlan=true \uC2DC \uC774\uACA9 \uD574\uC18C\uB97C \uC704\uD55C SyncPlan\uC744 \uD568\uAED8 \uC0DD\uC131\uD55C\uB2E4.",
       inputSchema: external_exports3.object({
         path: external_exports3.string().describe("\uC774\uACA9\uC744 \uAC80\uC0AC\uD560 \uD504\uB85C\uC81D\uD2B8 \uB8E8\uD2B8 \uB514\uB809\uD1A0\uB9AC\uC758 \uC808\uB300 \uACBD\uB85C"),
-        severity: external_exports3.enum(["critical", "high", "medium", "low"]).describe("\uC774 severity \uC774\uC0C1\uC758 \uC774\uACA9\uB9CC \uBC18\uD658. \uC0DD\uB7B5 \uC2DC \uBAA8\uB4E0 severity \uBC18\uD658").optional(),
+        severity: external_exports3.enum(["critical", "high", "medium", "low"]).describe(
+          "\uC774 severity \uC774\uC0C1\uC758 \uC774\uACA9\uB9CC \uBC18\uD658. \uC0DD\uB7B5 \uC2DC \uBAA8\uB4E0 severity \uBC18\uD658"
+        ).optional(),
         generatePlan: external_exports3.boolean().describe("\uC774\uACA9 \uD574\uC18C SyncPlan \uC0DD\uC131 \uC5EC\uBD80. \uAE30\uBCF8\uAC12: false").optional()
       })
     },
@@ -37928,8 +38012,12 @@ function createServer() {
       description: "\uB450 \uBAA8\uB4C8\uC758 Lowest Common Ancestor(LCA)\uB97C \uD504\uB799\uD0C8 \uD2B8\uB9AC\uC5D0\uC11C \uACC4\uC0B0\uD55C\uB2E4. \uC0C8\uB85C\uC6B4 \uACF5\uC720 \uC758\uC874\uC131\uC744 \uC5B4\uB290 \uB808\uC774\uC5B4\uC5D0 \uBC30\uCE58\uD574\uC57C \uD558\uB294\uC9C0 \uACB0\uC815\uD560 \uB54C \uC0AC\uC6A9\uD55C\uB2E4. \uAC01 \uBAA8\uB4C8\uC5D0\uC11C LCA\uAE4C\uC9C0\uC758 \uAC70\uB9AC\uC640 \uAD8C\uC7A5 \uBC30\uCE58 \uACBD\uB85C(suggestedPlacement)\uB97C \uBC18\uD658\uD55C\uB2E4.",
       inputSchema: external_exports3.object({
         path: external_exports3.string().describe("\uD504\uB85C\uC81D\uD2B8 \uB8E8\uD2B8 \uB514\uB809\uD1A0\uB9AC\uC758 \uC808\uB300 \uACBD\uB85C"),
-        moduleA: external_exports3.string().describe("\uCCAB \uBC88\uC9F8 \uBAA8\uB4C8\uC758 \uD504\uB85C\uC81D\uD2B8 \uB8E8\uD2B8 \uAE30\uC900 \uC0C1\uB300 \uACBD\uB85C (\uC608: src/features/auth)"),
-        moduleB: external_exports3.string().describe("\uB450 \uBC88\uC9F8 \uBAA8\uB4C8\uC758 \uD504\uB85C\uC81D\uD2B8 \uB8E8\uD2B8 \uAE30\uC900 \uC0C1\uB300 \uACBD\uB85C (\uC608: src/features/payment)")
+        moduleA: external_exports3.string().describe(
+          "\uCCAB \uBC88\uC9F8 \uBAA8\uB4C8\uC758 \uD504\uB85C\uC81D\uD2B8 \uB8E8\uD2B8 \uAE30\uC900 \uC0C1\uB300 \uACBD\uB85C (\uC608: src/features/auth)"
+        ),
+        moduleB: external_exports3.string().describe(
+          "\uB450 \uBC88\uC9F8 \uBAA8\uB4C8\uC758 \uD504\uB85C\uC81D\uD2B8 \uB8E8\uD2B8 \uAE30\uC900 \uC0C1\uB300 \uACBD\uB85C (\uC608: src/features/payment)"
+        )
       })
     },
     async (args) => {
@@ -37949,8 +38037,17 @@ function createServer() {
         action: external_exports3.enum(["list", "get", "check"]).describe("\uC218\uD589\uD560 \uB3D9\uC791: 'list' | 'get' | 'check'"),
         path: external_exports3.string().describe("\uD504\uB85C\uC81D\uD2B8 \uB8E8\uD2B8 \uB514\uB809\uD1A0\uB9AC\uC758 \uC808\uB300 \uACBD\uB85C"),
         ruleId: external_exports3.string().describe("action='get'\uC77C \uB54C \uC870\uD68C\uD560 \uADDC\uCE59 ID").optional(),
-        category: external_exports3.enum(["naming", "structure", "dependency", "documentation", "index", "module"]).describe("action='list'\uC77C \uB54C \uCE74\uD14C\uACE0\uB9AC \uD544\uD130").optional(),
-        targetPath: external_exports3.string().describe("action='check'\uC77C \uB54C \uAC80\uC0AC \uB300\uC0C1 \uACBD\uB85C (\uD504\uB85C\uC81D\uD2B8 \uB8E8\uD2B8 \uAE30\uC900 \uC0C1\uB300 \uACBD\uB85C)").optional()
+        category: external_exports3.enum([
+          "naming",
+          "structure",
+          "dependency",
+          "documentation",
+          "index",
+          "module"
+        ]).describe("action='list'\uC77C \uB54C \uCE74\uD14C\uACE0\uB9AC \uD544\uD130").optional(),
+        targetPath: external_exports3.string().describe(
+          "action='check'\uC77C \uB54C \uAC80\uC0AC \uB300\uC0C1 \uACBD\uB85C (\uD504\uB85C\uC81D\uD2B8 \uB8E8\uD2B8 \uAE30\uC900 \uC0C1\uB300 \uACBD\uB85C)"
+        ).optional()
       })
     },
     async (args) => {
@@ -37969,7 +38066,9 @@ function createServer() {
       inputSchema: external_exports3.object({
         path: external_exports3.string().describe("\uAC80\uC99D\uD560 \uD504\uB85C\uC81D\uD2B8 \uB8E8\uD2B8 \uB514\uB809\uD1A0\uB9AC\uC758 \uC808\uB300 \uACBD\uB85C"),
         rules: external_exports3.array(external_exports3.string()).describe("\uAC80\uC0AC\uD560 \uADDC\uCE59 ID \uBAA9\uB85D. \uC0DD\uB7B5 \uC2DC \uBAA8\uB4E0 \uD65C\uC131 \uADDC\uCE59 \uAC80\uC0AC").optional(),
-        fix: external_exports3.boolean().describe("safe \uB4F1\uAE09 \uC704\uBC18 \uD56D\uBAA9 \uC790\uB3D9 \uC218\uC815 \uC5EC\uBD80. \uAE30\uBCF8\uAC12: false (\uD604\uC7AC \uBBF8\uAD6C\uD604 \u2014 \uD5A5\uD6C4 \uC9C0\uC6D0 \uC608\uC815)").optional()
+        fix: external_exports3.boolean().describe(
+          "safe \uB4F1\uAE09 \uC704\uBC18 \uD56D\uBAA9 \uC790\uB3D9 \uC218\uC815 \uC5EC\uBD80. \uAE30\uBCF8\uAC12: false (\uD604\uC7AC \uBBF8\uAD6C\uD604 \u2014 \uD5A5\uD6C4 \uC9C0\uC6D0 \uC608\uC815)"
+        ).optional()
       })
     },
     async (args) => {
@@ -37986,9 +38085,17 @@ function createServer() {
     {
       description: "\uCF54\uB4DC \uB9AC\uBDF0 \uAC70\uBC84\uB10C\uC2A4 \uC138\uC158\uC744 \uAD00\uB9AC\uD55C\uB2E4. action='normalize-branch': \uBE0C\uB79C\uCE58\uBA85\uC744 \uD30C\uC77C\uC2DC\uC2A4\uD15C \uC548\uC804 \uBB38\uC790\uC5F4\uB85C \uBCC0\uD658. action='ensure-dir': \uB9AC\uBDF0 \uB514\uB809\uD1A0\uB9AC \uC0DD\uC131(.filid/review/<normalized>). action='checkpoint': \uB9AC\uBDF0 \uC9C4\uD589 \uB2E8\uACC4(A/B/C/DONE) \uAC10\uC9C0. action='elect-committee': \uBCC0\uACBD \uBCF5\uC7A1\uB3C4 \uAE30\uBC18 \uC704\uC6D0\uD68C \uC120\uCD9C. action='cleanup': \uB9AC\uBDF0 \uB514\uB809\uD1A0\uB9AC \uC0AD\uC81C.",
       inputSchema: external_exports3.object({
-        action: external_exports3.enum(["normalize-branch", "ensure-dir", "checkpoint", "elect-committee", "cleanup"]).describe("\uC218\uD589\uD560 \uB3D9\uC791"),
+        action: external_exports3.enum([
+          "normalize-branch",
+          "ensure-dir",
+          "checkpoint",
+          "elect-committee",
+          "cleanup"
+        ]).describe("\uC218\uD589\uD560 \uB3D9\uC791"),
         projectRoot: external_exports3.string().describe("\uD504\uB85C\uC81D\uD2B8 \uB8E8\uD2B8 \uB514\uB809\uD1A0\uB9AC \uC808\uB300 \uACBD\uB85C"),
-        branchName: external_exports3.string().describe("normalize-branch / ensure-dir / checkpoint / cleanup \uC561\uC158\uC5D0\uC11C \uC0AC\uC6A9\uD560 \uBE0C\uB79C\uCE58\uBA85").optional(),
+        branchName: external_exports3.string().describe(
+          "normalize-branch / ensure-dir / checkpoint / cleanup \uC561\uC158\uC5D0\uC11C \uC0AC\uC6A9\uD560 \uBE0C\uB79C\uCE58\uBA85"
+        ).optional(),
         changedFilesCount: external_exports3.number().describe("elect-committee \uC561\uC158\uC5D0\uC11C \uC0AC\uC6A9\uD560 \uBCC0\uACBD \uD30C\uC77C \uC218").optional(),
         changedFractalsCount: external_exports3.number().describe("elect-committee \uC561\uC158\uC5D0\uC11C \uC0AC\uC6A9\uD560 \uBCC0\uACBD \uD504\uB799\uD0C8 \uC218").optional(),
         hasInterfaceChanges: external_exports3.boolean().describe("elect-committee \uC561\uC158\uC5D0\uC11C \uC0AC\uC6A9\uD560 \uC778\uD130\uD398\uC774\uC2A4 \uBCC0\uACBD \uC5EC\uBD80").optional()

@@ -1,7 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
 import { handleReviewManage } from '../../../mcp/tools/review-manage.js';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -37,7 +39,7 @@ describe('handleReviewManage – normalize-branch', () => {
       projectRoot: '/tmp',
       branchName: 'fix#42@user~branch',
     });
-    expect((result.normalized as string)).toMatch(/fix_42_user_branch/);
+    expect(result.normalized as string).toMatch(/fix_42_user_branch/);
   });
 
   it('removes leading dots', async () => {
@@ -123,7 +125,12 @@ describe('handleReviewManage – ensure-dir', () => {
     });
 
     expect(result.created).toBe(true);
-    const expectedPath = path.join(tmpDir, '.filid', 'review', 'feature--my-feature');
+    const expectedPath = path.join(
+      tmpDir,
+      '.filid',
+      'review',
+      'feature--my-feature',
+    );
     expect(result.path).toBe(expectedPath);
 
     const stat = await fs.stat(expectedPath);
@@ -238,7 +245,10 @@ describe('handleReviewManage – elect-committee', () => {
       hasInterfaceChanges: false,
     });
     expect(result.complexity).toBe('LOW');
-    expect(result.committee).toEqual(['engineering-architect', 'operations-sre']);
+    expect(result.committee).toEqual([
+      'engineering-architect',
+      'operations-sre',
+    ]);
   });
 
   it('selects MEDIUM complexity when interface changes exist', async () => {

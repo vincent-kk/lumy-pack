@@ -42,10 +42,12 @@ export interface RestoredReference {
  */
 export function compactReversible(input: CompactInput): CompactResult {
   const { filePath, content, metadata } = input;
-  const originalLines = content.length === 0 ? 0 : content.split('\n').filter((l) => l.length > 0).length;
-  const exportsStr = metadata.exports.length > 0
-    ? metadata.exports.join(', ')
-    : '(none)';
+  const originalLines =
+    content.length === 0
+      ? 0
+      : content.split('\n').filter((l) => l.length > 0).length;
+  const exportsStr =
+    metadata.exports.length > 0 ? metadata.exports.join(', ') : '(none)';
 
   const compacted = [
     `[REF] ${filePath}`,

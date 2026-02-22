@@ -37,7 +37,9 @@ function isOrganByStructure(dirPath) {
       return LEGACY_ORGAN_DIR_NAMES.includes(path.basename(dirPath));
     }
     const entries = readdirSync(dirPath, { withFileTypes: true });
-    const hasClaudeMd = entries.some((e) => e.isFile() && e.name === "CLAUDE.md");
+    const hasClaudeMd = entries.some(
+      (e) => e.isFile() && e.name === "CLAUDE.md"
+    );
     const hasSpecMd = entries.some((e) => e.isFile() && e.name === "SPEC.md");
     const subdirs = entries.filter((e) => e.isDirectory());
     const hasFractalChildren = subdirs.some((d) => {
@@ -131,7 +133,9 @@ function guardStructure(input2) {
   const content = input2.tool_input.content ?? input2.tool_input.new_string ?? "";
   if (content) {
     const importPaths = extractImportPaths(content);
-    const circularCandidates = importPaths.filter((p) => isAncestorPath(filePath, p, cwd));
+    const circularCandidates = importPaths.filter(
+      (p) => isAncestorPath(filePath, p, cwd)
+    );
     if (circularCandidates.length > 0) {
       warnings.push(
         `\uB2E4\uC74C import\uAC00 \uD604\uC7AC \uD30C\uC77C\uC758 \uC870\uC0C1 \uBAA8\uB4C8\uC744 \uCC38\uC870\uD569\uB2C8\uB2E4 (\uC21C\uD658 \uC758\uC874 \uC704\uD5D8): ` + circularCandidates.map((p) => `"${p}"`).join(", ")
@@ -154,7 +158,9 @@ var chunks = [];
 for await (const chunk of process.stdin) {
   chunks.push(chunk);
 }
-var input = JSON.parse(Buffer.concat(chunks).toString("utf-8"));
+var input = JSON.parse(
+  Buffer.concat(chunks).toString("utf-8")
+);
 var result;
 try {
   result = guardStructure(input);

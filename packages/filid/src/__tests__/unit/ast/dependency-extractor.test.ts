@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { extractDependencies } from '../../../ast/dependency-extractor.js';
 
 describe('dependency-extractor', () => {
@@ -32,9 +33,9 @@ describe('dependency-extractor', () => {
     const result = extractDependencies(source, 'test.ts');
 
     expect(result.imports).toHaveLength(2);
-    const typeImport = result.imports.find(i => i.source === 'fs');
+    const typeImport = result.imports.find((i) => i.source === 'fs');
     expect(typeImport?.isTypeOnly).toBe(true);
-    const valueImport = result.imports.find(i => i.source === 'fs/promises');
+    const valueImport = result.imports.find((i) => i.source === 'fs/promises');
     expect(valueImport?.isTypeOnly).toBe(false);
   });
 
@@ -47,15 +48,19 @@ describe('dependency-extractor', () => {
     const result = extractDependencies(source, 'test.ts');
 
     expect(result.exports).toHaveLength(3);
-    expect(result.exports.map(e => e.name)).toEqual(['CONFIG', 'greet', 'Foo']);
-    expect(result.exports.every(e => !e.isDefault)).toBe(true);
+    expect(result.exports.map((e) => e.name)).toEqual([
+      'CONFIG',
+      'greet',
+      'Foo',
+    ]);
+    expect(result.exports.every((e) => !e.isDefault)).toBe(true);
   });
 
   it('should extract default export', () => {
     const source = `export default function main() {}`;
     const result = extractDependencies(source, 'test.ts');
 
-    const defaultExport = result.exports.find(e => e.isDefault);
+    const defaultExport = result.exports.find((e) => e.isDefault);
     expect(defaultExport).toBeDefined();
     expect(defaultExport?.name).toBe('main');
   });
@@ -71,7 +76,7 @@ describe('dependency-extractor', () => {
     const result = extractDependencies(source, 'test.ts');
 
     expect(result.calls.length).toBeGreaterThanOrEqual(3);
-    const callees = result.calls.map(c => c.callee);
+    const callees = result.calls.map((c) => c.callee);
     expect(callees).toContain('readFile');
     expect(callees).toContain('path.dirname');
     expect(callees).toContain('console.log');

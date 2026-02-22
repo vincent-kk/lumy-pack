@@ -1,10 +1,10 @@
+import { ChangeQueue } from '../../../core/change-queue.js';
 import type {
-  PreToolUseInput,
   PostToolUseInput,
+  PreToolUseInput,
   SubagentStartInput,
   UserPromptSubmitInput,
 } from '../../../types/hooks.js';
-import { ChangeQueue } from '../../../core/change-queue.js';
 
 /** 티어별 파라미터 정의 */
 const TIER_PARAMS = {
@@ -48,7 +48,9 @@ export function generateClaudeMdContent(
   const remaining = lineCount - headerCount;
 
   for (let i = 0; i < remaining; i++) {
-    lines.push(`- Rule ${i + 1}: Follow architectural conventions and patterns`);
+    lines.push(
+      `- Rule ${i + 1}: Follow architectural conventions and patterns`,
+    );
   }
 
   return lines.slice(0, lineCount).join('\n');
@@ -108,7 +110,10 @@ export function generatePreToolUseInput(tier: Tier): PreToolUseInput {
  */
 export function generatePostToolUseInput(tier: Tier): PostToolUseInput {
   const params = TIER_PARAMS[tier];
-  const filePath = generateFilePath({ depth: params.depth, fileName: 'index.ts' });
+  const filePath = generateFilePath({
+    depth: params.depth,
+    fileName: 'index.ts',
+  });
 
   return {
     cwd: '/workspace',
@@ -144,8 +149,12 @@ export function generateUserPromptInput(tier: Tier): UserPromptSubmitInput {
   const prompts: Record<Tier, string> = {
     S: 'Fix the bug',
     M: 'Refactor the authentication module to use the new token strategy and update all related tests',
-    L: 'Design and implement a comprehensive caching layer that integrates with the existing service architecture, handles cache invalidation, supports TTL, and includes monitoring capabilities'.repeat(2),
-    XL: 'Perform a full architectural review and migration plan for transitioning the monolith to microservices, including data migration strategy, API compatibility layer, rollout plan, and rollback procedures'.repeat(4),
+    L: 'Design and implement a comprehensive caching layer that integrates with the existing service architecture, handles cache invalidation, supports TTL, and includes monitoring capabilities'.repeat(
+      2,
+    ),
+    XL: 'Perform a full architectural review and migration plan for transitioning the monolith to microservices, including data migration strategy, API compatibility layer, rollout plan, and rollback procedures'.repeat(
+      4,
+    ),
   };
 
   return {

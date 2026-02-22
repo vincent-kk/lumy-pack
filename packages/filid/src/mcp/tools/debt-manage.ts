@@ -1,13 +1,14 @@
 import { createHash } from 'node:crypto';
-import { mkdir, writeFile, readdir, readFile, unlink } from 'node:fs/promises';
+import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+
 import type {
+  BiasLevel,
+  BiasResult,
   DebtItem,
   DebtItemCreate,
-  BiasResult,
-  BiasLevel,
 } from '../../types/debt.js';
-import { DEBT_WEIGHT_CAP, DEBT_BASE_WEIGHT } from '../../types/debt.js';
+import { DEBT_BASE_WEIGHT, DEBT_WEIGHT_CAP } from '../../types/debt.js';
 
 export interface DebtManageInput {
   action: 'create' | 'list' | 'resolve' | 'calculate-bias';
@@ -50,7 +51,10 @@ function serializeFrontmatter(item: DebtItem): string {
     if (value === null || value === undefined) {
       return `${key}: null`;
     }
-    if (typeof value === 'string' && (value.includes(':') || value.includes('\n') || value.includes("'"))) {
+    if (
+      typeof value === 'string' &&
+      (value.includes(':') || value.includes('\n') || value.includes("'"))
+    ) {
       return `${key}: "${value.replace(/"/g, '\\"')}"`;
     }
     return `${key}: ${value}`;
@@ -68,7 +72,9 @@ ${item.developer_justification}
 ${item.refined_adr}`;
 }
 
-function parseFrontmatter(content: string): Record<string, string | number | null> {
+function parseFrontmatter(
+  content: string,
+): Record<string, string | number | null> {
   const match = /^---\n([\s\S]*?)\n---/.exec(content);
   if (!match) return {};
   const result: Record<string, string | number | null> = {};
@@ -283,10 +289,14 @@ export async function handleDebtManage(
         throw new Error('debts is required for calculate-bias action');
       }
       if (!input.changedFractalPaths) {
-        throw new Error('changedFractalPaths is required for calculate-bias action');
+        throw new Error(
+          'changedFractalPaths is required for calculate-bias action',
+        );
       }
       if (!input.currentCommitSha) {
-        throw new Error('currentCommitSha is required for calculate-bias action');
+        throw new Error(
+          'currentCommitSha is required for calculate-bias action',
+        );
       }
       return handleCalculateBias(
         input.debts,

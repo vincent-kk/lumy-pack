@@ -1,10 +1,14 @@
 import { bench, describe } from 'vitest';
-import { trackChange } from '../../../hooks/change-tracker.js';
-import { generateChangeQueue } from '../fixtures/generator.js';
-import type { PostToolUseInput } from '../../../types/hooks.js';
-import { ChangeQueue } from '../../../core/change-queue.js';
 
-function makeInput(toolName: 'Write' | 'Edit', filePath: string): PostToolUseInput {
+import { ChangeQueue } from '../../../core/change-queue.js';
+import { trackChange } from '../../../hooks/change-tracker.js';
+import type { PostToolUseInput } from '../../../types/hooks.js';
+import { generateChangeQueue } from '../fixtures/generator.js';
+
+function makeInput(
+  toolName: 'Write' | 'Edit',
+  filePath: string,
+): PostToolUseInput {
   return {
     cwd: '/workspace',
     session_id: 'bench-session',

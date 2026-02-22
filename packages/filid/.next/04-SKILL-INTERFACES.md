@@ -14,31 +14,31 @@
 /filid:code-review [--scope=branch|pr|commit] [--base=<ref>] [--force] [--verbose]
 ```
 
-| 옵션 | 타입 | 기본값 | 설명 |
-|---|---|---|---|
-| `--scope` | `branch\|pr\|commit` | `branch` | 리뷰 범위 |
-| `--base` | string | merge-base 자동 감지 | 비교 기준 ref |
-| `--force` | flag | off | 기존 리뷰 파일 삭제 후 Phase A 강제 재시작 |
-| `--verbose` | flag | off | 위원회 토론 과정 상세 출력 |
+| 옵션        | 타입                 | 기본값               | 설명                                       |
+| ----------- | -------------------- | -------------------- | ------------------------------------------ |
+| `--scope`   | `branch\|pr\|commit` | `branch`             | 리뷰 범위                                  |
+| `--base`    | string               | merge-base 자동 감지 | 비교 기준 ref                              |
+| `--force`   | flag                 | off                  | 기존 리뷰 파일 삭제 후 Phase A 강제 재시작 |
+| `--verbose` | flag                 | off                  | 위원회 토론 과정 상세 출력                 |
 
 #### 입력
 
-| 입력 소스 | 수집 방법 | 용도 |
-|---|---|---|
-| git diff | `git diff <base>..HEAD` (Bash) | 변경 파일/내용 분석 |
-| 현재 브랜치 이름 | `git branch --show-current` (Bash) | .filid/ 디렉토리 식별 |
-| PR 메타데이터 (scope=pr 시) | `gh pr view` (Bash) | 의도 맥락 정보 |
-| 기존 부채 목록 | `.filid/debt/*.md` (Read) | 위원회 바이어스 |
-| 프랙탈 구조 | `fractal-scan` (MCP) | 구조 분석 |
-| 코드 메트릭 | `ast-analyze`, `test-metrics` (MCP) | 기술 검증 |
+| 입력 소스                   | 수집 방법                           | 용도                  |
+| --------------------------- | ----------------------------------- | --------------------- |
+| git diff                    | `git diff <base>..HEAD` (Bash)      | 변경 파일/내용 분석   |
+| 현재 브랜치 이름            | `git branch --show-current` (Bash)  | .filid/ 디렉토리 식별 |
+| PR 메타데이터 (scope=pr 시) | `gh pr view` (Bash)                 | 의도 맥락 정보        |
+| 기존 부채 목록              | `.filid/debt/*.md` (Read)           | 위원회 바이어스       |
+| 프랙탈 구조                 | `fractal-scan` (MCP)                | 구조 분석             |
+| 코드 메트릭                 | `ast-analyze`, `test-metrics` (MCP) | 기술 검증             |
 
 #### 출력
 
-| 출력 파일 | 경로 | 내용 |
-|---|---|---|
-| 리뷰 보고서 | `.filid/review/<branch>/review-report.md` | 합의 과정, 페르소나 의견, 기술 지표, 전체 판정 |
-| 수정 요청 사항 | `.filid/review/<branch>/fix-requests.md` | 조치 필요 항목 리스트 (코드 패치 포함) |
-| PR 코멘트 (선택) | GitHub PR 코멘트 | `--scope=pr` 시 `gh` CLI로 리뷰 요약 게시 (환경 의존적, 실패 시 skip) |
+| 출력 파일        | 경로                                      | 내용                                                                  |
+| ---------------- | ----------------------------------------- | --------------------------------------------------------------------- |
+| 리뷰 보고서      | `.filid/review/<branch>/review-report.md` | 합의 과정, 페르소나 의견, 기술 지표, 전체 판정                        |
+| 수정 요청 사항   | `.filid/review/<branch>/fix-requests.md`  | 조치 필요 항목 리스트 (코드 패치 포함)                                |
+| PR 코멘트 (선택) | GitHub PR 코멘트                          | `--scope=pr` 시 `gh` CLI로 리뷰 요약 게시 (환경 의존적, 실패 시 skip) |
 
 #### 내부 워크플로우 — 의장-위임 패턴
 
@@ -88,17 +88,17 @@ Phase C: 정치적 합의 (의장 직접 실행)
 
 #### 입력
 
-| 입력 소스 | 수집 방법 | 용도 |
-|---|---|---|
-| 현재 브랜치 이름 | `git branch --show-current` (Bash) | .filid/ 디렉토리 식별 |
-| 수정 요청 사항 | `.filid/review/<branch>/fix-requests.md` (Read) | Select List 구성 |
+| 입력 소스        | 수집 방법                                       | 용도                  |
+| ---------------- | ----------------------------------------------- | --------------------- |
+| 현재 브랜치 이름 | `git branch --show-current` (Bash)              | .filid/ 디렉토리 식별 |
+| 수정 요청 사항   | `.filid/review/<branch>/fix-requests.md` (Read) | Select List 구성      |
 
 #### 출력
 
-| 출력 파일 | 경로 | 내용 |
-|---|---|---|
-| 소명 기록 | `.filid/review/<branch>/justifications.md` | 거부 항목 + 소명 + 정제된 ADR |
-| 부채 파일 (N개) | `.filid/debt/<fractal-path>-<hash>.md` | 개별 부채 항목 |
+| 출력 파일       | 경로                                       | 내용                          |
+| --------------- | ------------------------------------------ | ----------------------------- |
+| 소명 기록       | `.filid/review/<branch>/justifications.md` | 거부 항목 + 소명 + 정제된 ADR |
+| 부채 파일 (N개) | `.filid/debt/<fractal-path>-<hash>.md`     | 개별 부채 항목                |
 
 #### 내부 워크플로우
 
@@ -130,20 +130,20 @@ Phase C: 정치적 합의 (의장 직접 실행)
 
 #### 입력
 
-| 입력 소스 | 수집 방법 | 용도 |
-|---|---|---|
-| 현재 브랜치 이름 | `git branch --show-current` (Bash) | .filid/ 디렉토리 식별 |
-| 리뷰 보고서 | `.filid/review/<branch>/review-report.md` (Read) | 원래 지적 사항 참조 |
-| 수정 요청 사항 | `.filid/review/<branch>/fix-requests.md` (Read) | 원래 수정 요청 참조 |
-| 소명 기록 | `.filid/review/<branch>/justifications.md` (Read) | 소명 내용 + `resolve_commit_sha` (Delta 기준점) 참조 |
-| 코드 변경분 | `git diff <resolve_commit_sha>..HEAD` (Bash) + `ast-analyze(tree-diff)` (MCP) | Delta 추출 |
+| 입력 소스        | 수집 방법                                                                     | 용도                                                 |
+| ---------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------- |
+| 현재 브랜치 이름 | `git branch --show-current` (Bash)                                            | .filid/ 디렉토리 식별                                |
+| 리뷰 보고서      | `.filid/review/<branch>/review-report.md` (Read)                              | 원래 지적 사항 참조                                  |
+| 수정 요청 사항   | `.filid/review/<branch>/fix-requests.md` (Read)                               | 원래 수정 요청 참조                                  |
+| 소명 기록        | `.filid/review/<branch>/justifications.md` (Read)                             | 소명 내용 + `resolve_commit_sha` (Delta 기준점) 참조 |
+| 코드 변경분      | `git diff <resolve_commit_sha>..HEAD` (Bash) + `ast-analyze(tree-diff)` (MCP) | Delta 추출                                           |
 
 #### 출력
 
-| 출력 파일 | 경로 | 내용 |
-|---|---|---|
-| 재검증 결과 | `.filid/review/<branch>/re-validate.md` | PASS/FAIL + 상세 판정 |
-| PR 코멘트 (선택) | GitHub PR 코멘트 | PASS/FAIL 판정 결과를 `gh` CLI로 PR에 게시 (환경 의존적, 실패 시 skip) |
+| 출력 파일        | 경로                                    | 내용                                                                   |
+| ---------------- | --------------------------------------- | ---------------------------------------------------------------------- |
+| 재검증 결과      | `.filid/review/<branch>/re-validate.md` | PASS/FAIL + 상세 판정                                                  |
+| PR 코멘트 (선택) | GitHub PR 코멘트                        | PASS/FAIL 판정 결과를 `gh` CLI로 PR에 게시 (환경 의존적, 실패 시 skip) |
 
 #### 내부 워크플로우
 
@@ -194,24 +194,24 @@ skills/code-review/
 
 ### 10.2 파일별 책임 분리
 
-| 파일 | 책임 | 로딩 시점 | 로딩 주체 |
-|------|------|-----------|-----------|
-| `SKILL.md` | 의장 정체성, 오케스트레이션 절차, Phase C 합의 지침, 체크포인트 재개 | 스킬 실행 시 자동 | Claude Code |
-| `reference.md` | review-report.md / fix-requests.md 출력 포맷 템플릿, 예시 | Phase C에서 의장이 Read | 의장 |
-| `state-machine.md` | 상태 전이 규칙 (4.1~4.5절의 요약), 정족수 계산 | Phase C에서 의장이 Read | 의장 |
-| `phases/phase-a-analysis.md` | git diff 수집, 프랙탈 경로 식별, 복잡도 판정, 위원회 선출, session.md 스키마 | Phase A에서 분석 agent가 Read | 분석 Agent |
-| `phases/phase-b-verification.md` | MCP tool 호출 목록, 검증 테이블 포맷, 부채 현황 수집, verification.md 스키마 | Phase B에서 검증 agent가 Read | 검증 Agent |
-| `personas/*.md` | 각 페르소나의 전문지식, 행동양식, 행동 원칙 | Phase C에서 선출된 것만 의장이 Read | 의장 |
+| 파일                             | 책임                                                                         | 로딩 시점                           | 로딩 주체   |
+| -------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------- | ----------- |
+| `SKILL.md`                       | 의장 정체성, 오케스트레이션 절차, Phase C 합의 지침, 체크포인트 재개         | 스킬 실행 시 자동                   | Claude Code |
+| `reference.md`                   | review-report.md / fix-requests.md 출력 포맷 템플릿, 예시                    | Phase C에서 의장이 Read             | 의장        |
+| `state-machine.md`               | 상태 전이 규칙 (4.1~4.5절의 요약), 정족수 계산                               | Phase C에서 의장이 Read             | 의장        |
+| `phases/phase-a-analysis.md`     | git diff 수집, 프랙탈 경로 식별, 복잡도 판정, 위원회 선출, session.md 스키마 | Phase A에서 분석 agent가 Read       | 분석 Agent  |
+| `phases/phase-b-verification.md` | MCP tool 호출 목록, 검증 테이블 포맷, 부채 현황 수집, verification.md 스키마 | Phase B에서 검증 agent가 Read       | 검증 Agent  |
+| `personas/*.md`                  | 각 페르소나의 전문지식, 행동양식, 행동 원칙                                  | Phase C에서 선출된 것만 의장이 Read | 의장        |
 
 ### 10.3 SKILL.md 크기 제한
 
-| 파일 | 최대 줄 수 | 근거 |
-|------|-----------|------|
-| `SKILL.md` | **120줄** | 오케스트레이션 + 체크포인트 재개 + `--force` + PR 코멘트 로직 포함 |
-| `reference.md` | **100줄** | 출력 포맷 템플릿. 예시는 최소화 |
-| `state-machine.md` | **50줄** | 전이 규칙 테이블 + 정족수 규칙 |
-| `phases/*.md` | **각 80줄** | 한 Phase의 지침. subagent가 단독 실행 |
-| `personas/*.md` | **각 150줄** | 전문지식 + 행동양식 + 행동 원칙의 3섹션 구조 |
+| 파일               | 최대 줄 수   | 근거                                                               |
+| ------------------ | ------------ | ------------------------------------------------------------------ |
+| `SKILL.md`         | **120줄**    | 오케스트레이션 + 체크포인트 재개 + `--force` + PR 코멘트 로직 포함 |
+| `reference.md`     | **100줄**    | 출력 포맷 템플릿. 예시는 최소화                                    |
+| `state-machine.md` | **50줄**     | 전이 규칙 테이블 + 정족수 규칙                                     |
+| `phases/*.md`      | **각 80줄**  | 한 Phase의 지침. subagent가 단독 실행                              |
+| `personas/*.md`    | **각 150줄** | 전문지식 + 행동양식 + 행동 원칙의 3섹션 구조                       |
 
 ### 10.4 의장의 Task tool 위임 방식
 

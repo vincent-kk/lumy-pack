@@ -16,40 +16,45 @@
 
 ## 위원회 구성
 
-| 페르소나 | 선출 근거 | 최종 입장 |
-|---|---|---|
-| 엔지니어링 아키텍트 | LCOM4 검증 필요 (클래스 변경 감지) | SYNTHESIS |
-| 지식 관리자 | CLAUDE.md 변경 감지 | SYNTHESIS |
-| 비즈니스 드라이버 | 기능 추가 PR | SYNTHESIS |
-| 운영/SRE | 보안 관련 코드 변경 | VETO → SYNTHESIS |
+| 페르소나            | 선출 근거                          | 최종 입장        |
+| ------------------- | ---------------------------------- | ---------------- |
+| 엔지니어링 아키텍트 | LCOM4 검증 필요 (클래스 변경 감지) | SYNTHESIS        |
+| 지식 관리자         | CLAUDE.md 변경 감지                | SYNTHESIS        |
+| 비즈니스 드라이버   | 기능 추가 PR                       | SYNTHESIS        |
+| 운영/SRE            | 보안 관련 코드 변경                | VETO → SYNTHESIS |
 
 ## 기술 검증 결과
 
 ### FCA-AI 구조 검증
-| 검증 항목 | 결과 | 상세 |
-|---|---|---|
-| 프랙탈 경계 | PASS | 모든 변경이 올바른 프랙탈 내 |
-| CLAUDE.md 규정 | WARN | src/auth/CLAUDE.md — 95줄 (한도 100줄) |
-| 3+12 규칙 | FAIL | src/auth/auth.spec.ts — 18 케이스 (한도 15) |
-| LCOM4 | FAIL | src/auth/validator.ts — LCOM4=3 (한도 2) |
-| CC | PASS | 최대 CC=12 (한도 15) |
-| 순환 의존성 | PASS | 사이클 없음 |
-| 구조 드리프트 | PASS | 드리프트 없음 |
+
+| 검증 항목      | 결과 | 상세                                        |
+| -------------- | ---- | ------------------------------------------- |
+| 프랙탈 경계    | PASS | 모든 변경이 올바른 프랙탈 내                |
+| CLAUDE.md 규정 | WARN | src/auth/CLAUDE.md — 95줄 (한도 100줄)      |
+| 3+12 규칙      | FAIL | src/auth/auth.spec.ts — 18 케이스 (한도 15) |
+| LCOM4          | FAIL | src/auth/validator.ts — LCOM4=3 (한도 2)    |
+| CC             | PASS | 최대 CC=12 (한도 15)                        |
+| 순환 의존성    | PASS | 사이클 없음                                 |
+| 구조 드리프트  | PASS | 드리프트 없음                               |
 
 ### 부채 현황
-| 기존 부채 수 | 이번 PR 관련 부채 | 가중치 합계 |
-|---|---|---|
-| 3건 | 1건 (src/auth 관련, 가중치 2) | 5.0 |
+
+| 기존 부채 수 | 이번 PR 관련 부채             | 가중치 합계 |
+| ------------ | ----------------------------- | ----------- |
+| 3건          | 1건 (src/auth 관련, 가중치 2) | 5.0         |
 
 ## 합의 과정 (Deliberation Log)
 
 ### Round 1 — PROPOSAL
+
 [상세 기록...]
 
 ### Round 2 — DEBATE
+
 [상세 기록...]
 
 ### Round N — CONCLUSION
+
 [최종 합의안...]
 
 ## 최종 판정
@@ -60,7 +65,7 @@
 
 ### 6.2 수정 요청 사항 (`fix-requests.md`)
 
-```markdown
+````markdown
 # Fix Requests — <branch name>
 
 **Generated**: <ISO 8601>
@@ -82,6 +87,7 @@
   // auth-happy.spec.ts: 기본 동작 3건
   // auth-edge.spec.ts: 엣지 케이스 12건 이하
   ```
+````
 
 ---
 
@@ -101,7 +107,8 @@
   ```
 
 ---
-```
+
+````
 
 ### 6.3 소명 기록 (`justifications.md`)
 
@@ -128,7 +135,7 @@ resolved_at: <ISO 8601>
 - **Debt Created**: `.filid/debt/src-auth-validator-a1b2c3.md`
 
 ---
-```
+````
 
 ### 6.4 재검증 결과 (`re-validate.md`)
 
@@ -140,22 +147,22 @@ resolved_at: <ISO 8601>
 
 ## Delta 분석
 
-| 파일 | 변경 유형 | 관련 Fix |
-|---|---|---|
-| src/auth/auth.spec.ts | modified (18→12 케이스) | FIX-001 해소 |
-| src/auth/auth-edge.spec.ts | added (6 케이스) | FIX-001 해소 |
+| 파일                       | 변경 유형               | 관련 Fix     |
+| -------------------------- | ----------------------- | ------------ |
+| src/auth/auth.spec.ts      | modified (18→12 케이스) | FIX-001 해소 |
+| src/auth/auth-edge.spec.ts | added (6 케이스)        | FIX-001 해소 |
 
 ## 검증 결과
 
-| Fix ID | 상태 | 상세 |
-|---|---|---|
-| FIX-001 | ✅ RESOLVED | spec.ts가 12케이스, edge.spec.ts가 6케이스로 분할 |
-| FIX-002 | ⏳ DEFERRED (부채) | 소명 수용됨, 부채 발행 완료 |
+| Fix ID  | 상태               | 상세                                              |
+| ------- | ------------------ | ------------------------------------------------- |
+| FIX-001 | ✅ RESOLVED        | spec.ts가 12케이스, edge.spec.ts가 6케이스로 분할 |
+| FIX-002 | ⏳ DEFERRED (부채) | 소명 수용됨, 부채 발행 완료                       |
 
 ## 부채 변동
 
-| 변동 | 부채 파일 | 상세 |
-|---|---|---|
+| 변동 | 부채 파일                    | 상세            |
+| ---- | ---------------------------- | --------------- |
 | 신규 | src-auth-validator-a1b2c3.md | LCOM4 분할 연기 |
 
 ## 최종 판정
@@ -211,10 +218,10 @@ created_at: <ISO 8601>
 
 ## 변경 파일 요약
 
-| 파일 | 변경 유형 | 프랙탈 | 줄 수 변경 |
-|------|-----------|--------|------------|
-| src/features/auth/validator.ts | modified | src/features/auth | +45 -12 |
-| ... | | | |
+| 파일                           | 변경 유형 | 프랙탈            | 줄 수 변경 |
+| ------------------------------ | --------- | ----------------- | ---------- |
+| src/features/auth/validator.ts | modified  | src/features/auth | +45 -12    |
+| ...                            |           |                   |            |
 
 ## 복잡도 판정 근거
 
@@ -246,44 +253,45 @@ created_at: <ISO 8601>
 
 ## FCA-AI 구조 검증
 
-| 검증 항목 | 결과 | 상세 |
-|-----------|------|------|
-| 프랙탈 경계 | PASS/WARN/FAIL | ... |
-| CLAUDE.md 규정 | PASS/WARN/FAIL | ... |
-| 3+12 규칙 | PASS/WARN/FAIL | ... |
-| LCOM4 | PASS/WARN/FAIL | ... |
-| CC | PASS/WARN/FAIL | ... |
-| 순환 의존성 | PASS/WARN/FAIL | ... |
-| 구조 드리프트 | PASS/WARN/FAIL | ... |
+| 검증 항목      | 결과           | 상세 |
+| -------------- | -------------- | ---- |
+| 프랙탈 경계    | PASS/WARN/FAIL | ...  |
+| CLAUDE.md 규정 | PASS/WARN/FAIL | ...  |
+| 3+12 규칙      | PASS/WARN/FAIL | ...  |
+| LCOM4          | PASS/WARN/FAIL | ...  |
+| CC             | PASS/WARN/FAIL | ...  |
+| 순환 의존성    | PASS/WARN/FAIL | ...  |
+| 구조 드리프트  | PASS/WARN/FAIL | ...  |
 
 ## 부채 현황
 
-| 기존 부채 수 | 이번 PR 관련 부채 | 가중치 합계 | 바이어스 수준 |
-|---|---|---|---|
-| N건 | M건 (관련 프랙탈, 가중치 X) | Y | <바이어스 수준> |
+| 기존 부채 수 | 이번 PR 관련 부채           | 가중치 합계 | 바이어스 수준   |
+| ------------ | --------------------------- | ----------- | --------------- |
+| N건          | M건 (관련 프랙탈, 가중치 X) | Y           | <바이어스 수준> |
 
 ### 관련 부채 목록
 
-| ID | 프랙탈 경로 | 규칙 위반 | 가중치 | 생성일 |
-|---|---|---|---|---|
-| ... | | | | |
+| ID  | 프랙탈 경로 | 규칙 위반 | 가중치 | 생성일 |
+| --- | ----------- | --------- | ------ | ------ |
+| ... |             |           |        |        |
 ```
 
 **필수 frontmatter 필드**: `session_ref`, `all_passed`, `critical_failures`, `debt_bias_level`, `created_at`
 
 ### 7.3 브랜치 이름 정규화 규칙
 
-| 원본 브랜치 이름 | 정규화 결과 | 규칙 |
-|---|---|---|
-| `feature/issue-6` | `feature--issue-6` | `/` → `--` |
-| `feature/deep/nested/path` | `feature--deep--nested--path` | 모든 `/` → `--` |
-| `main` | `main` | 변환 없음 |
-| `release-v1.0` | `release-v1.0` | 변환 없음 |
-| `fix/bug#123` | `fix--bug_123` | `/` → `--`, `#` → `_` |
-| `user@feature` | `user_feature` | `@` → `_` |
-| `feature/--special` | `feature----special` | `/` → `--`, 연속 `--` 유지 (충돌 방지) |
+| 원본 브랜치 이름           | 정규화 결과                   | 규칙                                   |
+| -------------------------- | ----------------------------- | -------------------------------------- |
+| `feature/issue-6`          | `feature--issue-6`            | `/` → `--`                             |
+| `feature/deep/nested/path` | `feature--deep--nested--path` | 모든 `/` → `--`                        |
+| `main`                     | `main`                        | 변환 없음                              |
+| `release-v1.0`             | `release-v1.0`                | 변환 없음                              |
+| `fix/bug#123`              | `fix--bug_123`                | `/` → `--`, `#` → `_`                  |
+| `user@feature`             | `user_feature`                | `@` → `_`                              |
+| `feature/--special`        | `feature----special`          | `/` → `--`, 연속 `--` 유지 (충돌 방지) |
 
 **정규화 규칙**:
+
 1. `/` → `--` (가장 핵심, 디렉토리 구분자 충돌 방지)
 2. `#`, `@`, `~`, `^`, `:`, `?`, `*`, `[`, `]`, `\` → `_` (파일시스템 안전 문자)
 3. 선행/후행 `.`, `-` 제거
@@ -294,14 +302,15 @@ created_at: <ISO 8601>
 
 ### 7.4 라이프사이클 자동 정리
 
-| 트리거 | 동작 | 메커니즘 |
-|---|---|---|
-| `re-validate` PASS | 유지 (PR에 리뷰 이력 보존) | — |
-| `re-validate` FAIL | 유지 (재수정 후 재검증 필요) | — |
-| PR 머지 후 | `.filid/review/<branch>/` 디렉토리 삭제 | **수동** (개발자가 머지 후 정리) |
-| 브랜치 삭제 후 | `.filid/review/<branch>/` 디렉토리 잔존 가능 | **수동** 정리 또는 `--gc` |
+| 트리거             | 동작                                         | 메커니즘                         |
+| ------------------ | -------------------------------------------- | -------------------------------- |
+| `re-validate` PASS | 유지 (PR에 리뷰 이력 보존)                   | —                                |
+| `re-validate` FAIL | 유지 (재수정 후 재검증 필요)                 | —                                |
+| PR 머지 후         | `.filid/review/<branch>/` 디렉토리 삭제      | **수동** (개발자가 머지 후 정리) |
+| 브랜치 삭제 후     | `.filid/review/<branch>/` 디렉토리 잔존 가능 | **수동** 정리 또는 `--gc`        |
 
 **설계 결정**: re-validate PASS에서 자동 삭제하지 않는 이유:
+
 1. 리뷰 파일이 커밋되어 PR에 감사 추적(audit trail)이 남아야 함
 2. PR 머지 전에 삭제하면 팀원이 리뷰 결과를 확인할 수 없음
 3. PR 머지 후에는 git 히스토리에 이력이 남으므로 디렉토리 삭제 가능

@@ -36,7 +36,10 @@ export async function handleFractalScan(args: unknown): Promise<ScanReport> {
       nodePaths.map((nodePath) => analyzeModule(nodePath)),
     );
     modules = results
-      .filter((r): r is PromiseFulfilledResult<ModuleInfo> => r.status === 'fulfilled')
+      .filter(
+        (r): r is PromiseFulfilledResult<ModuleInfo> =>
+          r.status === 'fulfilled',
+      )
       .map((r) => r.value);
   }
 

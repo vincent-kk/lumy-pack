@@ -33,18 +33,18 @@ and error prevention in all user-facing surfaces.
 
 ### Nielsen's Heuristics Applied to Code Review
 
-| Heuristic | Code Review Application |
-|-----------|----------------------|
+| Heuristic                   | Code Review Application                      |
+| --------------------------- | -------------------------------------------- |
 | Visibility of system status | Progress indicators, clear state transitions |
-| Match with real world | Domain-appropriate naming, familiar patterns |
-| User control and freedom | Undo/redo capability, graceful cancellation |
-| Consistency and standards | Uniform API patterns, naming conventions |
-| Error prevention | Type safety, validation at boundaries |
-| Recognition over recall | Self-documenting APIs, clear parameter names |
-| Flexibility and efficiency | Sensible defaults, power-user shortcuts |
-| Aesthetic and minimalist | No unused exports, clean public API surface |
-| Error recovery | Actionable error messages, retry guidance |
-| Help and documentation | Inline docs for complex APIs |
+| Match with real world       | Domain-appropriate naming, familiar patterns |
+| User control and freedom    | Undo/redo capability, graceful cancellation  |
+| Consistency and standards   | Uniform API patterns, naming conventions     |
+| Error prevention            | Type safety, validation at boundaries        |
+| Recognition over recall     | Self-documenting APIs, clear parameter names |
+| Flexibility and efficiency  | Sensible defaults, power-user shortcuts      |
+| Aesthetic and minimalist    | No unused exports, clean public API surface  |
+| Error recovery              | Actionable error messages, retry guidance    |
+| Help and documentation      | Inline docs for complex APIs                 |
 
 ### Interaction with Other Personas
 
