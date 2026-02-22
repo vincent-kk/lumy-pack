@@ -7,6 +7,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
+import { homedir } from 'node:os';
 
 import { getActiveRules, loadBuiltinRules } from '../core/rule-engine.js';
 import type { HookOutput, UserPromptSubmitInput } from '../types/hooks.js';
@@ -20,14 +21,14 @@ function cwdHash(cwd: string): string {
 }
 
 function getCacheDir(cwd: string): string {
-  return join(cwd, '.filid', 'cache');
+  const configDir = process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.claude');
+  return join(configDir, 'plugins', 'filid', cwdHash(cwd));
 }
 
 function readCachedContext(cwd: string): string | null {
-  const hash = cwdHash(cwd);
   const cacheDir = getCacheDir(cwd);
-  const stampFile = join(cacheDir, `last-scan-${hash}`);
-  const contextFile = join(cacheDir, `cached-context-${hash}.txt`);
+  const stampFile = join(cacheDir, 'timestamp');
+  const contextFile = join(cacheDir, 'cached-context.txt');
 
   try {
     if (!existsSync(stampFile) || !existsSync(contextFile)) return null;
@@ -40,15 +41,14 @@ function readCachedContext(cwd: string): string | null {
 }
 
 function writeCachedContext(cwd: string, context: string): void {
-  const hash = cwdHash(cwd);
   const cacheDir = getCacheDir(cwd);
-  const stampFile = join(cacheDir, `last-scan-${hash}`);
-  const contextFile = join(cacheDir, `cached-context-${hash}.txt`);
+  const stampFile = join(cacheDir, 'timestamp');
+  const contextFile = join(cacheDir, 'cached-context.txt');
 
   try {
     if (!existsSync(cacheDir)) mkdirSync(cacheDir, { recursive: true });
     writeFileSync(contextFile, context, 'utf-8');
-    writeFileSync(stampFile, String(Date.now()), 'utf-8');
+    writeFileSync(stampFile, '');
   } catch {
     // 캐시 쓰기 실패는 조용히 무시
   }

@@ -10,6 +10,7 @@ import {
   writeFileSync
 } from "node:fs";
 import { join } from "node:path";
+import { homedir } from "node:os";
 
 // src/types/rules.ts
 var BUILTIN_RULE_IDS = {
@@ -230,13 +231,13 @@ function cwdHash(cwd) {
   return createHash("sha256").update(cwd).digest("hex").slice(0, 12);
 }
 function getCacheDir(cwd) {
-  return join(cwd, ".filid", "cache");
+  const configDir = process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), ".claude");
+  return join(configDir, "plugins", "filid", cwdHash(cwd));
 }
 function readCachedContext(cwd) {
-  const hash = cwdHash(cwd);
   const cacheDir = getCacheDir(cwd);
-  const stampFile = join(cacheDir, `last-scan-${hash}`);
-  const contextFile = join(cacheDir, `cached-context-${hash}.txt`);
+  const stampFile = join(cacheDir, "timestamp");
+  const contextFile = join(cacheDir, "cached-context.txt");
   try {
     if (!existsSync(stampFile) || !existsSync(contextFile)) return null;
     const mtime = statSync(stampFile).mtimeMs;
@@ -247,14 +248,13 @@ function readCachedContext(cwd) {
   }
 }
 function writeCachedContext(cwd, context) {
-  const hash = cwdHash(cwd);
   const cacheDir = getCacheDir(cwd);
-  const stampFile = join(cacheDir, `last-scan-${hash}`);
-  const contextFile = join(cacheDir, `cached-context-${hash}.txt`);
+  const stampFile = join(cacheDir, "timestamp");
+  const contextFile = join(cacheDir, "cached-context.txt");
   try {
     if (!existsSync(cacheDir)) mkdirSync(cacheDir, { recursive: true });
     writeFileSync(contextFile, context, "utf-8");
-    writeFileSync(stampFile, String(Date.now()), "utf-8");
+    writeFileSync(stampFile, "");
   } catch {
   }
 }
