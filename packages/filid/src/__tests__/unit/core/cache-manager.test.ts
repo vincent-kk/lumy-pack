@@ -23,6 +23,28 @@ vi.mock('fast-glob', () => ({
   glob: vi.fn(async () => []),
 }));
 
+vi.mock('../../../core/project-hash.js', async () => {
+  const { glob } = await import('fast-glob');
+  const { statSync } = await import('node:fs');
+  const { createHash } = await import('node:crypto');
+  return {
+    computeProjectHash: async (cwd: string) => {
+      const files = (await glob('**/*', { cwd, dot: true })) as string[];
+      const content = files
+        .map((f) => {
+          try {
+            const s = statSync(f);
+            return `${f}:${s.mtimeMs}`;
+          } catch {
+            return `${f}:0`;
+          }
+        })
+        .join('\n');
+      return createHash('sha256').update(content).digest('hex').slice(0, 16);
+    },
+  };
+});
+
 describe('cache-manager', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -203,7 +225,7 @@ describe('cache-manager', () => {
     } as ReturnType<typeof statSync>);
 
     const { computeProjectHash } =
-      await import('../../../core/cache-manager.js');
+      await import('../../../core/project-hash.js');
     const h1 = await computeProjectHash('/proj');
     const h2 = await computeProjectHash('/proj');
 

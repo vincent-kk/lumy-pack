@@ -20,6 +20,7 @@ export {
   findNode,
   getAncestors,
   getDescendants,
+  getFractalsUnderOrgans,
   scanProject,
   shouldExclude,
 } from './core/fractal-tree.js';

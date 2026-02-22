@@ -1,6 +1,5 @@
 export type {
   CategoryType,
-  NodeType,
   FractalNode,
   FractalTree,
   DependencyEdge,

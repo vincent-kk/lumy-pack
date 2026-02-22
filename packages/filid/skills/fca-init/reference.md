@@ -21,6 +21,11 @@ Build an internal working list of all directories from `tree.nodes` for Phase 2 
 > **Note**: Do NOT use `fractal-navigate(action: "tree")` for scanning — that tool
 > builds a tree only from a pre-supplied `entries` array and does not read the filesystem.
 
+> **Important**: `tree.nodes` in the `fractal-scan` response contains **all**
+> directories, including those nested inside organ nodes. In Phase 2, always
+> iterate over the full `tree.nodes.values()`. Traversing only `children` from
+> `tree.root` will miss fractal nodes that live inside organ boundaries.
+
 ## Section 2 — Node Classification Rules
 
 For each directory, call `fractal-navigate` with `action: "classify"`:
@@ -56,8 +61,42 @@ Pattern-based organ rules (applied before name list, after CLAUDE.md/SPEC.md che
 | `__name__` (double-underscore wrapped) | `__tests__`, `__mocks__`, `__custom__` | organ |
 | `.name` (dot-prefixed) | `.git`, `.github`, `.vscode`, `.claude` | organ |
 
-> **중요**: 패턴 규칙은 구조(리프 여부, 자식 유무)와 무관하게 적용된다.
-> CLAUDE.md가 명시적으로 존재하면 패턴보다 우선한다.
+> **Important**: Pattern rules apply regardless of directory structure (leaf or
+> not). An explicit CLAUDE.md always takes precedence over pattern matching.
+
+### Deep Scan — Fractal Nodes Inside Organ Directories
+
+Organ nodes are never CLAUDE.md targets, but fractal nodes can exist inside
+them. Phase 2 must handle this by scanning the full `tree.nodes` map.
+
+**Core rules**:
+- Organ node itself → skip CLAUDE.md generation, but continue scanning inside
+- Fractal node inside an organ → eligible for CLAUDE.md generation
+- Organ node inside an organ → skip CLAUDE.md generation, continue scanning
+
+**Traversal algorithm** (iterate `tree.nodes` directly):
+
+```
+for each node in tree.nodes.values():
+  if node.type === 'fractal' or 'pure-function':
+    → include as a classification target (even if located inside an organ)
+  if node.type === 'organ':
+    → skip CLAUDE.md generation; sub-nodes are handled by the same loop
+```
+
+**Example — three levels of organ nesting**:
+
+```
+/app/src (fractal)                                      ← CLAUDE.md target
+  /app/src/components (organ)                           ← skip
+    /app/src/components/location (fractal, reclassified) ← CLAUDE.md target ✓
+      /app/src/components/location/FindLocationModal
+        (fractal)                                        ← CLAUDE.md target ✓
+```
+
+> `location` is not in `KNOWN_ORGAN_DIR_NAMES` and has a fractal child, so the
+> post-correction pass in `scanProject()` automatically reclassifies it as
+> fractal and places it in `components.children[]`.
 
 ## Section 3 — CLAUDE.md Generation Template
 

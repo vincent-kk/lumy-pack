@@ -17,12 +17,6 @@
  */
 export type CategoryType = 'fractal' | 'organ' | 'pure-function' | 'hybrid';
 
-/**
- * 하위 호환성을 위한 alias. 기존 코드는 NodeType을 계속 사용할 수 있다.
- * @deprecated CategoryType을 사용할 것을 권장한다.
- */
-export type NodeType = CategoryType;
-
 /** Fractal node — a domain boundary with independent business logic */
 export interface FractalNode {
   /** Absolute directory path */
