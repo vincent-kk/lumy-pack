@@ -124,10 +124,10 @@ function markSessionInjected(sessionId: string, cwd: string): void {
 }
 
 const CATEGORY_GUIDE = [
-  '- fractal: CLAUDE.md 또는 SPEC.md가 있는 독립 모듈',
-  '- organ: 프랙탈 자식이 없는 리프 디렉토리',
-  '- pure-function: 부작용 없는 순수 함수 모음',
-  '- hybrid: fractal + organ 특성을 동시에 가지는 과도기적 노드',
+  '- fractal: independent module with CLAUDE.md or SPEC.md',
+  '- organ: leaf directory with no fractal children',
+  '- pure-function: collection of pure functions with no side effects',
+  '- hybrid: transitional node with both fractal and organ characteristics',
 ].join('\n');
 
 /**
@@ -150,7 +150,7 @@ function buildFcaContext(cwd: string): string {
     'Rules:',
     '- CLAUDE.md: max 100 lines, must include 3-tier boundary sections',
     '- SPEC.md: no append-only growth, must restructure on updates',
-    '- Organ directories (구조 분석 기반 자동 분류) must NOT have CLAUDE.md',
+    '- Organ directories (auto-classified by structure analysis) must NOT have CLAUDE.md',
     '- Test files: max 15 cases per spec.ts (3 basic + 12 complex)',
     '- LCOM4 >= 2 → split module, CC > 15 → compress/abstract',
   ].join('\n');

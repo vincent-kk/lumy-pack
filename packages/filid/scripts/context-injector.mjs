@@ -302,10 +302,10 @@ function markSessionInjected(sessionId, cwd) {
   }
 }
 var CATEGORY_GUIDE = [
-  "- fractal: CLAUDE.md \uB610\uB294 SPEC.md\uAC00 \uC788\uB294 \uB3C5\uB9BD \uBAA8\uB4C8",
-  "- organ: \uD504\uB799\uD0C8 \uC790\uC2DD\uC774 \uC5C6\uB294 \uB9AC\uD504 \uB514\uB809\uD1A0\uB9AC",
-  "- pure-function: \uBD80\uC791\uC6A9 \uC5C6\uB294 \uC21C\uC218 \uD568\uC218 \uBAA8\uC74C",
-  "- hybrid: fractal + organ \uD2B9\uC131\uC744 \uB3D9\uC2DC\uC5D0 \uAC00\uC9C0\uB294 \uACFC\uB3C4\uAE30\uC801 \uB178\uB4DC"
+  "- fractal: independent module with CLAUDE.md or SPEC.md",
+  "- organ: leaf directory with no fractal children",
+  "- pure-function: collection of pure functions with no side effects",
+  "- hybrid: transitional node with both fractal and organ characteristics"
 ].join("\n");
 function isFcaProject(cwd) {
   return existsSync(join(cwd, ".filid")) || existsSync(join(cwd, "CLAUDE.md"));
@@ -316,7 +316,7 @@ function buildFcaContext(cwd) {
     "Rules:",
     "- CLAUDE.md: max 100 lines, must include 3-tier boundary sections",
     "- SPEC.md: no append-only growth, must restructure on updates",
-    "- Organ directories (\uAD6C\uC870 \uBD84\uC11D \uAE30\uBC18 \uC790\uB3D9 \uBD84\uB958) must NOT have CLAUDE.md",
+    "- Organ directories (auto-classified by structure analysis) must NOT have CLAUDE.md",
     "- Test files: max 15 cases per spec.ts (3 basic + 12 complex)",
     "- LCOM4 >= 2 \u2192 split module, CC > 15 \u2192 compress/abstract"
   ].join("\n");
