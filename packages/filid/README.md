@@ -8,6 +8,20 @@ As codebases grow, AI agents lose context, documentation drifts from code, and d
 
 ## Installation
 
+### Via Marketplace (Recommended)
+
+```bash
+# 1. Add the repository to your marketplace
+claude plugin marketplace add https://github.com/vincent-kk/lumy-pack
+
+# 2. Install the plugin
+claude plugin install filid
+```
+
+All components (Skills, MCP, Agents, Hooks) register automatically. No manual configuration needed.
+
+### For Development (Local Setup)
+
 ```bash
 # From monorepo root
 yarn install
@@ -24,8 +38,6 @@ Building produces two outputs:
 
 - `libs/server.cjs` — MCP server (11 analysis tools)
 - `scripts/*.mjs` — 5 hook scripts (automatic rule enforcement)
-
-All components (Skills, MCP, Agents, Hooks) register automatically after installation. No manual configuration needed.
 
 ---
 
