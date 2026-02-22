@@ -37,22 +37,24 @@ Build the project hierarchy using `fractal-navigate(action: "tree")` and
 partition into fractal nodes, organ nodes, and spec files.
 See [reference.md Section 1](./reference.md#section-1--tree-construction).
 
-### Phase 2 — CLAUDE.md Validation
+### Phases 2–4 (Parallel — after Phase 1)
 
+Phases 2, 3, and 4 are **independent** and run **in parallel** as separate Task
+subagents (`run_in_background: true`). Await all three before Phase 5.
+
+**Phase 2 — CLAUDE.md Validation**
 Check line count (≤100) and 3-tier boundary sections for every CLAUDE.md.
 See [reference.md Section 2](./reference.md#section-2--claudemd-validation).
 
-### Phase 3 — Organ Directory Validation
-
+**Phase 3 — Organ Directory Validation**
 Verify no organ directory contains a CLAUDE.md file.
 See [reference.md Section 3](./reference.md#section-3--organ-directory-validation).
 
-### Phase 4 — Test File Validation (3+12 Rule)
-
+**Phase 4 — Test File Validation (3+12 Rule)**
 Validate all `*.spec.ts` files against the 15-case limit using `test-metrics`.
 See [reference.md Section 4](./reference.md#section-4--test-file-validation-312-rule).
 
-### Phase 5 — Report Generation
+### Phase 5 — Report Generation (Sequential — after Phases 2–4)
 
 Emit a structured violation report; with `--fix`, apply auto-remediations
 and re-validate.
@@ -90,6 +92,7 @@ See [reference.md Section 5](./reference.md#section-5--report-formats).
 # Scan and auto-fix eligible violations
 /filid:fca-scan --fix
 
+# Phases: 1 (Tree) → [2 + 3 + 4 in parallel] → 5 (Report)
 # Thresholds
 CLAUDE_MD_LINE_LIMIT = 100 lines
 TEST_THRESHOLD       = 15 test cases per spec file

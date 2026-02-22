@@ -39,35 +39,38 @@ committee personas and a state machine.
 
 If `--force`: call `review-manage(cleanup)` first, then restart from Phase A.
 
-### Step 2 — Phase A: Structure Pre-Check (Delegated)
+### Step 2 — Phase A + B: Parallel Delegation
 
-> Skip if `--no-structure-check` is set.
+> Phase A and Phase B are independent and run **in parallel** as separate Task
+> subagents. Phase A is skipped when `--no-structure-check` is set; in that
+> case only Phase B runs.
 
-Delegate to Task subagent (`general-purpose`, model: `sonnet`).
+**Phase A: Structure Pre-Check** (`general-purpose`, model: `sonnet`,
+`run_in_background: true`)
+
 Subagent reads and executes `phases/phase-a-structure.md`.
-
-Resolve phase file path via `${CLAUDE_PLUGIN_ROOT}/skills/fca-review/phases/`.
+Resolve path via `${CLAUDE_PLUGIN_ROOT}/skills/fca-review/phases/`.
 Fallback: `Glob(**/skills/fca-review/phases/phase-a-structure.md)`.
-
 Provide context: review dir, project root, base ref, branch name.
 Output: `.filid/review/<branch>/structure-check.md`
 
 Phase A scans only **files changed in this diff** across 5 structural stages
 and records PASS/FAIL per stage plus a `critical_count` of CRITICAL+HIGH findings.
-These findings flow into Phase B (committee election) and Phase D (fix items).
+These findings flow into Phase D (fix items).
 
-### Step 3 — Phase B: Analysis & Committee Election (Delegated)
+**Phase B: Analysis & Committee Election** (`general-purpose`, model: `haiku`,
+`run_in_background: true`)
 
-Delegate to Task subagent (`general-purpose`, model: `haiku`).
 Subagent reads and executes `phases/phase-b-analysis.md`.
-
-Resolve phase file path via `${CLAUDE_PLUGIN_ROOT}/skills/fca-review/phases/`.
+Resolve path via `${CLAUDE_PLUGIN_ROOT}/skills/fca-review/phases/`.
 Fallback: `Glob(**/skills/fca-review/phases/phase-b-analysis.md)`.
-
 Provide context: branch name, normalized name, review dir, base ref, scope,
 project root. Output: `.filid/review/<branch>/session.md`
 
-### Step 4 — Phase C: Technical Verification (Delegated)
+**Await both** background agents before proceeding. If `--no-structure-check`,
+only await Phase B.
+
+### Step 3 — Phase C: Technical Verification (Delegated)
 
 Delegate to Task subagent (`general-purpose`, model: `sonnet`).
 Subagent reads and executes `phases/phase-c-verification.md`.
@@ -78,7 +81,7 @@ Fallback: `Glob(**/skills/fca-review/phases/phase-c-verification.md)`.
 Provide context: review dir, project root.
 Input: `session.md`. Output: `.filid/review/<branch>/verification.md`
 
-### Step 5 — Phase D: Political Consensus (Direct Execution)
+### Step 4 — Phase D: Political Consensus (Direct Execution)
 
 The chairperson executes Phase D directly:
 
@@ -96,7 +99,7 @@ The chairperson executes Phase D directly:
    - `.filid/review/<branch>/fix-requests.md` — actionable fix items (includes
      CRITICAL/HIGH structure violations as FIX-XXX items)
 
-### Step 6 — PR Comment (Optional)
+### Step 5 — PR Comment (Optional)
 
 When `--scope=pr`: check `gh auth status` (Bash), if authenticated post
 `gh pr comment --body "<summary>"` (Bash), otherwise skip with info message.
@@ -126,7 +129,9 @@ When `--scope=pr`: check `gh auth status` (Bash), if authenticated post
 /filid:fca-review --no-structure-check      # Skip Phase A structure pre-check (faster)
 /filid:fca-review --base=main --verbose     # Verbose review against main
 
-Phases:   A (Structure/sonnet) → B (Analysis/haiku) → C (Verification/sonnet) → D (Consensus/direct)
+Phases:   A (Structure/sonnet) ┐
+          B (Analysis/haiku)  ┘→ C (Verification/sonnet) → D (Consensus/direct)
+          [A + B run in parallel]
 Outputs:  structure-check.md, review-report.md, fix-requests.md
 Resume:   Automatic via checkpoint detection
 Personas: 2-6 elected based on complexity (LOW/MEDIUM/HIGH) + structure violations

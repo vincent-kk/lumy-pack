@@ -29,8 +29,12 @@ moves, renames, index.ts creations, and import path updates.
 
 ### Stage 1 — Analysis & Proposal
 
-`fractal-architect` performs a full structure scan, identifies rule violations and
-structural improvements, and generates a concrete restructuring proposal.
+`fractal-architect` performs analysis using **parallel MCP calls**:
+
+- `fractal-scan`, `drift-detect`, and `rule-query` run **simultaneously**.
+- `lca-resolve` runs after `drift-detect` completes (requires its output).
+
+After all calls complete, `fractal-architect` generates a concrete restructuring proposal.
 See [reference.md Section 1](./reference.md#section-1--analysis--proposal).
 
 ### Stage 2 — Plan Review & Approval
@@ -92,6 +96,8 @@ See [reference.md Section 4](./reference.md#section-4--validation).
 /filid:fca-restructure --auto-approve
 
 Stages:  Analysis → Plan → Execute → Validate
+         Stage 1: fractal-scan + drift-detect + rule-query run in parallel;
+                  lca-resolve runs after drift-detect
 Agents:  fractal-architect (Stage 1, 4), restructurer (Stage 3)
 Dry-run: Prints plan then exits — no file changes
 ```

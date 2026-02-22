@@ -47,7 +47,12 @@ For semantic analysis on changed files:
 ast-analyze(source: <new>, oldSource: <old>, analysisType: "tree-diff")
 ```
 
-### Step 3 — Verify Accepted Fixes
+### Steps 3–5 (Parallel — after Step 2)
+
+Steps 3, 4, and 5 are **independent** and run **in parallel** as separate Task
+subagents (`run_in_background: true`). Await all three before Step 6.
+
+**Step 3 — Verify Accepted Fixes**
 
 For each accepted fix item from `justifications.md`:
 
@@ -59,7 +64,7 @@ For each accepted fix item from `justifications.md`:
    - Structure violation → `structure-validate` — verify PASS
 3. Mark each fix as RESOLVED or UNRESOLVED
 
-### Step 4 — Verify Justifications (Constitutional Check)
+**Step 4 — Verify Justifications (Constitutional Check)**
 
 For each rejected fix with justification:
 
@@ -69,7 +74,7 @@ For each rejected fix with justification:
 2. Verify debt file was created via `debt-manage(list)`
 3. Mark as DEFERRED (valid) or UNCONSTITUTIONAL (invalid justification)
 
-### Step 5 — Resolve Cleared Debt
+**Step 5 — Resolve Cleared Debt**
 
 Check if any Delta changes also resolve existing debt items:
 
@@ -82,7 +87,7 @@ For each debt item whose `file_path` is in the Delta:
 1. Re-run the relevant MCP tool to check if the rule is now satisfied
 2. If satisfied: `debt-manage(action: "resolve", projectRoot: <root>, debtId: <id>)`
 
-### Step 6 — Render Verdict
+### Step 6 — Render Verdict (Sequential — after Steps 3–5)
 
 **PASS conditions** (all must be true):
 
@@ -127,6 +132,7 @@ Output:   re-validate.md, PR comment (optional)
 Prereq:   /filid:fca-resolve must have completed + fixes applied
 Verdict:  PASS | FAIL
 
+Steps:    1 (Load) → 2 (Delta) → [3 + 4 + 5 in parallel] → 6 (Verdict) → 7 (PR)
 MCP tools: review-manage(normalize-branch), ast-analyze(tree-diff, lcom4, cc),
            test-metrics(check-312), structure-validate, debt-manage(list, resolve)
 ```

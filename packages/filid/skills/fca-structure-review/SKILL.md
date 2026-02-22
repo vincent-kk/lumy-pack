@@ -31,32 +31,35 @@ Standalone execution (`/filid:fca-structure-review`) always runs the full 6-stag
 
 ## Core Workflow
 
-### Stage 1 — Structure Verification
+Stages 1–5 are **independent** and run **in parallel** as separate Task subagents
+(`run_in_background: true`). Stage 6 aggregates their results and runs after all
+parallel stages complete.
 
+### Stages 1–5 (Parallel)
+
+Spawn all five stages simultaneously. Await all before proceeding to Stage 6.
+
+**Stage 1 — Structure Verification**
 Validate directory classifications respect FCA-AI fractal/organ boundaries.
 See [reference.md Section 1](./reference.md#section-1--structure-verification-details).
 
-### Stage 2 — Document Compliance
-
+**Stage 2 — Document Compliance**
 Verify CLAUDE.md (≤100 lines, 3-tier sections) and SPEC.md (no append-only).
 See [reference.md Section 2](./reference.md#section-2--document-compliance-details).
 
-### Stage 3 — Test Compliance
-
+**Stage 3 — Test Compliance**
 Validate `*.spec.ts` files against the 3+12 rule (≤15 cases) via `test-metrics`.
 See [reference.md Section 3](./reference.md#section-3--test-compliance-details).
 
-### Stage 4 — Metric Analysis
-
+**Stage 4 — Metric Analysis**
 Measure LCOM4 (split at ≥2) and CC (compress at >15) via `ast-analyze`.
 See [reference.md Section 4](./reference.md#section-4--metric-analysis-details).
 
-### Stage 5 — Dependency Verification
-
+**Stage 5 — Dependency Verification**
 Build the dependency DAG and verify acyclicity via `ast-analyze`.
 See [reference.md Section 5](./reference.md#section-5--dependency-verification-details).
 
-### Stage 6 — Summary Report
+### Stage 6 — Summary Report (Sequential — after Stages 1–5)
 
 Aggregate all stage results into a structured pass/fail verdict.
 See [reference.md Section 6](./reference.md#section-6--summary-report-format).
@@ -91,7 +94,8 @@ See [reference.md Section 6](./reference.md#section-6--summary-report-format).
 /filid:fca-structure-review --stage=3          # Test rule check only
 /filid:fca-structure-review --verbose          # Per-file detail in all stages
 
-Stages:   Structure → Documents → Tests → Metrics → Dependencies → Summary
+Stages:   [Structure + Documents + Tests + Metrics + Dependencies] → Summary
+          (Stages 1–5 run in parallel; Stage 6 aggregates)
 Agents:   qa-reviewer (lead), fractal-architect (assist — stages 1, 5)
 Thresholds:
   CLAUDE_MD_LINE_LIMIT = 100

@@ -5,32 +5,27 @@ fractal structure restructuring skill. For the quick-start overview, see [SKILL.
 
 ## Section 1 — Analysis & Proposal
 
-`fractal-architect` scans the full tree with `fractal-scan`.
+`fractal-architect` runs the first three MCP calls **in parallel** (no dependencies):
 
 ```
+// Parallel batch — fire all three simultaneously:
 fractal-scan({ path: "<target-path>" })
 // Returns: { nodes: FractalNode[], summary: ScanSummary, violations: Violation[] }
-```
 
-Detect fractal principle deviations with `drift-detect`.
-
-```
 drift-detect({ path: "<target-path>" })
 // Returns: { drifts: DriftItem[], total: number }
-```
 
-Use `lca-resolve` when the correct target location for a move must be determined.
-
-```
-lca-resolve({ nodePath: "<path>", contextPaths: ["<sibling1>", "<sibling2>"] })
-// Returns: { lcaPath: string, recommendedParent: string, confidence: number }
-```
-
-Fetch active rules with `rule-query` to anchor proposal rationale.
-
-```
 rule-query({ action: "list" })
 // Returns: { rules: Rule[] }
+```
+
+After `drift-detect` completes, call `lca-resolve` for each move candidate
+(requires drift-detect output to identify reclassification targets):
+
+```
+// Sequential — after drift-detect:
+lca-resolve({ nodePath: "<path>", contextPaths: ["<sibling1>", "<sibling2>"] })
+// Returns: { lcaPath: string, recommendedParent: string, confidence: number }
 ```
 
 After analysis, `fractal-architect` generates a structured YAML proposal:
