@@ -1,13 +1,16 @@
-# Phase 6 — 테스트 전략
+# Phase 6 — 테스트 확장
 
 ## 1. 테스트 전략 개요
 
+기존 filid 테스트 스위트에 프랙탈 구조 관리 기능 테스트를 추가한다.
+새 테스트 스위트를 별도 생성하지 않고, 기존 `packages/filid/src/__tests__/` 하위에 추가한다.
+
 ### 1.1 테스트 프레임워크
 
-**Vitest 3.2** — 전체 테스트 스위트에 사용.
+기존 filid의 **Vitest 3.2** 설정을 그대로 사용한다. `vitest.config.ts`는 변경 없음 또는 최소 수정.
 
 ```typescript
-// vitest.config.ts
+// vitest.config.ts (기존 filid 설정 유지)
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
@@ -32,7 +35,7 @@ export default defineConfig({
 });
 ```
 
-테스트 파일 위치:
+테스트 파일 위치 (기존 filid `src/__tests__/` 하위에 추가):
 - 단위 테스트: `src/__tests__/unit/`
 - 통합 테스트: `src/__tests__/integration/`
 - E2E 테스트: `src/__tests__/e2e/`
@@ -59,13 +62,29 @@ export default defineConfig({
 
 ### 1.3 커버리지 목표
 
+기존 filid 커버리지 기준을 유지하며, 신규 모듈은 80%+ 목표를 추가한다.
+
 | 레이어 | 라인 커버리지 | 브랜치 커버리지 | 비고 |
 |--------|-------------|----------------|------|
 | Core 모듈 (`src/core/`) | 90%+ | 85%+ | 비즈니스 로직 핵심 |
 | MCP 서버 (`src/mcp/`) | 80%+ | 75%+ | 도구 핸들러 포함 |
 | Hook 핸들러 (`src/hooks/`) | 80%+ | 75%+ | 컨텍스트 주입/가드 |
 | 유틸리티 (`src/utils/`) | 85%+ | 80%+ | 순수 함수 우선 |
+| 신규 프랙탈 모듈 | 80%+ | 75%+ | Phase 6 추가분 |
 | 전체 | 80%+ | 75%+ | Vitest v8 provider |
+
+### 1.4 회귀 테스트
+
+기존 filid 테스트가 모두 통과해야 신규 테스트가 유효하다. 신규 테스트 추가 전후로
+기존 테스트 스위트 전체 통과를 확인한다.
+
+```bash
+# 기존 filid 테스트 전체 통과 확인 (신규 추가 전)
+yarn workspace @lumy-pack/filid test
+
+# 신규 테스트 추가 후 전체 재확인
+yarn workspace @lumy-pack/filid test
+```
 
 ---
 
@@ -73,8 +92,13 @@ export default defineConfig({
 
 ### 2.1 Mock 디렉토리 구조
 
+기존 filid 테스트 픽스처와 공존한다. 신규 픽스처는 기존 픽스처와 충돌하지 않도록
+별도 서브디렉토리 또는 명확한 이름으로 추가한다.
+
 ```
 src/__tests__/fixtures/
+├── (기존 filid 픽스처 유지)
+│
 ├── simple-project/          # 단순 프로젝트 (3개 fractal 모듈, 위반 없음)
 │   ├── src/
 │   │   ├── features/
@@ -140,10 +164,12 @@ export function getFixturePath(name: 'simple-project' | 'complex-project' | 'inv
 
 ### 2.2 공통 헬퍼 함수
 
+임시 디렉토리 접두사는 `filid-test-`를 사용한다 (기존 filid 패키지와 일관성 유지).
+
 ```typescript
 // src/__tests__/helpers/mock-factories.ts
 
-import type { FractalNode, HolonConfig, DriftItem, ValidationResult } from '../../types';
+import type { FractalNode, ScanOptions, DriftItem, ValidationResult } from '../../types';
 
 /**
  * Mock FractalNode 생성
@@ -171,18 +197,13 @@ export function createMockTree(nodes: Partial<FractalNode>[]): FractalNode[] {
 }
 
 /**
- * Mock HolonConfig 생성
+ * Mock ScanOptions 생성 (제로 설정 아키텍처 기반)
  */
-export function createMockConfig(overrides: Partial<HolonConfig> = {}): HolonConfig {
+export function createMockConfig(overrides: Partial<ScanOptions> = {}): ScanOptions {
   return {
-    version: '1.0.0',
     projectRoot: '/mock/project',
-    rules: {
-      enabled: true,
-      severityOverrides: {},
-    },
-    organDirNames: ['components', 'utils', 'types', 'hooks', 'helpers', 'lib', 'styles', 'assets', 'constants'],
-    categoryMappings: {},
+    maxDepth: 10,
+    excludePatterns: ['node_modules', '.git'],
     ...overrides,
   };
 }
@@ -228,7 +249,7 @@ export async function createTempProject(structure: Record<string, string>): Prom
   const { join, dirname } = await import('path');
   const { tmpdir } = await import('os');
 
-  const root = await mkdtemp(join(tmpdir(), 'holon-test-'));
+  const root = await mkdtemp(join(tmpdir(), 'filid-test-'));
   for (const [relPath, content] of Object.entries(structure)) {
     const fullPath = join(root, relPath);
     await mkdir(dirname(fullPath), { recursive: true });
@@ -242,74 +263,12 @@ export async function createTempProject(structure: Record<string, string>): Prom
 
 ## 3. Core 모듈 단위 테스트
 
-### 3.1 config-loader.test.ts
+기존 filid `src/__tests__/unit/core/` 하위에 다음 테스트 파일을 추가한다.
 
-**대상**: `src/core/config-loader.ts`
+### 3.1 (제거됨 — config-loader.test.ts)
 
-| # | 테스트 케이스 | 검증 내용 |
-|---|--------------|----------|
-| 1 | 기본 설정 파일 로드 성공 | `holon.config.yml`이 존재하면 파싱된 `HolonConfig` 객체를 반환한다 |
-| 2 | 설정 파일 없을 때 기본값 반환 | 파일이 없으면 `DEFAULT_CONFIG`를 반환한다 (예외 발생 안 함) |
-| 3 | YAML 구문 오류 시 예외 | 잘못된 YAML 파일이면 `ConfigParseError`를 throw한다 |
-| 4 | zod 스키마 검증 실패 시 예외 | 필수 필드 누락 시 `ConfigValidationError`를 throw하며 필드명을 포함한다 |
-| 5 | organDirNames 커스텀 설정 병합 | 사용자 설정의 `organDirNames`가 기본값을 덮어쓴다 |
-| 6 | categoryMappings 커스텀 설정 | 명시적 경로 매핑이 자동 분류보다 우선한다 |
-| 7 | 설정 파일 경로 옵션 지정 | `configPath` 옵션으로 임의 경로의 설정 파일을 로드할 수 있다 |
-| 8 | rules.enabled: false 처리 | 규칙 검사가 비활성화된 경우 빈 규칙 목록을 반환한다 |
-| 9 | severityOverrides 적용 | 특정 규칙의 심각도를 설정으로 재정의할 수 있다 |
-
-```typescript
-// src/__tests__/unit/core/config-loader.test.ts
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { loadConfig } from '../../../core/config-loader';
-import { createTempProject } from '../../helpers/mock-factories';
-import { rm } from 'fs/promises';
-
-describe('config-loader', () => {
-  let tmpDir: string;
-
-  afterEach(async () => {
-    if (tmpDir) await rm(tmpDir, { recursive: true, force: true });
-  });
-
-  it('기본 설정 파일 로드 성공', async () => {
-    tmpDir = await createTempProject({
-      'holon.config.yml': `version: "1.0.0"\nrules:\n  enabled: true\n`,
-    });
-    const config = await loadConfig({ projectRoot: tmpDir });
-    expect(config.version).toBe('1.0.0');
-    expect(config.rules.enabled).toBe(true);
-  });
-
-  it('설정 파일 없을 때 기본값 반환', async () => {
-    tmpDir = await createTempProject({});
-    const config = await loadConfig({ projectRoot: tmpDir });
-    expect(config).toBeDefined();
-    expect(config.organDirNames).toContain('components');
-  });
-
-  it('YAML 구문 오류 시 ConfigParseError throw', async () => {
-    tmpDir = await createTempProject({ 'holon.config.yml': ': invalid: yaml: [' });
-    await expect(loadConfig({ projectRoot: tmpDir })).rejects.toThrow('ConfigParseError');
-  });
-
-  it('zod 검증 실패 시 ConfigValidationError에 필드명 포함', async () => {
-    tmpDir = await createTempProject({
-      'holon.config.yml': 'version: 123\n', // version은 string이어야 함
-    });
-    await expect(loadConfig({ projectRoot: tmpDir })).rejects.toThrow('version');
-  });
-
-  it('organDirNames 커스텀 설정이 기본값을 덮어씀', async () => {
-    tmpDir = await createTempProject({
-      'holon.config.yml': `version: "1.0.0"\norganDirNames: ["shared", "common"]\n`,
-    });
-    const config = await loadConfig({ projectRoot: tmpDir });
-    expect(config.organDirNames).toEqual(['shared', 'common']);
-    expect(config.organDirNames).not.toContain('components');
-  });
-});
-```
+제로 설정 아키텍처 전환으로 config-loader 모듈이 제거되었다.
+해당 테스트도 제거한다.
 
 ---
 
@@ -319,35 +278,40 @@ describe('config-loader', () => {
 
 | # | 테스트 케이스 | 검증 내용 |
 |---|--------------|----------|
-| 1 | organ 패턴 이름 → `organ` 분류 | `components`, `utils` 등 9개 이름이 모두 `organ`으로 분류된다 |
-| 2 | 기본 fractal 분류 | 위 조건 미해당 디렉토리는 `fractal`로 분류된다 |
-| 3 | 순수 함수 파일만 포함 → `pure-function` | 무상태, I/O 없는 파일만 포함된 디렉토리는 `pure-function`으로 분류된다 |
-| 4 | fractal + organ 혼재 → `hybrid` | fractal 자식과 organ 파일이 공존하면 `hybrid`로 분류된다 |
-| 5 | 커스텀 organDirNames 적용 | 설정의 `organDirNames`에 추가된 이름이 `organ`으로 분류된다 |
-| 6 | categoryMappings 명시 매핑 우선 | 설정의 명시적 매핑이 자동 분류보다 우선한다 |
-| 7 | 중첩 organ 디렉토리 정확 분류 | `features/auth/components`는 `organ`, `features/auth`는 `fractal` |
-| 8 | 빈 디렉토리 분류 | 자식이 없는 디렉토리는 기본 `fractal`로 분류된다 |
-| 9 | 대소문자 구분 | `Components`(PascalCase)는 organ 이름 패턴에 해당하지 않는다 |
+| 1 | CLAUDE.md 있는 디렉토리 → `fractal` 분류 | CLAUDE.md가 있는 디렉토리는 `fractal`로 분류된다 |
+| 2 | SPEC.md 있는 디렉토리 → `fractal` 분류 | SPEC.md가 있는 디렉토리는 `fractal`로 분류된다 |
+| 3 | 리프 디렉토리 → `organ` 분류 | 프랙탈 자식이 없는 리프 디렉토리는 `organ`으로 분류된다 |
+| 4 | 기본 fractal 분류 | CLAUDE.md/SPEC.md 없고 리프가 아닌 디렉토리는 `fractal`로 분류된다 |
+| 5 | 순수 함수 파일만 포함 → `pure-function` | 부작용 없는 파일만 포함된 디렉토리는 `pure-function`으로 분류된다 |
+| 6 | fractal + organ 혼재 → `hybrid` | fractal 자식과 organ 파일이 공존하면 `hybrid`로 분류된다 |
+| 7 | 중첩 리프 디렉토리 정확 분류 | `features/auth/components`는 `organ`, `features/auth`는 `fractal` |
+| 8 | 빈 디렉토리 분류 | 자식이 없는 디렉토리는 `organ`으로 분류된다 |
 
 ```typescript
 // src/__tests__/unit/core/category-classifier.test.ts
 import { describe, it, expect } from 'vitest';
 import { classifyCategory } from '../../../core/category-classifier';
-import { createMockConfig, createMockNode } from '../../helpers/mock-factories';
+import { createMockNode } from '../../helpers/mock-factories';
 
 describe('category-classifier', () => {
-  const defaultConfig = createMockConfig();
-
-  it('organ 패턴 이름은 organ으로 분류', () => {
-    const organNames = ['components', 'utils', 'types', 'hooks', 'helpers', 'lib', 'styles', 'assets', 'constants'];
-    for (const name of organNames) {
-      const result = classifyCategory({ name, children: [], config: defaultConfig });
-      expect(result, `${name} should be organ`).toBe('organ');
-    }
+  it('CLAUDE.md가 있는 디렉토리는 fractal로 분류', () => {
+    const result = classifyCategory({ name: 'auth', children: [], hasClaudeMd: true });
+    expect(result).toBe('fractal');
   });
 
-  it('패턴 미해당 디렉토리는 fractal로 분류', () => {
-    const result = classifyCategory({ name: 'auth', children: [], config: defaultConfig });
+  it('SPEC.md가 있는 디렉토리는 fractal로 분류', () => {
+    const result = classifyCategory({ name: 'auth', children: [], hasSpecMd: true });
+    expect(result).toBe('fractal');
+  });
+
+  it('프랙탈 자식이 없는 리프 디렉토리는 organ으로 분류', () => {
+    const result = classifyCategory({ name: 'components', children: [] });
+    expect(result).toBe('organ');
+  });
+
+  it('패턴 미해당 비리프 디렉토리는 fractal로 분류', () => {
+    const child = createMockNode({ category: 'fractal' });
+    const result = classifyCategory({ name: 'features', children: [child] });
     expect(result).toBe('fractal');
   });
 
@@ -356,7 +320,6 @@ describe('category-classifier', () => {
       name: 'math',
       children: [],
       isPureFunction: true,
-      config: defaultConfig,
     });
     expect(result).toBe('pure-function');
   });
@@ -367,23 +330,8 @@ describe('category-classifier', () => {
       name: 'mixed',
       children: [fractalChild],
       hasOrganFiles: true,
-      config: defaultConfig,
     });
     expect(result).toBe('hybrid');
-  });
-
-  it('커스텀 organDirNames가 적용됨', () => {
-    const config = createMockConfig({ organDirNames: ['shared', 'common'] });
-    expect(classifyCategory({ name: 'shared', children: [], config })).toBe('organ');
-    expect(classifyCategory({ name: 'components', children: [], config })).toBe('fractal');
-  });
-
-  it('categoryMappings 명시 매핑이 자동 분류보다 우선', () => {
-    const config = createMockConfig({
-      categoryMappings: { 'src/utils': 'fractal' },
-    });
-    const result = classifyCategory({ name: 'utils', path: 'src/utils', children: [], config });
-    expect(result).toBe('fractal');
   });
 });
 ```
@@ -535,17 +483,19 @@ describe('category-classifier', () => {
 
 **대상**: `src/mcp/server.ts` + 각 도구 핸들러
 
+기존 filid MCP 서버에 프랙탈 도구가 추가된 형태를 테스트한다.
+
 ```typescript
 // src/__tests__/integration/mcp/server.test.ts
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { createHolonMcpServer } from '../../../mcp/server';
+import { createFilidMcpServer } from '../../../mcp/server';
 import { getFixturePath } from '../../helpers/fixture-loader';
 
-describe('Holon MCP Server', () => {
-  let server: Awaited<ReturnType<typeof createHolonMcpServer>>;
+describe('filid MCP Server — 프랙탈 도구', () => {
+  let server: Awaited<ReturnType<typeof createFilidMcpServer>>;
 
   beforeAll(async () => {
-    server = await createHolonMcpServer({ projectRoot: getFixturePath('simple-project') });
+    server = await createFilidMcpServer({ projectRoot: getFixturePath('simple-project') });
   });
 
   afterAll(async () => {
@@ -558,7 +508,7 @@ describe('Holon MCP Server', () => {
 
 | # | 테스트 케이스 | 검증 내용 |
 |---|--------------|----------|
-| 1 | 서버 생성 및 연결 | `createHolonMcpServer()`가 예외 없이 서버 인스턴스를 반환한다 |
+| 1 | 서버 생성 및 연결 | `createFilidMcpServer()`가 예외 없이 서버 인스턴스를 반환한다 |
 | 2 | 도구 목록 조회 — 5개 등록 확인 | `server.listTools()` 응답에 `fractal-scan`, `drift-detect`, `lca-resolve`, `rule-query`, `structure-validate` 5개가 포함된다 |
 | 3 | fractal-scan 호출 — 성공 | `simple-project` 경로로 호출 시 `nodes` 배열과 `summary`가 포함된 응답을 반환한다 |
 | 4 | fractal-scan 호출 — 잘못된 경로 | 존재하지 않는 경로로 호출 시 MCP error response를 반환한다 (예외 throw 아님) |
@@ -667,45 +617,45 @@ PostToolUse hook — 파일 시스템 변경을 추적하고 태그를 생성한
 ### 6.1 테스트 명령어
 
 ```bash
-# 전체 테스트 실행
-yarn workspace @lumy-pack/holon test
+# 전체 테스트 실행 (기존 filid 테스트 + 신규 추가분 포함)
+yarn workspace @lumy-pack/filid test
 
 # 단위 테스트만 실행
-yarn workspace @lumy-pack/holon test src/__tests__/unit
+yarn workspace @lumy-pack/filid test src/__tests__/unit
 
 # 통합 테스트만 실행
-yarn workspace @lumy-pack/holon test src/__tests__/integration
+yarn workspace @lumy-pack/filid test src/__tests__/integration
 
 # 특정 모듈 테스트
-yarn workspace @lumy-pack/holon test config-loader
-yarn workspace @lumy-pack/holon test drift-detector
+yarn workspace @lumy-pack/filid test category-classifier
+yarn workspace @lumy-pack/filid test drift-detector
 
 # 감시 모드 (개발 중)
-yarn workspace @lumy-pack/holon test --watch
+yarn workspace @lumy-pack/filid test --watch
 
 # 커버리지 포함 실행
-yarn workspace @lumy-pack/holon test --coverage
+yarn workspace @lumy-pack/filid test --coverage
 ```
 
 ### 6.2 커버리지 보고서 생성
 
 ```bash
-# HTML 커버리지 보고서 생성 (packages/holon/coverage/)
-yarn workspace @lumy-pack/holon test --coverage --reporter=html
+# HTML 커버리지 보고서 생성 (packages/filid/coverage/)
+yarn workspace @lumy-pack/filid test --coverage --reporter=html
 
 # 커버리지 임계값 강제 적용 (CI용)
-yarn workspace @lumy-pack/holon test --coverage --coverage.thresholds.lines=80
+yarn workspace @lumy-pack/filid test --coverage --coverage.thresholds.lines=80
 ```
 
 ### 6.3 CI 통합
 
 ```yaml
 # .github/workflows/test.yml (참고용)
-- name: Run holon tests
-  run: yarn workspace @lumy-pack/holon test --coverage --reporter=json
+- name: Run filid tests
+  run: yarn workspace @lumy-pack/filid test --coverage --reporter=json
 
 - name: Check coverage thresholds
-  run: yarn workspace @lumy-pack/holon test --coverage
+  run: yarn workspace @lumy-pack/filid test --coverage
   # vitest.config.ts의 thresholds 설정으로 미달 시 CI 실패
 ```
 
@@ -718,3 +668,4 @@ yarn workspace @lumy-pack/holon test --coverage --coverage.thresholds.lines=80
 5. **테스트 이름**: 한국어 서술형 — 조건과 결과를 명확히 표현 (예: "경로가 없으면 ScanError를 throw한다")
 6. **에러 케이스 포함**: 정상 케이스뿐 아니라 경계값과 예외 케이스를 반드시 포함한다
 7. **타임아웃**: 파일 시스템 I/O 테스트는 `{ timeout: 10000 }` 옵션을 명시적으로 설정한다
+8. **기존 테스트 회귀**: 신규 테스트 추가 후 기존 filid 테스트가 모두 통과하는지 확인한다

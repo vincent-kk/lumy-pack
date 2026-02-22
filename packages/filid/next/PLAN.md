@@ -8,14 +8,14 @@ filid v2는 기존 **FCA-AI 규칙 적용** 기능에 **프랙탈 구조 관리*
 
 ### 통합 배경
 
-프랙탈 구조 관리를 별도 플러그인(holon)으로 분리하는 방안을 검토한 결과, 통합이 유리하다는 결론에 도달했다.
+프랙탈 구조 관리를 별도 플러그인으로 분리하는 방안을 검토한 결과, 통합이 유리하다는 결론에 도달했다.
 
 | 비교 항목 | 분리 (2개 플러그인) | 통합 (filid 확장) |
 |-----------|-------------------|------------------|
 | 코드 중복 | ~780줄 (타입, hook, 분류기) | 0 |
 | Hook 이벤트 겹침 | 100% (3/3 이벤트 동일) | 단일 파이프라인 |
 | 타입 호환성 | NodeType(3종) vs CategoryType(4종) 불일치 | 단일 타입 체계 |
-| ORGAN_DIR_NAMES | 이중 하드코딩 위험 | config-loader 단일화 |
+| ORGAN_DIR_NAMES | 이중 하드코딩 위험 | 구조 기반 분류로 전환 (제로 설정) |
 | 사용자 설치 | 2개 플러그인 관리 | 1개 플러그인 |
 | 에이전트 협업 | 플러그인 간 통신 불가 | 내부 모듈 호출 |
 
@@ -39,7 +39,7 @@ filid v2는 기존 **FCA-AI 규칙 적용** 기능에 **프랙탈 구조 관리*
 | 수동으로 구조를 파악하는 비용 | fractal-scan MCP 도구로 즉시 트리 시각화 |
 | 의존 관계 배치 결정의 모호성 | LCA 알고리즘으로 최적 위치 계산 |
 | 구조 변경 후 규칙 위반 누락 | structure-guard 통합으로 변경 전 검증 강화 |
-| ORGAN_DIR_NAMES 하드코딩 | .holonrc.yml 설정 기반 외부 주입으로 전환 |
+| ORGAN_DIR_NAMES 하드코딩 | 구조 기반 분류로 전환 (CLAUDE.md/SPEC.md 존재, 디렉토리 구조 분석, LLM 판단) |
 
 ---
 
@@ -95,9 +95,9 @@ filid v2는 기존 **FCA-AI 규칙 적용** 기능에 **프랙탈 구조 관리*
 | 파일 | 변경 내용 |
 |------|-----------|
 | `src/types/fractal.ts` | `NodeType` → `CategoryType`(+hybrid) 확장, `FractalNode` 필드 추가 (hasIndex, hasPackageJson, depth), `ModuleInfo` 타입 추가 |
-| `src/core/organ-classifier.ts` | `ORGAN_DIR_NAMES` 하드코딩 → config-loader 기반 주입으로 전환 |
-| `src/core/fractal-tree.ts` | `buildFractalTree()` 확장 — config 기반 include/exclude, maxDepth 지원, 스캔 시간 측정 |
-| `src/hooks/context-injector.ts` | 프랙탈 규칙 요약 섹션 추가 주입, 인라인 organ 목록 → config-loader 참조로 교체 |
+| `src/core/organ-classifier.ts` | `ORGAN_DIR_NAMES` 하드코딩 → 구조 기반 분류로 전환 (디렉토리 구조 분석 + LLM 판단) |
+| `src/core/fractal-tree.ts` | `buildFractalTree()` 확장 — 구조 기반 분류 적용, maxDepth 지원, 스캔 시간 측정 |
+| `src/hooks/context-injector.ts` | 프랙탈 규칙 요약 섹션 추가 주입, 구조 기반 분류 결과 반영 + 모호한 케이스 LLM 판단 위임 |
 | `src/hooks/organ-guard.ts` | structure-guard로 확장 — 카테고리 분류 기반 검증 3가지 추가 |
 | `src/hooks/change-tracker.ts` | 카테고리 분류 태그 추가, `.filid/change-log.jsonl` 기록 |
 | `src/mcp/server.ts` | MCP 도구 5개 추가 등록 (fractal-scan, drift-detect, lca-resolve, rule-query, structure-validate) |
@@ -111,10 +111,8 @@ filid v2는 기존 **FCA-AI 규칙 적용** 기능에 **프랙탈 구조 관리*
 | 파일 | 역할 |
 |------|------|
 | `src/types/rules.ts` | 규칙 타입 정의 (Rule, RuleSet, RuleViolation, RuleSeverity) |
-| `src/types/config.ts` | 설정 타입 정의 (HolonConfig, CategoryConfig, ScanConfig) |
 | `src/types/drift.ts` | 이격 타입 정의 (DriftItem, DriftResult, SyncPlan, SyncAction) |
 | `src/types/report.ts` | 보고서 타입 정의 (ScanReport, ValidationReport, AnalysisReport) |
-| `src/core/config-loader.ts` | .holonrc.yml 로드, 3단계 설정 병합 |
 | `src/core/rule-engine.ts` | 규칙 로드, 평가, 실행 |
 | `src/core/fractal-scanner.ts` | 디렉토리 트리 스캔 (config 기반 확장판 fractal-tree) |
 | `src/core/index-analyzer.ts` | index.ts barrel export 패턴 분석 |
@@ -173,10 +171,9 @@ packages/filid/
 │   │   ├── [NEW] drift.ts
 │   │   └── [NEW] report.ts
 │   ├── core/
-│   │   ├── [MOD] fractal-tree.ts            # config 기반 스캔 확장
-│   │   ├── [MOD] organ-classifier.ts        # 하드코딩 → config-loader 주입
+│   │   ├── [MOD] fractal-tree.ts            # 구조 기반 스캔 확장
+│   │   ├── [MOD] organ-classifier.ts        # 하드코딩 → 구조 기반 분류로 전환
 │   │   ├── (dependency-graph.ts 유지)
-│   │   ├── [NEW] config-loader.ts
 │   │   ├── [NEW] rule-engine.ts
 │   │   ├── [NEW] fractal-scanner.ts         # fractal-tree 래핑 + config 통합
 │   │   ├── [NEW] index-analyzer.ts
@@ -204,7 +201,6 @@ packages/filid/
 │   │       └── [NEW] structure-guard.entry.ts
 │   └── __tests__/
 │       ├── core/
-│       │   ├── [NEW] config-loader.test.ts
 │       │   ├── [NEW] rule-engine.test.ts
 │       │   ├── [NEW] fractal-scanner.test.ts
 │       │   ├── [NEW] category-classifier.test.ts
@@ -235,22 +231,20 @@ packages/filid/
 
 ## 5. 구현 Phase 및 의존 관계
 
-### Phase 1: 타입 확장 & 설정 시스템
+### Phase 1: 타입 확장 & 구조 기반 분류 시스템
 
-**목표:** 기존 타입을 확장하고, config-loader를 도입하여 하드코딩 제거
+**목표:** 기존 타입을 확장하고, 구조 기반 분류 시스템을 도입하여 하드코딩 제거
 
 **작업 항목:**
 1. `src/types/fractal.ts` — `NodeType` → `CategoryType`(+hybrid) 확장, `FractalNode` 필드 추가, `ModuleInfo` 타입 추가
 2. `src/types/rules.ts` — 규칙 타입 정의 (BLUEPRINT.md 섹션 2.2 참조)
-3. `src/types/config.ts` — 설정 타입 정의 (BLUEPRINT.md 섹션 2.3 참조)
-4. `src/types/drift.ts` — 이격 타입 정의 (BLUEPRINT.md 섹션 2.4 참조)
-5. `src/types/report.ts` — 보고서 타입 정의 (BLUEPRINT.md 섹션 2.6 참조)
-6. `src/core/config-loader.ts` — `.holonrc.yml` 로드, 설정 병합 (default → project → user)
-7. `src/index.ts` — 신규 타입 re-export 추가
+3. `src/types/drift.ts` — 이격 타입 정의 (BLUEPRINT.md 섹션 2.4 참조)
+4. `src/types/report.ts` — 보고서 타입 정의 (BLUEPRINT.md 섹션 2.6 참조)
+5. `src/index.ts` — 신규 타입 re-export 추가
 
 **마이그레이션:**
-- `src/core/organ-classifier.ts`의 `ORGAN_DIR_NAMES` 하드코딩을 config-loader에서 제공하는 값으로 교체
-- `src/hooks/context-injector.ts:21`의 인라인 organ 목록을 config-loader 참조로 교체
+- `src/core/organ-classifier.ts`의 `ORGAN_DIR_NAMES` 하드코딩을 구조 기반 분류로 교체 (CLAUDE.md/SPEC.md 존재 여부, 디렉토리 구조 분석)
+- `src/hooks/context-injector.ts:21`의 인라인 organ 목록을 구조 기반 분류 결과로 교체
 - 기존 `NodeType`을 사용하는 모든 import는 `CategoryType`으로 전환 (하위 호환: `NodeType = CategoryType`으로 alias 유지)
 
 **완료 조건:** `tsc --noEmit` 통과, 기존 테스트 전체 통과
@@ -267,12 +261,11 @@ packages/filid/
 
 ```
 Level 0 (의존 없음, Phase 1 타입만 의존):
-  config-loader         — .holonrc.yml 로드, 3단계 설정 병합 (Phase 1에서 생성)
-  organ-classifier [MOD] — config-loader 기반 주입으로 전환
+  organ-classifier [MOD] — 구조 기반 분류로 전환 (디렉토리 구조 분석)
 
-Level 1 (config-loader 의존):
+Level 1 (Phase 1 타입 의존):
   rule-engine            — 규칙 로드, 평가, 실행
-  fractal-scanner        — fractal-tree.ts 래핑 + config 기반 include/exclude
+  fractal-scanner        — fractal-tree.ts 래핑 + 구조 기반 include/exclude
 
 Level 2 (fractal-scanner 의존):
   index-analyzer         — index.ts barrel export 패턴 분석
@@ -288,8 +281,8 @@ Level 4 (모든 Level 3 의존):
 ```
 
 **기존 모듈 확장:**
-- `fractal-tree.ts` — config 기반 include/exclude, maxDepth, 스캔 시간 측정 추가
-- `organ-classifier.ts` — `ORGAN_DIR_NAMES`를 `config-loader`에서 주입받도록 변경, `classifyNode()` 반환값을 `CategoryType`으로 확장 (hybrid 판별 추가)
+- `fractal-tree.ts` — 구조 기반 include/exclude, maxDepth, 스캔 시간 측정 추가
+- `organ-classifier.ts` — `ORGAN_DIR_NAMES` 하드코딩을 구조 기반 분류로 전환, `classifyNode()` 반환값을 `CategoryType`으로 확장 (hybrid 판별 추가)
 
 **완료 조건:** 각 모듈 단위 테스트 통과, 기존 테스트 전체 통과
 
@@ -309,7 +302,7 @@ Level 4 (모든 Level 3 의존):
 | `fractal-scan` | `tools/fractal-scan.ts` | fractal-scanner, project-analyzer |
 | `drift-detect` | `tools/drift-detect.ts` | drift-detector, fractal-validator |
 | `lca-resolve` | `tools/lca-resolve.ts` | lca-calculator |
-| `rule-query` | `tools/rule-query.ts` | rule-engine, config-loader |
+| `rule-query` | `tools/rule-query.ts` | rule-engine |
 | `structure-validate` | `tools/structure-validate.ts` | fractal-validator, category-classifier |
 
 **서버 수정:**
@@ -329,7 +322,7 @@ Level 4 (모든 Level 3 의존):
 
 | 기존 Hook | 통합 방향 | 변경 내용 |
 |-----------|----------|-----------|
-| `context-injector` | **확장** | 기존 FCA-AI 규칙 주입에 프랙탈 구조 규칙 요약 섹션 추가. config-loader 기반 organ 목록 참조 |
+| `context-injector` | **확장** | 기존 FCA-AI 규칙 주입에 프랙탈 구조 규칙 요약 섹션 추가. 구조 기반 분류 결과 기반 organ 목록 반영 |
 | `organ-guard` | **확장 + 리네임** → `structure-guard` | 기존 organ CLAUDE.md 차단에 카테고리 기반 검증 3가지 추가 (미분류 경로, 순환 의존, organ 하위 fractal 생성) |
 | `change-tracker` | **확장** | 기존 추적에 카테고리 분류 태그 추가, `.filid/change-log.jsonl` 기록 |
 | `pre-tool-validator` | **유지** | 변경 없음 |
@@ -390,7 +383,6 @@ Level 4 (모든 Level 3 의존):
 | `__tests__/hooks/` | 2개 (확장 + 신규) | stdin/stdout JSON 직렬화 테스트 |
 
 **핵심 테스트 케이스:**
-- `config-loader.test.ts`: 설정 로드, 병합, zod 검증, 기본값 폴백
 - `fractal-scanner.test.ts`: 가상 디렉토리 트리 스캔, FractalTree 빌드 검증
 - `category-classifier.test.ts`: 4종 카테고리 분류 경계값 (organ-classifier 확장)
 - `lca-calculator.test.ts`: 의존 그래프 LCA 계산 정확성
@@ -432,22 +424,25 @@ depth: number;           // 루트로부터의 깊이
 // 기존 (v1) — organ-classifier.ts
 const ORGAN_DIR_NAMES = ['components', 'utils', 'types', ...]; // 9개 하드코딩
 
-// 확장 (v2) — config-loader에서 주입
-import { loadConfig } from './config-loader.js';
-const config = await loadConfig(cwd);
-const organNames = config.categories?.organNames ?? DEFAULT_ORGAN_NAMES;
+// 확장 (v2) — 구조 기반 분류 (제로 설정)
+// 이름 기반 판별을 제거하고, 디렉토리 구조를 분석하여 분류
+export function classifyNode(input: ClassifyInput): CategoryType {
+  // 1. CLAUDE.md 존재 → fractal
+  if (input.hasClaudeMd) return 'fractal';
+  // 2. SPEC.md 존재 → fractal
+  if (input.hasSpecMd) return 'fractal';
+  // 3. 프랙탈 자식 없음 + 리프 파일만 → organ
+  if (!input.hasFractalChildren && input.isLeafDirectory) return 'organ';
+  // 4. 부작용 없음 → pure-function
+  if (!input.hasSideEffects) return 'pure-function';
+  // 5. 기본값 → fractal
+  return 'fractal';
+  // 6. 모호한 케이스는 context-injector를 통해 LLM이 판단
+}
 ```
 
-기본값은 기존 9개를 유지하되, `.holonrc.yml`로 확장 가능:
-
-```yaml
-# .holonrc.yml
-categories:
-  organNames:
-    - "queries"
-    - "mutations"
-    - "schemas"
-```
+설정 파일(.fractalrc.yml) 없이 구조 기반으로 자동 분류된다.
+모호한 경계 케이스는 Claude Code의 LLM 판단에 위임한다.
 
 ### 6.3 Hook 마이그레이션
 
@@ -457,15 +452,17 @@ categories:
 - 기존 `isOrganDirectory()` 함수는 내부적으로 유지 (structure-guard에서 호출)
 - 기존 차단 동작 (`continue: false` for organ CLAUDE.md) 완전 보존
 
-### 6.4 context-injector 인라인 organ 목록 교체
+### 6.4 context-injector 구조 기반 분류 반영
 
 ```typescript
-// 기존 (v1) — line 21
+// 기존 (v1) — 하드코딩된 organ 목록
 '- Organ directories (components, utils, types, hooks, helpers, lib, styles, assets, constants) must NOT have CLAUDE.md'
 
-// 확장 (v2) — config-loader 참조
-const organNames = config.categories?.organNames ?? DEFAULT_ORGAN_NAMES;
-`- Organ directories (${organNames.join(', ')}) must NOT have CLAUDE.md`
+// 확장 (v2) — 구조 기반 분류 결과 반영
+// organ-classifier의 구조 분석 결과를 동적으로 반영
+const organDirs = tree.nodes.filter(n => n.category === 'organ').map(n => n.name);
+`- Organ directories (${organDirs.join(', ')}) must NOT have CLAUDE.md`
+// 모호한 케이스가 있으면 LLM에게 판단을 요청하는 컨텍스트를 추가 주입
 ```
 
 ---
@@ -537,15 +534,25 @@ yarn workspace @lumy-pack/filid test:run
 ```json
 {
   "dependencies": {
-    "yaml": "^2.0.0",
-    "zod": "^3.23.8"
+    "micromatch": "^4.0.8"
+  },
+  "devDependencies": {
+    "@types/micromatch": "^4.0.9"
   }
 }
 ```
 
 기존 filid 의존성 (`@modelcontextprotocol/sdk`, `fast-glob`, `esbuild` 등)은 변경 없음.
-`yaml`은 `.holonrc.yml` 파싱에 필요하고, `zod`는 설정 스키마 검증에 필요하다.
+`micromatch`는 glob 패턴 기반 디렉토리 분류 및 exclude 패턴 매칭에 사용한다.
+
+**제거된 의존성:**
+- `yaml`: 설정 파일(.fractalrc.yml) 제거로 불필요
+- `zod`: 설정 스키마 검증 제거로 불필요
+
+**설계 결정:** filid v2는 제로 설정(zero-config) 아키텍처를 채택한다.
+설정 파일 대신 디렉토리 구조 분석으로 자동 분류하고,
+모호한 경계 케이스는 Claude Code 플러그인 환경의 LLM 판단에 위임한다.
 
 ### 불필요한 의존성
 
-기존 holon 계획에서 별도 패키지용으로 예정했던 `typescript` (AST 파싱용) 의존성은 filid에 이미 포함되어 있으므로 추가 불필요.
+기존 별도 패키지 계획에서 예정했던 `typescript` (AST 파싱용) 의존성은 filid에 이미 포함되어 있으므로 추가 불필요.

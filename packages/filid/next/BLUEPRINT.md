@@ -1,4 +1,4 @@
-# Holon — 기술 청사진
+# filid v2 — 프랙탈 구조 관리 기술 청사진
 
 ## 1. 아키텍처 개요
 
@@ -10,31 +10,40 @@
 │  .claude-plugin/plugin.json  |  .mcp.json               │
 │  hooks/hooks.json            |  agents/*.md             │
 │  skills/*/SKILL.md                                       │
+│                                                          │
+│  [기존 filid]  FCA-AI 규칙 강제 에이전트/스킬             │
+│  [신규 v2]     프랙탈 구조 관리 에이전트/스킬 통합         │
 ├─────────────────────────────────────────────────────────┤
 │                      MCP Layer                          │
-│  fractal-scan  drift-detect  lca-resolve                │
-│  rule-query    structure-validate                        │
+│  [기존] fractal-navigate                                 │
+│  [신규] fractal-scan  drift-detect  lca-resolve          │
+│         rule-query    structure-validate                 │
 │  (libs/server.cjs — esbuild CJS 번들)                   │
 ├─────────────────────────────────────────────────────────┤
 │                      Hook Layer                         │
-│  context-injector (UserPromptSubmit)                    │
-│  structure-guard  (PreToolUse: Write|Edit)              │
-│  change-tracker   (PostToolUse: Write|Edit)             │
+│  [기존] pre-tool-use  post-tool-use  session-start       │
+│         user-prompt-submit  stop                        │
+│  [신규] context-injector (UserPromptSubmit 확장)         │
+│         structure-guard  (PreToolUse: Write|Edit)        │
+│         change-tracker   (PostToolUse: Write|Edit)       │
 │  (scripts/*.mjs — esbuild ESM 번들)                     │
 ├─────────────────────────────────────────────────────────┤
 │                      Core Layer                         │
-│  rule-engine       config-loader    category-classifier │
-│  fractal-scanner   index-analyzer   module-main-analyzer│
-│  fractal-validator lca-calculator   drift-detector      │
-│  project-analyzer                                       │
+│  [기존] fractal-tree  organ-classifier  dependency-graph │
+│  [신규] rule-engine       category-classifier            │
+│         fractal-scanner   index-analyzer   module-main-analyzer│
+│         fractal-validator lca-calculator   drift-detector      │
+│         project-analyzer                                 │
 ├─────────────────────────────────────────────────────────┤
 │                      Type Layer                         │
-│  fractal.ts  rules.ts  config.ts                        │
+│  fractal.ts  rules.ts  scan.ts                          │
 │  drift.ts    hooks.ts  report.ts                        │
 └─────────────────────────────────────────────────────────┘
 ```
 
 각 레이어는 하위 레이어에만 의존한다. Plugin Layer는 빌드 산출물(libs/, scripts/)을 참조하고, MCP/Hook Layer는 Core Layer를 사용하며, Core Layer는 Type Layer에만 의존한다.
+
+신규 v2 모듈은 기존 filid Core Layer의 `fractal-tree`, `organ-classifier`, `dependency-graph` 위에 구축된다.
 
 ---
 
@@ -53,7 +62,7 @@ context-injector.mjs (scripts/)
         │  stdin: { cwd, session_id, hook_event_name: "UserPromptSubmit", prompt }
         ▼
 injectContext(input: UserPromptSubmitInput)
-        │  config-loader로 .holonrc.yml 로드
+        │  organ-classifier로 구조 기반 분류 수행
         │  rule-engine으로 활성화된 규칙 목록 조회
         ▼
 HookOutput { continue: true, hookSpecificOutput: { additionalContext: "..." } }
@@ -62,14 +71,14 @@ HookOutput { continue: true, hookSpecificOutput: { additionalContext: "..." } }
 Claude Code가 에이전트 컨텍스트에 규칙 요약 주입
 ```
 
-에이전트가 코드를 작성할 때 자동으로 프랙탈 구조 규칙 요약이 컨텍스트에 포함된다. 규칙 내용은 `config-loader`가 로드한 `.holonrc.yml`의 설정에 따라 달라진다.
+에이전트가 코드를 작성할 때 자동으로 프랙탈 구조 규칙 요약이 컨텍스트에 포함된다. 규칙 내용은 `organ-classifier`의 구조 기반 분류 결과에 따라 달라진다.
 
 ---
 
 #### Restructure 모드
 
 ```
-/holon:restructure 스킬 호출
+/filid:restructure 스킬 호출
         │
         ▼
 fractal-architect 에이전트 (opus, read-only)
@@ -101,7 +110,7 @@ restructurer 에이전트 (sonnet, write)
 #### Sync 모드
 
 ```
-/holon:sync 스킬 호출
+/filid:sync 스킬 호출
         │
         ▼
 drift-detect MCP 도구 호출
@@ -133,6 +142,8 @@ lca-resolve, structure-validate로 보정 액션 검증
 
 ### 2.1 fractal.ts
 
+기존 filid의 타입을 확장하는 형태로 정의한다. 기존 filid에서 사용하는 `NodeType`은 `CategoryType`의 alias로 유지한다.
+
 ```typescript
 /**
  * 프랙탈 구조 노드 타입 정의
@@ -149,6 +160,9 @@ lca-resolve, structure-validate로 보정 액션 검증
  * - hybrid: fractal이면서 동시에 organ 역할을 하는 전환 단계 노드.
  */
 export type CategoryType = 'fractal' | 'organ' | 'pure-function' | 'hybrid';
+
+/** 기존 filid NodeType과의 호환성 alias */
+export type NodeType = CategoryType;
 
 /**
  * 프랙탈 트리의 단일 노드
@@ -311,8 +325,8 @@ export interface RuleEvaluationContext {
   projectRoot: string;
   /** 프랙탈 트리 (스캔 결과) */
   tree: import('./fractal.js').FractalTree;
-  /** holon 설정 */
-  config: import('./config.js').HolonConfig;
+  /** 스캔 옵션 (프로그래밍적 전달용, 선택) */
+  options?: import('./scan.js').ScanOptions;
 }
 
 /**
@@ -364,82 +378,23 @@ export interface RuleViolation {
 
 ---
 
-### 2.3 config.ts
+### 2.3 scan.ts
 
 ```typescript
 /**
- * Holon 설정 시스템 타입 정의
- */
-
-/**
- * 설정 출처
- */
-export type ConfigSource =
-  | 'default'   // 기본 내장 설정
-  | 'project'   // 프로젝트 루트 .holonrc.yml
-  | 'user'      // 사용자 홈 ~/.holonrc.yml
-  | 'cli';      // CLI 옵션 (--config 플래그)
-
-/**
- * 설정 병합 전략
+ * 스캔 설정 타입 정의
  *
- * - override: 상위 설정이 하위 설정을 완전히 덮어씀
- * - merge: 배열은 합치고, 스칼라는 덮어씀
- * - append: 배열에 추가만 허용, 기존 항목 유지
+ * 제로 설정(zero-config): 외부 설정 파일 없이 내장 기본값을 사용한다.
+ * 필요 시 프로그래밍적으로 옵션을 전달할 수 있다.
  */
-export type MergeStrategy = 'override' | 'merge' | 'append';
 
 /**
- * 규칙 활성화 설정 (개별 규칙 override)
+ * 스캔 옵션 (프로그래밍적 전달용)
  */
-export interface RuleOverride {
-  /** 규칙 식별자 */
-  id: string;
-  /** 활성화 여부 (false면 비활성화) */
-  enabled?: boolean;
-  /** 심각도 override */
-  severity?: import('./rules.js').RuleSeverity;
-}
-
-/**
- * 커스텀 카테고리 설정
- */
-export interface CategoryConfig {
-  /**
-   * 추가 organ 디렉토리명 목록.
-   * 기본값: ['components', 'utils', 'types', 'hooks', 'helpers',
-   *           'lib', 'styles', 'assets', 'constants', 'services',
-   *           'adapters', 'repositories']
-   */
-  organNames?: string[];
-  /**
-   * 스캔에서 제외할 glob 패턴 목록.
-   * 기본값: ['node_modules', '.git', 'dist', 'build', 'coverage']
-   */
-  ignorePatterns?: string[];
-  /**
-   * fractal로 강제 분류할 경로 목록 (glob 지원)
-   */
-  forceFractal?: string[];
-  /**
-   * organ으로 강제 분류할 경로 목록 (glob 지원)
-   */
-  forceOrgan?: string[];
-}
-
-/**
- * 스캔 설정
- */
-export interface ScanConfig {
-  /**
-   * 스캔 포함 glob 패턴.
-   * 기본값: ['**']
-   */
+export interface ScanOptions {
+  /** 스캔 포함 glob 패턴. 기본값: ['**'] */
   include?: string[];
-  /**
-   * 스캔 제외 glob 패턴.
-   * 기본값: ['node_modules/**', '.git/**', 'dist/**', '*.test.ts']
-   */
+  /** 스캔 제외 glob 패턴. 기본값: ['node_modules/**', '.git/**', 'dist/**'] */
   exclude?: string[];
   /** 최대 스캔 깊이. 기본값: 10 */
   maxDepth?: number;
@@ -447,83 +402,13 @@ export interface ScanConfig {
   followSymlinks?: boolean;
 }
 
-/**
- * 출력 설정
- */
-export interface OutputConfig {
-  /**
-   * 출력 형식.
-   * - text: 사람이 읽기 쉬운 텍스트
-   * - json: 구조화된 JSON
-   * - markdown: 마크다운 형식
-   */
-  format?: 'text' | 'json' | 'markdown';
-  /**
-   * 출력 상세 수준.
-   * - quiet: 오류만
-   * - normal: 오류 + 경고
-   * - verbose: 모두 (info 포함)
-   */
-  verbosity?: 'quiet' | 'normal' | 'verbose';
-  /** 색상 출력 여부. 기본값: true */
-  color?: boolean;
-  /** 아이콘(유니코드 이모지) 사용 여부. 기본값: false */
-  icons?: boolean;
-}
-
-/**
- * Auto Guide 모드 설정
- */
-export interface AutoGuideConfig {
-  /** Auto Guide 활성화 여부. 기본값: true */
-  enabled?: boolean;
-  /**
-   * 컨텍스트 주입 상세 수준.
-   * - minimal: 한 줄 요약
-   * - standard: 카테고리 분류 + 주요 규칙
-   * - full: 모든 활성 규칙 전체 내용
-   */
-  contextLevel?: 'minimal' | 'standard' | 'full';
-}
-
-/**
- * 병합된 최종 Holon 설정
- */
-export interface HolonConfig {
-  /** 설정 스키마 버전 */
-  version: string;
-  /** 규칙 override 목록 */
-  rules?: RuleOverride[];
-  /** 카테고리 설정 */
-  categories?: CategoryConfig;
-  /** 스캔 설정 */
-  scan?: ScanConfig;
-  /** 출력 설정 */
-  output?: OutputConfig;
-  /** Auto Guide 모드 설정 */
-  autoGuide?: AutoGuideConfig;
-}
-
-/**
- * .holonrc.yml 파일의 파싱 전 원시 스키마 (zod 검증 전)
- */
-export interface HolonrcSchema extends HolonConfig {
-  // HolonConfig와 동일. zod로 검증 후 HolonConfig로 확정된다.
-}
-
-/**
- * 설정 로드 결과 (출처 정보 포함)
- */
-export interface ConfigLoadResult {
-  /** 병합된 최종 설정 */
-  config: HolonConfig;
-  /** 각 출처별 설정 기여도 */
-  sources: Array<{
-    source: ConfigSource;
-    path: string | null;
-    applied: boolean;
-  }>;
-}
+/** 기본 스캔 옵션 */
+export const DEFAULT_SCAN_OPTIONS: Required<ScanOptions> = {
+  include: ['**'],
+  exclude: ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**', '**/coverage/**'],
+  maxDepth: 10,
+  followSymlinks: false,
+};
 ```
 
 ---
@@ -659,11 +544,13 @@ export interface SyncPlan {
 
 ### 2.5 hooks.ts
 
+기존 filid의 hooks 타입을 그대로 사용한다. v2 Hook 스크립트(context-injector, structure-guard, change-tracker)는 기존 filid의 Hook 타입 패턴을 재사용하므로 별도 파일이 필요하지 않을 수 있다.
+
 ```typescript
 /**
  * Claude Code Hook 입출력 타입 정의
  *
- * filid의 hooks.ts 패턴을 그대로 재사용한다.
+ * 기존 filid hooks 타입을 그대로 사용한다.
  * Hook 스크립트는 stdin에서 JSON을 읽고 stdout에 JSON을 쓴다.
  */
 
@@ -857,16 +744,25 @@ export interface AnalysisReport {
 | 카테고리 | 분류 기준 | 허용 | 금지 |
 |----------|-----------|------|------|
 | `fractal` | 독립적인 도메인 경계. package.json이 있거나 CLAUDE.md가 있거나 하위에 복수의 자식 프랙탈이 있음 | CLAUDE.md, SPEC.md, 자식 fractal, organ | - |
-| `organ` | 프랙탈 노드 내의 기능적 하위 디렉토리. 이름이 표준 organ 목록에 포함 | 파일, 순수 함수 | CLAUDE.md, 자식 fractal |
+| `organ` | 프랙탈 노드 내의 기능적 하위 디렉토리. 프랙탈 자식이 없고 리프 파일만 포함하는 디렉토리 | 파일, 순수 함수 | CLAUDE.md, 자식 fractal |
 | `pure-function` | 상태 없는 순수 함수만 포함. 단일 책임. 이름이 `utils`, `helpers`, `lib`이거나 명시적으로 지정됨 | 함수 파일, 타입 파일 | 클래스, 상태, 부작용 |
 | `hybrid` | fractal → organ 전환 중이거나 organ이지만 일부 자식 fractal을 가짐. 임시 상태로 분류 | fractal + organ 혼합 | 장기 유지 (해소 필요) |
 
-**표준 organ 이름 목록 (기본값):**
+**구조 기반 분류 규칙 (제로 설정):**
 ```
-components, utils, types, hooks, helpers, lib, styles, assets,
-constants, services, adapters, repositories, store, context,
-providers, middleware, interceptors, validators, formatters
+분류 우선순위 (높은 것부터):
+1. CLAUDE.md 존재 → fractal
+2. SPEC.md 존재 → fractal
+3. 프랙탈 자식 없음 + 리프 파일만 포함 → organ
+4. 부작용 없는 순수 함수만 포함 → pure-function
+5. 기본값 → fractal
+6. 모호한 케이스 → context-injector를 통해 LLM이 판단
 ```
+
+**설계 결정:** 이름 기반 organ 목록(components, utils 등)을 제거하고
+디렉토리 구조 분석으로 자동 분류한다. Claude Code 플러그인 환경에서
+LLM이 실제 코드를 읽고 컨텍스트를 이해하므로, 엣지 케이스를
+설정 파일이 아닌 AI 판단에 위임한다.
 
 ---
 
@@ -961,200 +857,76 @@ root/
 
 ---
 
-## 4. 설정 시스템
+## 4. 제로 설정 아키텍처
 
-### 4.1 .holonrc.yml 스키마
+### 4.1 설계 원칙
 
-```yaml
-# .holonrc.yml — Holon 플러그인 설정
-# 스키마 버전
-version: "1.0"
+filid v2는 **제로 설정(zero-config)** 아키텍처를 채택한다. 외부 설정 파일(`.fractalrc.yml`, `.filidrc.yml`)을 사용하지 않는다.
 
-# 규칙 설정
-rules:
-  # 개별 규칙 비활성화
-  - id: "no-plural-fractal"
-    enabled: false
+**근거:**
+- filid는 Claude Code 플러그인이다. 사용자에게 설정 파일은 진입 허들이 된다.
+- 디렉토리 구조 자체가 충분한 분류 정보를 제공한다.
+- 모호한 케이스는 LLM이 실제 코드를 읽고 판단할 수 있다.
+- 프로젝트마다 organ 목록이 달라서, 이름 기반 고정 목록은 범용적이지 않다.
 
-  # 심각도 조정
-  - id: "fractal-max-depth"
-    severity: "error"  # 기본값 warning → error로 격상
-
-  # 커스텀 규칙 (사용자 정의)
-  # custom 규칙은 별도 파일에서 로드 (향후 지원 예정)
-
-# 카테고리 설정
-categories:
-  # 추가 organ 디렉토리명 (기본 목록에 추가)
-  organNames:
-    - "queries"
-    - "mutations"
-    - "fragments"
-    - "schemas"
-
-  # 스캔에서 제외할 패턴
-  ignorePatterns:
-    - "**/__generated__/**"
-    - "**/*.stories.tsx"
-    - "**/fixtures/**"
-
-  # 특정 경로를 fractal로 강제 분류 (glob 지원)
-  forceFractal:
-    - "src/features/*"
-    - "packages/*"
-
-  # 특정 경로를 organ으로 강제 분류 (glob 지원)
-  forceOrgan:
-    - "src/shared/ui"
-
-# 스캔 설정
-scan:
-  # 스캔 포함 패턴
-  include:
-    - "src/**"
-    - "packages/**"
-
-  # 스캔 제외 패턴 (ignorePatterns와 병합됨)
-  exclude:
-    - "**/*.test.ts"
-    - "**/*.spec.ts"
-    - "**/node_modules/**"
-    - "**/dist/**"
-    - "**/.next/**"
-
-  # 최대 탐색 깊이 (기본값: 10)
-  maxDepth: 8
-
-  # 심볼릭 링크 추적 (기본값: false)
-  followSymlinks: false
-
-# 출력 설정
-output:
-  # 출력 형식: text | json | markdown
-  format: "text"
-
-  # 상세 수준: quiet | normal | verbose
-  verbosity: "normal"
-
-  # 색상 출력 (기본값: true)
-  color: true
-
-  # 아이콘 사용 (기본값: false)
-  icons: false
-
-# Auto Guide 모드 설정
-autoGuide:
-  # Auto Guide 활성화 (기본값: true)
-  enabled: true
-
-  # 컨텍스트 주입 수준: minimal | standard | full
-  contextLevel: "standard"
-```
-
----
-
-### 4.2 설정 병합 순서
-
-설정은 낮은 우선순위 → 높은 우선순위 순서로 병합된다:
+### 4.2 3단계 분류 체계
 
 ```
-1. 기본값 (default)
-   └─ packages/holon/src/core/config-loader.ts 내 DEFAULT_CONFIG 상수
+1단계: 프로그래밍적 규칙 (Deterministic)
+  ├─ CLAUDE.md 존재 → fractal
+  ├─ SPEC.md 존재 → fractal
+  ├─ 프랙탈 자식 없음 + 리프 파일만 → organ
+  ├─ 부작용 없음 → pure-function
+  └─ 기본값 → fractal
 
-2. 프로젝트 설정 (project)
-   └─ {cwd}/.holonrc.yml (프로젝트 루트에서 위로 탐색)
+2단계: 컨텍스트 주입 (Structural Info)
+  └─ context-injector가 현재 디렉토리의 구조 정보를 LLM 컨텍스트에 주입
 
-3. 사용자 설정 (user)
-   └─ ~/.holonrc.yml (홈 디렉토리)
-
-4. CLI 옵션 (cli)
-   └─ --config <path>, --verbosity, --format 등
+3단계: LLM 판단 (Contextual Decision)
+  └─ 모호한 경계 케이스에서 AI가 실제 코드를 읽고 분류 결정
 ```
 
-**병합 규칙:**
-- 스칼라 값(`format`, `verbosity`, `maxDepth` 등): 상위 설정이 덮어씀
-- 배열 값(`organNames`, `ignorePatterns`, `rules` 등): 상위 설정이 추가됨 (중복 제거)
-- `forceFractal`, `forceOrgan`: 모든 레벨의 배열을 합집합
+### 4.3 제거된 구성 요소
 
----
-
-### 4.3 zod 검증 스키마
-
-```typescript
-import { z } from 'zod';
-
-const RuleSeveritySchema = z.enum(['error', 'warning', 'info']);
-
-const RuleOverrideSchema = z.object({
-  id: z.string().min(1),
-  enabled: z.boolean().optional(),
-  severity: RuleSeveritySchema.optional(),
-});
-
-const CategoryConfigSchema = z.object({
-  organNames: z.array(z.string()).optional(),
-  ignorePatterns: z.array(z.string()).optional(),
-  forceFractal: z.array(z.string()).optional(),
-  forceOrgan: z.array(z.string()).optional(),
-});
-
-const ScanConfigSchema = z.object({
-  include: z.array(z.string()).optional(),
-  exclude: z.array(z.string()).optional(),
-  maxDepth: z.number().int().min(1).max(20).optional(),
-  followSymlinks: z.boolean().optional(),
-});
-
-const OutputConfigSchema = z.object({
-  format: z.enum(['text', 'json', 'markdown']).optional(),
-  verbosity: z.enum(['quiet', 'normal', 'verbose']).optional(),
-  color: z.boolean().optional(),
-  icons: z.boolean().optional(),
-});
-
-const AutoGuideConfigSchema = z.object({
-  enabled: z.boolean().optional(),
-  contextLevel: z.enum(['minimal', 'standard', 'full']).optional(),
-});
-
-export const HolonrcSchema = z.object({
-  version: z.string().default('1.0'),
-  rules: z.array(RuleOverrideSchema).optional(),
-  categories: CategoryConfigSchema.optional(),
-  scan: ScanConfigSchema.optional(),
-  output: OutputConfigSchema.optional(),
-  autoGuide: AutoGuideConfigSchema.optional(),
-});
-
-export type HolonrcInput = z.input<typeof HolonrcSchema>;
-export type HolonrcOutput = z.output<typeof HolonrcSchema>;
-```
+| 구성 요소 | 상태 | 대체 방법 |
+|-----------|------|-----------|
+| `.fractalrc.yml` | 제거 | 구조 기반 자동 분류 |
+| `config-loader.ts` | 제거 | organ-classifier 구조 분석 |
+| `FractalConfig` 타입 | 제거 | `ScanOptions` (프로그래밍적 옵션만) |
+| `CategoryConfig.organNames` | 제거 | 구조 분석 (리프 디렉토리 = organ) |
+| `yaml` 의존성 | 제거 | 불필요 |
+| `zod` 의존성 | 제거 | 불필요 |
+| 3단계 설정 병합 | 제거 | 단일 내장 기본값 |
 
 ---
 
 ## 5. 모듈 의존 관계
 
+기존 filid 모듈과 신규 v2 모듈의 통합 의존 관계 그래프:
+
 ```
 src/types/
   fractal.ts ──────────────────────────────────────────────┐
   rules.ts   ──────────────────────────────────────────┐   │
-  config.ts  ──────────────────────────────────┐       │   │
-  drift.ts   ──────────────────────────────────│───┐   │   │
-  hooks.ts   (독립)                             │   │   │   │
-  report.ts  ──────────────────────────────────┘   │   │   │
-                                                   │   │   │
-src/core/                                          │   │   │
-                                                   │   │   │
-  config-loader ◄── (config.ts)                   │   │   │
-       │                                           │   │   │
-       ▼                                           │   │   │
-  rule-engine ◄── (rules.ts, config.ts)            │   │   │
-       │                                           │   │   │
-       │         category-classifier ◄── (fractal.ts, config.ts)
-       │                │                          │   │   │
-       │                ▼                          │   │   │
-       └──────► fractal-scanner ◄── (fractal.ts, config.ts)
-                        │
+  scan.ts    (독립, 내장 기본값만)                      │   │
+  drift.ts   ──────────────────────────────────────┐   │   │
+  hooks.ts   (독립)                                 │   │   │
+  report.ts  ──────────────────────────────────────┘   │   │
+                                                       │   │
+src/core/                                              │   │
+  [기존 filid 모듈]                                    │   │
+  fractal-tree ◄── (fractal.ts)                       │   │
+  organ-classifier ◄── (fractal.ts)                   │   │
+  dependency-graph ◄── (fractal.ts)                   │   │
+       │                                               │   │
+  [신규 v2 모듈]                                       │   │
+  rule-engine ◄── (rules.ts)                          │   │
+       │                                               │   │
+       │         category-classifier ◄── (fractal.ts) │   │
+       │                │                              │   │
+       │                ▼                              │   │
+       └──────► fractal-scanner ◄── (fractal.ts)
+                        │           ▲ (기존 fractal-tree 재사용)
               ┌─────────┼─────────────┐
               ▼         ▼             ▼
        index-analyzer  module-main-  fractal-validator ◄── (rule-engine)
@@ -1163,24 +935,25 @@ src/core/                                          │   │   │
               └────────────┴─────────┘
                            │
                     lca-calculator ◄── (fractal.ts)
-                           │
+                           │           ▲ (기존 dependency-graph 활용)
                     drift-detector ◄── (drift.ts, fractal-validator, lca-calculator)
                            │
                     project-analyzer ◄── (report.ts, 모든 모듈 통합)
                            │
                            ▼
-                    MCP Layer (tools/)
-                    Hook Layer (hooks/)
+                    기존 filid MCP/Hook + 신규 v2 MCP/Hook
+                    MCP Layer (tools/): fractal-navigate + fractal-scan 등
+                    Hook Layer (hooks/): 기존 5개 hook + context-injector 등
 ```
 
 **레벨 요약:**
 
 | 레벨 | 모듈 | 의존 |
 |------|------|------|
-| 0 | `config-loader`, `category-classifier` | types만 |
-| 1 | `rule-engine`, `fractal-scanner` | Level 0 |
+| 0 | `category-classifier` | types만 |
+| 1 | `rule-engine`, `fractal-scanner` | Level 0 (기존 `fractal-tree` 활용) |
 | 2 | `index-analyzer`, `module-main-analyzer`, `fractal-validator` | Level 1 |
-| 3 | `lca-calculator` | Level 2 (fractal-scanner) |
+| 3 | `lca-calculator` | Level 2 (fractal-scanner, 기존 `dependency-graph` 활용) |
 | 4 | `drift-detector` | Level 2-3 (validator, lca) |
 | 5 | `project-analyzer` | Level 0-4 (전체 통합) |
-| 6 | MCP tools, Hook handlers | Level 5 (project-analyzer 또는 개별 모듈) |
+| 6 | 기존 filid MCP/Hook + 신규 v2 MCP/Hook | Level 5 (project-analyzer 또는 개별 모듈) |

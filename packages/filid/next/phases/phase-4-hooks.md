@@ -1,30 +1,44 @@
-# Phase 4 — Hooks
+# Phase 4 — Hook 통합
 
-## 1. Hook 시스템 개요
+## 1. 개요
 
-### 1.1 hooks.json 설정
+새 hook을 만드는 것이 아니라 기존 filid hook 3개를 확장하는 방식으로 프랙탈 구조 관리 기능을 통합한다.
 
-Claude Code는 `hooks.json`에 정의된 hook 설정에 따라 특정 이벤트 발생 시 외부 프로세스를 실행한다. Holon은 세 가지 이벤트에 반응한다.
+**기존 filid hooks 현황:**
+
+- `hooks/hooks.json`: 5개 hook 정의 (변경 일부)
+- 이벤트: `UserPromptSubmit(*)`, `PreToolUse(Write|Edit)`, `PostToolUse(Write|Edit)`, `SubagentStart(*)`
+- 빌드: `build-plugin.mjs`의 `hookEntries` 배열 (entry 이름 변경)
+- 빌드 산출물: `scripts/*.mjs`
+
+**변경 범위:**
+
+| hook | 변경 유형 | 내용 |
+|------|-----------|------|
+| `context-injector` | 확장 | 기존 FCA-AI 규칙 유지 + 프랙탈 구조 규칙 섹션 추가 |
+| `organ-guard` → `structure-guard` | 확장 + 리네임 | 기존 organ CLAUDE.md 차단(continue: false) 유지 + 카테고리 검증 3가지 추가(경고만, continue: true) |
+| `change-tracker` | 확장 | 카테고리 분류 태그 추가, `.filid/change-log.jsonl` 기록 |
+| `pre-tool-validator` | 변경 없음 | — |
+| `agent-enforcer` | 변경 없음 | — |
+
+---
+
+## 2. hooks.json 수정
+
+`organ-guard.mjs` 경로를 `structure-guard.mjs`로 변경한다. 나머지는 그대로 유지한다.
 
 ```json
 {
   "hooks": {
-    "UserPromptSubmit": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/context-injector.mjs\"",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
       {
         "matcher": "Write|Edit",
         "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/pre-tool-validator.mjs\"",
+            "timeout": 3
+          },
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/structure-guard.mjs\"",
@@ -44,132 +58,76 @@ Claude Code는 `hooks.json`에 정의된 hook 설정에 따라 특정 이벤트 
           }
         ]
       }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/agent-enforcer.mjs\"",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/context-injector.mjs\"",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   }
 }
 ```
 
-**설계 결정:**
-
-- `UserPromptSubmit`은 `matcher: "*"`로 모든 프롬프트에 반응한다. timeout은 5초로 context-injector가 config 파일을 읽는 I/O 시간을 허용한다.
-- `PreToolUse`와 `PostToolUse`는 `matcher: "Write|Edit"`로 파일 쓰기 작업에만 반응한다. timeout은 3초로 빠른 경로 분류 작업에 충분하다.
-- filid와 달리 `SubagentStart` hook은 없다. Holon은 에이전트 동작을 강제하는 것이 아니라 구조를 안내하는 역할이기 때문이다.
-
-### 1.2 Entry Point 패턴
-
-모든 hook entry 파일은 동일한 stdin → JSON parse → handler → JSON stringify → stdout 패턴을 따른다.
-
-```typescript
-// 공통 패턴 (filid에서 재사용)
-const chunks: Buffer[] = [];
-for await (const chunk of process.stdin) {
-  chunks.push(chunk as Buffer);
-}
-const input = JSON.parse(Buffer.concat(chunks).toString('utf-8'));
-const output = handler(input);
-process.stdout.write(JSON.stringify(output));
-```
-
-**핵심 원칙:**
-
-- 모든 entry 파일은 top-level `for await` 루프로 stdin을 읽는다 (Node.js ESM 환경에서 top-level await 사용 가능).
-- 핸들러 함수(`handler`)는 동기 또는 비동기 모두 가능하다. 비동기인 경우 entry 파일에서 `await`한다.
-- 출력은 반드시 유효한 JSON 문자열이어야 하며, `\n` 없이 `process.stdout.write`로 단일 호출로 쓴다.
-- 에러 발생 시에도 반드시 `{ continue: true }` 형태의 유효한 JSON을 출력해야 한다. 출력 실패 시 Claude Code가 hook을 오류로 처리한다.
-
-**Hook 입력/출력 타입 (`src/types/hooks.ts`):**
-
-```typescript
-// filid에서 그대로 복사
-interface HookBaseInput {
-  cwd: string;
-  session_id: string;
-  hook_event_name: string;
-}
-
-interface PreToolUseInput extends HookBaseInput {
-  hook_event_name: 'PreToolUse';
-  tool_name: string;
-  tool_input: {
-    file_path?: string;
-    path?: string;
-    content?: string;
-    old_string?: string;
-    new_string?: string;
-    [key: string]: unknown;
-  };
-}
-
-interface PostToolUseInput extends HookBaseInput {
-  hook_event_name: 'PostToolUse';
-  tool_name: string;
-  tool_input: {
-    file_path?: string;
-    path?: string;
-    [key: string]: unknown;
-  };
-  tool_response: {
-    [key: string]: unknown;
-  };
-}
-
-interface UserPromptSubmitInput extends HookBaseInput {
-  hook_event_name: 'UserPromptSubmit';
-  prompt?: string;
-}
-
-interface HookOutput {
-  continue: boolean;
-  hookSpecificOutput?: {
-    additionalContext?: string;
-  };
-}
-```
-
 ---
 
-## 2. Hook 핸들러 상세
+## 3. Hook 핸들러 상세
 
-### 2.1 context-injector (UserPromptSubmit)
+### 3.1 context-injector 확장 (UserPromptSubmit)
 
-**역할:** 사용자가 프롬프트를 제출할 때마다 현재 프로젝트의 프랙탈 구조 규칙 요약을 에이전트의 시스템 컨텍스트에 주입한다. 에이전트가 파일을 작성하거나 디렉토리를 생성할 때 구조 원칙을 인지하도록 한다.
+**역할:** 기존 FCA-AI 규칙 텍스트를 유지하면서, 아래에 프랙탈 구조 규칙 요약 섹션을 추가 주입한다. 프랙탈 구조를 스캔하여 프랙탈 섹션을 추가하며, 스캔에 실패하면 기존 FCA-AI 컨텍스트만 반환한다.
 
-**주입 내용:**
-
-에이전트 컨텍스트에 주입되는 텍스트는 세 부분으로 구성된다.
-
-1. **현재 프로젝트 활성 규칙 요약**: `cwd`에서 `.holonrc.yml`을 로드하여 활성화된 규칙을 간결하게 나열한다. config 파일이 없으면 기본 규칙을 사용한다.
-2. **카테고리 분류 기준**: `fractal`, `organ`, `pure-function`, `hybrid` 각각의 식별 기준을 한 줄씩 설명한다.
-3. **최근 이격 상태**: `drift-detector`를 경량 실행하여 `critical`/`high` severity 이격이 있으면 간략히 언급한다. 이격 스캔에 실패하면 해당 섹션을 생략하고 나머지를 정상 출력한다.
-
-**로직 흐름:**
+**변경 전 출력 (기존 FCA-AI 규칙, 유지):**
 
 ```
-cwd 수신
-  → config-loader.loadConfig(cwd) 호출 (실패 시 기본 설정 사용)
-  → rule-engine.getActiveRules(config) 로 활성 규칙 목록 추출
-  → 규칙을 "- [ruleId]: [description]" 형식으로 포맷팅
-  → (선택적) drift-detector.detectDrift(tree, config, { severity: 'high' })
-     로 고위험 이격 항목 수집
-  → 세 섹션을 조합하여 additionalContext 문자열 생성
-  → { continue: true, hookSpecificOutput: { additionalContext } } 반환
+[FCA-AI] Active in: /Users/vincent/project
+Rules:
+- CLAUDE.md: max 100 lines, must include 3-tier boundary sections
+- SPEC.md: no append-only growth, must restructure on updates
+- Organ directories (구조 분석 기반 자동 분류) must NOT have CLAUDE.md
+- Test files: max 15 cases per spec.ts (3 basic + 12 complex)
+- LCOM4 >= 2 → split module, CC > 15 → compress/abstract
 ```
 
-**출력 예시:**
+**변경 후 출력 (프랙탈 섹션 추가):**
 
 ```
-[Holon] Active in: /Users/vincent/project
+[FCA-AI] Active in: /Users/vincent/project
+Rules:
+- CLAUDE.md: max 100 lines, must include 3-tier boundary sections
+- SPEC.md: no append-only growth, must restructure on updates
+- Organ directories (구조 분석 기반 자동 분류) must NOT have CLAUDE.md
+- Test files: max 15 cases per spec.ts (3 basic + 12 complex)
+- LCOM4 >= 2 → split module, CC > 15 → compress/abstract
 
-Fractal Structure Rules:
+[filid] Fractal Structure Rules:
 - fractal-node-has-index: 모든 fractal 노드는 index.ts barrel export를 가져야 한다
 - organ-no-claude-md: organ 디렉토리에 CLAUDE.md를 생성해서는 안 된다
 - lca-dependency-rule: 공유 의존성은 LCA 노드 이하에 배치해야 한다
 - module-has-main: fractal 모듈은 main.ts 진입점을 가져야 한다
 
-Category Classification:
-- fractal: 자체 index.ts와 하위 organ을 가진 독립 모듈 (예: src/features/auth/)
-- organ: 단일 책임의 leaf 디렉토리 (예: components/, utils/, types/)
-- pure-function: 상태 없이 입출력만 처리하는 함수 모음 (예: src/lib/math/)
+Category Classification (구조 기반 자동 분류):
+- fractal: CLAUDE.md 또는 SPEC.md가 있는 독립 모듈
+- organ: 프랙탈 자식이 없는 리프 디렉토리
+- pure-function: 부작용 없는 순수 함수 모음
 - hybrid: fractal + organ 특성을 동시에 가지는 과도기적 노드
 
 ⚠ High-severity drifts detected: 2 items
@@ -180,71 +138,80 @@ Category Classification:
 **함수 시그니처 및 로직:**
 
 ```typescript
-// src/hooks/context-injector.ts
+// src/hooks/context-injector.ts (확장)
 
-import { loadConfig } from '../core/config-loader.js';
 import { getActiveRules } from '../core/rule-engine.js';
 import { scanProject } from '../core/fractal-scanner.js';
 import { detectDrift } from '../core/drift-detector.js';
 import type { UserPromptSubmitInput, HookOutput } from '../types/hooks.js';
 
 const CATEGORY_GUIDE = [
-  '- fractal: 자체 index.ts와 하위 organ을 가진 독립 모듈 (예: src/features/auth/)',
-  '- organ: 단일 책임의 leaf 디렉토리 (예: components/, utils/, types/)',
-  '- pure-function: 상태 없이 입출력만 처리하는 함수 모음 (예: src/lib/math/)',
+  '- fractal: CLAUDE.md 또는 SPEC.md가 있는 독립 모듈',
+  '- organ: 프랙탈 자식이 없는 리프 디렉토리',
+  '- pure-function: 부작용 없는 순수 함수 모음',
   '- hybrid: fractal + organ 특성을 동시에 가지는 과도기적 노드',
 ].join('\n');
+
+// 기존 FCA-AI 규칙 텍스트 (변경 없음)
+function buildFcaContext(cwd: string): string {
+  return [
+    `[FCA-AI] Active in: ${cwd}`,
+    'Rules:',
+    '- CLAUDE.md: max 100 lines, must include 3-tier boundary sections',
+    '- SPEC.md: no append-only growth, must restructure on updates',
+    '- Organ directories (구조 분석 기반 자동 분류) must NOT have CLAUDE.md',
+    '- Test files: max 15 cases per spec.ts (3 basic + 12 complex)',
+    '- LCOM4 >= 2 → split module, CC > 15 → compress/abstract',
+  ].join('\n');
+}
 
 export async function injectContext(input: UserPromptSubmitInput): Promise<HookOutput> {
   const cwd = input.cwd;
 
-  // 1단계: 설정 로드 (실패 허용)
-  let config;
-  try {
-    config = await loadConfig(cwd);
-  } catch {
-    config = getDefaultConfig();
-  }
+  // 1단계: 기존 FCA-AI 컨텍스트 (항상 포함)
+  const fcaContext = buildFcaContext(cwd);
 
-  // 2단계: 활성 규칙 추출 및 포맷팅
-  const rules = getActiveRules(config);
-  const rulesText = rules
-    .map((r) => `- ${r.id}: ${r.description}`)
-    .join('\n');
-
-  // 3단계: 고위험 이격 감지 (실패 시 섹션 생략)
-  let driftText = '';
+  // 2단계: 프랙탈 구조 섹션 (스캔 성공 시에만 추가)
+  let fractalSection = '';
   try {
-    const tree = await scanProject(cwd, { config });
-    const driftResult = await detectDrift(tree, config);
-    const highPriority = driftResult.items.filter(
-      (d) => d.severity === 'critical' || d.severity === 'high',
-    );
-    if (highPriority.length > 0) {
-      const driftLines = highPriority
-        .slice(0, 5) // 최대 5개만 표시
-        .map((d) => `- ${d.path} — ${d.expected} (expected: ${d.actual})`)
-        .join('\n');
-      driftText =
-        `\n\n⚠ High-severity drifts detected: ${highPriority.length} items\n` + driftLines;
+    // 활성 규칙 추출 및 포맷팅
+    const rules = getActiveRules();
+    const rulesText = rules.map((r) => `- ${r.id}: ${r.description}`).join('\n');
+
+    // 고위험 이격 감지 (실패 시 섹션 생략)
+    let driftText = '';
+    try {
+      const tree = await scanProject(cwd);
+      const driftResult = await detectDrift(tree);
+      const highPriority = driftResult.items.filter(
+        (d) => d.severity === 'critical' || d.severity === 'high',
+      );
+      if (highPriority.length > 0) {
+        const driftLines = highPriority
+          .slice(0, 5)
+          .map((d) => `- ${d.path} — ${d.expected} (expected: ${d.actual})`)
+          .join('\n');
+        driftText =
+          `\n\n⚠ High-severity drifts detected: ${highPriority.length} items\n` + driftLines;
+      }
+    } catch {
+      // 이격 감지 실패는 조용히 무시
     }
+
+    fractalSection = [
+      '',
+      '[filid] Fractal Structure Rules:',
+      rulesText,
+      '',
+      'Category Classification:',
+      CATEGORY_GUIDE,
+      driftText,
+    ].join('\n');
   } catch {
-    // 이격 감지 실패는 조용히 무시
+    // 프랙탈 스캔 실패 → 프랙탈 섹션 생략, FCA-AI만 반환
   }
 
-  // 4단계: 컨텍스트 조합
-  const additionalContext = [
-    `[Holon] Active in: ${cwd}`,
-    '',
-    'Fractal Structure Rules:',
-    rulesText,
-    '',
-    'Category Classification:',
-    CATEGORY_GUIDE,
-    driftText,
-  ]
-    .join('\n')
-    .trim();
+  const additionalContext = (fcaContext + fractalSection).trim();
 
   return {
     continue: true,
@@ -253,58 +220,64 @@ export async function injectContext(input: UserPromptSubmitInput): Promise<HookO
 }
 ```
 
+**설계 결정:**
+
+기존 `injectContext`는 동기 함수였으나 프랙탈 섹션 추가로 비동기가 된다. entry 파일에서 `await`을 추가해야 한다. 프랙탈 스캔에 실패하는 프로젝트에서는 기존 FCA-AI 컨텍스트만 반환하므로 하위 호환성이 유지된다.
+
 ---
 
-### 2.2 structure-guard (PreToolUse)
+### 3.2 structure-guard (PreToolUse) — organ-guard 확장 + 리네임
 
-**역할:** `Write` 또는 `Edit` 도구 호출이 발생하기 전에 대상 파일 경로를 검사하여 프랙탈 구조 규칙 위반 여부를 사전에 경고한다. 차단하지 않고 경고만 주입하는 것이 원칙이다 (`continue: true` 항상 반환).
+**역할:** 기존 `organ-guard`의 핵심 로직(organ 디렉토리 내 CLAUDE.md 차단, `continue: false`)을 완전히 보존하면서, 카테고리 기반 검증 3가지를 추가한다. 추가 검증은 경고만 주입하고 작업을 차단하지 않는다(`continue: true`).
 
-**경고 조건:**
+**파일:** `src/hooks/organ-guard.ts` → `src/hooks/structure-guard.ts` (신규 파일, organ-guard.ts는 삭제)
 
-1. **organ 디렉토리에 `CLAUDE.md` 생성 시도**: 경로 세그먼트 중 organ 디렉토리명(`components`, `utils`, `types`, `hooks`, `helpers`, `lib`, `styles`, `assets`, `constants`)이 포함된 위치에 `CLAUDE.md`를 쓰려는 경우 경고한다.
+**기존 organ-guard 로직 (완전 보존):**
 
-2. **프랙탈 노드 밖에서 모듈 생성 시도**: `category-classifier`로 대상 파일의 부모 디렉토리를 분류했을 때 어떤 카테고리에도 해당하지 않는 미분류(`unclassified`) 경로인 경우 경고한다.
-
-3. **순환 의존을 만들 수 있는 import 추가**: `Write`/`Edit` 도구의 `content`/`new_string`에 `import` 구문이 포함되어 있고, import 대상 경로가 현재 파일의 조상 노드를 가리키는 경우 잠재적 순환 의존 위험을 경고한다.
-
-**로직 흐름:**
-
+```typescript
+// organ-guard에서 이전: organ 내 CLAUDE.md Write → continue: false
+if (input.tool_name === 'Write' && isClaudeMd(filePath)) {
+  const segments = getParentSegments(filePath);
+  for (const segment of segments) {
+    if (isOrganDirectory(segment)) {
+      return {
+        continue: false,
+        hookSpecificOutput: {
+          additionalContext: `BLOCKED: Cannot create CLAUDE.md inside organ directory "${segment}". ...`,
+        },
+      };
+    }
+  }
+}
 ```
-tool_name이 Write 또는 Edit인지 확인
-  → tool_input에서 file_path 또는 path 추출
-  → 빈 경로이면 { continue: true } 반환
 
-  → [검사 1] organ 내 CLAUDE.md
-    파일명이 CLAUDE.md인지 확인
-    + 경로 세그먼트 중 organ 디렉토리명 포함 여부 확인
-    → 위반 시 경고 메시지 추가
+**추가 검증 3가지 (경고만, continue: true):**
 
-  → [검사 2] 미분류 경로의 모듈 생성
-    category-classifier.classify(parentDir) 호출
-    → 'unclassified' 반환 시 경고 메시지 추가
+1. **프랙탈 노드 밖에서 모듈 생성 시도**: `category-classifier`로 대상 파일의 부모 디렉토리를 분류했을 때 `unclassified`인 경우 경고한다.
 
-  → [검사 3] 잠재적 순환 의존
-    content 또는 new_string에서 import 경로 추출
-    각 import 경로가 현재 파일의 조상을 참조하는지 확인
-    → 의심 import 발견 시 경고 메시지 추가
+2. **organ 내부에 하위 디렉토리 생성 시도**: 파일 경로에 organ 디렉토리 세그먼트가 포함되어 있고, 그 아래에 하위 디렉토리가 있는 경로인 경우 경고한다 (organ은 flat leaf여야 한다).
 
-  → 경고가 없으면 { continue: true } 반환
-  → 경고가 있으면 { continue: true, hookSpecificOutput: { additionalContext: "⚠️ Warning: ..." } } 반환
-```
+3. **잠재적 순환 의존을 만들 수 있는 import 추가**: `Write`/`Edit` 도구의 `content`/`new_string`에 `import` 구문이 포함되어 있고, import 대상 경로가 현재 파일의 조상 노드를 가리키는 경우 경고한다.
 
 **함수 시그니처 및 로직:**
 
 ```typescript
 // src/hooks/structure-guard.ts
 
+import { isOrganDirectory } from '../core/organ-classifier.js';
 import { classify } from '../core/category-classifier.js';
 import type { PreToolUseInput, HookOutput } from '../types/hooks.js';
 import * as path from 'node:path';
 
-const ORGAN_DIR_NAMES = new Set([
-  'components', 'utils', 'types', 'hooks', 'helpers',
-  'lib', 'styles', 'assets', 'constants',
-]);
+function getParentSegments(filePath: string): string[] {
+  const normalized = filePath.replace(/\\/g, '/');
+  const parts = normalized.split('/').filter((p) => p.length > 0);
+  return parts.slice(0, -1);
+}
+
+function isClaudeMd(filePath: string): boolean {
+  return filePath.endsWith('/CLAUDE.md') || filePath === 'CLAUDE.md';
+}
 
 function extractImportPaths(content: string): string[] {
   const importRegex = /from\s+['"]([^'"]+)['"]/g;
@@ -317,18 +290,15 @@ function extractImportPaths(content: string): string[] {
 }
 
 function isAncestorPath(filePath: string, importPath: string, cwd: string): boolean {
-  // 상대 경로 import만 검사 (절대 경로 및 패키지 import 제외)
   if (!importPath.startsWith('.')) return false;
   const fileDir = path.dirname(path.resolve(cwd, filePath));
   const resolvedImport = path.resolve(fileDir, importPath);
   const fileAbsolute = path.resolve(cwd, filePath);
-  // import 대상이 현재 파일의 부모 디렉토리를 참조하는지 확인
   return fileAbsolute.startsWith(resolvedImport + path.sep);
 }
 
-export function guardStructure(input: PreToolUseInput, cwd: string): HookOutput {
-  const toolName = input.tool_name;
-  if (toolName !== 'Write' && toolName !== 'Edit') {
+export function guardStructure(input: PreToolUseInput): HookOutput {
+  if (input.tool_name !== 'Write' && input.tool_name !== 'Edit') {
     return { continue: true };
   }
 
@@ -337,23 +307,29 @@ export function guardStructure(input: PreToolUseInput, cwd: string): HookOutput 
     return { continue: true };
   }
 
-  const warnings: string[] = [];
-  const segments = filePath.replace(/\\/g, '/').split('/').filter(Boolean);
-  const fileName = segments[segments.length - 1] ?? '';
+  const cwd = input.cwd;
+  const segments = getParentSegments(filePath);
 
-  // 검사 1: organ 디렉토리 내 CLAUDE.md
-  if (fileName === 'CLAUDE.md') {
-    const parentSegments = segments.slice(0, -1);
-    const organSegment = parentSegments.find((s) => ORGAN_DIR_NAMES.has(s));
-    if (organSegment) {
-      warnings.push(
-        `organ 디렉토리 "${organSegment}" 내에 CLAUDE.md를 생성하려 합니다. ` +
-          `Organ 디렉토리는 leaf-level 구획으로 자체 CLAUDE.md를 가져서는 안 됩니다.`,
-      );
+  // [기존 로직 보존] organ 디렉토리 내 CLAUDE.md Write → 차단 (continue: false)
+  if (input.tool_name === 'Write' && isClaudeMd(filePath)) {
+    for (const segment of segments) {
+      if (isOrganDirectory(segment)) {
+        return {
+          continue: false,
+          hookSpecificOutput: {
+            additionalContext:
+              `BLOCKED: Cannot create CLAUDE.md inside organ directory "${segment}". ` +
+              `Organ directories are leaf-level compartments and should not have their own CLAUDE.md.`,
+          },
+        };
+      }
     }
   }
 
-  // 검사 2: 미분류 경로의 모듈 생성
+  // [추가 검증] 경고만 수집 (continue: true)
+  const warnings: string[] = [];
+
+  // 검사 1: 미분류 경로의 모듈 생성
   const parentDir = path.dirname(path.resolve(cwd, filePath));
   try {
     const category = classify(parentDir, cwd);
@@ -365,6 +341,16 @@ export function guardStructure(input: PreToolUseInput, cwd: string): HookOutput 
     }
   } catch {
     // 분류 실패는 무시
+  }
+
+  // 검사 2: organ 내부 하위 디렉토리 생성 (organ은 flat이어야 한다)
+  const organIdx = segments.findIndex((s) => isOrganDirectory(s));
+  if (organIdx !== -1 && organIdx < segments.length - 1) {
+    const organSegment = segments[organIdx];
+    warnings.push(
+      `organ 디렉토리 "${organSegment}" 내부에 하위 디렉토리를 생성하려 합니다. ` +
+        `Organ 디렉토리는 flat leaf 구획으로 중첩 디렉토리를 가져서는 안 됩니다.`,
+    );
   }
 
   // 검사 3: 잠재적 순환 의존
@@ -385,7 +371,7 @@ export function guardStructure(input: PreToolUseInput, cwd: string): HookOutput 
   }
 
   const additionalContext =
-    `⚠️ Warning from Holon structure-guard:\n` +
+    `⚠️ Warning from filid structure-guard:\n` +
     warnings.map((w, i) => `${i + 1}. ${w}`).join('\n');
 
   return {
@@ -395,52 +381,49 @@ export function guardStructure(input: PreToolUseInput, cwd: string): HookOutput 
 }
 ```
 
-**설계 결정 — 차단하지 않고 경고만:**
+**설계 결정:**
 
-PLAN.md의 요구사항과 달리, structure-guard는 `continue: false`를 반환하지 않는다. filid의 `pre-tool-validator`와 `organ-guard`는 명확한 규칙 위반(CLAUDE.md 라인 수 초과)을 차단하지만, holon의 구조 규칙은 더 유연하게 적용되어야 한다. 프랙탈 구조 전환 과정에서 일시적으로 규칙에서 벗어난 파일이 존재할 수 있으며, 에이전트가 판단하여 결정해야 하는 상황이 많다. 경고를 통해 인지시키되 작업을 방해하지 않는다.
+- 기존 `organ-guard`의 `continue: false` 차단 로직은 함수 최상단에 위치하여 최우선으로 실행된다.
+- 추가 검증 3가지는 차단 검사를 통과한 뒤에만 실행된다.
+- `cwd`는 `input.cwd`에서 직접 읽는다 (기존 organ-guard와의 인터페이스 통일).
 
 ---
 
-### 2.3 change-tracker (PostToolUse)
+### 3.3 change-tracker 확장 (PostToolUse)
 
-**역할:** `Write` 또는 `Edit` 도구 실행 후 변경된 파일 경로와 해당 경로의 프랙탈 카테고리를 추적 태그로 기록한다. 나중에 drift 분석이나 감사 로그로 활용할 수 있다.
+**역할:** 기존 `ChangeQueue` 기반 enqueue 로직을 유지하면서, 변경 파일의 프랙탈 카테고리를 분류하여 `.filid/change-log.jsonl`에 추가 기록한다.
+
+**변경 전 (기존):**
+
+```typescript
+queue.enqueue({ filePath, changeType });
+return { continue: true };
+```
+
+**변경 후 (카테고리 태그 추가):**
+
+```typescript
+queue.enqueue({ filePath, changeType });
+appendChangeLog(cwd, { timestamp, action: toolName, path: filePath, category, sessionId });
+return { continue: true };
+```
 
 **추적 태그 형식:**
 
 ```
-[holon:change] <timestamp> <action> <path> <category>
+[filid:change] <timestamp> <action> <path> <category>
 ```
 
 예시:
 
 ```
-[holon:change] 2026-02-22T10:30:00.000Z Write src/features/auth/components/LoginForm.tsx organ
-[holon:change] 2026-02-22T10:31:15.123Z Edit src/features/auth/index.ts fractal
-```
-
-**로직 흐름:**
-
-```
-tool_name이 Write 또는 Edit인지 확인
-  → tool_input에서 file_path 또는 path 추출
-  → 빈 경로이면 { continue: true } 반환
-
-  → category-classifier.classify(filePath, cwd) 로 카테고리 판별
-    (실패 시 'unknown' 사용)
-
-  → timestamp: new Date().toISOString()
-  → 추적 태그 문자열 생성:
-    "[holon:change] {timestamp} {toolName} {filePath} {category}"
-
-  → { continue: true } 반환
-    (additionalContext 없이 로깅 목적으로만 사용)
-    단, 디버그 모드(HOLON_DEBUG=1 환경변수)이면
-    additionalContext에 태그를 포함하여 에이전트가 볼 수 있도록 한다
+[filid:change] 2026-02-22T10:30:00.000Z Write src/features/auth/components/LoginForm.tsx organ
+[filid:change] 2026-02-22T10:31:15.123Z Edit src/features/auth/index.ts fractal
 ```
 
 **추적 로그 저장:**
 
-추적 태그는 `{cwd}/.holon/change-log.jsonl`에 JSON Lines 형식으로 저장된다. 파일이 없으면 생성하고, 있으면 append한다.
+추적 항목은 `{cwd}/.filid/change-log.jsonl`에 JSON Lines 형식으로 저장된다. 파일이 없으면 생성하고, 있으면 append한다.
 
 ```typescript
 interface ChangeLogEntry {
@@ -455,10 +438,11 @@ interface ChangeLogEntry {
 **함수 시그니처 및 로직:**
 
 ```typescript
-// src/hooks/change-tracker.ts
+// src/hooks/change-tracker.ts (확장)
 
 import { classify } from '../core/category-classifier.js';
 import type { PostToolUseInput, HookOutput } from '../types/hooks.js';
+import type { ChangeQueue, ChangeRecord } from '../core/change-queue.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
@@ -472,7 +456,7 @@ interface ChangeLogEntry {
 
 function appendChangeLog(cwd: string, entry: ChangeLogEntry): void {
   try {
-    const logDir = path.join(cwd, '.holon');
+    const logDir = path.join(cwd, '.filid');
     const logFile = path.join(logDir, 'change-log.jsonl');
     if (!fs.existsSync(logDir)) {
       fs.mkdirSync(logDir, { recursive: true });
@@ -483,9 +467,9 @@ function appendChangeLog(cwd: string, entry: ChangeLogEntry): void {
   }
 }
 
-export function trackChange(input: PostToolUseInput): HookOutput {
-  const toolName = input.tool_name;
-  if (toolName !== 'Write' && toolName !== 'Edit') {
+export function trackChange(input: PostToolUseInput, queue: ChangeQueue): HookOutput {
+  // Only track Write and Edit mutations
+  if (input.tool_name !== 'Write' && input.tool_name !== 'Edit') {
     return { continue: true };
   }
 
@@ -495,6 +479,11 @@ export function trackChange(input: PostToolUseInput): HookOutput {
   }
 
   const cwd = input.cwd;
+  const toolName = input.tool_name;
+
+  // 기존 ChangeQueue enqueue 로직 (변경 없음)
+  const changeType: ChangeRecord['changeType'] = toolName === 'Write' ? 'created' : 'modified';
+  queue.enqueue({ filePath, changeType });
 
   // 카테고리 판별 (실패 시 'unknown')
   let category = 'unknown';
@@ -513,13 +502,12 @@ export function trackChange(input: PostToolUseInput): HookOutput {
     sessionId: input.session_id,
   };
 
-  // 로그 파일에 기록
+  // .filid/change-log.jsonl에 기록
   appendChangeLog(cwd, entry);
 
-  // 추적 태그 생성 (HOLON_DEBUG=1이면 에이전트 컨텍스트에도 포함)
-  const tag = `[holon:change] ${timestamp} ${toolName} ${filePath} ${category}`;
-
-  if (process.env['HOLON_DEBUG'] === '1') {
+  // 추적 태그 (FILID_DEBUG=1이면 에이전트 컨텍스트에도 포함)
+  if (process.env['FILID_DEBUG'] === '1') {
+    const tag = `[filid:change] ${timestamp} ${toolName} ${filePath} ${category}`;
     return {
       continue: true,
       hookSpecificOutput: { additionalContext: tag },
@@ -530,15 +518,20 @@ export function trackChange(input: PostToolUseInput): HookOutput {
 }
 ```
 
-**설계 결정 — `additionalContext` 미포함:**
+**설계 결정:**
 
-change-tracker는 기본적으로 `additionalContext`를 주입하지 않는다. 모든 Write/Edit 작업 후 에이전트 컨텍스트에 추적 태그가 삽입되면 컨텍스트 윈도우가 불필요하게 소모된다. 추적 데이터는 `.holon/change-log.jsonl`에 기록되어 에이전트 외부에서 분석 용도로 활용한다. 디버그 모드(`HOLON_DEBUG=1`)에서만 에이전트 컨텍스트에 태그를 포함한다.
+- 기존 `ChangeQueue.enqueue()` 호출은 그대로 유지한다. 카테고리 기록은 부가 기능이므로 enqueue 실패 여부와 무관하게 실행된다.
+- 로그 디렉토리는 `.filid/`를 사용한다.
+- 디버그 환경변수는 `FILID_DEBUG`를 사용한다.
+- 기본적으로 `additionalContext`를 주입하지 않아 컨텍스트 윈도우 소모를 방지한다.
 
 ---
 
-## 3. Entry Point 코드 설계
+## 4. Entry Point 코드 설계
 
-### 3.1 context-injector.entry.ts
+### 4.1 context-injector.entry.ts (수정)
+
+`injectContext`가 비동기가 되므로 `await`을 추가한다.
 
 ```typescript
 // src/hooks/entries/context-injector.entry.ts
@@ -562,11 +555,11 @@ try {
 process.stdout.write(JSON.stringify(result));
 ```
 
-**비고:** `injectContext`는 `async` 함수이므로 entry 파일에서 `await`한다. 예외 발생 시에도 `{ continue: true }`를 반환하여 hook 실패로 인한 Claude Code 중단을 방지한다.
-
 ---
 
-### 3.2 structure-guard.entry.ts
+### 4.2 structure-guard.entry.ts (신규, organ-guard.entry.ts 대체)
+
+`organ-guard.entry.ts`를 삭제하고 `structure-guard.entry.ts`를 신규 추가한다.
 
 ```typescript
 // src/hooks/entries/structure-guard.entry.ts
@@ -582,7 +575,7 @@ const input = JSON.parse(Buffer.concat(chunks).toString('utf-8')) as PreToolUseI
 
 let result;
 try {
-  result = guardStructure(input, input.cwd);
+  result = guardStructure(input);
 } catch {
   result = { continue: true };
 }
@@ -590,14 +583,16 @@ try {
 process.stdout.write(JSON.stringify(result));
 ```
 
-**비고:** `guardStructure`는 동기 함수다. `cwd`는 `input.cwd`에서 직접 읽는다. `category-classifier.classify`가 실패해도 예외를 잡아 `{ continue: true }`를 반환하므로 구조 분류 오류가 hook 전체 실패로 이어지지 않는다.
+**비고:** `guardStructure`는 동기 함수이므로 `await` 불필요. `cwd`는 `input.cwd`에서 직접 읽으므로 별도 인자 전달 없음 (기존 organ-guard.entry.ts와의 차이점).
 
 ---
 
-### 3.3 change-tracker.entry.ts
+### 4.3 change-tracker.entry.ts (수정)
+
+`ChangeQueue` 인스턴스 생성 방식은 기존 entry 파일 패턴을 그대로 따른다.
 
 ```typescript
-// src/hooks/entries/change-tracker.entry.ts
+// src/hooks/entries/change-tracker.entry.ts (기존 패턴 유지)
 
 import { trackChange } from '../change-tracker.js';
 import type { PostToolUseInput } from '../../types/hooks.js';
@@ -618,49 +613,39 @@ try {
 process.stdout.write(JSON.stringify(result));
 ```
 
-**비고:** `trackChange`는 동기 함수다. 파일 시스템 쓰기(`appendChangeLog`)가 실패해도 함수 내부에서 예외를 잡아 처리하므로 entry 파일의 try/catch는 최후의 안전망 역할만 한다.
+**비고:** `trackChange` 시그니처에서 `queue` 파라미터 처리는 기존 entry 파일의 `ChangeQueue` 인스턴스 생성 패턴을 참조하여 구현한다.
 
 ---
 
-## 4. 빌드 설정
+## 5. 빌드 설정 수정
 
-각 hook entry 파일은 esbuild로 개별 `.mjs` 파일로 번들링된다. `build-plugin.mjs`에서 처리한다.
+`build-plugin.mjs`의 `hookEntries` 배열에서 `organ-guard`를 `structure-guard`로 변경한다.
 
 ```javascript
-// build-plugin.mjs — Hook 번들 설정 부분
+// build-plugin.mjs — hookEntries 배열 수정
 const hookEntries = [
-  { entry: 'src/hooks/entries/context-injector.entry.ts', out: 'scripts/context-injector.mjs' },
-  { entry: 'src/hooks/entries/structure-guard.entry.ts',  out: 'scripts/structure-guard.mjs' },
-  { entry: 'src/hooks/entries/change-tracker.entry.ts',   out: 'scripts/change-tracker.mjs' },
+  'pre-tool-validator',
+  'structure-guard',      // organ-guard → structure-guard
+  'change-tracker',
+  'agent-enforcer',
+  'context-injector',
 ];
-
-for (const { entry, out } of hookEntries) {
-  await esbuild.build({
-    entryPoints: [entry],
-    bundle: true,
-    platform: 'node',
-    format: 'esm',
-    outfile: out,
-    banner: { js: '#!/usr/bin/env node' },
-    external: [],  // 완전 번들
-  });
-}
 ```
 
 **산출물:**
 
 ```
 scripts/
-├── context-injector.mjs    # UserPromptSubmit hook
-├── structure-guard.mjs     # PreToolUse hook
-└── change-tracker.mjs      # PostToolUse hook
+├── pre-tool-validator.mjs  # 변경 없음
+├── structure-guard.mjs     # organ-guard.mjs 대체
+├── change-tracker.mjs      # 변경됨 (카테고리 태그 추가)
+├── agent-enforcer.mjs      # 변경 없음
+└── context-injector.mjs    # 변경됨 (프랙탈 섹션 추가)
 ```
 
 ---
 
-## 5. 테스트 전략
-
-### hooks/ 테스트 케이스
+## 6. 테스트 전략
 
 각 hook은 stdin/stdout JSON 직렬화 테스트와 핸들러 로직 단위 테스트로 나뉜다.
 
@@ -668,11 +653,11 @@ scripts/
 
 ```typescript
 // 핵심 케이스
-- injectContext: config 로드 성공 시 규칙 요약 포함 여부
-- injectContext: config 파일 없을 때 기본 설정으로 폴백
-- injectContext: drift 감지 실패 시에도 continue: true 반환
-- injectContext: 반환값이 { continue: true, hookSpecificOutput: { additionalContext: string } } 구조인지 확인
-- injectContext: additionalContext에 "[Holon] Active in:" 헤더 포함 확인
+- injectContext: 프랙탈 구조 스캔 실패 시 FCA-AI 컨텍스트만 반환, continue: true
+- injectContext: 프랙탈 구조 스캔 성공 시 FCA-AI + 프랙탈 섹션 모두 포함
+- injectContext: drift 감지 실패 시에도 continue: true 반환 (프랙탈 섹션에서 drift 생략)
+- injectContext: additionalContext에 "[FCA-AI] Active in:" 헤더 항상 포함 확인
+- injectContext: additionalContext에 "[filid] Fractal Structure Rules:" 헤더는 설정 있을 때만 포함
 ```
 
 **structure-guard.test.ts:**
@@ -680,9 +665,11 @@ scripts/
 ```typescript
 // 핵심 케이스
 - guardStructure: Write 아닌 도구 → { continue: true } (조기 반환)
-- guardStructure: organ 디렉토리 내 CLAUDE.md 쓰기 → 경고 포함, continue: true
-- guardStructure: 루트 CLAUDE.md 쓰기 → 경고 없음, continue: true
+- guardStructure: organ 디렉토리 내 CLAUDE.md Write → continue: false (기존 차단 로직 보존)
+- guardStructure: 루트 CLAUDE.md Write → { continue: true } (차단 없음)
+- guardStructure: organ 내 일반 파일 Write → 추가 검증만 수행, continue: true
 - guardStructure: 미분류 경로 → 경고 포함, continue: true
+- guardStructure: organ 내 하위 디렉토리 파일 → 경고 포함, continue: true
 - guardStructure: 순환 import 포함 content → 경고 포함, continue: true
 - guardStructure: 정상 경로의 정상 파일 → { continue: true, hookSpecificOutput 없음 }
 ```
@@ -692,8 +679,9 @@ scripts/
 ```typescript
 // 핵심 케이스
 - trackChange: Write 아닌 도구 → { continue: true }
-- trackChange: Write 도구, 정상 경로 → { continue: true } (additionalContext 없음)
-- trackChange: Write 도구, HOLON_DEBUG=1 → additionalContext에 [holon:change] 태그 포함
-- trackChange: change-log.jsonl에 올바른 JSON Lines 항목 기록 확인
+- trackChange: Write 도구 → ChangeQueue.enqueue 호출 확인 (기존 동작 보존)
+- trackChange: Write 도구 → .filid/change-log.jsonl에 올바른 JSON Lines 항목 기록 확인
+- trackChange: Write 도구, FILID_DEBUG=1 → additionalContext에 [filid:change] 태그 포함
 - trackChange: 파일 시스템 쓰기 실패 시에도 { continue: true } 반환
+- trackChange: 카테고리 분류 실패 시 category='unknown'으로 기록
 ```

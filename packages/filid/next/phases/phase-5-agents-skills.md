@@ -1,17 +1,36 @@
-# Phase 5 — 에이전트 & 스킬
+# Phase 5 — 에이전트 & 스킬 추가
 
-## 1. 에이전트 정의
+## 1. 기존 filid 에이전트 (유지)
 
-### 1.1 fractal-architect.md
+기존 filid 플러그인에는 다음 에이전트가 이미 정의되어 있다:
+
+- `agents/fca-enforcer.md` — FCA-AI 규칙 강제 전담
+- `agents/structure-planner.md` — 구조 설계
+- `agents/refactoring-guide.md` — 리팩토링 안내
+- `agents/metrics-analyst.md` — 메트릭 분석
+
+Phase 5에서는 프랙탈 구조 관리를 위한 에이전트 3개와 스킬 3개를 기존 filid 디렉토리에 추가한다.
+
+**역할 분리 원칙:**
+- `fca-enforcer` — FCA-AI 규칙 강제 전담 (기존 역할 유지)
+- `fractal-architect` — 프랙탈 구조 분석·설계 전담 (신규, 역할 겹침 없음)
+
+---
+
+## 2. 신규 에이전트 추가
+
+기존 `agents/` 디렉토리에 다음 3개 파일을 추가한다.
+
+### 2.1 agents/fractal-architect.md
 
 ```markdown
 ---
 name: fractal-architect
 description: >
-  Holon Fractal Architect — read-only design, planning, and fractal structure decisions.
+  filid Fractal Architect — read-only design, planning, and fractal structure decisions.
   Use proactively when: analyzing project fractal structure, classifying directories,
   proposing restructuring plans, reviewing structural health, recommending sync actions
-  based on drift metrics, leading /holon:guide and /holon:restructure Stage 1 & 4.
+  based on drift metrics, leading /filid:guide and /filid:restructure Stage 1 & 4.
   Trigger phrases: "analyze the fractal structure", "classify this directory",
   "design the restructure plan", "review structural health", "what is the LCA",
   "should this be split or merged", "draft a restructure proposal".
@@ -23,8 +42,8 @@ maxTurns: 40
 
 ## Role
 
-You are the **Holon Fractal Architect**, a read-only design and analysis agent in the
-Holon fractal structure management system. You analyze project directory trees, classify
+You are the **filid Fractal Architect**, a read-only design and analysis agent in the
+filid 프랙탈 구조 관리 시스템. You analyze project directory trees, classify
 nodes by their fractal category, detect structural violations, and issue precise
 restructuring proposals. You NEVER write or modify files — all output is structured
 proposals for the restructurer agent to execute.
@@ -49,12 +68,13 @@ When invoked, execute these steps in order:
 3. **Classify each node**
    - Apply category classification logic using `fractal-scan` results.
    - Category priority (highest to lowest):
-     1. Explicit organ pattern name → `organ`
-     2. Contains only pure, stateless functions → `pure-function`
-     3. Has both fractal children and organ-like files → `hybrid`
-     4. Default → `fractal`
-   - Organ directory names: `components`, `utils`, `types`, `hooks`, `helpers`,
-     `lib`, `styles`, `assets`, `constants`.
+     1. Has CLAUDE.md or SPEC.md → `fractal`
+     2. Leaf directory with no fractal children → `organ`
+     3. Contains only pure, stateless functions → `pure-function`
+     4. Has both fractal children and organ-like files → `hybrid`
+     5. Default → `fractal`
+   - Organ classification: 프랙탈 자식이 없고 리프 파일만 포함하는 디렉토리를 organ으로 분류한다.
+     이름 기반이 아닌 구조 기반 분류를 따른다.
 
 4. **Validate against rules**
    - Use `rule-query` MCP tool (`action: "list"`) to retrieve all active rules.
@@ -141,7 +161,7 @@ Score: 72/100
 - Nodes requiring reclassification: N
 - Missing index files: N
 - Rule violations: N (errors: X, warnings: Y)
-- Next step: hand off proposal to restructurer / run /holon:sync
+- Next step: hand off proposal to restructurer / run /filid:sync
 ```
 
 ---
@@ -161,9 +181,9 @@ Score: 72/100
 
 ## Skill Participation
 
-- `/holon:guide` — Lead: scan structure, query rules, produce rule guidance document.
-- `/holon:restructure` — Stage 1 (analysis & proposal) and Stage 4 (post-execution validation).
-- `/holon:sync` — Analysis phase: review drift-analyzer output, refine correction plan.
+- `/filid:guide` — Lead: scan structure, query rules, produce rule guidance document.
+- `/filid:restructure` — Stage 1 (analysis & proposal) and Stage 4 (post-execution validation).
+- `/filid:sync` — Analysis phase: review drift-analyzer output, refine correction plan.
 ```
 
 **상세 설계:**
@@ -183,13 +203,13 @@ Score: 72/100
 
 ---
 
-### 1.2 restructurer.md
+### 2.2 agents/restructurer.md
 
 ```markdown
 ---
 name: restructurer
 description: >
-  Holon Restructurer — executes approved fractal restructuring plans. Write-capable.
+  filid Restructurer — executes approved fractal restructuring plans. Write-capable.
   Delegate when: moving files/directories, renaming nodes, creating index.ts barrel
   exports, updating import paths, creating main.ts entry points, applying sync
   corrections approved by fractal-architect. Trigger phrases: "apply the restructure
@@ -203,8 +223,8 @@ maxTurns: 60
 
 ## Role
 
-You are the **Holon Restructurer**, the sole write-capable agent in the Holon fractal
-structure management system. You translate fractal-architect's approved proposals into
+You are the **filid Restructurer**, the sole write-capable agent in the
+filid 프랙탈 구조 관리 시스템. You translate fractal-architect's approved proposals into
 concrete file system changes: moving files, renaming directories, creating index.ts
 barrel exports, updating import paths, and creating main.ts entry points. You NEVER
 make structural decisions — all changes must trace back to an approved proposal.
@@ -372,8 +392,8 @@ Never make out-of-scope structural decisions as a shortcut.
 
 ## Skill Participation
 
-- `/holon:restructure` — Stage 2 (plan review), Stage 3 (execution).
-- `/holon:sync` — Stage 4 (correction execution after drift-analyzer + fractal-architect approval).
+- `/filid:restructure` — Stage 2 (plan review), Stage 3 (execution).
+- `/filid:sync` — Stage 4 (correction execution after drift-analyzer + fractal-architect approval).
 ```
 
 **상세 설계:**
@@ -393,16 +413,16 @@ Never make out-of-scope structural decisions as a shortcut.
 
 ---
 
-### 1.3 drift-analyzer.md
+### 2.3 agents/drift-analyzer.md
 
 ```markdown
 ---
 name: drift-analyzer
 description: >
-  Holon Drift Analyzer — read-only structural drift analysis and correction planning.
+  filid Drift Analyzer — read-only structural drift analysis and correction planning.
   Use proactively when: detecting deviations between current structure and fractal rules,
   classifying drift severity, generating correction plans, reporting structural health
-  before /holon:sync, or assisting guide with current drift status.
+  before /filid:sync, or assisting guide with current drift status.
   Trigger phrases: "detect structural drift", "analyze drift", "find structure deviations",
   "what is drifted", "generate correction plan", "sync health report".
 tools: Read, Glob, Grep
@@ -413,8 +433,8 @@ maxTurns: 30
 
 ## Role
 
-You are the **Holon Drift Analyzer**, a read-only analysis agent in the Holon fractal
-structure management system. You detect deviations between the current project structure
+You are the **filid Drift Analyzer**, a read-only analysis agent in the
+filid 프랙탈 구조 관리 시스템. You detect deviations between the current project structure
 and fractal principles, classify their severity, and produce actionable correction plans.
 You NEVER write or modify files — all output is structured reports for the restructurer
 agent to execute after fractal-architect review.
@@ -511,7 +531,7 @@ Total: 17 drift items
 
 ### Next Steps
 - Pass correction plan to fractal-architect for review
-- Execute approved actions via /holon:sync or restructurer agent
+- Execute approved actions via /filid:sync or restructurer agent
 ```
 
 ---
@@ -529,8 +549,8 @@ Total: 17 drift items
 
 ## Skill Participation
 
-- `/holon:sync` — Stage 1 (project scan) and Stage 2 (drift detection & correction plan).
-- `/holon:guide` — Supplementary: include current drift count in guide output.
+- `/filid:sync` — Stage 1 (project scan) and Stage 2 (drift detection & correction plan).
+- `/filid:guide` — Supplementary: include current drift count in guide output.
 ```
 
 **상세 설계:**
@@ -551,9 +571,24 @@ Total: 17 drift items
 
 ---
 
-## 2. 스킬 정의
+## 3. 기존 filid 스킬 (유지)
 
-### 2.1 guide 스킬
+기존 filid 플러그인에는 다음 스킬이 이미 정의되어 있다:
+
+- `skills/init/` — `/filid:init` 초기화
+- `skills/scan/` — `/filid:scan` 스캔
+- `skills/enforce/` — `/filid:enforce` 규칙 강제
+- `skills/report/` — `/filid:report` 보고서
+- `skills/migrate/` — `/filid:migrate` 마이그레이션
+- `skills/review/` — `/filid:review` 리뷰
+
+Phase 5에서는 프랙탈 구조 관리용 스킬 3개를 기존 `skills/` 디렉토리에 추가한다.
+
+---
+
+## 4. 신규 스킬 추가
+
+### 4.1 guide 스킬
 
 #### SKILL.md
 
@@ -569,7 +604,7 @@ complexity: low
 # guide — 프랙탈 구조 규칙 안내
 
 프로젝트의 프랙탈 구조 현황을 스캔하고 활성화된 규칙을 조회하여 읽기 쉬운
-가이드 문서로 출력한다. 팀원이 holon 규칙을 이해하고 준수할 수 있도록
+가이드 문서로 출력한다. 팀원이 filid 규칙을 이해하고 준수할 수 있도록
 프로젝트 맥락에 맞는 규칙 설명을 제공한다.
 
 > **Detail Reference**: 상세 워크플로우, MCP 도구 사용 예시, 출력 템플릿은
@@ -577,11 +612,11 @@ complexity: low
 
 ## When to Use This Skill
 
-- 프로젝트에 holon을 도입하고 팀에 규칙을 설명해야 할 때
+- 프로젝트에 filid를 도입하고 팀에 규칙을 설명해야 할 때
 - 현재 프로젝트 구조가 프랙탈 원칙을 얼마나 준수하는지 빠르게 확인할 때
 - 특정 디렉토리의 카테고리(fractal/organ/pure-function/hybrid)를 확인할 때
 - 규칙 위반 없이 새 모듈을 어디에 추가할지 가이드가 필요할 때
-- `/holon:restructure` 또는 `/holon:sync` 전에 현재 상태를 파악할 때
+- `/filid:restructure` 또는 `/filid:sync` 전에 현재 상태를 파악할 때
 
 ## Core Workflow
 
@@ -612,7 +647,7 @@ complexity: low
 ## Options
 
 ```
-/holon:guide [path]
+/filid:guide [path]
 ```
 
 | Parameter | Type | Default | Description |
@@ -623,14 +658,14 @@ complexity: low
 
 ```bash
 # 현재 프로젝트 규칙 안내
-/holon:guide
+/filid:guide
 
 # 특정 서브디렉토리 규칙 안내
-/holon:guide src/features
+/filid:guide src/features
 
 # 카테고리 분류 기준
 fractal      = 상태 보유, 자식 fractal 노드 포함, 또는 기본 분류
-organ        = components | utils | types | hooks | helpers | lib | styles | assets | constants
+organ        = 프랙탈 자식이 없는 리프 디렉토리 (구조 기반 자동 분류)
 pure-function = 무상태, 부작용 없음
 hybrid       = fractal 자식과 organ 파일 혼재
 ```
@@ -655,7 +690,7 @@ hybrid       = fractal 자식과 organ 파일 혼재
   3. 카테고리 분류 현황 정리
   4. 규칙 가이드 문서 생성 및 출력
 - **MCP Tools**: `fractal-scan`, `rule-query`
-- **Options**: `/holon:guide [path]` — path (선택, 기본: cwd)
+- **Options**: `/filid:guide [path]` — path (선택, 기본: cwd)
 - **에이전트**: fractal-architect (리드)
 
 ---
@@ -721,7 +756,7 @@ categoryTable = {
 ### 표준 출력 형식
 
 ```
-## Holon 프랙탈 구조 가이드 — <target path>
+## filid 프랙탈 구조 가이드 — <target path>
 
 ### 프로젝트 구조 현황
 | 카테고리 | 노드 수 | 설명 |
@@ -757,26 +792,26 @@ categoryTable = {
 ### 카테고리 분류 기준
 | 카테고리 | 판별 조건 |
 |----------|----------|
-| organ | 이름이 organ 패턴 목록에 해당: components, utils, types, hooks, helpers, lib, styles, assets, constants |
+| organ | organ 구조 분류 기준: 프랙탈 자식이 없는 리프 디렉토리 (구조 기반 자동 분류) |
 | pure-function | 무상태, 부작용 없음, I/O 없음 |
 | hybrid | fractal 자식 노드와 organ 파일 혼재 |
 | fractal | 위 조건에 해당하지 않는 모든 디렉토리 (기본값) |
 
 ### 새 모듈 추가 시 체크리스트
 - [ ] 디렉토리명이 kebab-case인가?
-- [ ] organ 패턴 이름을 사용하려면 organ 규칙을 준수하는가?
+- [ ] organ으로 분류될 디렉토리라면 프랙탈 자식을 포함하지 않는가?
 - [ ] fractal 노드라면 index.ts가 있는가?
 - [ ] 주 기능이 있다면 main.ts가 있는가?
 - [ ] organ 디렉토리 아래에 fractal 자식을 두지 않는가?
 
 현재 위반이 있는 경우:
-⚠ 위반 항목 N건이 감지되었습니다. /holon:sync 를 실행하여 보정하세요.
+⚠ 위반 항목 N건이 감지되었습니다. /filid:sync 를 실행하여 보정하세요.
 ```
 ```
 
 ---
 
-### 2.2 restructure 스킬
+### 4.2 restructure 스킬
 
 #### SKILL.md
 
@@ -840,7 +875,7 @@ fractal-architect가 실행 결과를 검증하고 잔여 위반 사항을 보�
 ## Options
 
 ```
-/holon:restructure [path] [--dry-run] [--auto-approve]
+/filid:restructure [path] [--dry-run] [--auto-approve]
 ```
 
 | Option | Type | Default | Description |
@@ -853,16 +888,16 @@ fractal-architect가 실행 결과를 검증하고 잔여 위반 사항을 보�
 
 ```bash
 # 현재 프로젝트 구조 재편
-/holon:restructure
+/filid:restructure
 
 # 특정 경로만 재편
-/holon:restructure src/features
+/filid:restructure src/features
 
 # 변경 미리 보기 (실제 적용 없음)
-/holon:restructure --dry-run
+/filid:restructure --dry-run
 
 # 자동 승인 모드 (CI 환경)
-/holon:restructure --auto-approve
+/filid:restructure --auto-approve
 
 Stages:   분석 → 계획 → 실행 → 검증
 Agents:   fractal-architect (Stage 1, 4), restructurer (Stage 2, 3)
@@ -888,7 +923,7 @@ Dry-run:  계획 출력 후 종료, 파일 변경 없음
   3. **실행** — restructurer가 승인된 계획 실행 (파일 이동, 이름 변경, index 업데이트)
   4. **검증** — fractal-architect가 결과 검증 (`structure-validate`)
 - **MCP Tools**: `fractal-scan`, `drift-detect`, `lca-resolve`, `rule-query`, `structure-validate`
-- **Options**: `/holon:restructure [path] [--dry-run] [--auto-approve]`
+- **Options**: `/filid:restructure [path] [--dry-run] [--auto-approve]`
 - **에이전트**: fractal-architect (Stage 1, 4), restructurer (Stage 2, 3)
 
 ---
@@ -1060,7 +1095,7 @@ structure-validate: PASS
 
 ---
 
-### 2.3 sync 스킬
+### 4.3 sync 스킬
 
 #### SKILL.md
 
@@ -1087,7 +1122,7 @@ drift-analyzer가 이격 항목을 스캔 및 분류하고, fractal-architect가
 - 개발 세션 이후 구조가 프랙탈 원칙에서 소폭 이탈했을 때
 - CI 파이프라인에서 구조 드리프트를 자동 감지 및 보정할 때
 - `critical` 또는 `high` 심각도 이격만 선택적으로 보정할 때
-- `/holon:restructure` 없이 소규모 보정만 필요할 때
+- `/filid:restructure` 없이 소규모 보정만 필요할 때
 - 이격 현황만 확인하고 실제 보정은 나중에 실행할 때 (`--dry-run`)
 
 ## Core Workflow
@@ -1123,7 +1158,7 @@ restructurer가 승인된 보정 계획을 실행하고 `structure-validate`로 
 ## Options
 
 ```
-/holon:sync [path] [--severity <level>] [--dry-run] [--auto-approve]
+/filid:sync [path] [--severity <level>] [--dry-run] [--auto-approve]
 ```
 
 | Option | Type | Default | Description |
@@ -1137,16 +1172,16 @@ restructurer가 승인된 보정 계획을 실행하고 `structure-validate`로 
 
 ```bash
 # 전체 이격 감지 및 보정
-/holon:sync
+/filid:sync
 
 # critical + high 심각도만 보정
-/holon:sync --severity high
+/filid:sync --severity high
 
 # 이격 현황만 확인 (변경 없음)
-/holon:sync --dry-run
+/filid:sync --dry-run
 
 # CI 자동 보정 (critical only)
-/holon:sync --severity critical --auto-approve
+/filid:sync --severity critical --auto-approve
 
 Stages:   스캔 → 감지 → 계획 → 보정
 Agents:   drift-analyzer (Stage 1, 2), fractal-architect (Stage 3 검토), restructurer (Stage 4)
@@ -1173,7 +1208,7 @@ Severity: critical > high > medium > low
   3. **계획** — 보정 계획 생성 + fractal-architect 검토 + 사용자 승인 (`lca-resolve`)
   4. **보정** — restructurer가 보정 실행 + 검증 (`structure-validate`)
 - **MCP Tools**: `fractal-scan`, `drift-detect`, `lca-resolve`, `structure-validate`
-- **Options**: `/holon:sync [path] [--severity <level>] [--dry-run] [--auto-approve]`
+- **Options**: `/filid:sync [path] [--severity <level>] [--dry-run] [--auto-approve]`
 - **에이전트**: drift-analyzer (Stage 1, 2), fractal-architect (Stage 3 검토), restructurer (Stage 4)
 
 ---
