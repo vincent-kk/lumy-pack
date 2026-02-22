@@ -20,17 +20,22 @@ const __dirname = dirname(__filename);
 // Ensure output directory exists
 mkdirSync(resolve(__dirname, 'libs'), { recursive: true });
 
-// 1. MCP server bundle (CJS for broad node compatibility)
-await build({
-  entryPoints: [resolve(__dirname, 'src/mcp/server-entry.ts')],
+// Shared esbuild options for all bundles
+const sharedOptions = {
   bundle: true,
   platform: 'node',
   target: 'node20',
+  minify: true,
+  sourcemap: false,
+  treeShaking: true,
+};
+
+// 1. MCP server bundle (CJS for broad node compatibility)
+await build({
+  ...sharedOptions,
+  entryPoints: [resolve(__dirname, 'src/mcp/server-entry.ts')],
   format: 'cjs',
   outfile: resolve(__dirname, 'libs/server.cjs'),
-  external: [],
-  minify: false,
-  sourcemap: false,
 });
 
 console.log('  MCP server  -> libs/server.cjs');
@@ -47,15 +52,10 @@ const hookEntries = [
 await Promise.all(
   hookEntries.map((name) =>
     build({
+      ...sharedOptions,
       entryPoints: [resolve(__dirname, `src/hooks/entries/${name}.entry.ts`)],
-      bundle: true,
-      platform: 'node',
-      target: 'node20',
       format: 'esm',
       outfile: resolve(__dirname, `libs/${name}.mjs`),
-      external: [],
-      minify: false,
-      sourcemap: false,
     }),
   ),
 );
