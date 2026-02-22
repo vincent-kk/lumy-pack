@@ -68,7 +68,7 @@ Apply the following patch to `<file path>`:
 <code patch from fix-requests.md>
 \`\`\`
 
-After applying, commit your changes before running `/filid:re-validate`.
+After applying, commit your changes before running `/filid:fca-revalidate`.
 ```
 
 ## AskUserQuestion Patterns

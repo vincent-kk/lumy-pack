@@ -1,12 +1,12 @@
 ---
-name: structure-review
+name: fca-structure-review
 user_invocable: true
 description: 6-stage FCA-AI PR verification — structure, docs, tests, metrics, dependencies
 version: 1.0.0
 complexity: complex
 ---
 
-# structure-review — 6-Stage PR Verification
+# fca-structure-review — 6-Stage PR Verification
 
 Execute the FCA-AI 6-stage PR verification pipeline. Validate structure,
 documents, tests, metrics, and dependencies, then emit a consolidated verdict.
@@ -70,7 +70,7 @@ See [reference.md Section 6](./reference.md#section-6--summary-report-format).
 > Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well (e.g., "3단계만 해줘" instead of `--stage=3`).
 
 ```
-/filid:structure-review [--stage=1-6] [--verbose]
+/filid:fca-structure-review [--stage=1-6] [--verbose]
 ```
 
 | Option      | Type          | Default | Description                                  |
@@ -81,10 +81,10 @@ See [reference.md Section 6](./reference.md#section-6--summary-report-format).
 ## Quick Reference
 
 ```
-/filid:structure-review                    # Run full 6-stage pipeline
-/filid:structure-review --stage=1          # Structure only
-/filid:structure-review --stage=3          # Test rule check only
-/filid:structure-review --verbose          # Per-file detail in all stages
+/filid:fca-structure-review                    # Run full 6-stage pipeline
+/filid:fca-structure-review --stage=1          # Structure only
+/filid:fca-structure-review --stage=3          # Test rule check only
+/filid:fca-structure-review --verbose          # Per-file detail in all stages
 
 Stages:   Structure → Documents → Tests → Metrics → Dependencies → Summary
 Agents:   qa-reviewer (lead), fractal-architect (assist — stages 1, 5)

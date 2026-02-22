@@ -134,7 +134,7 @@ const CATEGORY_GUIDE = [
  * Returns true if the cwd is an FCA-AI project.
  * Treats presence of .filid/ directory or CLAUDE.md as indicator.
  *
- * Edge case: returns false before /filid:init on new projects (intentional).
+ * Edge case: returns false before /filid:fca-init on new projects (intentional).
  * The init skill loads rules from its own SKILL.md and does not rely on hook context.
  */
 function isFcaProject(cwd: string): boolean {

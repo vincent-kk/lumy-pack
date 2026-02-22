@@ -1,12 +1,12 @@
 ---
-name: guide
+name: fca-guide
 user_invocable: true
 description: Generate a fractal structure guide for a directory — scans the project, queries active rules, and produces a readable guidance document
 version: 1.0.0
 complexity: low
 ---
 
-# guide — Fractal Structure Guide
+# fca-guide — Fractal Structure Guide
 
 Scan the project's fractal structure and query all active rules to produce a
 human-readable guidance document. Helps team members understand filid conventions
@@ -22,7 +22,7 @@ and how the current project is classified, so new modules are placed correctly.
 - Quickly checking how well the current structure follows fractal principles
 - Confirming the category (fractal / organ / pure-function / hybrid) of a directory
 - Getting guidance on where to place a new module without causing violations
-- Reviewing the current state before running `/filid:restructure` or `/filid:sync`
+- Reviewing the current state before running `/filid:fca-restructure` or `/filid:fca-sync`
 
 ## Core Workflow
 
@@ -62,7 +62,7 @@ See [reference.md Section 4](./reference.md#section-4--guide-document-output).
 > Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well.
 
 ```
-/filid:guide [path]
+/filid:fca-guide [path]
 ```
 
 | Parameter | Type   | Default                   | Description                         |
@@ -73,10 +73,10 @@ See [reference.md Section 4](./reference.md#section-4--guide-document-output).
 
 ```bash
 # Guide for current project
-/filid:guide
+/filid:fca-guide
 
 # Guide for a specific sub-directory
-/filid:guide src/features
+/filid:fca-guide src/features
 
 # Category classification criteria
 fractal       = Holds state, contains fractal children, or is the default classification

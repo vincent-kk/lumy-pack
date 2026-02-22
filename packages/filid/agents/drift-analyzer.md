@@ -4,7 +4,7 @@ description: >
   filid Drift Analyzer — read-only structural drift analysis and correction planning.
   Use proactively when: detecting deviations between current structure and fractal rules,
   classifying drift severity, generating correction plans, reporting structural health
-  before /filid:sync, or supplementing guide with current drift status.
+  before /filid:fca-sync, or supplementing guide with current drift status.
   Trigger phrases: "detect structural drift", "analyze drift", "find structure deviations",
   "what is drifted", "generate correction plan", "sync health report".
 tools: Read, Glob, Grep
@@ -113,7 +113,7 @@ Total: 17 drift items
 
 ### Next Steps
 - Pass correction plan to fractal-architect for review
-- Execute approved actions via /filid:sync or restructurer agent
+- Execute approved actions via /filid:fca-sync or restructurer agent
 ```
 
 ---
@@ -131,5 +131,5 @@ Total: 17 drift items
 
 ## Skill Participation
 
-- `/filid:sync` — Lead: Stage 1 (project scan) and Stage 2 (drift detection & correction plan).
-- `/filid:guide` — Supplementary: include current drift count in guide output.
+- `/filid:fca-sync` — Lead: Stage 1 (project scan) and Stage 2 (drift detection & correction plan).
+- `/filid:fca-guide` — Supplementary: include current drift count in guide output.

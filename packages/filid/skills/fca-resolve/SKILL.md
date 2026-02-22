@@ -1,12 +1,12 @@
 ---
-name: resolve-review
+name: fca-resolve
 user_invocable: true
 description: Interactive fix request resolution workflow. Parses fix-requests.md from a completed code review, presents items for accept/reject selection, collects developer justifications for rejected items, refines justifications into ADRs, and creates technical debt files for deferred fixes.
 version: 1.0.0
 complexity: medium
 ---
 
-# resolve-review — Fix Request Resolution
+# fca-resolve — Fix Request Resolution
 
 Resolve fix requests from a completed code review. Present each item for
 developer accept/reject, collect justifications for rejected items, refine
@@ -16,7 +16,7 @@ them into ADRs, and create technical debt records.
 
 ## When to Use
 
-- After `/filid:code-review` generates `fix-requests.md`
+- After `/filid:fca-review` generates `fix-requests.md`
 - To selectively accept or reject fix requests with formal justification
 - To create tracked technical debt for deferred fixes
 
@@ -27,7 +27,7 @@ them into ADRs, and create technical debt records.
 1. Detect branch: `git branch --show-current` (Bash)
 2. Normalize: `review-manage(normalize-branch)` MCP tool
 3. Verify: Read `.filid/review/<normalized>/fix-requests.md`
-4. If not found: abort with "No fix requests found. Run /filid:code-review first."
+4. If not found: abort with "No fix requests found. Run /filid:fca-review first."
 
 ### Step 2 — Parse Fix Requests
 
@@ -96,15 +96,37 @@ For each rejected fix:
 Capture current commit SHA: `git rev-parse HEAD` (Bash)
 
 Write `.filid/review/<branch>/justifications.md` with frontmatter
-containing `resolve_commit_sha` (used by `/filid:re-validate` as
+containing `resolve_commit_sha` (used by `/filid:fca-revalidate` as
 Delta baseline). See `reference.md` for the full output template.
+
+### Step 7 — Offer to Run fca-revalidate
+
+After writing justifications.md, prompt the developer:
+
+```
+If there were accepted fixes:
+  AskUserQuestion(
+    question: "Accepted fixes have been outlined above. Once you have applied
+               and committed them, run /filid:fca-revalidate for the final
+               PASS/FAIL verdict.\n\nAre you ready to run fca-revalidate now?",
+    options: [
+      { label: "Run now",   description: "Invoke /filid:fca-revalidate immediately" },
+      { label: "Not yet",   description: "Apply the fixes first, then run manually" }
+    ]
+  )
+  → On "Run now": invoke /filid:fca-revalidate
+  → On "Not yet": remind the developer with the command to run
+
+If there were NO accepted fixes (all rejected):
+  Automatically invoke /filid:fca-revalidate — no pending code changes needed.
+```
 
 ## Options
 
 > Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well.
 
 ```
-/filid:resolve-review
+/filid:fca-resolve
 ```
 
 No parameters. Current branch auto-detected.
@@ -112,12 +134,12 @@ No parameters. Current branch auto-detected.
 ## Quick Reference
 
 ```
-/filid:resolve-review    # Resolve fix requests on current branch
+/filid:fca-resolve    # Resolve fix requests on current branch
 
 Input:    .filid/review/<branch>/fix-requests.md
 Outputs:  justifications.md, .filid/debt/*.md (per rejected item)
-Prereq:   /filid:code-review must have completed
-Next:     /filid:re-validate (after applying accepted fixes)
+Prereq:   /filid:fca-review must have completed
+Next:     /filid:fca-revalidate (after applying accepted fixes)
 
 MCP tools: review-manage(normalize-branch), debt-manage(create)
 ```

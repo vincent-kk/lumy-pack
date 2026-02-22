@@ -1,12 +1,12 @@
 ---
-name: restructure
+name: fca-restructure
 user_invocable: true
 description: Analyze project structure and restructure it to follow fractal principles — multi-stage with user approval
 version: 1.0.0
 complexity: high
 ---
 
-# restructure — Fractal Structure Restructuring
+# fca-restructure — Fractal Structure Restructuring
 
 Analyze the current project directory structure and restructure it according to
 fractal principles. The `fractal-architect` agent performs the analysis and produces
@@ -67,7 +67,7 @@ See [reference.md Section 4](./reference.md#section-4--validation).
 > Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well (e.g., "바뀌는 것만 보여줘" instead of `--dry-run`).
 
 ```
-/filid:restructure [path] [--dry-run] [--auto-approve]
+/filid:fca-restructure [path] [--dry-run] [--auto-approve]
 ```
 
 | Option           | Type   | Default                   | Description                                       |
@@ -80,16 +80,16 @@ See [reference.md Section 4](./reference.md#section-4--validation).
 
 ```bash
 # Restructure current project
-/filid:restructure
+/filid:fca-restructure
 
 # Restructure a specific path
-/filid:restructure src/features
+/filid:fca-restructure src/features
 
 # Preview changes without applying them
-/filid:restructure --dry-run
+/filid:fca-restructure --dry-run
 
 # Automated approval for CI environments
-/filid:restructure --auto-approve
+/filid:fca-restructure --auto-approve
 
 Stages:  Analysis → Plan → Execute → Validate
 Agents:  fractal-architect (Stage 1, 4), restructurer (Stage 3)

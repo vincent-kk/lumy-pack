@@ -186,5 +186,5 @@ Never make out-of-scope structural decisions as a shortcut.
 
 ## Skill Participation
 
-- `/filid:restructure` — Stage 3 (execution); Stage 2 plan review support.
-- `/filid:sync` — Stage 4 (correction execution after drift-analyzer + fractal-architect approval).
+- `/filid:fca-restructure` — Stage 3 (execution); Stage 2 plan review support.
+- `/filid:fca-sync` — Stage 4 (correction execution after drift-analyzer + fractal-architect approval).

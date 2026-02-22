@@ -1,12 +1,12 @@
 ---
-name: re-validate
+name: fca-revalidate
 user_invocable: true
 description: Delta-based lightweight re-validation after fix resolution. Extracts changes since resolve_commit_sha, verifies accepted fixes resolved their issues, checks justifications for constitutional compliance, resolves cleared debt, and renders final PASS/FAIL verdict with optional PR comment.
 version: 1.0.0
 complexity: medium
 ---
 
-# re-validate — Delta Re-validation
+# fca-revalidate — Delta Re-validation
 
 Perform lightweight re-validation after fix resolution. Extract the Delta
 since `resolve_commit_sha`, verify fixes resolved their issues, and render
@@ -16,7 +16,7 @@ a final PASS/FAIL verdict. Optionally post the result as a PR comment.
 
 ## When to Use
 
-- After `/filid:resolve-review` and applying accepted fixes
+- After `/filid:fca-resolve` and applying accepted fixes
 - To verify that code changes address the original fix requests
 - To get final PASS/FAIL verdict before PR merge
 
@@ -112,7 +112,7 @@ Post verdict to PR if GitHub CLI is available:
 > Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well.
 
 ```
-/filid:re-validate
+/filid:fca-revalidate
 ```
 
 No parameters. Current branch auto-detected.
@@ -120,11 +120,11 @@ No parameters. Current branch auto-detected.
 ## Quick Reference
 
 ```
-/filid:re-validate    # Re-validate on current branch
+/filid:fca-revalidate    # Re-validate on current branch
 
 Input:    justifications.md (resolve_commit_sha), fix-requests.md, review-report.md
 Output:   re-validate.md, PR comment (optional)
-Prereq:   /filid:resolve-review must have completed + fixes applied
+Prereq:   /filid:fca-resolve must have completed + fixes applied
 Verdict:  PASS | FAIL
 
 MCP tools: review-manage(normalize-branch), ast-analyze(tree-diff, lcom4, cc),

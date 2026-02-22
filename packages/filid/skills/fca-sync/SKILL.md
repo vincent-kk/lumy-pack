@@ -1,12 +1,12 @@
 ---
-name: sync
+name: fca-sync
 user_invocable: true
 description: Detect structural drift and correct deviations from fractal principles — supports severity filtering, dry-run, and auto-approve
 version: 1.0.0
 complexity: high
 ---
 
-# sync — Structural Drift Synchronization
+# fca-sync — Structural Drift Synchronization
 
 Detect deviations between the current project structure and fractal principles,
 then apply targeted corrections. `drift-analyzer` scans and classifies drift items,
@@ -22,7 +22,7 @@ approved corrections.
 - Correcting minor structural drift after a development session
 - Automatically detecting and fixing drift in a CI pipeline
 - Selectively correcting only `critical` or `high` severity drift items
-- Applying small corrections without the full scope of `/filid:restructure`
+- Applying small corrections without the full scope of `/filid:fca-restructure`
 - Inspecting drift status without making changes (`--dry-run`)
 
 ## Core Workflow
@@ -67,7 +67,7 @@ See [reference.md Section 4](./reference.md#section-4--correction-execution).
 > Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well (e.g., "critical만 처리해줘" instead of `--severity critical`).
 
 ```
-/filid:sync [path] [--severity critical|high|medium|low] [--dry-run] [--auto-approve]
+/filid:fca-sync [path] [--severity critical|high|medium|low] [--dry-run] [--auto-approve]
 ```
 
 | Option           | Type                          | Default                   | Description                                               |
@@ -81,16 +81,16 @@ See [reference.md Section 4](./reference.md#section-4--correction-execution).
 
 ```bash
 # Detect and correct all drift
-/filid:sync
+/filid:fca-sync
 
 # Correct critical and high severity only
-/filid:sync --severity high
+/filid:fca-sync --severity high
 
 # Inspect drift without making changes
-/filid:sync --dry-run
+/filid:fca-sync --dry-run
 
 # CI automated correction (critical only)
-/filid:sync --severity critical --auto-approve
+/filid:fca-sync --severity critical --auto-approve
 
 Stages:   Scan → Detect → Plan → Execute
 Agents:   drift-analyzer (Stage 1, 2), fractal-architect (Stage 3 review), restructurer (Stage 4)

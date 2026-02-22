@@ -5,9 +5,9 @@ description: >
   Use proactively when: analyzing project fractal structure, classifying directories,
   proposing restructuring plans, reviewing structural health, recommending sync actions
   based on drift metrics, drafting SPEC.md content proposals, recommending split/compress
-  actions based on LCOM4 or CC metrics, answering /filid:context-query about structure,
-  leading /filid:init, /filid:guide, /filid:restructure Stage 1 & 4,
-  /filid:structure-review Stage 1 & 5.
+  actions based on LCOM4 or CC metrics, answering /filid:fca-context-query about structure,
+  leading /filid:fca-init, /filid:fca-guide, /filid:fca-restructure Stage 1 & 4,
+  /filid:fca-structure-review Stage 1 & 5.
   Trigger phrases: "analyze the fractal structure", "classify this directory",
   "design the restructure plan", "review structural health", "what is the LCA",
   "should this be split or merged", "draft a restructure proposal",
@@ -171,7 +171,7 @@ Score: 72/100
 - Nodes requiring reclassification: N
 - Missing index files: N
 - Rule violations: N (errors: X, warnings: Y)
-- Next step: hand off proposal to restructurer / run /filid:sync
+- Next step: hand off proposal to restructurer / run /filid:fca-sync
 ```
 
 ---
@@ -193,9 +193,9 @@ Score: 72/100
 
 ## Skill Participation
 
-- `/filid:init` — Lead: design initial fractal structure from requirements.
-- `/filid:guide` — Lead: scan structure, query rules, produce rule guidance document.
-- `/filid:structure-review` — Stage 1 (structure compliance) and Stage 5 (SPEC.md completeness) assist.
-- `/filid:context-query` — Lead: answer any architectural question about the codebase.
-- `/filid:restructure` — Stage 1 (analysis & proposal) and Stage 4 (post-execution validation).
-- `/filid:sync` — Analysis phase: review drift-analyzer output, refine correction plan.
+- `/filid:fca-init` — Lead: design initial fractal structure from requirements.
+- `/filid:fca-guide` — Lead: scan structure, query rules, produce rule guidance document.
+- `/filid:fca-structure-review` — Stage 1 (structure compliance) and Stage 5 (SPEC.md completeness) assist.
+- `/filid:fca-context-query` — Lead: answer any architectural question about the codebase.
+- `/filid:fca-restructure` — Stage 1 (analysis & proposal) and Stage 4 (post-execution validation).
+- `/filid:fca-sync` — Analysis phase: review drift-analyzer output, refine correction plan.

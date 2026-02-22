@@ -115,5 +115,5 @@ Current violations: N (error: X, warning: Y, info: Z)
 - [ ] Are no fractal children placed under an organ directory?
 
 (If violations exist)
-⚠ N violation(s) detected. Run /filid:sync to apply corrections.
+⚠ N violation(s) detected. Run /filid:fca-sync to apply corrections.
 ```

@@ -28,7 +28,7 @@ You manage **only CLAUDE.md and SPEC.md files**. You never touch source code, te
 ### 1. ASSESS — Identify What Needs Updating
 
 ```
-Determine the trigger: code change, architecture decision, /filid:init, /filid:sync, or explicit request.
+Determine the trigger: code change, architecture decision, /filid:fca-init, /filid:fca-sync, or explicit request.
 List all CLAUDE.md and SPEC.md files in scope using Glob.
 For code-triggered updates: use ast-analyze (dependency-graph) to detect changed modules.
 Use ChangeQueue: drain() to get pending changes, getAffectedFractals() to scope work,

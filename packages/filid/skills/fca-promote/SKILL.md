@@ -1,12 +1,12 @@
 ---
-name: promote
+name: fca-promote
 user_invocable: true
 description: Promote stable test.ts files to 3+12 rule-compliant spec.ts
 version: 1.0.0
 complexity: medium
 ---
 
-# promote — Test Promotion
+# fca-promote — Test Promotion
 
 Promote stable `test.ts` files to parameterized `spec.ts` files satisfying the
 FCA-AI 3+12 rule (max 3 basic + 12 complex = 15 total). Executes discovery,
@@ -68,7 +68,7 @@ See [reference.md Section 5](./reference.md#section-5--validation-and-migration)
 > Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well (e.g., "60일 기준으로 해줘" instead of `--days=60`).
 
 ```
-/filid:promote [path] [--days=90]
+/filid:fca-promote [path] [--days=90]
 ```
 
 | Option     | Type    | Default                   | Description                                  |
@@ -79,10 +79,10 @@ See [reference.md Section 5](./reference.md#section-5--validation-and-migration)
 ## Quick Reference
 
 ```
-/filid:promote                         # Scan cwd, 90-day threshold
-/filid:promote [path]                  # Scan specific directory
-/filid:promote --days=N                # Custom stability threshold
-/filid:promote [path] --days=N         # Both options combined
+/filid:fca-promote                         # Scan cwd, 90-day threshold
+/filid:fca-promote [path]                  # Scan specific directory
+/filid:fca-promote --days=N                # Custom stability threshold
+/filid:fca-promote [path] --days=N         # Both options combined
 
 Phases:   Discovery → Eligibility → Analysis → Generation → Validate → Migrate
 Agents:   qa-reviewer (analysis), implementer (execution)

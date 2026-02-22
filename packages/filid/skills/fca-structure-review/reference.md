@@ -113,7 +113,7 @@ Issues by severity:
   LOW (0)
 
 Recommendations:
-  1. Run /filid:sync to auto-compress src/core/CLAUDE.md
+  1. Run /filid:fca-sync to auto-compress src/core/CLAUDE.md
   2. Split src/parser/index.ts into focused sub-modules
 ```
 

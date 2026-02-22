@@ -1,12 +1,12 @@
 ---
-name: init
+name: fca-init
 user_invocable: true
 description: Initialize FCA-AI project — directory classification, CLAUDE.md/SPEC.md generation
 version: 1.0.0
 complexity: medium
 ---
 
-# init — FCA-AI Initialization
+# fca-init — FCA-AI Initialization
 
 Initialize the FCA-AI fractal context architecture in a project. Scans the
 directory tree, classifies every directory by node type, generates missing
@@ -22,7 +22,7 @@ CLAUDE.md files for fractal nodes, and produces a validation report.
 - Onboarding an existing codebase into the fractal context system
 - Regenerating CLAUDE.md files after a large-scale refactor removed them
 - Creating SPEC.md scaffolds for modules that lack formal specifications
-- Auditing which directories are correctly classified before running `/filid:scan`
+- Auditing which directories are correctly classified before running `/filid:fca-scan`
 
 ## Core Workflow
 
@@ -67,7 +67,7 @@ See [reference.md Section 5](./reference.md#section-5--validation-and-report-for
 > Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well.
 
 ```
-/filid:init [path]
+/filid:fca-init [path]
 ```
 
 | Parameter | Type   | Default                   | Description                  |
@@ -78,10 +78,10 @@ See [reference.md Section 5](./reference.md#section-5--validation-and-report-for
 
 ```bash
 # Initialize current project
-/filid:init
+/filid:fca-init
 
 # Initialize a specific sub-directory
-/filid:init src/payments
+/filid:fca-init src/payments
 
 # Constants
 ORGAN_DIR_NAMES   = components | utils | types | hooks | helpers

@@ -1,12 +1,12 @@
 ---
-name: scan
+name: fca-scan
 user_invocable: true
 description: Scan for FCA-AI rule violations and generate report, --fix for auto-remediation
 version: 1.0.0
 complexity: medium
 ---
 
-# scan — FCA-AI Rule Scanner
+# fca-scan — FCA-AI Rule Scanner
 
 Scan the project for FCA-AI rule violations across CLAUDE.md documents,
 organ directory boundaries, and test file structure. Produces a prioritised
@@ -20,9 +20,9 @@ violation report and, with `--fix`, applies automatic remediation.
 
 - Auditing the project before opening a pull request
 - Checking for regressions after a large-scale refactor
-- Verifying that `/filid:init` produced a fully compliant structure
+- Verifying that `/filid:fca-init` produced a fully compliant structure
 - Running a periodic governance health check
-- Preparing a baseline report before `/filid:structure-review` or `/filid:promote`
+- Preparing a baseline report before `/filid:fca-structure-review` or `/filid:fca-promote`
 
 ## Core Workflow
 
@@ -65,7 +65,7 @@ See [reference.md Section 5](./reference.md#section-5--report-formats).
 > Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well (e.g., "고칠 수 있는 건 고쳐줘" instead of `--fix`).
 
 ```
-/filid:scan [path] [--fix]
+/filid:fca-scan [path] [--fix]
 ```
 
 | Parameter | Type   | Default                   | Description                                 |
@@ -77,13 +77,13 @@ See [reference.md Section 5](./reference.md#section-5--report-formats).
 
 ```bash
 # Scan current project (report only)
-/filid:scan
+/filid:fca-scan
 
 # Scan a specific sub-directory
-/filid:scan src/payments
+/filid:fca-scan src/payments
 
 # Scan and auto-fix eligible violations
-/filid:scan --fix
+/filid:fca-scan --fix
 
 # Thresholds
 CLAUDE_MD_LINE_LIMIT = 100 lines

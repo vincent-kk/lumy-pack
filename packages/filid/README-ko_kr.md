@@ -48,8 +48,8 @@ filid 스킬은 **LLM 프롬프트**이지, CLI 명령어가 아닙니다. Claud
 ### 프로젝트 초기화
 
 ```
-/filid:init
-/filid:init ./packages/my-app
+/filid:fca-init
+/filid:fca-init ./packages/my-app
 ```
 
 프로젝트 디렉토리를 스캔하여 각 모듈에 `CLAUDE.md` 경계 문서를 생성합니다. `components/`, `utils/` 같은 유틸리티 디렉토리(organ)는 자동으로 건너뜁니다.
@@ -57,9 +57,9 @@ filid 스킬은 **LLM 프롬프트**이지, CLI 명령어가 아닙니다. Claud
 ### 규칙 위반 찾고 수정하기
 
 ```
-/filid:scan
-/filid:scan src/core 쪽만 봐줘
-/filid:scan 고칠 수 있는 건 고쳐줘
+/filid:fca-scan
+/filid:fca-scan src/core 쪽만 봐줘
+/filid:fca-scan 고칠 수 있는 건 고쳐줘
 ```
 
 CLAUDE.md 100줄 초과, 3-tier 경계 섹션 누락, organ 디렉토리 내 CLAUDE.md 존재 등을 검출합니다.
@@ -67,9 +67,9 @@ CLAUDE.md 100줄 초과, 3-tier 경계 섹션 누락, organ 디렉토리 내 CLA
 ### 코드 변경 후 문서 동기화
 
 ```
-/filid:sync
-/filid:sync 바뀌는 것만 미리 보여줘
-/filid:sync critical 이상만 처리해줘
+/filid:fca-sync
+/filid:fca-sync 바뀌는 것만 미리 보여줘
+/filid:fca-sync critical 이상만 처리해줘
 ```
 
 코드 변경으로 인한 구조적 drift를 감지하고, 해당 모듈의 CLAUDE.md/SPEC.md를 갱신합니다. 내부적으로 `drift-detect` MCP 도구를 사용합니다.
@@ -77,8 +77,8 @@ CLAUDE.md 100줄 초과, 3-tier 경계 섹션 누락, organ 디렉토리 내 CLA
 ### PR 올리기 전 구조 검증
 
 ```
-/filid:structure-review
-/filid:structure-review 3단계만 실행해줘
+/filid:fca-structure-review
+/filid:fca-structure-review 3단계만 실행해줘
 ```
 
 경계 검사 → 문서 검증 → 의존성 분석 → 테스트 메트릭 → 복잡도 평가 → 최종 판정 순서로 진행됩니다.
@@ -89,42 +89,42 @@ CLAUDE.md 100줄 초과, 3-tier 경계 섹션 누락, organ 디렉토리 내 CLA
 
 ```
 # 현재 브랜치 리뷰
-/filid:code-review
+/filid:fca-review
 
 # 특정 PR 리뷰
-/filid:code-review https://github.com/owner/repo/pull/123
+/filid:fca-review https://github.com/owner/repo/pull/123
 
 # 처음부터 다시 시작
-/filid:code-review 처음부터 다시 해줘
+/filid:fca-review 처음부터 다시 해줘
 
 # 리뷰 후 — 수정 요청 처리
-/filid:resolve-review
+/filid:fca-resolve
 
 # 수정 후 — 최종 판정
-/filid:re-validate
+/filid:fca-revalidate
 ```
 
 **흐름:**
 
-1. **`/filid:code-review`** — 위원회 선출 → 기술 검증 → 합의 → 리뷰 보고서 생성
-2. **`/filid:resolve-review`** — 각 수정 요청에 대해 수용 또는 거부(사유 입력) 선택
-3. **`/filid:re-validate`** — 수정 사항 반영 후 PASS/FAIL 최종 판정
+1. **`/filid:fca-review`** — 위원회 선출 → 기술 검증 → 합의 → 리뷰 보고서 생성
+2. **`/filid:fca-resolve`** — 각 수정 요청에 대해 수용 또는 거부(사유 입력) 선택
+3. **`/filid:fca-revalidate`** — 수정 사항 반영 후 PASS/FAIL 최종 판정
 
 산출물은 `.filid/review/<branch>/`에, 기술 부채는 `.filid/debt/`에 저장됩니다.
 
 ### FCA-AI가 뭔지 잘 모르겠을 때
 
 ```
-/filid:guide
-/filid:guide fractal 구조에 대해 알려줘
-/filid:context-query organ 디렉토리에서 뭘 할 수 있어?
+/filid:fca-guide
+/filid:fca-guide fractal 구조에 대해 알려줘
+/filid:fca-context-query organ 디렉토리에서 뭘 할 수 있어?
 ```
 
 ### 모듈 구조 개선이 필요할 때
 
 ```
-/filid:restructure ./src/core
-/filid:promote
+/filid:fca-restructure ./src/core
+/filid:fca-promote
 ```
 
 ---
@@ -148,17 +148,17 @@ CLAUDE.md 100줄 초과, 3-tier 경계 섹션 누락, organ 디렉토리 내 CLA
 
 | 스킬                      | 설명                                     |
 | ------------------------- | ---------------------------------------- |
-| `/filid:init`             | 프로젝트 FCA-AI 초기화                   |
-| `/filid:scan`             | 규칙 위반 검출 (자동 수정 가능)          |
-| `/filid:sync`             | 코드-문서 동기화                         |
-| `/filid:structure-review` | PR 구조 검증 (6단계)                     |
-| `/filid:promote`          | 안정된 테스트를 spec으로 승격            |
-| `/filid:context-query`    | 구조 관련 질의응답                       |
-| `/filid:guide`            | FCA-AI 가이드                            |
-| `/filid:restructure`      | 모듈 리팩토링 가이드 + 마이그레이션 단계 |
-| `/filid:code-review`      | 다중 페르소나 거버넌스 코드 리뷰         |
-| `/filid:resolve-review`   | 수정 요청 해결                           |
-| `/filid:re-validate`      | 수정 후 재검증 (PASS/FAIL)               |
+| `/filid:fca-init`             | 프로젝트 FCA-AI 초기화                   |
+| `/filid:fca-scan`             | 규칙 위반 검출 (자동 수정 가능)          |
+| `/filid:fca-sync`             | 코드-문서 동기화                         |
+| `/filid:fca-structure-review` | PR 구조 검증 (6단계)                     |
+| `/filid:fca-promote`          | 안정된 테스트를 spec으로 승격            |
+| `/filid:fca-context-query`    | 구조 관련 질의응답                       |
+| `/filid:fca-guide`            | FCA-AI 가이드                            |
+| `/filid:fca-restructure`      | 모듈 리팩토링 가이드 + 마이그레이션 단계 |
+| `/filid:fca-review`           | 다중 페르소나 거버넌스 코드 리뷰         |
+| `/filid:fca-resolve`          | 수정 요청 해결                           |
+| `/filid:fca-revalidate`       | 수정 후 재검증 (PASS/FAIL)               |
 
 ---
 
