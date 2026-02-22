@@ -12,7 +12,7 @@
 |--------------|--------|---------|-----------|---------------|
 | `pre-tool-validator.mjs` | PreToolUse | 3초 | 4.1KB | <50ms |
 | `organ-guard.mjs` | PreToolUse | 3초 | 1.5KB | <30ms |
-| `change-tracker.mjs` | PostToolUse | 3초 | 633B | <20ms |
+| `change-tracker.mjs` | _(disabled)_ | — | 633B | — |
 | `agent-enforcer.mjs` | SubagentStart | 3초 | 1.3KB | <30ms |
 | `context-injector.mjs` | UserPromptSubmit | 5초 | 988B | <20ms |
 
@@ -26,7 +26,7 @@
 | context-injector | 매 사용자 프롬프트 | **높음** — 모든 상호작용마다 |
 | pre-tool-validator | Write\|Edit 도구 호출 | **중간** — 파일 수정 시 |
 | organ-guard | Write\|Edit 도구 호출 | **중간** — 파일 수정 시 |
-| change-tracker | Write\|Edit 도구 호출 | **중간** — 파일 수정 시 |
+| change-tracker | _(disabled)_ | — |
 | agent-enforcer | 서브에이전트 생성 | **낮음** — 에이전트 생성 시 |
 
 ### stdin/stdout JSON 직렬화 비용
@@ -179,7 +179,7 @@ Rules:
 | `scripts/organ-guard.mjs` | 1.5KB | ESM | organ-classifier + hook 로직 |
 | `scripts/agent-enforcer.mjs` | 1.3KB | ESM | ROLE_RESTRICTIONS + hook 로직 |
 | `scripts/context-injector.mjs` | 988B | ESM | 규칙 문자열 + hook 로직 |
-| `scripts/change-tracker.mjs` | 633B | ESM | ChangeQueue 타입 + hook 로직 |
+| `scripts/change-tracker.mjs` | 633B | ESM | ChangeQueue 타입 + hook 로직 _(disabled)_ |
 | **Hook 합계** | **~8.5KB** | | |
 
 ### 전체 번들 합계

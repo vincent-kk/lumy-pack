@@ -248,13 +248,15 @@ function guardOrganWrite(input: PreToolUseInput): HookOutput
 Organ 디렉토리 내 CLAUDE.md 생성을 차단한다.
 경로의 모든 부모 세그먼트를 `ORGAN_DIR_NAMES`와 비교.
 
-### change-tracker
+### change-tracker _(disabled)_
 
 ```typescript
 function trackChange(input: PostToolUseInput, queue: ChangeQueue): HookOutput
 ```
 Write/Edit 후 파일 경로를 ChangeQueue에 기록한다.
 Write → `created`, Edit → `modified`.
+
+> **Note**: hooks.json에서 제거됨. 코드는 유지되지만 런타임에 실행되지 않음.
 
 ### agent-enforcer
 

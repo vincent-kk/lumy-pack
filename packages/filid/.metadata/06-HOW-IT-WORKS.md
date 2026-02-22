@@ -40,12 +40,9 @@
 └──────────────────────────────────────────────────────┘
         │
         ▼
-┌─ PostToolUse (matcher: Write|Edit) ─────────────────┐
-│  change-tracker.mjs (timeout: 3s)                    │
-│  → Write → changeType: 'created'                     │
-│  → Edit  → changeType: 'modified'                    │
-│  → ChangeQueue에 { filePath, changeType, timestamp } │
-│  → 항상 continue: true (차단 없음)                     │
+┌─ PostToolUse ────────────────────────────────────────┐
+│  (disabled — change-tracker removed from hooks.json)  │
+│  No active PostToolUse hooks.                         │
 └──────────────────────────────────────────────────────┘
         │
         ▼ (서브에이전트 생성 시)

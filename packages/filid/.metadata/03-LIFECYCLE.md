@@ -375,8 +375,7 @@ T1  에이전트가 Write 도구 호출
 
 T2  (pass 시) Write 도구 실행 → 파일 생성/수정
 
-T3  PostToolUse (matcher: Write|Edit)
-    └─ change-tracker: ChangeQueue에 기록
+T3  PostToolUse (disabled — no active hooks)
 
 T4  에이전트가 서브에이전트 생성
     └─ SubagentStart (matcher: *)

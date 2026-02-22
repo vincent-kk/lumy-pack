@@ -160,7 +160,7 @@ filid operates through a **4-layer architecture**, ordered by automation level:
 │  Layer 1: HOOKS (automatic, event-driven)            │
 │  ┌─────────────────────────────────────────────────┐ │
 │  │ PreToolUse  → pre-tool-validator, organ-guard   │ │
-│  │ PostToolUse → change-tracker                    │ │
+│  │ PostToolUse → (disabled)                         │ │
 │  │ SubagentStart → agent-enforcer                  │ │
 │  │ UserPromptSubmit → context-injector             │ │
 │  └─────────────────────────────────────────────────┘ │
@@ -326,7 +326,7 @@ Runtime enforcement hooks that fire automatically on Claude Code events:
 |------------|---------|--------|---------|
 | `PreToolUse` | `Write\|Edit` | `pre-tool-validator` | Validate CLAUDE.md line limits, SPEC.md constraints |
 | `PreToolUse` | `Write\|Edit` | `organ-guard` | Block CLAUDE.md creation in organ directories |
-| `PostToolUse` | `Write\|Edit` | `change-tracker` | Record changes in ChangeQueue for batch sync |
+| `PostToolUse` | — | _(disabled)_ | change-tracker removed — no active PostToolUse hooks |
 | `SubagentStart` | `*` | `agent-enforcer` | Inject role constraints into sub-agents |
 | `UserPromptSubmit` | `*` | `context-injector` | Inject FCA-AI rules into agent context |
 
