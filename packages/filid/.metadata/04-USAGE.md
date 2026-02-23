@@ -48,7 +48,7 @@ node build-plugin.mjs
 이 명령은 esbuild로 두 가지 산출물을 생성:
 
 1. **MCP 서버 번들**: `bridge/mcp-server.cjs` (~516KB, CJS)
-2. **Hook 스크립트 번들**: `scripts/*.mjs` (5개, ESM)
+2. **Hook 스크립트 번들**: `libs/*.mjs` (6개, ESM)
 
 ### TypeScript 컴파일 (라이브러리 빌드)
 

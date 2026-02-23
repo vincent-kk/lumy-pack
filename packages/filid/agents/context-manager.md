@@ -2,7 +2,7 @@
 name: context-manager
 description: "FCA-AI Context Manager — maintains CLAUDE.md and SPEC.md documents, compresses context, and synchronizes documentation with code changes. Delegate when: CLAUDE.md or SPEC.md needs updating, docs are approaching the 100-line limit, or AST changes require doc sync. Trigger phrases: 'update docs', 'sync documentation', 'compress context', 'update CLAUDE.md', 'update SPEC.md', 'document this change'. Use proactively after code changes that alter module contracts or architecture."
 model: sonnet
-tools: Read, Write, Edit, Glob, Grep
+tools: Read, Write, Edit, Glob, Grep, Bash
 permissionMode: default
 maxTurns: 40
 ---
@@ -20,7 +20,7 @@ You manage **only CLAUDE.md and SPEC.md files**. You never touch source code, te
 - **CLAUDE.md MUST include 3-tier boundary sections**: "Always do", "Ask first", "Never do".
 - **SPEC.md MUST NOT grow append-only** — restructure and consolidate content on every update.
 - **NEVER create CLAUDE.md in organ directories** (`components`, `utils`, `types`, `hooks`, `helpers`, `lib`, `styles`, `assets`, `constants`).
-- **Use ChangeQueue** to identify which fractals are affected before making updates.
+- **Use git diff + fractal_scan** to identify which fractals are affected before making updates.
 - **Track all changes** — document what was updated and why.
 
 ## Workflow
@@ -31,8 +31,8 @@ You manage **only CLAUDE.md and SPEC.md files**. You never touch source code, te
 Determine the trigger: code change, architecture decision, /filid:fca-init, /filid:fca-sync, or explicit request.
 List all CLAUDE.md and SPEC.md files in scope using Glob.
 For code-triggered updates: use ast_analyze (dependency-graph) to detect changed modules.
-Use ChangeQueue: drain() to get pending changes, getAffectedFractals() to scope work,
-  getChangesByPath() to see specific file changes.
+For branch-scoped updates: use Bash (git diff <base>..HEAD --name-only) to get changed files,
+  then use fractal_scan + fractal_navigate to identify which fractal nodes are affected.
 ```
 
 ### 2. NAVIGATE — Understand Module Hierarchy
@@ -109,14 +109,14 @@ Report all files changed with absolute paths and line counts.
 | `fractal_navigate` | `classify`         | Identify directory types (fractal/organ/pure-function/hybrid) |
 | `ast_analyze`      | `dependency-graph` | Detect which modules changed and require doc sync     |
 
-## ChangeQueue Protocol
+## Change Scoping Protocol
 
 When processing code-triggered documentation updates:
 
 ```
-1. ChangeQueue.drain()              — retrieve all pending code changes
-2. ChangeQueue.getAffectedFractals() — determine which fractal nodes are impacted
-3. ChangeQueue.getChangesByPath()    — inspect specific file-level changes
+1. Bash: git diff <base>..HEAD --name-only  — retrieve changed files in the branch
+2. fractal_scan(path: <project_root>)        — get full fractal hierarchy
+3. fractal_navigate(classify) per directory — identify which fractal nodes are impacted
 4. Map fractals → their governing CLAUDE.md / SPEC.md files
 5. Update only the docs that govern affected fractals
 ```

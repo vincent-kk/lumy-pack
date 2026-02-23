@@ -30,7 +30,7 @@ fractal_scan(path: <PROJECT_ROOT>)
 // Returns: ScanReport { tree: { nodes: Map<path, FractalNode>, root: string }, ... }
 ```
 
-Store `tree.nodes` as `SCAN_NODES` for use in A.1 and A.2 classify calls.
+Store `tree.nodes` as `SCAN_NODES` for use in A.1 classify calls.
 
 Build two lists:
 - `CHANGED_FILES`: all modified/added source files (`.ts`, `.tsx`, `.js`)
@@ -66,7 +66,7 @@ Severity mapping:
 For each file in `CHANGED_CLAUDE_MDS`:
 - Line count must be <= 100
 - Must contain all three tier sections: "Always do", "Ask first", "Never do"
-- Run `doc_compress(mode: "auto")` — warning if >= 90 lines
+- If line count >= 90: record as LOW severity warning (approaching limit; `doc_compress` recommended)
 
 For each file in `CHANGED_SPEC_MDS`:
 - Check for append-only patterns (duplicate section headings from prior iterations)
