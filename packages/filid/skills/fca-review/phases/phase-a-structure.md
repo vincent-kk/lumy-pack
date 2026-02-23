@@ -23,6 +23,15 @@ fix-request agenda items).
 git diff <BASE_REF>..HEAD --name-only
 ```
 
+Then scan the full project hierarchy (required for `fractal_navigate` entries in A.1):
+
+```
+fractal_scan(path: <PROJECT_ROOT>)
+// Returns: ScanReport { tree: { nodes: Map<path, FractalNode>, root: string }, ... }
+```
+
+Store `tree.nodes` as `SCAN_NODES` for use in A.1 and A.2 classify calls.
+
 Build two lists:
 - `CHANGED_FILES`: all modified/added source files (`.ts`, `.tsx`, `.js`)
 - `CHANGED_DIRS`: unique parent directories of changed files
@@ -38,7 +47,7 @@ If a list is empty for a given stage, record the stage as `SKIP`.
 For each directory in `CHANGED_DIRS`:
 
 ```
-fractal_navigate(action: "classify", path: <directory>, entries: [/* nodes from fractal_scan */])
+fractal_navigate(action: "classify", path: <directory>, entries: SCAN_NODES)
 structure_validate(path: <directory>)
 ```
 

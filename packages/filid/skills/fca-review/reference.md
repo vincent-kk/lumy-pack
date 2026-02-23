@@ -179,13 +179,14 @@ No MCP tool calls. Reads `session.md` + `verification.md` + `structure-check.md`
 
 **Checkpoint resume order** (based on files present in `REVIEW_DIR`):
 
-| Files present                                          | Resume from |
-| ------------------------------------------------------ | ----------- |
-| None                                                   | Phase A     |
-| `structure-check.md` only                             | Phase B     |
-| `session.md` (no `verification.md`)                   | Phase C     |
-| `session.md` + `verification.md`                      | Phase D     |
-| `session.md` + `verification.md` + `review-report.md` | Complete    |
+| Files present                                                      | Resume from |
+| ------------------------------------------------------------------ | ----------- |
+| None                                                               | Phase A     |
+| `structure-check.md` only                                         | Phase B     |
+| `session.md` only (no `verification.md`)                          | Phase C     |
+| `structure-check.md` + `session.md` (no `verification.md`)        | Phase C     |
+| `session.md` + `verification.md`                                   | Phase D     |
+| `session.md` + `verification.md` + `review-report.md`             | Complete    |
 
 When `--no-structure-check` is active, Phase A is skipped and resume starts
 from Phase B even when no checkpoint files exist.

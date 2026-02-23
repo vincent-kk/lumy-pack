@@ -86,6 +86,7 @@ if [ -z "$NODE_BIN" ]; then
 fi
 
 # Cache the resolved path for subsequent invocations
+mkdir -p "$(dirname "$CACHE_FILE")" 2>/dev/null
 echo "$NODE_BIN" > "$CACHE_FILE" 2>/dev/null
 
 exec "$NODE_BIN" "$@"

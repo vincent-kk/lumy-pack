@@ -164,7 +164,7 @@ Prereq:   /filid:fca-resolve must have completed + fixes applied
 Verdict:  PASS | FAIL
 
 Steps:    1 (Load) → 2 (Delta) → [3 + 4 + 5 in parallel] → 6 (Verdict) → 7 (PR) → 8 (Cleanup on PASS)
-MCP tools: review_manage(normalize-branch, cleanup), ast_analyze(tree-diff, lcom4, cc),
+MCP tools: review_manage(normalize-branch, cleanup), ast_analyze(tree-diff, lcom4, cyclomatic-complexity),
            test_metrics(check-312), structure_validate, debt_manage(list, resolve)
 Cleanup:  PASS → .filid/review/<branch>/ deleted | FAIL → kept for inspection
 ```

@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Layer 1 (자동)  → Hooks (PreToolUse, SubagentStart, UserPromptSubmit)
 Layer 2 (도구)  → MCP Server (14개 분석/관리 도구)
 Layer 3 (에이전트) → 7개 특화 에이전트 (architect, implementer, QA 등)
-Layer 4 (사용자) → 13개 Skills (/filid:fca-init, /filid:fca-review 등)
+Layer 4 (사용자) → 14개 Skills (/filid:fca-init, /filid:fca-review 등)
 ```
 
 ## Commands

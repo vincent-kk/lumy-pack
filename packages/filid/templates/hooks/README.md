@@ -9,8 +9,10 @@ Hooks operate at Layer 1 of the 4-layer architecture and fire without user inter
 |---|---|---|
 | `PreToolUse` (Write/Edit) | `pre-tool-validator.entry.ts` | CLAUDE.md / SPEC.md content validation |
 | `PreToolUse` (Write/Edit) | `structure-guard.entry.ts` | Organ structure protection + circular dependency warning |
+| `PreToolUse` (ExitPlanMode) | `plan-gate.entry.ts` | FCA-AI compliance checklist before exiting plan mode |
 | `SubagentStart` | `agent-enforcer.entry.ts` | FCA-AI agent role restriction injection |
 | `UserPromptSubmit` | `context-injector.entry.ts` | FCA-AI rules injection on session start |
+| `SessionEnd` | `session-cleanup.entry.ts` | Session cache and marker file cleanup |
 
 Built entry files live in `libs/` after `yarn build:plugin`.
 
@@ -76,12 +78,26 @@ Does not block agent startup; restrictions are communicated as instructions.
 | `context-manager` | Can only edit CLAUDE.md and SPEC.md. Cannot modify business logic or source code. |
 | `drift-analyzer` | Read-only. Cannot use Write or Edit tools. Detects drift and produces correction plans only. |
 | `restructurer` | Can only execute actions from an approved restructuring plan. No structural decisions. |
+| `code-surgeon` | Can only apply approved fix items from fix-requests.md. No architectural changes. |
 
 Unrecognized agent types pass through with no restriction.
 
 ---
 
-### 4. UserPromptSubmit — FCA-AI Context Injector
+### 4. PreToolUse (ExitPlanMode) — Plan Gate
+
+**Entry**: `src/hooks/entries/plan-gate.entry.ts`
+**Built output**: `libs/plan-gate.mjs`
+
+Fires when `ExitPlanMode` tool is called. Injects an FCA-AI compliance checklist reminder into the agent's context before the plan is finalized.
+
+**Behavior**:
+- Passes with `additionalContext` containing FCA-AI plan compliance reminders (CLAUDE.md limits, organ boundaries, 3+12 test rule)
+- Never blocks plan mode exit (always `continue: true`)
+
+---
+
+### 5. UserPromptSubmit — FCA-AI Context Injector
 
 **Entry**: `src/hooks/entries/context-injector.entry.ts`
 **Built output**: `libs/context-injector.mjs`
@@ -109,6 +125,21 @@ Never blocks user prompts (always `continue: true`).
 
 ---
 
+### 6. SessionEnd — Session Cleanup
+
+**Entry**: `src/hooks/entries/session-cleanup.entry.ts`
+**Built output**: `libs/session-cleanup.mjs`
+
+Fires when a Claude Code session ends. Cleans up session-specific cache and marker files.
+
+**Behavior**:
+- Deletes the session context marker file (`session-context-<hash>`) from the plugin cache directory
+- Deletes the cached context file (`cached-context-<hash>`) if present
+- Always returns `continue: true` (SessionEnd hooks cannot block session termination)
+- Safe: only removes filid's own cache files, never touches project files
+
+---
+
 ## Hook Registration
 
 Hooks are registered via `hooks/hooks.json` in the package root.
@@ -125,8 +156,15 @@ then executes the built `.mjs` file in `libs/`.
           { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/pre-tool-validator.mjs\"", "timeout": 3 },
           { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/structure-guard.mjs\"", "timeout": 3 }
         ]
+      },
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/plan-gate.mjs\"", "timeout": 3 }
+        ]
       }
     ],
+    "PostToolUse": [],
     "SubagentStart": [
       {
         "matcher": "*",
@@ -140,6 +178,14 @@ then executes the built `.mjs` file in `libs/`.
         "matcher": "*",
         "hooks": [
           { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/context-injector.mjs\"", "timeout": 5 }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/session-cleanup.mjs\"", "timeout": 3 }
         ]
       }
     ]
