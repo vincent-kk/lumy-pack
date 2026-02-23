@@ -1,101 +1,78 @@
 ---
 name: fca-ast-fallback
 user_invocable: true
-description: AST pattern search/replace fallback using LLM when ast-grep is unavailable
+description: AST pattern search/replace fallback using LLM when ast-grep is unavailable.
 version: 1.0.0
 complexity: low
 ---
 
 # fca-ast-fallback — AST Pattern Matching Fallback
 
-When `@ast-grep/napi` is not installed, this skill provides a best-effort
-AST pattern search and replace using LLM capabilities with Read and Grep tools.
+Provide best-effort AST pattern search and replace using LLM capabilities
+with Read, Glob, Grep, and Edit tools when `@ast-grep/napi` is unavailable.
 
-> **Note**: This is a fallback for environments where ast-grep cannot be installed.
-> For production use, install ast-grep: `npm install -g @ast-grep/napi`
+> **Detail Reference**: For language-to-extension mappings, meta-variable
+> conversion rules, and exact MCP error detection strings, read the
+> `reference.md` file in this skill's directory (same location as this SKILL.md).
 
 ## When to Use This Skill
 
-- `ast_grep_search` or `ast_grep_replace` MCP tools return "@ast-grep/napi is not available"
-- You need basic AST pattern matching but cannot install native dependencies
-- Quick one-off pattern searches where exact AST precision isn't critical
+- `ast_grep_search` or `ast_grep_replace` MCP tools return `@ast-grep/napi is not available`
+- The environment cannot install native dependencies (sandboxed, CI, etc.)
+- Quick one-off pattern searches where exact AST precision is not critical
+- Searching across multiple languages in a single pass
+
+> **Note**: This is a fallback. For production use, install ast-grep:
+> `npm install -g @ast-grep/napi`
 
 ## Core Workflow
 
-### Step 1 — Attempt Native Tool
+### Phase 1 — Attempt Native Tool
 
-First, try calling `ast_grep_search` MCP tool with the user's pattern. If it succeeds,
-return the result directly. No fallback needed.
+Call `ast_grep_search` (or `ast_grep_replace`) MCP tool with the user's
+pattern. If it succeeds, return the result directly. No fallback needed.
+See [reference.md Section 1](./reference.md#section-1--native-tool-attempt).
 
-### Step 2 — Detect Unavailability
+### Phase 2 — Detect Unavailability
 
-If the response contains "@ast-grep/napi is not available", switch to LLM fallback mode.
-Inform the user:
+If the MCP response contains the error string, switch to fallback mode
+and inform the user.
+See [reference.md Section 2](./reference.md#section-2--unavailability-detection).
 
-```
-[INFO] ast-grep is not installed. Using LLM-based pattern matching fallback.
-Results may be less precise than ast-grep. For better accuracy: npm install -g @ast-grep/napi
-```
+### Phase 3 — LLM Search Fallback
 
-### Step 3 — LLM Search Fallback
+Convert AST meta-variables to regex approximations, find matching files
+by language extension, search with Grep, then filter false positives
+using LLM code understanding.
+See [reference.md Section 3](./reference.md#section-3--llm-search-fallback).
 
-For **search** requests:
+### Phase 4 — LLM Replace Fallback
 
-1. Use `Glob` tool to find files matching the target language extensions:
-   - TypeScript: `**/*.ts`, `**/*.tsx`
-   - JavaScript: `**/*.js`, `**/*.jsx`, `**/*.mjs`
-   - Python: `**/*.py`
-   - (Other languages similarly)
-2. Exclude: `node_modules/`, `dist/`, `build/`, `.git/`
-3. Use `Grep` tool with a regex approximation of the AST pattern:
-   - Convert meta-variables (`$NAME`, `$$$ARGS`) to regex wildcards
-   - `$NAME` → `[\w.]+` (single identifier/expression)
-   - `$$$ARGS` → `[\s\S]*?` (multiple items)
-4. Read matching files with `Read` tool for context
-5. Analyze the code structure using LLM understanding to filter false positives
-6. Format results as:
-   ```
-   file/path.ts:42
-   >   42: matched code line
-       43: context line after
-   ```
+Perform search (Phase 3), show dry-run preview of proposed changes,
+ask for user confirmation, then apply via Edit tool.
+See [reference.md Section 4](./reference.md#section-4--llm-replace-fallback).
 
-### Step 4 — LLM Replace Fallback
+## Available MCP Tools
 
-For **replace** requests:
-
-1. Perform search (Step 3) to find all matches
-2. Show a **dry-run preview** of proposed changes:
-   ```
-   file/path.ts:42
-     - old code
-     + new code
-   ```
-3. Ask for user confirmation before applying
-4. Use `Edit` tool to apply changes one by one
-5. Report summary: N replacements in M files
-
-## Limitations
-
-- **Accuracy**: LLM pattern matching is approximate. Complex AST patterns (nested structures,
-  type-aware matching) may produce false positives or miss matches.
-- **Scale**: Works best for small-to-medium codebases. For large projects (>1000 files),
-  install `@ast-grep/napi` for performance.
-- **Meta-variables**: Only `$NAME` and `$$$ARGS` are approximated. Advanced ast-grep features
-  (rules, constraints, fix patterns) are not supported.
+| Tool               | Purpose                                      | Fallback          |
+| ------------------ | -------------------------------------------- | ----------------- |
+| `ast_grep_search`  | Native AST pattern search (Phase 1 attempt)  | Grep + Read + LLM |
+| `ast_grep_replace` | Native AST pattern replace (Phase 1 attempt) | Edit + LLM        |
 
 ## Options
+
+> Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well.
 
 ```
 /filid:fca-ast-fallback <pattern> [--language <lang>] [--path <dir>] [--replace <replacement>]
 ```
 
-| Parameter | Type   | Default | Description |
-|-----------|--------|---------|-------------|
-| pattern   | string | required | AST-like pattern (e.g., `console.log($MSG)`) |
-| --language | string | typescript | Target language |
-| --path | string | . | Search directory |
-| --replace | string | — | Replacement pattern (enables replace mode) |
+| Parameter    | Type   | Default    | Description                                      |
+| ------------ | ------ | ---------- | ------------------------------------------------ |
+| `pattern`    | string | required   | AST-like pattern (e.g., `console.log($MSG)`)     |
+| `--language` | string | typescript | Target language (17 supported, see reference.md) |
+| `--path`     | string | .          | Search directory                                 |
+| `--replace`  | string | —          | Replacement pattern (enables replace mode)       |
 
 ## Quick Reference
 
@@ -103,9 +80,18 @@ For **replace** requests:
 # Search for all console.log calls
 /filid:fca-ast-fallback "console.log($MSG)"
 
-# Search in specific directory
-/filid:fca-ast-fallback "function $NAME($$$ARGS)" --path src/
+# Search in specific directory for Python
+/filid:fca-ast-fallback "def $NAME($$$ARGS)" --language python --path src/
 
 # Replace var with const
 /filid:fca-ast-fallback "var $NAME = $VALUE" --replace "const $NAME = $VALUE"
+
+# Supported meta-variables (regex approximation)
+$NAME       → single identifier/expression  ([\w.]+)
+$VALUE      → single value expression       ([\w.]+)
+$$$ARGS     → multiple items/arguments       ([\s\S]*?)
+
+# 17 supported languages
+javascript typescript tsx python ruby go rust java
+kotlin swift c cpp csharp html css json yaml
 ```
