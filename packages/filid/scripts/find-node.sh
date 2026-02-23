@@ -6,12 +6,26 @@
 # shells (e.g. Claude Code hook invocations).
 #
 # Priority:
+#   0. Cached path in ~/.claude/plugins/filid/node-path-cache (skip full search)
 #   1. `which node` (node is on PATH)
 #   2. nvm versioned paths  (~/.nvm/versions/node/*/bin/node)
 #   3. fnm versioned paths  (~/.fnm/node-versions/*/installation/bin/node)
 #   4. Homebrew / system paths (/opt/homebrew/bin/node, /usr/local/bin/node)
 #
 # Exits 0 on failure so it never blocks Claude Code hook processing.
+
+# ---------------------------------------------------------------------------
+# 0. Check cached path — if valid, exec immediately
+# ---------------------------------------------------------------------------
+CACHE_FILE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/filid/node-path-cache"
+
+if [ -f "$CACHE_FILE" ]; then
+  CACHED=$(cat "$CACHE_FILE")
+  if [ -x "$CACHED" ]; then
+    exec "$CACHED" "$@"
+  fi
+  rm -f "$CACHE_FILE"  # stale cache — remove and fall through to full search
+fi
 
 NODE_BIN=""
 
@@ -70,5 +84,8 @@ if [ -z "$NODE_BIN" ]; then
   printf '[filid] Error: Could not find node binary. Ensure Node.js >= 20 is installed.\n' >&2
   exit 0  # exit 0 so this hook does not block Claude Code
 fi
+
+# Cache the resolved path for subsequent invocations
+echo "$NODE_BIN" > "$CACHE_FILE" 2>/dev/null
 
 exec "$NODE_BIN" "$@"
