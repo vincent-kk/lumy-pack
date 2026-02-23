@@ -76,9 +76,9 @@ yarn version:sync   # 버전 동기화 (package.json → src/version.ts)
 
 `fractal-architect`, `qa-reviewer` (읽기 전용) · `implementer`, `restructurer` (구현) · `context-manager` (문서) · `drift-analyzer` (드리프트) · `code-surgeon` (패치)
 
-### Skills (13)
+### Skills (14)
 
-`fca-review` (다중 페르소나 리뷰), `fca-scan` (위반 스캔), `fca-init`, `fca-sync`, `fca-structure-review`, `fca-promote`, `fca-restructure`, `fca-resolve`, `fca-revalidate`, `fca-guide`, `fca-context-query`, `fca-update` (문서/테스트 동기화), `fca-ast-fallback` (LLM AST 패턴 매칭)
+`fca-review` (다중 페르소나 리뷰), `fca-scan` (위반 스캔), `fca-init`, `fca-sync`, `fca-structure-review`, `fca-promote`, `fca-restructure`, `fca-resolve`, `fca-revalidate`, `fca-guide`, `fca-context-query`, `fca-update` (문서/테스트 동기화), `fca-pull-request` (FCA-aware PR 자동 생성), `fca-ast-fallback` (LLM AST 패턴 매칭)
 
 ## References
 
