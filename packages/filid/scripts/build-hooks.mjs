@@ -3,7 +3,7 @@
  * Build script for hook entry point bundles
  * Bundles each hook into a self-contained ESM file for plugin distribution
  *
- * Output: libs/<name>.mjs
+ * Output: bridge/<name>.mjs
  */
 
 import * as esbuild from 'esbuild';
@@ -15,7 +15,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
 
 // Ensure output directory exists
-await mkdir(resolve(root, 'libs'), { recursive: true });
+await mkdir(resolve(root, 'bridge'), { recursive: true });
 
 const hookEntries = [
   'pre-tool-validator',
@@ -34,7 +34,7 @@ await Promise.all(
       platform: 'node',
       target: 'node20',
       format: 'esm',
-      outfile: resolve(root, `libs/${name}.mjs`),
+      outfile: resolve(root, `bridge/${name}.mjs`),
       minify: true,
       sourcemap: false,
       treeShaking: true,
@@ -42,4 +42,4 @@ await Promise.all(
   ),
 );
 
-console.log(`  Hook scripts (${hookEntries.length}) -> libs/*.mjs`);
+console.log(`  Hook scripts (${hookEntries.length}) -> bridge/*.mjs`);

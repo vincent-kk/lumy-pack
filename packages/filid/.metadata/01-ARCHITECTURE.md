@@ -145,13 +145,15 @@ packages/filid/
 ├── hooks/
 │   └── hooks.json               # Hook 이벤트 매핑
 ├── libs/
-│   └── server.cjs               # MCP 서버 번들 (~516KB)
-├── scripts/                     # Hook 스크립트 번들 (5개)
+│   └── find-node.sh             # Node.js 바이너리 탐색 (런타임 유틸)
+├── bridge/
+│   ├── mcp-server.cjs           # MCP 서버 번들 (~516KB)
 │   ├── pre-tool-validator.mjs   # CLAUDE.md/SPEC.md 검증
-│   ├── structure-guard.mjs       # Organ 보호
-│   ├── change-tracker.mjs       # 변경 기록 (disabled)
+│   ├── structure-guard.mjs      # Organ 보호
 │   ├── agent-enforcer.mjs       # 역할 제한
-│   └── context-injector.mjs     # 규칙 주입
+│   ├── plan-gate.mjs            # Plan 모드 게이트
+│   ├── context-injector.mjs     # 규칙 주입
+│   └── session-cleanup.mjs      # 세션 정리
 ├── skills/                      # 스킬 정의 (11개)
 │   ├── init/SKILL.md
 │   ├── scan/SKILL.md

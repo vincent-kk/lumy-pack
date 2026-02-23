@@ -34,7 +34,6 @@
     "bridge",
     "libs",
     "hooks",
-    "scripts",
     "skills",
     "templates",
     ".claude-plugin",
@@ -42,7 +41,7 @@
     "README.md"
   ],
   "scripts": {
-    "clean": "rm -rf bridge libs",
+    "clean": "rm -rf bridge",
     "version:sync": "node scripts/inject-version.mjs",
     "build": "yarn clean && yarn version:sync && tsc -p tsconfig.build.json && node scripts/build-mcp-server.mjs && node scripts/build-hooks.mjs",
     "build:plugin": "node scripts/build-mcp-server.mjs && node scripts/build-hooks.mjs",

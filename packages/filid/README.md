@@ -37,7 +37,7 @@ claude --plugin-dir ./packages/filid
 Building produces two outputs:
 
 - `bridge/mcp-server.cjs` — MCP server (14 analysis tools)
-- `libs/*.mjs` — 5 hook scripts (automatic rule enforcement)
+- `bridge/*.mjs` — 6 hook scripts (automatic rule enforcement)
 
 ---
 

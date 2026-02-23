@@ -48,7 +48,7 @@ node build-plugin.mjs
 이 명령은 esbuild로 두 가지 산출물을 생성:
 
 1. **MCP 서버 번들**: `bridge/mcp-server.cjs` (~516KB, CJS)
-2. **Hook 스크립트 번들**: `libs/*.mjs` (6개, ESM)
+2. **Hook 스크립트 번들**: `bridge/*.mjs` (6개, ESM)
 
 ### TypeScript 컴파일 (라이브러리 빌드)
 
@@ -127,12 +127,12 @@ yarn test:run   # 1회 실행
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/pre-tool-validator.mjs\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/libs/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/bridge/pre-tool-validator.mjs\"",
             "timeout": 3
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/structure-guard.mjs\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/libs/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/bridge/structure-guard.mjs\"",
             "timeout": 3
           }
         ]
@@ -142,7 +142,7 @@ yarn test:run   # 1회 실행
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/plan-gate.mjs\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/libs/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/bridge/plan-gate.mjs\"",
             "timeout": 3
           }
         ]
@@ -155,7 +155,7 @@ yarn test:run   # 1회 실행
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/agent-enforcer.mjs\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/libs/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/bridge/agent-enforcer.mjs\"",
             "timeout": 3
           }
         ]
@@ -167,7 +167,7 @@ yarn test:run   # 1회 실행
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/context-injector.mjs\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/libs/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/bridge/context-injector.mjs\"",
             "timeout": 5
           }
         ]
@@ -179,7 +179,7 @@ yarn test:run   # 1회 실행
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/session-cleanup.mjs\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/libs/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/bridge/session-cleanup.mjs\"",
             "timeout": 3
           }
         ]
@@ -570,7 +570,7 @@ disallowedTools: # 선택적 — 도구 제한
 
 1. esbuild 미설치 → `npm install` (devDependencies)
 2. TypeScript 문법 에러 → `yarn typecheck` 으로 확인
-3. `libs/` 또는 `scripts/` 디렉토리 권한 → `mkdir -p` 로 재생성
+3. `bridge/` 디렉토리 권한 → `mkdir -p` 로 재생성
 
 ---
 

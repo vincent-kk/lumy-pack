@@ -14,7 +14,7 @@ Hooks operate at Layer 1 of the 4-layer architecture and fire without user inter
 | `UserPromptSubmit` | `context-injector.entry.ts` | FCA-AI rules injection on session start |
 | `SessionEnd` | `session-cleanup.entry.ts` | Session cache and marker file cleanup |
 
-Built entry files live in `libs/` after `yarn build:plugin`.
+Built entry files live in `bridge/` after `yarn build:plugin`.
 
 ---
 
@@ -23,7 +23,7 @@ Built entry files live in `libs/` after `yarn build:plugin`.
 ### 1. PreToolUse — CLAUDE.md / SPEC.md Validator
 
 **Entry**: `src/hooks/entries/pre-tool-validator.entry.ts`
-**Built output**: `libs/pre-tool-validator.mjs`
+**Built output**: `bridge/pre-tool-validator.mjs`
 
 Fires on every `Write` or `Edit` tool call targeting a file path.
 
@@ -42,7 +42,7 @@ Fires on every `Write` or `Edit` tool call targeting a file path.
 ### 2. PreToolUse — Structure Guard
 
 **Entry**: `src/hooks/entries/structure-guard.entry.ts`
-**Built output**: `libs/structure-guard.mjs`
+**Built output**: `bridge/structure-guard.mjs`
 
 Fires on every `Write` or `Edit` tool call.
 
@@ -63,7 +63,7 @@ Fires on every `Write` or `Edit` tool call.
 ### 3. SubagentStart — Agent Role Enforcer
 
 **Entry**: `src/hooks/entries/agent-enforcer.entry.ts`
-**Built output**: `libs/agent-enforcer.mjs`
+**Built output**: `bridge/agent-enforcer.mjs`
 
 Fires when any subagent starts. Injects role-based tool restrictions into the agent's context via `additionalContext`.
 Does not block agent startup; restrictions are communicated as instructions.
@@ -87,7 +87,7 @@ Unrecognized agent types pass through with no restriction.
 ### 4. PreToolUse (ExitPlanMode) — Plan Gate
 
 **Entry**: `src/hooks/entries/plan-gate.entry.ts`
-**Built output**: `libs/plan-gate.mjs`
+**Built output**: `bridge/plan-gate.mjs`
 
 Fires when `ExitPlanMode` tool is called. Injects an FCA-AI compliance checklist reminder into the agent's context before the plan is finalized.
 
@@ -100,7 +100,7 @@ Fires when `ExitPlanMode` tool is called. Injects an FCA-AI compliance checklist
 ### 5. UserPromptSubmit — FCA-AI Context Injector
 
 **Entry**: `src/hooks/entries/context-injector.entry.ts`
-**Built output**: `libs/context-injector.mjs`
+**Built output**: `bridge/context-injector.mjs`
 
 Fires on each user prompt submission. Injects FCA-AI rules into Claude's context on the first prompt of each session.
 
@@ -128,7 +128,7 @@ Never blocks user prompts (always `continue: true`).
 ### 6. SessionEnd — Session Cleanup
 
 **Entry**: `src/hooks/entries/session-cleanup.entry.ts`
-**Built output**: `libs/session-cleanup.mjs`
+**Built output**: `bridge/session-cleanup.mjs`
 
 Fires when a Claude Code session ends. Cleans up session-specific cache and marker files.
 
@@ -144,7 +144,7 @@ Fires when a Claude Code session ends. Cleans up session-specific cache and mark
 
 Hooks are registered via `hooks/hooks.json` in the package root.
 Each hook command uses `find-node.sh` to locate the Node.js binary (nvm/fnm 환경 대응),
-then executes the built `.mjs` file in `libs/`.
+then executes the built `.mjs` file in `bridge/`.
 
 ```json
 {
@@ -153,14 +153,14 @@ then executes the built `.mjs` file in `libs/`.
       {
         "matcher": "Write|Edit",
         "hooks": [
-          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/pre-tool-validator.mjs\"", "timeout": 3 },
-          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/structure-guard.mjs\"", "timeout": 3 }
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/libs/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/bridge/pre-tool-validator.mjs\"", "timeout": 3 },
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/libs/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/bridge/structure-guard.mjs\"", "timeout": 3 }
         ]
       },
       {
         "matcher": "ExitPlanMode",
         "hooks": [
-          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/plan-gate.mjs\"", "timeout": 3 }
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/libs/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/bridge/plan-gate.mjs\"", "timeout": 3 }
         ]
       }
     ],
@@ -169,7 +169,7 @@ then executes the built `.mjs` file in `libs/`.
       {
         "matcher": "*",
         "hooks": [
-          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/agent-enforcer.mjs\"", "timeout": 3 }
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/libs/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/bridge/agent-enforcer.mjs\"", "timeout": 3 }
         ]
       }
     ],
@@ -177,7 +177,7 @@ then executes the built `.mjs` file in `libs/`.
       {
         "matcher": "*",
         "hooks": [
-          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/context-injector.mjs\"", "timeout": 5 }
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/libs/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/bridge/context-injector.mjs\"", "timeout": 5 }
         ]
       }
     ],
@@ -185,7 +185,7 @@ then executes the built `.mjs` file in `libs/`.
       {
         "matcher": "*",
         "hooks": [
-          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/session-cleanup.mjs\"", "timeout": 3 }
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/libs/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/bridge/session-cleanup.mjs\"", "timeout": 3 }
         ]
       }
     ]
@@ -193,4 +193,4 @@ then executes the built `.mjs` file in `libs/`.
 }
 ```
 
-After any hook source change, rebuild with `yarn build:plugin` to regenerate `libs/`.
+After any hook source change, rebuild with `yarn build:plugin` to regenerate `bridge/`.

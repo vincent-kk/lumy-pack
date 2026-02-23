@@ -34,7 +34,7 @@ export const DEFAULT_SCAN_OPTIONS: Required<ScanOptions> = {
     '**/.omc/**',
     '**/.metadata/**',
     '**/next/**',
-    '**/libs/**',
+    '**/bridge/**',
   ],
   maxDepth: 10,
   followSymlinks: false,

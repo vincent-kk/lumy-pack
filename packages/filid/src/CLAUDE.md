@@ -32,7 +32,7 @@
 
 - 새 모듈 추가 시 `index.ts`에 export 추가
 - `core/` 변경 후 관련 `__tests__/unit/core/` 테스트 업데이트
-- 빌드 후 `dist/`와 `libs/` 모두 재생성 확인
+- 빌드 후 `dist/`와 `bridge/` 모두 재생성 확인
 
 ### Ask first
 
