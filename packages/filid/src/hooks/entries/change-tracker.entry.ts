@@ -2,7 +2,8 @@
 import type { PostToolUseInput } from '../../types/hooks.js';
 import { trackChange } from '../change-tracker.js';
 
-// Minimal ChangeQueue stub for the standalone entry — no persistent queue needed
+// Intentionally disabled hook — see change-tracker.ts @deprecated for rationale.
+// Minimal ChangeQueue stub for the standalone entry — no persistent queue available yet.
 const stubQueue = {
   enqueue: (_record: unknown) => {},
 };

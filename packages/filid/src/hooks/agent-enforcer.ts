@@ -7,6 +7,7 @@ import type { HookOutput, SubagentStartInput } from '../types/hooks.js';
  * - qa-reviewer: read-only, no file modifications
  * - implementer: code within SPEC.md scope only
  * - context-manager: only CLAUDE.md/SPEC.md documents
+ * - code-surgeon: fix scope only, no collateral changes
  */
 const ROLE_RESTRICTIONS: Record<string, string> = {
   'fractal-architect':
@@ -21,6 +22,8 @@ const ROLE_RESTRICTIONS: Record<string, string> = {
     'ROLE RESTRICTION: You are a Drift Analyzer agent. You MUST NOT use Write or Edit tools. You are read-only — detect drift, classify severity, and produce correction plans only.',
   restructurer:
     'ROLE RESTRICTION: You are a Restructurer agent. You may only execute actions from an approved restructuring plan. Do not make structural decisions or modify business logic.',
+  'code-surgeon':
+    'ROLE RESTRICTION: You are a Code Surgeon agent. You MUST apply only the approved fix item specified in the task. Do not modify files outside the fix scope or apply collateral changes.',
 };
 
 /**

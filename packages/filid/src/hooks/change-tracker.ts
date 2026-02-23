@@ -1,6 +1,12 @@
 /**
- * @deprecated Disabled in hooks.json. Entry stub uses no-op queue.
- * This module is retained for backward compatibility but is not active at runtime.
+ * @deprecated Intentionally disabled — NOT dead code.
+ *
+ * This module implements PostToolUse change tracking (Write/Edit → .filid/change-log.jsonl).
+ * Currently disabled in hooks.json because ChangeQueue cannot persist across hook invocations
+ * (each hook call runs in a separate process). The entry stub uses a no-op queue as workaround.
+ *
+ * Retained for future activation when a persistent queue mechanism is available.
+ * Do NOT delete or flag as dead code during plugin validation.
  */
 import * as fs from 'node:fs';
 import * as path from 'node:path';
