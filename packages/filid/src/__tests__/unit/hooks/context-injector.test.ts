@@ -4,7 +4,7 @@ import type { UserPromptSubmitInput } from '../../../types/hooks.js';
 
 // Default existsSync behavior:
 //   .filid path    → true  (passes isFcaProject gate)
-//   /session-* path → false (treated as first session)
+//   /session-context-* path → false (treated as first session)
 //   others         → false (cache files absent = cache miss)
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>();
@@ -12,7 +12,8 @@ vi.mock('node:fs', async (importOriginal) => {
     ...actual,
     existsSync: vi.fn((p: unknown) => {
       if (typeof p === 'string' && p.endsWith('.filid')) return true;
-      if (typeof p === 'string' && p.includes('/session-')) return false;
+      if (typeof p === 'string' && p.includes('/session-context-'))
+        return false;
       return false;
     }),
     statSync: vi.fn(() => {
@@ -43,7 +44,8 @@ describe('context-injector', () => {
     (existsSync as ReturnType<typeof vi.fn>).mockImplementation(
       (p: unknown) => {
         if (typeof p === 'string' && p.endsWith('.filid')) return true;
-        if (typeof p === 'string' && p.includes('/session-')) return false;
+        if (typeof p === 'string' && p.includes('/session-context-'))
+          return false;
         return false;
       },
     );
@@ -116,7 +118,8 @@ describe('context-injector', () => {
     (existsSync as ReturnType<typeof vi.fn>).mockImplementation(
       (p: unknown) => {
         if (typeof p === 'string' && p.endsWith('.filid')) return true;
-        if (typeof p === 'string' && p.includes('/session-')) return true; // marker exists
+        if (typeof p === 'string' && p.includes('/session-context-'))
+          return true; // marker exists
         return false;
       },
     );
@@ -142,7 +145,7 @@ describe('context-injector', () => {
     (existsSync as ReturnType<typeof vi.fn>).mockImplementation(
       (p: unknown) => {
         if (typeof p === 'string' && p.endsWith('.filid')) return true;
-        if (typeof p === 'string' && p.includes('/session-'))
+        if (typeof p === 'string' && p.includes('/session-context-'))
           throw new Error('fs error');
         return false;
       },

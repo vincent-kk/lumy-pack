@@ -11,8 +11,8 @@
  *
  * Layer 2 (UserPromptSubmit hook) — THIS FILE
  *   - Role: Inject FCA-AI rules + fractal structure rules on session's first prompt
- *   - Session gate: session-{sessionIdHash} marker file in cache directory
- *   - Cache: content hash-based invalidation (no TTL)
+ *   - Session gate: session-context-{sessionIdHash} marker file in cache directory
+ *   - Cache: per-session cached-context-{sessionIdHash} file
  *
  * Cache functions are provided by src/core/cache-manager.ts.
  */
@@ -76,8 +76,8 @@ export async function injectContext(
     return { continue: true };
   }
 
-  // use cached context if content hash matches
-  const cached = readCachedContext(cwd);
+  // use cached context if available for this session
+  const cached = readCachedContext(cwd, session_id);
   if (cached) {
     markSessionInjected(session_id, cwd);
     return {
@@ -112,7 +112,7 @@ export async function injectContext(
   const additionalContext = (fcaContext + fractalSection).trim();
 
   // persist cache and record session marker
-  writeCachedContext(cwd, additionalContext);
+  writeCachedContext(cwd, additionalContext, session_id);
   markSessionInjected(session_id, cwd);
 
   return {

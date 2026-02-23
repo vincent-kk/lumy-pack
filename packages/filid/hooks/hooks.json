@@ -51,6 +51,17 @@
           }
         ]
       }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/session-cleanup.mjs\"",
+            "timeout": 3
+          }
+        ]
+      }
     ]
   }
 }

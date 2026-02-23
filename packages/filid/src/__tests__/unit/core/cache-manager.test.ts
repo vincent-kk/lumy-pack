@@ -103,7 +103,7 @@ describe('cache-manager', () => {
     vi.mocked(existsSync).mockReturnValue(false);
     const { readCachedContext } =
       await import('../../../core/cache-manager.js');
-    const result = readCachedContext('/proj');
+    const result = readCachedContext('/proj', 'sid-test');
     expect(result).toBeNull();
   });
 
@@ -124,25 +124,19 @@ describe('cache-manager', () => {
 
     const { writeCachedContext, readCachedContext } =
       await import('../../../core/cache-manager.js');
-    writeCachedContext('/proj', 'hello context');
-    const result = readCachedContext('/proj');
+    writeCachedContext('/proj', 'hello context', 'sid-test');
+    const result = readCachedContext('/proj', 'sid-test');
     expect(result).toBe('hello context');
   });
 
-  // Test 7: readCachedContext — returns null when hash mismatch
-  it('readCachedContext: returns null when hash is mismatched', async () => {
-    const { existsSync, readFileSync } = await import('node:fs');
-
-    vi.mocked(existsSync).mockReturnValue(true);
-    // stamp file returns wrong hash; context file returns some text
-    vi.mocked(readFileSync).mockImplementation((_p) => {
-      if (_p.toString().endsWith('timestamp')) return 'wronghash';
-      return 'some context text';
-    });
+  // Test 7: readCachedContext — different sessions have independent caches
+  it('readCachedContext: returns null for different session', async () => {
+    const { existsSync } = await import('node:fs');
+    vi.mocked(existsSync).mockReturnValue(false);
 
     const { readCachedContext } =
       await import('../../../core/cache-manager.js');
-    const result = readCachedContext('/proj');
+    const result = readCachedContext('/proj', 'other-session');
     expect(result).toBeNull();
   });
 
@@ -195,9 +189,9 @@ describe('cache-manager', () => {
   it('pruneOldSessions: does not call unlinkSync when session files <= 10', async () => {
     const { readdirSync, unlinkSync } = await import('node:fs');
     vi.mocked(readdirSync).mockReturnValue([
-      'session-a',
-      'session-b',
-      'session-c',
+      'session-context-a',
+      'session-context-b',
+      'session-context-c',
     ] as unknown as ReturnType<typeof readdirSync>);
     const { pruneOldSessions } = await import('../../../core/cache-manager.js');
     pruneOldSessions('/proj');

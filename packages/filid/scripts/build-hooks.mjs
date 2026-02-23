@@ -23,6 +23,7 @@ const hookEntries = [
   'agent-enforcer',
   'context-injector',
   'plan-gate',
+  'session-cleanup',
 ];
 
 await Promise.all(
