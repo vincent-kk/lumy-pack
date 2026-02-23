@@ -9,6 +9,7 @@ complexity: high
 # fca-update — Code-Docs-Tests Synchronization
 
 Analyze files changed in the current branch to:
+
 1. Update CLAUDE.md / SPEC.md to match the implementation (create if missing)
 2. Organize and update test.ts / spec.ts following FCA-AI principles
 
@@ -51,33 +52,34 @@ Agents: `drift-analyzer` (sonnet) → `restructurer` (sonnet)
 MCP: `drift_detect`, `lca_resolve`, `structure_validate`
 See [reference.md Section 2](./reference.md#section-2--sync).
 
-### Stage 3 — Doc & Test Update
+### Stage 3 — Doc & Test Update (Parallel)
 
 Update CLAUDE.md/SPEC.md and organize test.ts/spec.ts based on changed files.
+Two independent agents run in parallel on non-overlapping file sets.
 
-Agent: `context-manager` (sonnet) — document updates
-Agent: `implementer` (sonnet) — test organization
+Agent: `context-manager` (sonnet) — document updates (CLAUDE.md / SPEC.md)
+Agent: `implementer` (sonnet) — test organization (test.ts / spec.ts)
 See [reference.md Section 3](./reference.md#section-3--doc--test-update).
 
 ### Stage 4 — Finalize
 
 1. `cache_manage({ action: "save-hash", cwd: "<path>", skillName: "fca-update", hash: currentHash })`
 2. Output consolidated report
-See [reference.md Section 4](./reference.md#section-4--finalize).
+   See [reference.md Section 4](./reference.md#section-4--finalize).
 
 ## Available MCP Tools
 
-| Tool | Stage | Purpose |
-|------|-------|---------|
-| `cache_manage` | 0, 4 | Incremental gate: compute and persist project hash |
-| `fractal_scan` | 1 | Project structure scan |
-| `fractal_navigate` | 1 | Tree traversal and classification |
-| `test_metrics` | 1, 3 | 3+12 rule validation |
-| `drift_detect` | 2 | Drift detection |
-| `lca_resolve` | 2 | Determine correct placement for reclassification |
-| `structure_validate` | 2 | Structure validity check |
-| `doc_compress` | 3 | Document size check |
-| `ast_analyze` | 3 | LCOM4, CC metrics |
+| Tool                 | Stage | Purpose                                            |
+| -------------------- | ----- | -------------------------------------------------- |
+| `cache_manage`       | 0, 4  | Incremental gate: compute and persist project hash |
+| `fractal_scan`       | 1     | Project structure scan                             |
+| `fractal_navigate`   | 1     | Tree traversal and classification                  |
+| `test_metrics`       | 1, 3  | 3+12 rule validation                               |
+| `drift_detect`       | 2     | Drift detection                                    |
+| `lca_resolve`        | 2     | Determine correct placement for reclassification   |
+| `structure_validate` | 2     | Structure validity check                           |
+| `doc_compress`       | 3     | Document size check                                |
+| `ast_analyze`        | 3     | LCOM4, CC metrics                                  |
 
 ## Options
 
@@ -87,13 +89,13 @@ See [reference.md Section 4](./reference.md#section-4--finalize).
 /filid:fca-update [path] [--force] [--scan-only] [--no-sync] [--auto-approve]
 ```
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `path` | string | cwd | Target directory |
-| `--force` | flag | off | Ignore cache, run full scan |
-| `--scan-only` | flag | off | Run Stage 1 only (skip sync/update) |
-| `--no-sync` | flag | off | Skip Stage 2 (scan + doc/test update only) |
-| `--auto-approve` | flag | off | Skip user approval in sync stage |
+| Option           | Type   | Default | Description                                |
+| ---------------- | ------ | ------- | ------------------------------------------ |
+| `path`           | string | cwd     | Target directory                           |
+| `--force`        | flag   | off     | Ignore cache, run full scan                |
+| `--scan-only`    | flag   | off     | Run Stage 1 only (skip sync/update)        |
+| `--no-sync`      | flag   | off     | Skip Stage 2 (scan + doc/test update only) |
+| `--auto-approve` | flag   | off     | Skip user approval in sync stage           |
 
 ## Quick Reference
 

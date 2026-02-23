@@ -16,6 +16,7 @@ cache_manage({ action: "get-hash", cwd: "<target-path>", skillName: "fca-update"
 ```
 
 Decision logic:
+
 - `found === false` → first run ever, proceed to Stage 1
 - `found === true` and `hash === currentHash` and no `--force` → output "No changes since last run. Use --force to override." and exit
 - `found === true` and `hash !== currentHash` → changes detected, proceed to Stage 1
@@ -23,6 +24,7 @@ Decision logic:
 ## Section 1 — Scan
 
 Collect branch diff:
+
 ```bash
 git branch --show-current          # current branch name
 git diff --name-only main...HEAD   # list of changed files (default base: main)
@@ -39,6 +41,7 @@ test_metrics({ action: "check-312", files: [{ filePath, content }] })
 ```
 
 Scan result categories:
+
 - CLAUDE.md exceeds 100-line limit
 - CLAUDE.md present inside an organ directory
 - test/spec files violating 3+12 rule (> 15 test cases)
@@ -58,19 +61,21 @@ drift_detect({ path: "<target-path>", severity: "high" })
 `fca-scan` and `fca-sync` use different severity vocabularies. This table maps
 scan violations to Stage 2 gate conditions:
 
-| fca-scan Violation Type | Stage 2 Gate |
-|-------------------------|--------------|
-| CLAUDE.md exceeds 100 lines | high — triggers Stage 2 |
-| CLAUDE.md present in organ directory | critical — triggers Stage 2 |
-| 3+12 rule violation (test count > 15) | high — triggers Stage 2 |
-| Unclassified directory | medium — does NOT trigger Stage 2 |
-| SPEC.md append-only growth | medium — does NOT trigger Stage 2 |
+| fca-scan Violation Type               | Stage 2 Gate                      |
+| ------------------------------------- | --------------------------------- |
+| CLAUDE.md exceeds 100 lines           | high — triggers Stage 2           |
+| CLAUDE.md present in organ directory  | critical — triggers Stage 2       |
+| 3+12 rule violation (test count > 15) | high — triggers Stage 2           |
+| Unclassified directory                | medium — does NOT trigger Stage 2 |
+| SPEC.md append-only growth            | medium — does NOT trigger Stage 2 |
 
 fca-sync DriftSeverity ordering: `critical > high > medium > low`
+
 - Stage 2 gate: execute when `critical` or `high` is present
 - `medium` and `low` are reported but not auto-corrected
 
 Correction calls:
+
 ```
 lca_resolve({ path: "<target-path>", moduleA: "...", moduleB: "..." })
 // Returns: { lcaPath: string, suggestedPlacement: string }
@@ -81,24 +86,38 @@ structure_validate({ path: "<target-path>" })
 
 ## Section 3 — Doc & Test Update
 
+**Execution mode**: Parallel — `context-manager` and `implementer` operate on
+non-overlapping file sets (docs vs tests) and can run simultaneously.
+
 ### Document Update (CLAUDE.md / SPEC.md)
 
 For each fractal node containing changed files:
 
 1. **Check CLAUDE.md**: existence and 100-line limit
 2. **Create CLAUDE.md if missing**: include 3-tier boundary sections
+
    ```markdown
    # <module-name> — <one-line description>
+
    ## Purpose
+
    ## Structure
+
    | File | Role |
+
    ## Conventions
+
    ## Boundaries
+
    ### Always do
+
    ### Ask first
+
    ### Never do
+
    ## Dependencies
    ```
+
 3. **Update CLAUDE.md if present**: reflect implemented changes; compress if > 100 lines
 
 ```
@@ -128,6 +147,7 @@ test_metrics({ action: "check-312", files: [...] })
 ## Section 4 — Finalize
 
 Save run hash:
+
 ```
 cache_manage({ action: "save-hash", cwd: "<path>", skillName: "fca-update", hash: "<currentHash>" })
 // Returns: { saved: true, skillName: "fca-update", hash: "..." }

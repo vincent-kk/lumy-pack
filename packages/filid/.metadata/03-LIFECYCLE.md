@@ -58,14 +58,14 @@
 
 ### 사용 MCP 도구
 
-- `fractal_navigate` (action: `tree`): 전체 계층 구조 스캔
+- `fractal_scan`: 전체 계층 구조 스캔 (파일시스템 직접 읽기)
 - `fractal_navigate` (action: `classify`): 개별 디렉토리 분류
 
 ### 워크플로우
 
 ```
 1. 디렉토리 트리 스캔
-   fractal_navigate(action: 'tree', entries: [...])
+   fractal_scan(path: <project_root>)
        │
        ▼
 2. 각 디렉토리 분류
@@ -113,14 +113,14 @@
 
 ### 사용 MCP 도구
 
-- `fractal_navigate` (action: `tree`): 프로젝트 구조 스캔
+- `fractal_scan`: 프로젝트 구조 스캔 (파일시스템 직접 읽기)
 - `test_metrics` (action: `check-312`): 3+12 규칙 검사
 
 ### 워크플로우
 
 ```
 1. 프로젝트 트리 구축
-   fractal_navigate(action: 'tree')
+   fractal_scan(path: <project_root>)
        │
        ▼
 2. CLAUDE.md 검증

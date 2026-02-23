@@ -47,8 +47,8 @@ node build-plugin.mjs
 
 이 명령은 esbuild로 두 가지 산출물을 생성:
 
-1. **MCP 서버 번들**: `libs/server.cjs` (~516KB, CJS)
-2. **Hook 스크립트 번들**: `scripts/*.mjs` (5개, ESM)
+1. **MCP 서버 번들**: `bridge/mcp-server.cjs` (~516KB, CJS)
+2. **Hook 스크립트 번들**: `libs/*.mjs` (6개, ESM)
 
 ### TypeScript 컴파일 (라이브러리 빌드)
 
@@ -103,9 +103,9 @@ yarn test:run   # 1회 실행
 ```json
 {
   "mcpServers": {
-    "filid": {
+    "t": {
       "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/libs/server.cjs"]
+      "args": ["${CLAUDE_PLUGIN_ROOT}/bridge/mcp-server.cjs"]
     }
   }
 }
@@ -127,12 +127,22 @@ yarn test:run   # 1회 실행
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/pre-tool-validator.mjs\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/pre-tool-validator.mjs\"",
             "timeout": 3
           },
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/structure-guard.mjs\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/structure-guard.mjs\"",
+            "timeout": 3
+          }
+        ]
+      },
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/plan-gate.mjs\"",
             "timeout": 3
           }
         ]
@@ -145,7 +155,7 @@ yarn test:run   # 1회 실행
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/agent-enforcer.mjs\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/agent-enforcer.mjs\"",
             "timeout": 3
           }
         ]
@@ -157,8 +167,20 @@ yarn test:run   # 1회 실행
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/context-injector.mjs\"",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/context-injector.mjs\"",
             "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/session-cleanup.mjs\"",
+            "timeout": 3
           }
         ]
       }
@@ -170,9 +192,11 @@ yarn test:run   # 1회 실행
 | Hook 이벤트      | matcher             | 스크립트                            | timeout |
 | ---------------- | ------------------- | ----------------------------------- | ------- |
 | PreToolUse       | `Write\|Edit`       | pre-tool-validator, structure-guard | 3초     |
+| PreToolUse       | `ExitPlanMode`      | plan-gate                           | 3초     |
 | PostToolUse      | —                   | _(disabled)_                        | —       |
 | SubagentStart    | `*` (모든 에이전트) | agent-enforcer                      | 3초     |
 | UserPromptSubmit | `*` (모든 프롬프트) | context-injector                    | 5초     |
+| SessionEnd       | `*` (모든 세션)     | session-cleanup                     | 3초     |
 
 ---
 
@@ -505,7 +529,7 @@ disallowedTools: # 선택적 — 도구 제한
 
 **원인 및 해결**:
 
-1. `libs/server.cjs` 미존재 → `node build-plugin.mjs` 실행
+1. `bridge/mcp-server.cjs` 미존재 → `node build-plugin.mjs` 실행
 2. `typescript` 미설치 → `npm install` 실행
 3. Node.js 버전 < 20 → 업그레이드
 

@@ -66,9 +66,9 @@ CLAUDE.md/SPEC.md가 아닌 일반 파일 Write 시:
 | 항목           | 설명                                     |
 | -------------- | ---------------------------------------- |
 | 번들 형식      | CJS (CommonJS)                           |
-| 번들 크기      | ~516KB (`libs/server.cjs`)               |
+| 번들 크기      | ~516KB (`bridge/mcp-server.cjs`)         |
 | 외부 의존성    | `typescript` (external, ~50MB 설치 크기) |
-| 기동 방식      | `node libs/server.cjs` → stdio transport |
+| 기동 방식      | `node bridge/mcp-server.cjs` → stdio transport |
 | 예상 기동 시간 | ~200-500ms (TypeScript 모듈 로딩 포함)   |
 
 > MCP 서버는 세션당 1회 기동 후 상주. 기동 비용은 초기 1회만 발생.
@@ -166,7 +166,7 @@ Rules:
 
 | 파일              | 크기  | 형식 | 포함 내용                                             |
 | ----------------- | ----- | ---- | ----------------------------------------------------- |
-| `libs/server.cjs` | 516KB | CJS  | MCP SDK + core + ast + metrics + compress + mcp/tools |
+| `bridge/mcp-server.cjs` | 516KB | CJS  | MCP SDK + core + ast + metrics + compress + mcp/tools |
 
 > `typescript`는 `external`로 제외 → 실행 시 `node_modules`에서 로드.
 > minify 미적용 (디버깅 가독성 우선).

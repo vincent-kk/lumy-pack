@@ -35,6 +35,7 @@ and a state machine.
    - No checkpoint files → Phase A (unless `--no-structure-check`, then Phase B)
    - `structure-check.md` only → Phase B
    - `session.md` only → Phase C
+   - `structure-check.md` + `session.md` (no `verification.md`) → Phase C
    - `session.md` + `verification.md` → Phase D
    - All complete (`review-report.md` exists) → "Review complete"
 
@@ -110,6 +111,8 @@ When `--scope=pr`: check `gh auth status` (Bash), if authenticated post
 | Tool             | Action             | Purpose                                          |
 | ---------------- | ------------------ | ------------------------------------------------ |
 | `review_manage`  | `normalize-branch` | Normalize branch name for review directory path  |
+| `review_manage`  | `ensure-dir`       | Create `.filid/review/<branch>/` directory       |
+| `review_manage`  | `elect-committee`  | Deterministic committee election (Phase B)       |
 | `review_manage`  | `checkpoint`       | Check existing review progress for resume        |
 | `review_manage`  | `cleanup`          | Delete review session files (--force or on pass) |
 
@@ -141,7 +144,8 @@ When `--scope=pr`: check `gh auth status` (Bash), if authenticated post
 Phases:   A (Structure/sonnet) ┐
           B (Analysis/haiku)  ┘→ C (Verification/sonnet) → D (Consensus/direct)
           [A + B run in parallel]
-Outputs:  structure-check.md, review-report.md, fix-requests.md
+Outputs:  structure-check.md (Phase A), session.md (Phase B), verification.md (Phase C),
+          review-report.md, fix-requests.md (Phase D)
 Resume:   Automatic via checkpoint detection
 Personas: 2-6 elected based on complexity (LOW/MEDIUM/HIGH) + structure violations
 Rounds:   Max 5 deliberation rounds in state machine

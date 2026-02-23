@@ -12,11 +12,9 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 // Cache directory layout:
-//   {cwdHash}/cached-context.txt    — Layer 2: FCA rules text cache
-//   {cwdHash}/timestamp             — Layer 2: content hash for invalidation
-//   {cwdHash}/session-{hash}        — Layer 2: session inject marker (24h TTL)
-//   {cwdHash}/run-{skillName}.hash  — Layer 4: skill run hash for incremental mode
-//   {cwdHash}/context-text          — Layer 1: reserved (not implemented)
+//   {cwdHash}/session-context-{hash}   — Layer 2: session inject marker (24h TTL)
+//   {cwdHash}/cached-context-{hash}    — Layer 2: per-session FCA rules text cache
+//   {cwdHash}/run-{skillName}.hash     — Layer 4: skill run hash for incremental mode
 
 export function cwdHash(cwd: string): string {
   return createHash('sha256').update(cwd).digest('hex').slice(0, 12);
@@ -27,34 +25,36 @@ export function getCacheDir(cwd: string): string {
   return join(configDir, 'plugins', 'filid', cwdHash(cwd));
 }
 
-export function readCachedContext(cwd: string): string | null {
+export function readCachedContext(
+  cwd: string,
+  sessionId: string,
+): string | null {
   const cacheDir = getCacheDir(cwd);
-  const stampFile = join(cacheDir, 'timestamp');
-  const contextFile = join(cacheDir, 'cached-context.txt');
+  const contextFile = join(
+    cacheDir,
+    `cached-context-${sessionIdHash(sessionId)}`,
+  );
   try {
-    if (!existsSync(stampFile) || !existsSync(contextFile)) return null;
-    const savedHash = readFileSync(stampFile, 'utf-8').trim();
-    const context = readFileSync(contextFile, 'utf-8');
-    const currentHash = createHash('sha256')
-      .update(context)
-      .digest('hex')
-      .slice(0, 8);
-    if (savedHash !== currentHash) return null;
-    return context;
+    if (!existsSync(contextFile)) return null;
+    return readFileSync(contextFile, 'utf-8');
   } catch {
     return null;
   }
 }
 
-export function writeCachedContext(cwd: string, context: string): void {
+export function writeCachedContext(
+  cwd: string,
+  context: string,
+  sessionId: string,
+): void {
   const cacheDir = getCacheDir(cwd);
-  const stampFile = join(cacheDir, 'timestamp');
-  const contextFile = join(cacheDir, 'cached-context.txt');
+  const contextFile = join(
+    cacheDir,
+    `cached-context-${sessionIdHash(sessionId)}`,
+  );
   try {
     if (!existsSync(cacheDir)) mkdirSync(cacheDir, { recursive: true });
     writeFileSync(contextFile, context, 'utf-8');
-    const hash = createHash('sha256').update(context).digest('hex').slice(0, 8);
-    writeFileSync(stampFile, hash, 'utf-8');
   } catch {
     // silently ignore cache write failures
   }
@@ -65,7 +65,10 @@ export function sessionIdHash(sessionId: string): string {
 }
 
 export function isFirstInSession(sessionId: string, cwd: string): boolean {
-  const marker = join(getCacheDir(cwd), `session-${sessionIdHash(sessionId)}`);
+  const marker = join(
+    getCacheDir(cwd),
+    `session-context-${sessionIdHash(sessionId)}`,
+  );
   try {
     return !existsSync(marker);
   } catch {
@@ -77,14 +80,24 @@ export function pruneOldSessions(cwd: string): void {
   try {
     const dir = getCacheDir(cwd);
     const files = readdirSync(dir);
-    const sessionFiles = files.filter((f) => f.startsWith('session-'));
+    const sessionFiles = files.filter((f) => f.startsWith('session-context-'));
     if (sessionFiles.length <= 10) return;
     const now = Date.now();
     const TTL_MS = 24 * 60 * 60 * 1000;
     for (const file of sessionFiles) {
       const fp = join(dir, file);
       try {
-        if (now - statSync(fp).mtimeMs > TTL_MS) unlinkSync(fp);
+        if (now - statSync(fp).mtimeMs > TTL_MS) {
+          unlinkSync(fp);
+          // also remove the paired cached-context file
+          const hash = file.replace('session-context-', '');
+          const contextFp = join(dir, `cached-context-${hash}`);
+          try {
+            if (existsSync(contextFp)) unlinkSync(contextFp);
+          } catch {
+            // ignore
+          }
+        }
       } catch {
         // ignore individual file deletion failures
       }
@@ -94,9 +107,26 @@ export function pruneOldSessions(cwd: string): void {
   }
 }
 
+export function removeSessionFiles(sessionId: string, cwd: string): void {
+  const cacheDir = getCacheDir(cwd);
+  const hash = sessionIdHash(sessionId);
+  const marker = join(cacheDir, `session-context-${hash}`);
+  const contextFile = join(cacheDir, `cached-context-${hash}`);
+  try {
+    if (existsSync(marker)) unlinkSync(marker);
+  } catch {
+    // silently ignore deletion failures
+  }
+  try {
+    if (existsSync(contextFile)) unlinkSync(contextFile);
+  } catch {
+    // silently ignore deletion failures
+  }
+}
+
 export function markSessionInjected(sessionId: string, cwd: string): void {
   const cacheDir = getCacheDir(cwd);
-  const marker = join(cacheDir, `session-${sessionIdHash(sessionId)}`);
+  const marker = join(cacheDir, `session-context-${sessionIdHash(sessionId)}`);
   try {
     if (!existsSync(cacheDir)) mkdirSync(cacheDir, { recursive: true });
     writeFileSync(marker, '', 'utf-8');

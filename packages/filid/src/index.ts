@@ -103,6 +103,7 @@ export {
   sessionIdHash,
   isFirstInSession,
   pruneOldSessions,
+  removeSessionFiles,
   markSessionInjected,
   saveRunHash,
   getLastRunHash,

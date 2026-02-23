@@ -11,14 +11,11 @@
  *
  * Layer 2 (UserPromptSubmit hook) — THIS FILE
  *   - Role: Inject FCA-AI rules + fractal structure rules on session's first prompt
- *   - Session gate: session-{sessionIdHash} marker file in cache directory
- *   - Cache: content hash-based invalidation (no TTL)
+ *   - Session gate: session-context-{sessionIdHash} marker file in cache directory
+ *   - Cache: per-session cached-context-{sessionIdHash} file
  *
  * Cache functions are provided by src/core/cache-manager.ts.
  */
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
-
 import {
   isFirstInSession,
   markSessionInjected,
@@ -28,23 +25,14 @@ import {
 import { getActiveRules, loadBuiltinRules } from '../core/rule-engine.js';
 import type { HookOutput, UserPromptSubmitInput } from '../types/hooks.js';
 
+import { isFcaProject } from './shared.js';
+
 const CATEGORY_GUIDE = [
   '- fractal: independent module with CLAUDE.md or SPEC.md',
   '- organ: leaf directory with no fractal children',
   '- pure-function: collection of pure functions with no side effects',
   '- hybrid: transitional node with both fractal and organ characteristics',
 ].join('\n');
-
-/**
- * Returns true if the cwd is an FCA-AI project.
- * Treats presence of .filid/ directory or CLAUDE.md as indicator.
- *
- * Edge case: returns false before /filid:fca-init on new projects (intentional).
- * The init skill loads rules from its own SKILL.md and does not rely on hook context.
- */
-function isFcaProject(cwd: string): boolean {
-  return existsSync(join(cwd, '.filid')) || existsSync(join(cwd, 'CLAUDE.md'));
-}
 
 /**
  * Builds the FCA-AI rules text to inject into Claude's context.
@@ -58,6 +46,10 @@ function buildFcaContext(cwd: string): string {
     '- Organ directories (auto-classified by structure analysis) must NOT have CLAUDE.md',
     '- Test files: max 15 cases per spec.ts (3 basic + 12 complex)',
     '- LCOM4 >= 2 → split module, CC > 15 → compress/abstract',
+    '',
+    'Development Workflow:',
+    '- When planning, include CLAUDE.md/SPEC.md updates for affected fractal modules',
+    '- Update SPEC.md (requirements) BEFORE code, CLAUDE.md when boundaries change',
   ].join('\n');
 }
 
@@ -84,8 +76,8 @@ export async function injectContext(
     return { continue: true };
   }
 
-  // use cached context if content hash matches
-  const cached = readCachedContext(cwd);
+  // use cached context if available for this session
+  const cached = readCachedContext(cwd, session_id);
   if (cached) {
     markSessionInjected(session_id, cwd);
     return {
@@ -120,7 +112,7 @@ export async function injectContext(
   const additionalContext = (fcaContext + fractalSection).trim();
 
   // persist cache and record session marker
-  writeCachedContext(cwd, additionalContext);
+  writeCachedContext(cwd, additionalContext, session_id);
   markSessionInjected(session_id, cwd);
 
   return {
