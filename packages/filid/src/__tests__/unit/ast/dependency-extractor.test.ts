@@ -3,12 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { extractDependencies } from '../../../ast/dependency-extractor.js';
 
 describe('dependency-extractor', () => {
-  it('should extract named imports', () => {
+  it('should extract named imports', async () => {
     const source = `
       import { readFile, writeFile } from 'fs/promises';
       import { join } from 'path';
     `;
-    const result = extractDependencies(source, 'test.ts');
+    const result = await extractDependencies(source, 'test.ts');
 
     expect(result.imports).toHaveLength(2);
     expect(result.imports[0].source).toBe('fs/promises');
@@ -17,20 +17,20 @@ describe('dependency-extractor', () => {
     expect(result.imports[1].specifiers).toEqual(['join']);
   });
 
-  it('should extract default imports', () => {
+  it('should extract default imports', async () => {
     const source = `import path from 'path';`;
-    const result = extractDependencies(source, 'test.ts');
+    const result = await extractDependencies(source, 'test.ts');
 
     expect(result.imports).toHaveLength(1);
     expect(result.imports[0].specifiers).toEqual(['path']);
   });
 
-  it('should detect type-only imports', () => {
+  it('should detect type-only imports', async () => {
     const source = `
       import type { Stats } from 'fs';
       import { readFile } from 'fs/promises';
     `;
-    const result = extractDependencies(source, 'test.ts');
+    const result = await extractDependencies(source, 'test.ts');
 
     expect(result.imports).toHaveLength(2);
     const typeImport = result.imports.find((i) => i.source === 'fs');
@@ -39,13 +39,13 @@ describe('dependency-extractor', () => {
     expect(valueImport?.isTypeOnly).toBe(false);
   });
 
-  it('should extract named exports', () => {
+  it('should extract named exports', async () => {
     const source = `
       export const CONFIG = { max: 3 };
       export function greet() { return 'hi'; }
       export class Foo {}
     `;
-    const result = extractDependencies(source, 'test.ts');
+    const result = await extractDependencies(source, 'test.ts');
 
     expect(result.exports).toHaveLength(3);
     expect(result.exports.map((e) => e.name)).toEqual([
@@ -56,16 +56,16 @@ describe('dependency-extractor', () => {
     expect(result.exports.every((e) => !e.isDefault)).toBe(true);
   });
 
-  it('should extract default export', () => {
+  it('should extract default export', async () => {
     const source = `export default function main() {}`;
-    const result = extractDependencies(source, 'test.ts');
+    const result = await extractDependencies(source, 'test.ts');
 
     const defaultExport = result.exports.find((e) => e.isDefault);
     expect(defaultExport).toBeDefined();
     expect(defaultExport?.name).toBe('main');
   });
 
-  it('should extract function calls', () => {
+  it('should extract function calls', async () => {
     const source = `
       import { readFile } from 'fs/promises';
       import path from 'path';
@@ -73,7 +73,7 @@ describe('dependency-extractor', () => {
       const dir = path.dirname('/test');
       console.log(dir);
     `;
-    const result = extractDependencies(source, 'test.ts');
+    const result = await extractDependencies(source, 'test.ts');
 
     expect(result.calls.length).toBeGreaterThanOrEqual(3);
     const callees = result.calls.map((c) => c.callee);
@@ -82,15 +82,15 @@ describe('dependency-extractor', () => {
     expect(callees).toContain('console.log');
   });
 
-  it('should set filePath in result', () => {
+  it('should set filePath in result', async () => {
     const source = `const x = 1;`;
-    const result = extractDependencies(source, 'my-file.ts');
+    const result = await extractDependencies(source, 'my-file.ts');
 
     expect(result.filePath).toBe('my-file.ts');
   });
 
-  it('should handle empty source', () => {
-    const result = extractDependencies('', 'empty.ts');
+  it('should handle empty source', async () => {
+    const result = await extractDependencies('', 'empty.ts');
 
     expect(result.imports).toEqual([]);
     expect(result.exports).toEqual([]);

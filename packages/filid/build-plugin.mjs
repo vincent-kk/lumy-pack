@@ -30,12 +30,30 @@ const sharedOptions = {
   treeShaking: true,
 };
 
+// NODE_PATH auto-injection banner for MCP server bundle
+// Resolves global npm modules so native packages like @ast-grep/napi can be found
+const mcpBanner = `
+// Resolve global npm modules for native package imports
+try {
+  var _cp = require('child_process');
+  var _Module = require('module');
+  var _globalRoot = _cp.execSync('npm root -g', { encoding: 'utf8', timeout: 5000 }).trim();
+  if (_globalRoot) {
+    var _sep = process.platform === 'win32' ? ';' : ':';
+    process.env.NODE_PATH = _globalRoot + (process.env.NODE_PATH ? _sep + process.env.NODE_PATH : '');
+    _Module._initPaths();
+  }
+} catch (_e) { /* npm not available - native modules will gracefully degrade */ }
+`;
+
 // 1. MCP server bundle (CJS for broad node compatibility)
 await build({
   ...sharedOptions,
   entryPoints: [resolve(__dirname, 'src/mcp/server-entry.ts')],
   format: 'cjs',
   outfile: resolve(__dirname, 'libs/server.cjs'),
+  banner: { js: mcpBanner },
+  external: ['@ast-grep/napi'],
 });
 
 console.log('  MCP server  -> libs/server.cjs');
@@ -44,7 +62,8 @@ console.log('  MCP server  -> libs/server.cjs');
 const hookEntries = [
   'pre-tool-validator',
   'structure-guard',
-  'change-tracker',
+  // NOTE: disabled for now
+  // 'change-tracker',
   'agent-enforcer',
   'context-injector',
 ];

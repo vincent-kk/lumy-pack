@@ -1,7 +1,9 @@
 /**
  * MCP tool handler: ast-analyze
  * Wraps AST analysis modules (dependency-extractor, lcom4, cyclomatic-complexity, tree-diff).
+ * Requires @ast-grep/napi — returns helpful error if not installed.
  */
+import { getSgLoadError, getSgModule } from '../../ast/ast-grep-shared.js';
 import { calculateCC } from '../../ast/cyclomatic-complexity.js';
 import { extractDependencies } from '../../ast/dependency-extractor.js';
 import { calculateLCOM4 } from '../../ast/lcom4.js';
@@ -28,14 +30,22 @@ export interface AstAnalyzeInput {
 /**
  * Handle AST analysis requests.
  */
-export function handleAstAnalyze(
+export async function handleAstAnalyze(
   input: AstAnalyzeInput,
-): Record<string, unknown> {
+): Promise<Record<string, unknown>> {
+  const sg = await getSgModule();
+  if (!sg) {
+    return {
+      error: `@ast-grep/napi is not available. Install it with: npm install -g @ast-grep/napi`,
+      sgLoadError: getSgLoadError(),
+    };
+  }
+
   const filePath = input.filePath ?? 'anonymous.ts';
 
   switch (input.analysisType) {
     case 'dependency-graph': {
-      const info = extractDependencies(input.source, filePath);
+      const info = await extractDependencies(input.source, filePath);
       return {
         imports: info.imports,
         exports: info.exports,
@@ -47,7 +57,7 @@ export function handleAstAnalyze(
       if (!input.className) {
         throw new Error('className is required for lcom4 analysis');
       }
-      const result = calculateLCOM4(input.source, input.className);
+      const result = await calculateLCOM4(input.source, input.className);
       return {
         value: result.value,
         components: result.components,
@@ -57,7 +67,7 @@ export function handleAstAnalyze(
     }
 
     case 'cyclomatic-complexity': {
-      const result = calculateCC(input.source, filePath);
+      const result = await calculateCC(input.source, filePath);
       return {
         value: result.value,
         fileTotal: result.fileTotal,
@@ -67,7 +77,7 @@ export function handleAstAnalyze(
 
     case 'tree-diff': {
       const oldSource = input.oldSource ?? '';
-      const result = computeTreeDiff(oldSource, input.source, filePath);
+      const result = await computeTreeDiff(oldSource, input.source, filePath);
       return {
         changes: result.changes,
         hasSemanticChanges: result.hasSemanticChanges,
@@ -76,8 +86,8 @@ export function handleAstAnalyze(
     }
 
     case 'full': {
-      const deps = extractDependencies(input.source, filePath);
-      const cc = calculateCC(input.source, filePath);
+      const deps = await extractDependencies(input.source, filePath);
+      const cc = await calculateCC(input.source, filePath);
       const result: Record<string, unknown> = {
         dependencies: {
           imports: deps.imports,
@@ -92,7 +102,7 @@ export function handleAstAnalyze(
       };
 
       if (input.className) {
-        const lcom4 = calculateLCOM4(input.source, input.className);
+        const lcom4 = await calculateLCOM4(input.source, input.className);
         result.lcom4 = {
           value: lcom4.value,
           components: lcom4.components,

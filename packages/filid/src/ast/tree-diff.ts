@@ -1,8 +1,10 @@
 /**
  * Semantic AST diff — compares two source code versions and identifies
  * added, removed, or modified top-level declarations while ignoring
- * formatting-only changes. Uses @babel/parser.
+ * formatting-only changes. Uses @ast-grep/napi.
  */
+import type { SgNode } from '@ast-grep/napi';
+
 import type { TreeDiffChange, TreeDiffResult } from '../types/ast.js';
 
 import { parseSource } from './parser.js';
@@ -14,50 +16,110 @@ interface DeclSignature {
   line: number;
 }
 
-function extractDeclarations(source: string): DeclSignature[] {
-  const ast = parseSource(source);
+function getNameFromNode(node: SgNode, nameKind: string): string | null {
+  const nameNode = node.children().find((c: SgNode) => c.kind() === nameKind);
+  return nameNode ? nameNode.text() : null;
+}
+
+async function extractDeclarations(source: string): Promise<DeclSignature[]> {
+  const root = await parseSource(source);
   const decls: DeclSignature[] = [];
+  const rootChildren = root.children();
 
-  for (const stmt of ast.program.body) {
-    const line = stmt.loc?.start.line ?? 0;
-    const normalized = source
-      .slice(stmt.start ?? 0, stmt.end ?? 0)
-      .replace(/\s+/g, '');
+  for (const stmt of rootChildren) {
+    const kind = stmt.kind();
+    const line = stmt.range().start.line + 1;
+    const normalized = stmt.text().replace(/\s+/g, '');
 
-    const node =
-      stmt.type === 'ExportNamedDeclaration' ? stmt.declaration : stmt;
-    if (!node) continue;
-
-    if (node.type === 'FunctionDeclaration' && node.id) {
-      decls.push({ name: node.id.name, kind: 'function', normalized, line });
-    } else if (node.type === 'ClassDeclaration' && node.id) {
-      decls.push({ name: node.id.name, kind: 'class', normalized, line });
-    } else if (node.type === 'VariableDeclaration') {
-      for (const d of node.declarations) {
-        if (d.id?.type === 'Identifier') {
-          decls.push({ name: d.id.name, kind: 'variable', normalized, line });
+    if (kind === 'function_declaration') {
+      const name = getNameFromNode(stmt, 'identifier');
+      if (name) decls.push({ name, kind: 'function', normalized, line });
+    } else if (kind === 'class_declaration') {
+      const name = getNameFromNode(stmt, 'type_identifier');
+      if (name) decls.push({ name, kind: 'class', normalized, line });
+    } else if (
+      kind === 'lexical_declaration' ||
+      kind === 'variable_declaration'
+    ) {
+      for (const d of stmt.children()) {
+        if (d.kind() === 'variable_declarator') {
+          const name = getNameFromNode(d, 'identifier');
+          if (name) decls.push({ name, kind: 'variable', normalized, line });
         }
       }
-    } else if (node.type === 'TSInterfaceDeclaration') {
-      decls.push({ name: node.id.name, kind: 'interface', normalized, line });
-    } else if (node.type === 'TSTypeAliasDeclaration') {
-      decls.push({ name: node.id.name, kind: 'type', normalized, line });
+    } else if (kind === 'interface_declaration') {
+      const name = getNameFromNode(stmt, 'type_identifier');
+      if (name) decls.push({ name, kind: 'interface', normalized, line });
+    } else if (kind === 'type_alias_declaration') {
+      const name = getNameFromNode(stmt, 'type_identifier');
+      if (name) decls.push({ name, kind: 'type', normalized, line });
+    } else if (kind === 'export_statement') {
+      // Unwrap export to get the actual declaration
+      const children = stmt.children();
+      for (const child of children) {
+        const ck = child.kind();
+        const childNorm = stmt.text().replace(/\s+/g, '');
+
+        if (ck === 'function_declaration') {
+          const name = getNameFromNode(child, 'identifier');
+          if (name)
+            decls.push({
+              name,
+              kind: 'function',
+              normalized: childNorm,
+              line,
+            });
+        } else if (ck === 'class_declaration') {
+          const name = getNameFromNode(child, 'type_identifier');
+          if (name)
+            decls.push({ name, kind: 'class', normalized: childNorm, line });
+        } else if (
+          ck === 'lexical_declaration' ||
+          ck === 'variable_declaration'
+        ) {
+          for (const d of child.children()) {
+            if (d.kind() === 'variable_declarator') {
+              const name = getNameFromNode(d, 'identifier');
+              if (name)
+                decls.push({
+                  name,
+                  kind: 'variable',
+                  normalized: childNorm,
+                  line,
+                });
+            }
+          }
+        } else if (ck === 'interface_declaration') {
+          const name = getNameFromNode(child, 'type_identifier');
+          if (name)
+            decls.push({
+              name,
+              kind: 'interface',
+              normalized: childNorm,
+              line,
+            });
+        } else if (ck === 'type_alias_declaration') {
+          const name = getNameFromNode(child, 'type_identifier');
+          if (name)
+            decls.push({ name, kind: 'type', normalized: childNorm, line });
+        }
+      }
     }
   }
 
   return decls;
 }
 
-export function computeTreeDiff(
+export async function computeTreeDiff(
   oldSource: string,
   newSource: string,
   _filePath = 'diff.ts',
-): TreeDiffResult {
+): Promise<TreeDiffResult> {
   const oldMap = new Map(
-    extractDeclarations(oldSource).map((d) => [d.name, d]),
+    (await extractDeclarations(oldSource)).map((d) => [d.name, d]),
   );
   const newMap = new Map(
-    extractDeclarations(newSource).map((d) => [d.name, d]),
+    (await extractDeclarations(newSource)).map((d) => [d.name, d]),
   );
 
   const changes: TreeDiffChange[] = [];

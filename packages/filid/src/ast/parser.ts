@@ -1,37 +1,60 @@
 /**
- * Shared AST utilities using @babel/parser (TypeScript-capable, pure JS, bundleable).
+ * Shared AST utilities using @ast-grep/napi (tree-sitter backend).
+ * Provides source parsing and tree traversal for all analysis modules.
  */
 import { readFileSync } from 'node:fs';
 
-import { parse } from '@babel/parser';
+import type { SgNode } from '@ast-grep/napi';
 
-export function parseSource(source: string, filePath = 'anonymous.ts') {
-  const ast = parse(source, {
-    sourceType: 'module',
-    plugins: ['typescript'],
-    errorRecovery: true,
-  });
-  return Object.assign(ast, {
-    fileName: filePath,
-    statements: ast.program.body,
-  });
+import {
+  EXT_TO_LANG,
+  getSgLoadError,
+  getSgModule,
+  toLangEnum,
+} from './ast-grep-shared.js';
+
+/**
+ * Parse TypeScript/JavaScript source into an AST root node.
+ * Throws if @ast-grep/napi is not available.
+ */
+export async function parseSource(
+  source: string,
+  filePath = 'anonymous.ts',
+): Promise<SgNode> {
+  const sg = await getSgModule();
+  if (!sg) {
+    throw new Error(
+      `@ast-grep/napi is not available. Install it with: npm install -g @ast-grep/napi` +
+        (getSgLoadError() ? ` (${getSgLoadError()})` : ''),
+    );
+  }
+
+  // Detect language from file extension, default to typescript
+  const ext = filePath.includes('.') ? '.' + filePath.split('.').pop() : '.ts';
+  const langStr = EXT_TO_LANG[ext] ?? 'typescript';
+  const lang = toLangEnum(sg, langStr);
+
+  return sg.parse(lang, source).root();
 }
 
-export function parseFile(filePath: string) {
+/**
+ * Parse a file from disk into an AST root node.
+ */
+export async function parseFile(filePath: string): Promise<SgNode> {
   const source = readFileSync(filePath, 'utf-8');
-  return parseSource(source);
+  return parseSource(source, filePath);
 }
 
-/** Recursive AST node visitor */
-export function walk(node: any, fn: (n: any) => void): void {
-  if (!node || typeof node !== 'object') return;
-  if (node.type) fn(node);
-  for (const key of Object.keys(node)) {
-    const val = node[key];
-    if (Array.isArray(val)) {
-      for (const item of val) walk(item, fn);
-    } else if (val && typeof val === 'object' && val.type) {
-      walk(val, fn);
+/**
+ * Recursive AST node visitor using tree-sitter children.
+ */
+export function walk(node: SgNode, fn: (n: SgNode) => void): void {
+  if (!node) return;
+  fn(node);
+  const children = node.children?.();
+  if (children) {
+    for (const child of children) {
+      walk(child, fn);
     }
   }
 }

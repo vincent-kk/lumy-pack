@@ -33,7 +33,7 @@ See [reference.md Section 1](./reference.md#section-1--question-parsing).
 
 ### Phase 2 — Navigation (Prompt 1)
 
-Locate the target module using `fractal-scan` to retrieve the full tree, then
+Locate the target module using `fractal_scan` to retrieve the full tree, then
 find the node matching the query.
 See [reference.md Section 2](./reference.md#section-2--navigation-details).
 
@@ -44,7 +44,7 @@ See [reference.md Section 3](./reference.md#section-3--context-chain-loading).
 
 ### Phase 4 — Compression (if needed)
 
-Apply `doc-compress(mode: "auto")` when chain exceeds context limits.
+Apply `doc_compress(mode: "auto")` when chain exceeds context limits.
 See [reference.md Section 4](./reference.md#section-4--compression-strategy).
 
 ### Phase 5 — Response (Prompt 2–3 max)
@@ -56,9 +56,9 @@ See [reference.md Section 5](./reference.md#section-5--3-prompt-limit-protocol).
 
 | Tool               | Action     | Purpose                                                 |
 | ------------------ | ---------- | ------------------------------------------------------- |
-| `fractal-scan`     | —          | Scan project hierarchy to locate the target module      |
-| `fractal-navigate` | `classify` | Resolve ambiguous module classification                 |
-| `doc-compress`     | `auto`     | Compress CLAUDE.md chain when it exceeds context limits |
+| `fractal_scan`     | —          | Scan project hierarchy to locate the target module      |
+| `fractal_navigate` | `classify` | Resolve ambiguous module classification                 |
+| `doc_compress`     | `auto`     | Compress CLAUDE.md chain when it exceeds context limits |
 
 ## Options
 
@@ -85,7 +85,7 @@ See [reference.md Section 5](./reference.md#section-5--3-prompt-limit-protocol).
 /filid:fca-context-query "What does the auth CLAUDE.md say we must never do?"
 
 # 3-Prompt Limit
-Prompt 1  →  fractal-navigate (locate module)
+Prompt 1  →  fractal_scan (full tree) + fractal_navigate (classify target)
 Prompt 2  →  load/analyse CLAUDE.md chain
 Prompt 3  →  final answer (hard limit)
 

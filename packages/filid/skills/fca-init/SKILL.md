@@ -24,18 +24,33 @@ CLAUDE.md files for fractal nodes, and produces a validation report.
 - Creating SPEC.md scaffolds for modules that lack formal specifications
 - Auditing which directories are correctly classified before running `/filid:fca-scan`
 
+## Prerequisites — Environment Check
+
+Before starting the main workflow, check ast-grep availability by calling
+`ast_grep_search` with a trivial pattern (e.g., `pattern: "$X"`, `language: "typescript"`, `path: "."`).
+
+- **Available**: Proceed silently — no message needed.
+- **Unavailable** (response contains "@ast-grep/napi is not available"):
+  Display a non-blocking informational message and continue:
+  ```
+  [INFO] ast-grep이 설치되지 않았습니다.
+  AST 패턴 매칭 기능을 사용하려면: npm install -g @ast-grep/napi
+  (선택사항 — 설치 없이도 fca-init은 정상 동작합니다)
+  ```
+  The absence of ast-grep does NOT block any phase below.
+
 ## Core Workflow
 
 ### Phase 1 — Directory Scan
 
-Retrieve the complete project hierarchy using `fractal-scan`.
+Retrieve the complete project hierarchy using `fractal_scan`.
 Build a working list of all directories from `tree.nodes` for classification.
 See [reference.md Section 1](./reference.md#section-1--directory-scan-details).
 
 ### Phase 2 — Node Classification
 
 Classify each directory as fractal, organ, or pure-function using
-`fractal-navigate(action: "classify", path, entries)` (entries from Phase 1 scan) and priority-ordered decision rules.
+`fractal_navigate(action: "classify", path, entries)` (entries from Phase 1 scan) and priority-ordered decision rules.
 See [reference.md Section 2](./reference.md#section-2--node-classification-rules).
 
 ### Phase 3 — CLAUDE.md Generation
@@ -59,8 +74,9 @@ See [reference.md Section 5](./reference.md#section-5--validation-and-report-for
 
 | Tool               | Action     | Purpose                                                        |
 | ------------------ | ---------- | -------------------------------------------------------------- |
-| `fractal-scan`     | —          | Scan filesystem and retrieve complete project directory hierarchy |
-| `fractal-navigate` | `classify` | Classify a single directory as fractal / organ / pure-function |
+| `fractal_scan`     | —          | Scan filesystem and retrieve complete project directory hierarchy |
+| `fractal_navigate` | `classify` | Classify a single directory as fractal / organ / pure-function |
+| `ast_grep_search`  | —          | AST pattern matching (optional — requires @ast-grep/napi)      |
 
 ## Options
 

@@ -65,7 +65,7 @@
 | 소스 파일        | 43개 `.ts` (테스트 제외)                                                                                                                                              |
 | 타입/인터페이스  | 30개+                                                                                                                                                                 |
 | 공개 함수/클래스 | 35개+                                                                                                                                                                 |
-| MCP 도구         | 11개 (ast-analyze, fractal-navigate, doc-compress, test-metrics, fractal-scan, drift-detect, lca-resolve, rule-query, structure-validate, review-manage, debt-manage) |
+| MCP 도구         | 11개 (ast_analyze, fractal_navigate, doc_compress, test_metrics, fractal_scan, drift_detect, lca_resolve, rule_query, structure_validate, review_manage, debt_manage) |
 | Hook 스크립트    | 5개 (pre-tool-validator, structure-guard, agent-enforcer, context-injector, change-tracker _(disabled)_)                                                              |
 | 에이전트         | 6개 (fractal-architect, implementer, context-manager, qa-reviewer, drift-analyzer, restructurer)                                                                      |
 | 스킬             | 11개 (/init, /scan, /sync, /structure-review, /promote, /context-query, /code-review, /resolve-review, /re-validate, /guide, /restructure)                            |

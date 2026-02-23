@@ -25,7 +25,7 @@ them into ADRs, and create technical debt records.
 ### Step 1 — Branch Detection & Review Directory Lookup
 
 1. Detect branch: `git branch --show-current` (Bash)
-2. Normalize: `review-manage(action: "normalize-branch", projectRoot: <project_root>, branchName: <branch>)` MCP tool
+2. Normalize: `review_manage(action: "normalize-branch", projectRoot: <project_root>, branchName: <branch>)` MCP tool
 3. Verify: Read `.filid/review/<normalized>/fix-requests.md`
 4. If not found: abort with "No fix requests found. Run /filid:fca-review first."
 
@@ -77,9 +77,9 @@ For each rejected fix:
    - Decision: defer the fix with stated rationale
    - Consequences: technical debt created, future impact
 
-3. **Create debt file**: Call `debt-manage(create)` MCP tool:
+3. **Create debt file**: Call `debt_manage(create)` MCP tool:
    ```
-   debt-manage(
+   debt_manage(
      action: "create",
      projectRoot: <project_root>,
      debtItem: {
@@ -129,6 +129,13 @@ If there were NO accepted fixes (all rejected):
   Automatically invoke /filid:fca-revalidate — no pending code changes needed.
 ```
 
+## Available MCP Tools
+
+| Tool             | Action             | Purpose                                                  |
+| ---------------- | ------------------ | -------------------------------------------------------- |
+| `review_manage`  | `normalize-branch` | Normalize branch name for review directory path          |
+| `debt_manage`    | `create`           | Create a technical debt record for each rejected fix     |
+
 ## Options
 
 > Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well.
@@ -149,5 +156,5 @@ Outputs:  justifications.md, .filid/debt/*.md (per rejected item)
 Prereq:   /filid:fca-review must have completed
 Next:     /filid:fca-revalidate (after applying accepted fixes)
 
-MCP tools: review-manage(normalize-branch), debt-manage(create)
+MCP tools: review_manage(normalize-branch), debt_manage(create)
 ```

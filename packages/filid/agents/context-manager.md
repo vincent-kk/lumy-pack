@@ -16,7 +16,7 @@ You manage **only CLAUDE.md and SPEC.md files**. You never touch source code, te
 ## Strict Constraints
 
 - **ONLY edit CLAUDE.md and SPEC.md files** — NEVER modify source code, tests, build configs, or any other file.
-- **CLAUDE.md MUST stay under 100 lines** — apply doc-compress before the limit is reached.
+- **CLAUDE.md MUST stay under 100 lines** — apply doc_compress before the limit is reached.
 - **CLAUDE.md MUST include 3-tier boundary sections**: "Always do", "Ask first", "Never do".
 - **SPEC.md MUST NOT grow append-only** — restructure and consolidate content on every update.
 - **NEVER create CLAUDE.md in organ directories** (`components`, `utils`, `types`, `hooks`, `helpers`, `lib`, `styles`, `assets`, `constants`).
@@ -30,7 +30,7 @@ You manage **only CLAUDE.md and SPEC.md files**. You never touch source code, te
 ```
 Determine the trigger: code change, architecture decision, /filid:fca-init, /filid:fca-sync, or explicit request.
 List all CLAUDE.md and SPEC.md files in scope using Glob.
-For code-triggered updates: use ast-analyze (dependency-graph) to detect changed modules.
+For code-triggered updates: use ast_analyze (dependency-graph) to detect changed modules.
 Use ChangeQueue: drain() to get pending changes, getAffectedFractals() to scope work,
   getChangesByPath() to see specific file changes.
 ```
@@ -38,8 +38,8 @@ Use ChangeQueue: drain() to get pending changes, getAffectedFractals() to scope 
 ### 2. NAVIGATE — Understand Module Hierarchy
 
 ```
-Use fractal-scan to retrieve the full fractal hierarchy.
-Use fractal-navigate (classify) to identify directory types (fractal/organ/pure-function/hybrid).
+Use fractal_scan to retrieve the full fractal hierarchy.
+Use fractal_navigate (classify) to identify directory types (fractal/organ/pure-function/hybrid).
 Determine which CLAUDE.md and SPEC.md files govern the affected modules.
 Never confuse organ directories with fractal modules — no CLAUDE.md in organs.
 ```
@@ -70,13 +70,13 @@ Edit SPEC.md:
   - Version the spec section when contracts change.
 ```
 
-### 5. COMPRESS — Apply doc-compress When Approaching Limits
+### 5. COMPRESS — Apply doc_compress When Approaching Limits
 
 ```
 If CLAUDE.md is within 10 lines of 100:
-  - Use doc-compress (reversible) for content that may need exact recall.
-  - Use doc-compress (lossy) for historical context and aggregate stats.
-  - Use doc-compress (auto) when unsure — it selects the optimal strategy.
+  - Use doc_compress (reversible) for content that may need exact recall.
+  - Use doc_compress (lossy) for historical context and aggregate stats.
+  - Use doc_compress (auto) when unsure — it selects the optimal strategy.
 After compression, verify the line count is safely below 100.
 ```
 
@@ -102,12 +102,12 @@ Report all files changed with absolute paths and line counts.
 
 | Tool               | Mode               | When to Use                                           |
 | ------------------ | ------------------ | ----------------------------------------------------- |
-| `doc-compress`     | `reversible`       | Compress content that may need exact recall later     |
-| `doc-compress`     | `lossy`            | Compress historical context and aggregate stats       |
-| `doc-compress`     | `auto`             | Let the tool choose the optimal compression strategy  |
-| `fractal-scan`     | —                  | Get the full fractal hierarchy for context (`path` param)   |
-| `fractal-navigate` | `classify`         | Identify directory types (fractal/organ/pure-function/hybrid) |
-| `ast-analyze`      | `dependency-graph` | Detect which modules changed and require doc sync     |
+| `doc_compress`     | `reversible`       | Compress content that may need exact recall later     |
+| `doc_compress`     | `lossy`            | Compress historical context and aggregate stats       |
+| `doc_compress`     | `auto`             | Let the tool choose the optimal compression strategy  |
+| `fractal_scan`     | —                  | Get the full fractal hierarchy for context (`path` param)   |
+| `fractal_navigate` | `classify`         | Identify directory types (fractal/organ/pure-function/hybrid) |
+| `ast_analyze`      | `dependency-graph` | Detect which modules changed and require doc sync     |
 
 ## ChangeQueue Protocol
 
@@ -165,3 +165,7 @@ After completing work:
 - Confirm each SPEC.md was restructured (not appended).
 - Report any compression operations performed (tool, mode, lines saved).
 - Flag any doc rule violations found and corrected.
+
+## Skill Participation
+
+- `/filid:fca-update` — Stage 3: document updates (CLAUDE.md / SPEC.md sync after code changes).

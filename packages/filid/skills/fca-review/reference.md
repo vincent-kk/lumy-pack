@@ -129,41 +129,41 @@ When `--scope=pr` and `gh` CLI is authenticated:
 
 | Tool                 | Action / Parameters              | Stage | Purpose                                          |
 | -------------------- | -------------------------------- | ----- | ------------------------------------------------ |
-| `fractal-navigate`   | `action: "classify"`             | 1     | Classify changed dirs for boundary check         |
-| `structure-validate` | `path: <changed dir>`            | 1     | Fractal/organ boundary validation (diff only)    |
-| `doc-compress`       | `mode: "auto"`                   | 2     | CLAUDE.md line count (changed CLAUDE.md only)    |
-| `test-metrics`       | `action: "check-312"`            | 3     | 3+12 rule on changed spec.ts files only          |
-| `ast-analyze`        | `analysisType: "lcom4"`          | 4     | Module cohesion on changed source files          |
-| `ast-analyze`        | `analysisType: "cyclomatic-complexity"` | 4 | Complexity on changed source files          |
-| `test-metrics`       | `action: "decide"`               | 4     | Split/compress recommendation                    |
-| `ast-analyze`        | `analysisType: "dependency-graph"` | 5  | DAG + cycle detection on changed files           |
+| `fractal_navigate`   | `action: "classify"`             | 1     | Classify changed dirs for boundary check         |
+| `structure_validate` | `path: <changed dir>`            | 1     | Fractal/organ boundary validation (diff only)    |
+| `doc_compress`       | `mode: "auto"`                   | 2     | CLAUDE.md line count (changed CLAUDE.md only)    |
+| `test_metrics`       | `action: "check-312"`            | 3     | 3+12 rule on changed spec.ts files only          |
+| `ast_analyze`        | `analysisType: "lcom4"`          | 4     | Module cohesion on changed source files          |
+| `ast_analyze`        | `analysisType: "cyclomatic-complexity"` | 4 | Complexity on changed source files          |
+| `test_metrics`       | `action: "decide"`               | 4     | Split/compress recommendation                    |
+| `ast_analyze`        | `analysisType: "dependency-graph"` | 5  | DAG + cycle detection on changed files           |
 
 ### Phase B (Analysis Agent, haiku)
 
 | Tool               | Action             | Purpose                              |
 | ------------------ | ------------------ | ------------------------------------ |
-| `review-manage`    | `normalize-branch` | Branch name → filesystem-safe string |
-| `review-manage`    | `ensure-dir`       | Create `.filid/review/<branch>/`     |
-| `review-manage`    | `elect-committee`  | Deterministic committee election     |
-| `fractal-navigate` | `classify`         | Classify changed directories         |
-| `fractal-scan`     | —                  | Build full fractal tree              |
+| `review_manage`    | `normalize-branch` | Branch name → filesystem-safe string |
+| `review_manage`    | `ensure-dir`       | Create `.filid/review/<branch>/`     |
+| `review_manage`    | `elect-committee`  | Deterministic committee election     |
+| `fractal_navigate` | `classify`         | Classify changed directories         |
+| `fractal_scan`     | —                  | Build full fractal tree              |
 
 ### Phase C (Verification Agent, sonnet)
 
 | Tool                 | Action                  | Purpose                               |
 | -------------------- | ----------------------- | ------------------------------------- |
-| `ast-analyze`        | `lcom4`                 | Cohesion verification (split needed?) |
-| `ast-analyze`        | `cyclomatic-complexity` | Complexity verification               |
-| `ast-analyze`        | `dependency-graph`      | Circular dependency check             |
-| `ast-analyze`        | `tree-diff`             | Semantic change analysis              |
-| `test-metrics`       | `check-312`             | 3+12 rule validation                  |
-| `test-metrics`       | `count`                 | Test case counting                    |
-| `test-metrics`       | `decide`                | Split/compress/parameterize decision  |
-| `structure-validate` | —                       | FCA-AI structure rules                |
-| `drift-detect`       | —                       | Structure drift detection             |
-| `doc-compress`       | `auto`                  | Document compression state            |
-| `rule-query`         | `list`                  | Active rules listing                  |
-| `debt-manage`        | `calculate-bias`        | Debt bias level determination         |
+| `ast_analyze`        | `lcom4`                 | Cohesion verification (split needed?) |
+| `ast_analyze`        | `cyclomatic-complexity` | Complexity verification               |
+| `ast_analyze`        | `dependency-graph`      | Circular dependency check             |
+| `ast_analyze`        | `tree-diff`             | Semantic change analysis              |
+| `test_metrics`       | `check-312`             | 3+12 rule validation                  |
+| `test_metrics`       | `count`                 | Test case counting                    |
+| `test_metrics`       | `decide`                | Split/compress/parameterize decision  |
+| `structure_validate` | —                       | FCA-AI structure rules                |
+| `drift_detect`       | —                       | Structure drift detection             |
+| `doc_compress`       | `auto`                  | Document compression state            |
+| `rule_query`         | `list`                  | Active rules listing                  |
+| `debt_manage`        | `calculate-bias`        | Debt bias level determination         |
 
 ### Phase D (Chairperson, direct)
 
@@ -173,9 +173,9 @@ No MCP tool calls. Reads `session.md` + `verification.md` + `structure-check.md`
 
 | Tool            | Action             | Purpose                     |
 | --------------- | ------------------ | --------------------------- |
-| `review-manage` | `normalize-branch` | Branch normalization        |
-| `review-manage` | `checkpoint`       | Phase state detection       |
-| `review-manage` | `cleanup`          | Delete review dir (--force) |
+| `review_manage` | `normalize-branch` | Branch normalization        |
+| `review_manage` | `checkpoint`       | Phase state detection       |
+| `review_manage` | `cleanup`          | Delete review dir (--force) |
 
 **Checkpoint resume order** (based on files present in `REVIEW_DIR`):
 

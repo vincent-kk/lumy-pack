@@ -5,12 +5,12 @@ structural drift synchronization skill. For the quick-start overview, see [SKILL
 
 ## Section 1 — Scan
 
-`drift-analyzer` calls `fractal-scan` to retrieve the full directory tree and current
+`drift-analyzer` calls `fractal_scan` to retrieve the full directory tree and current
 node classifications.
 
 ```
-fractal-scan({ path: "<target-path>" })
-// Returns: { nodes: FractalNode[], summary: ScanSummary, violations: Violation[] }
+fractal_scan({ path: "<target-path>" })
+// Returns: ScanReport { tree: { nodes: Map<path, FractalNode>, root: string }, modules: ModuleInfo[], timestamp, duration }
 ```
 
 For each node, confirm:
@@ -22,10 +22,10 @@ For each node, confirm:
 
 ## Section 2 — Detect & Classify
 
-`drift-detect` identifies all deviations from fractal principles.
+`drift_detect` identifies all deviations from fractal principles.
 
 ```
-drift-detect({ path: "<target-path>", severity: "<level>" })
+drift_detect({ path: "<target-path>", severity: "<level>" })
 // Returns: { drifts: DriftItem[], total: number, bySeverity: SeverityCount }
 ```
 
@@ -50,10 +50,10 @@ Each `DriftItem` fields:
 ## Section 3 — Plan & Approval
 
 `drift-analyzer` generates the correction plan. For reclassification candidates,
-`fractal-architect` uses `lca-resolve` to confirm the correct target location.
+`fractal-architect` uses `lca_resolve` to confirm the correct target location.
 
 ```
-lca-resolve({ path: "<drifted-path>", moduleA: "<neighbor1>", moduleB: "<neighbor2>" })
+lca_resolve({ path: "<drifted-path>", moduleA: "<neighbor1>", moduleB: "<neighbor2>" })
 // Returns: { lcaPath: string, recommendedParent: string, confidence: number }
 ```
 
@@ -117,10 +117,10 @@ for each drift-item with move/rename action:
     edit(file, replace(oldPath, newPath))
 ```
 
-After execution, `structure-validate` confirms correctness:
+After execution, `structure_validate` confirms correctness:
 
 ```
-structure-validate({ path: "<target-path>" })
+structure_validate({ path: "<target-path>" })
 // Returns: { passed: boolean, checks: ValidationCheck[], violations: Violation[] }
 ```
 
@@ -147,7 +147,7 @@ structure-validate({ path: "<target-path>" })
 | D005 | src/components/AuthWidget | move → src/features/auth/... | ✓ |
 
 ### Validation Result
-structure-validate: PASS
+structure_validate: PASS
 - All imports resolvable: ✓
 - All fractal nodes have index.ts: ✓
 - Organ directory rules satisfied: ✓

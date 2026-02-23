@@ -350,15 +350,15 @@ server.ts
 Server (MCP SDK)
     ├── ListToolsRequestSchema → TOOL_DEFINITIONS (4개 도구 스키마)
     └── CallToolRequestSchema → switch(name)
-            ├── 'ast-analyze' → handleAstAnalyze(args)
-            ├── 'fractal-navigate' → handleFractalNavigate(args)
-            ├── 'doc-compress' → handleDocCompress(args)
-            └── 'test-metrics' → handleTestMetrics(args)
+            ├── 'ast_analyze' → handleAstAnalyze(args)
+            ├── 'fractal_navigate' → handleFractalNavigate(args)
+            ├── 'doc_compress' → handleDocCompress(args)
+            └── 'test_metrics' → handleTestMetrics(args)
 ```
 
 ### 도구별 내부 라우팅
 
-**ast-analyze**:
+**ast_analyze**:
 
 ```
 analysisType switch:
@@ -369,7 +369,7 @@ analysisType switch:
 └── 'full' → extractDependencies() + calculateCC() + (optional)calculateLCOM4()
 ```
 
-**fractal-navigate**:
+**fractal_navigate**:
 
 ```
 action switch:
@@ -378,7 +378,7 @@ action switch:
 └── 'tree' → buildFractalTree() (전체 트리 반환)
 ```
 
-**doc-compress**:
+**doc_compress**:
 
 ```
 mode switch:
@@ -387,7 +387,7 @@ mode switch:
 └── 'auto' → inferMode() → content있으면 reversible, entries있으면 lossy
 ```
 
-**test-metrics**:
+**test_metrics**:
 
 ```
 action switch:

@@ -57,7 +57,7 @@
     "version:patch": "yarn version patch"
   },
   "dependencies": {
-    "@babel/parser": "^7.29.0",
+    "@ast-grep/napi": "^0.31.0",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "fast-glob": "^3.0.0",
     "zod": "^4.0.0"

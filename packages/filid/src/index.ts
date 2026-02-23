@@ -109,6 +109,19 @@ export {
 } from './core/cache-manager.js';
 export { computeProjectHash } from './core/project-hash.js';
 
+// AST Grep tools (pattern matching via @ast-grep/napi)
+export { handleAstGrepSearch } from './mcp/tools/ast-grep-search.js';
+export { handleAstGrepReplace } from './mcp/tools/ast-grep-replace.js';
+export {
+  getSgModule,
+  getSgLoadError,
+  SUPPORTED_LANGUAGES as AST_GREP_LANGUAGES,
+  EXT_TO_LANG,
+  getFilesForLanguage,
+  formatMatch,
+  toLangEnum,
+} from './ast/ast-grep-shared.js';
+
 // MCP tool handlers
 export { handleAstAnalyze } from './mcp/tools/ast-analyze.js';
 export { handleFractalNavigate } from './mcp/tools/fractal-navigate.js';

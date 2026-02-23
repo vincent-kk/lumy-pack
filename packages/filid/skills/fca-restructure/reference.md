@@ -9,22 +9,22 @@ fractal structure restructuring skill. For the quick-start overview, see [SKILL.
 
 ```
 // Parallel batch — fire all three simultaneously:
-fractal-scan({ path: "<target-path>" })
-// Returns: { nodes: FractalNode[], summary: ScanSummary, violations: Violation[] }
+fractal_scan({ path: "<target-path>" })
+// Returns: ScanReport { tree: { nodes: Map<path, FractalNode>, root: string }, modules: ModuleInfo[], timestamp, duration }
 
-drift-detect({ path: "<target-path>" })
+drift_detect({ path: "<target-path>" })
 // Returns: { drifts: DriftItem[], total: number }
 
-rule-query({ action: "list", path: "<target-path>" })
+rule_query({ action: "list", path: "<target-path>" })
 // Returns: { rules: Rule[] }
 ```
 
-After `drift-detect` completes, call `lca-resolve` for each move candidate
-(requires drift-detect output to identify reclassification targets):
+After `drift_detect` completes, call `lca_resolve` for each move candidate
+(requires drift_detect output to identify reclassification targets):
 
 ```
-// Sequential — after drift-detect:
-lca-resolve({ path: "<path>", moduleA: "<sibling1>", moduleB: "<sibling2>" })
+// Sequential — after drift_detect:
+lca_resolve({ path: "<path>", moduleA: "<sibling1>", moduleB: "<sibling2>" })
 // Returns: { lcaPath: string, recommendedParent: string, confidence: number }
 ```
 
@@ -106,10 +106,10 @@ export type { AuthUser, AuthState } from './types';
 
 ## Section 4 — Validation
 
-After `restructurer` completes, `fractal-architect` validates with `structure-validate`.
+After `restructurer` completes, `fractal-architect` validates with `structure_validate`.
 
 ```
-structure-validate({ path: "<target-path>" })
+structure_validate({ path: "<target-path>" })
 // Returns: { passed: boolean, checks: ValidationCheck[], violations: Violation[] }
 ```
 
@@ -140,7 +140,7 @@ Validation checks:
 | src/app.ts | ../components/AuthModal | ../features/auth/components/AuthModal |
 
 ### Validation Result
-structure-validate: PASS
+structure_validate: PASS
 - All imports resolvable: ✓
 - No orphaned files: ✓
 - All fractal nodes have index.ts: ✓

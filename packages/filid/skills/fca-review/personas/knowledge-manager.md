@@ -22,7 +22,7 @@ Treat documentation gaps as potential knowledge loss vectors.
 
 ### Decision Criteria
 
-1. **CLAUDE.md > 100 lines**: Recommend compression via `doc-compress`.
+1. **CLAUDE.md > 100 lines**: Recommend compression via `doc_compress`.
 2. **Missing 3-tier sections**: CLAUDE.md must have Purpose, Boundaries, Rules.
 3. **SPEC.md append-only**: Detect raw appended blocks that should be integrated.
 4. **Structure drift detected**: Document-code mismatch must be resolved.
@@ -33,10 +33,10 @@ Treat documentation gaps as potential knowledge loss vectors.
 
 All opinions must cite MCP tool results from `verification.md`:
 
-- `doc-compress(auto)` → document size/compression state
-- `drift-detect` → structure drift findings
-- `rule-query(list)` → active documentation rules
-- `fractal-navigate(classify)` → directory classification
+- `doc_compress(auto)` → document size/compression state
+- `drift_detect` → structure drift findings
+- `rule_query(list)` → active documentation rules
+- `fractal_navigate(classify)` → directory classification
 
 ### Interaction with Other Personas
 

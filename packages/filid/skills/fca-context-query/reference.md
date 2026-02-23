@@ -16,18 +16,18 @@ starting point. Otherwise proceed to Phase 2.
 
 ## Section 2 — Navigation Details
 
-Use `fractal-scan` to retrieve the full project tree, then find the node matching the target:
+Use `fractal_scan` to retrieve the full project tree, then find the node matching the target:
 
 ```
-fractal-scan({ path: "<project-root>" })
+fractal_scan({ path: "<project-root>" })
 ```
 
 Scan `tree.nodes` for the node whose name or path best matches the target.
-If the match is ambiguous, use `fractal-navigate(classify)` with the node's
+If the match is ambiguous, use `fractal_navigate(classify)` with the node's
 known children from the scan result:
 
 ```
-fractal-navigate({ action: "classify", path: "<candidate-path>", entries: [/* nodes from scan */] })
+fractal_navigate({ action: "classify", path: "<candidate-path>", entries: [/* nodes from scan */] })
 ```
 
 This counts as **Prompt 1** of the 3-Prompt budget.
@@ -49,15 +49,16 @@ target node. Do not load sibling or cousin nodes.
 ## Section 4 — Compression Strategy
 
 If the combined CLAUDE.md chain exceeds working context limits, call
-`doc-compress` before generating the response:
+`doc_compress` before generating the response:
 
 ```
-doc-compress({ mode: "auto" })
+doc_compress({ mode: "auto", filePath: "<CLAUDE.md path>", content: "<file content>" })
 ```
 
 `auto` mode selects `reversible` compression for structured documents
-and `lossy` compression for tool-call history. The original files remain
-on disk; only the in-context representation is compressed.
+(when `filePath`/`content` are provided) and `lossy` compression for
+tool-call history (when `toolCallEntries` are provided). The original
+files remain on disk; only the in-context representation is compressed.
 
 Apply compression only when necessary. Skip if the chain fits in context.
 
@@ -65,7 +66,7 @@ Apply compression only when necessary. Skip if the chain fits in context.
 
 | Prompt      | Purpose                                                     |
 | ----------- | ----------------------------------------------------------- |
-| 1           | Module location via `fractal-navigate`                      |
+| 1           | Module location via `fractal_navigate`                      |
 | 2           | Detailed analysis or additional context loading if required |
 | 3 (maximum) | Final response generation                                   |
 

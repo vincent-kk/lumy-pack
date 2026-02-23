@@ -3,21 +3,21 @@ import { describe, expect, it } from 'vitest';
 import { computeTreeDiff } from '../../../ast/tree-diff.js';
 
 describe('tree-diff', () => {
-  it('should detect no changes for identical source', () => {
+  it('should detect no changes for identical source', async () => {
     const source = `export function greet() { return 'hi'; }`;
-    const result = computeTreeDiff(source, source);
+    const result = await computeTreeDiff(source, source);
 
     expect(result.hasSemanticChanges).toBe(false);
     expect(result.changes).toHaveLength(0);
   });
 
-  it('should detect added declarations', () => {
+  it('should detect added declarations', async () => {
     const oldSource = `export function foo() { return 1; }`;
     const newSource = `
       export function foo() { return 1; }
       export function bar() { return 2; }
     `;
-    const result = computeTreeDiff(oldSource, newSource);
+    const result = await computeTreeDiff(oldSource, newSource);
 
     expect(result.hasSemanticChanges).toBe(true);
     const added = result.changes.filter((c) => c.type === 'added');
@@ -26,13 +26,13 @@ describe('tree-diff', () => {
     expect(added[0].kind).toBe('function');
   });
 
-  it('should detect removed declarations', () => {
+  it('should detect removed declarations', async () => {
     const oldSource = `
       export function foo() { return 1; }
       export function bar() { return 2; }
     `;
     const newSource = `export function foo() { return 1; }`;
-    const result = computeTreeDiff(oldSource, newSource);
+    const result = await computeTreeDiff(oldSource, newSource);
 
     expect(result.hasSemanticChanges).toBe(true);
     const removed = result.changes.filter((c) => c.type === 'removed');
@@ -40,10 +40,10 @@ describe('tree-diff', () => {
     expect(removed[0].name).toBe('bar');
   });
 
-  it('should detect modified declarations', () => {
+  it('should detect modified declarations', async () => {
     const oldSource = `export function greet() { return 'hello'; }`;
     const newSource = `export function greet() { return 'hi'; }`;
-    const result = computeTreeDiff(oldSource, newSource);
+    const result = await computeTreeDiff(oldSource, newSource);
 
     expect(result.hasSemanticChanges).toBe(true);
     const modified = result.changes.filter((c) => c.type === 'modified');
@@ -51,26 +51,26 @@ describe('tree-diff', () => {
     expect(modified[0].name).toBe('greet');
   });
 
-  it('should ignore formatting-only changes', () => {
+  it('should ignore formatting-only changes', async () => {
     const oldSource = `export function greet(){return 'hi';}`;
     const newSource = `
       export function greet() {
         return 'hi';
       }
     `;
-    const result = computeTreeDiff(oldSource, newSource);
+    const result = await computeTreeDiff(oldSource, newSource);
 
     expect(result.hasSemanticChanges).toBe(false);
     expect(result.formattingOnlyChanges).toBeGreaterThan(0);
   });
 
-  it('should handle class declarations', () => {
+  it('should handle class declarations', async () => {
     const oldSource = `class Foo { bar() { return 1; } }`;
     const newSource = `
       class Foo { bar() { return 1; } }
       class Baz { qux() { return 2; } }
     `;
-    const result = computeTreeDiff(oldSource, newSource);
+    const result = await computeTreeDiff(oldSource, newSource);
 
     expect(result.hasSemanticChanges).toBe(true);
     const added = result.changes.filter((c) => c.type === 'added');
@@ -78,10 +78,10 @@ describe('tree-diff', () => {
     expect(added[0].kind).toBe('class');
   });
 
-  it('should handle variable declarations', () => {
+  it('should handle variable declarations', async () => {
     const oldSource = `const x = 1;`;
     const newSource = `const x = 2;`;
-    const result = computeTreeDiff(oldSource, newSource);
+    const result = await computeTreeDiff(oldSource, newSource);
 
     expect(result.hasSemanticChanges).toBe(true);
     const modified = result.changes.filter((c) => c.type === 'modified');

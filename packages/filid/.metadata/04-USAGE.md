@@ -375,7 +375,7 @@ yarn test:run   # 1회 실행
 
 에이전트가 MCP 도구를 호출하는 JSON 입출력 예시.
 
-### ast-analyze: 의존성 분석
+### ast_analyze: 의존성 분석
 
 ```json
 // 입력
@@ -392,7 +392,7 @@ yarn test:run   # 1회 실행
 }
 ```
 
-### ast-analyze: LCOM4 계산
+### ast_analyze: LCOM4 계산
 
 ```json
 // 입력
@@ -411,7 +411,7 @@ yarn test:run   # 1회 실행
 }
 ```
 
-### test-metrics: 의사결정 트리
+### test_metrics: 의사결정 트리
 
 ```json
 // 입력
@@ -430,7 +430,7 @@ yarn test:run   # 1회 실행
 }
 ```
 
-### fractal-navigate: 디렉토리 분류
+### fractal_navigate: 디렉토리 분류
 
 ```json
 // 입력
@@ -446,7 +446,7 @@ yarn test:run   # 1회 실행
 }
 ```
 
-### doc-compress: 가역적 압축
+### doc_compress: 가역적 압축
 
 ```json
 // 입력

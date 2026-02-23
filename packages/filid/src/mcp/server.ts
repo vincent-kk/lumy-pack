@@ -2,9 +2,12 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
+import { SUPPORTED_LANGUAGES } from '../ast/ast-grep-shared.js';
 import { VERSION } from '../version.js';
 
 import { handleAstAnalyze } from './tools/ast-analyze.js';
+import { handleAstGrepReplace } from './tools/ast-grep-replace.js';
+import { handleAstGrepSearch } from './tools/ast-grep-search.js';
 import { handleCacheManage } from './tools/cache-manage.js';
 import { handleDebtManage } from './tools/debt-manage.js';
 import { handleDocCompress } from './tools/doc-compress.js';
@@ -51,7 +54,7 @@ export function createServer(): McpServer {
   const server = new McpServer({ name: 'filid', version: VERSION });
 
   server.registerTool(
-    'ast-analyze',
+    'ast_analyze',
     {
       description:
         'Analyze TypeScript/JavaScript source code AST. Extract dependencies, calculate LCOM4, cyclomatic complexity, or compute semantic diffs.',
@@ -80,6 +83,11 @@ export function createServer(): McpServer {
     async (args) => {
       try {
         const result = await handleAstAnalyze(args);
+        if ('error' in result) {
+          return {
+            content: [{ type: 'text' as const, text: result.error as string }],
+          };
+        }
         return toolResult(result);
       } catch (error) {
         return toolError(error);
@@ -88,7 +96,7 @@ export function createServer(): McpServer {
   );
 
   server.registerTool(
-    'fractal-navigate',
+    'fractal_navigate',
     {
       description:
         'Navigate the FCA-AI fractal tree structure. Classify directories as fractal/organ, list siblings, or build the full tree.',
@@ -132,7 +140,7 @@ export function createServer(): McpServer {
   );
 
   server.registerTool(
-    'doc-compress',
+    'doc_compress',
     {
       description:
         'Compress documents for context management. Supports reversible (file reference), lossy (tool call summary), or auto mode.',
@@ -172,7 +180,7 @@ export function createServer(): McpServer {
   );
 
   server.registerTool(
-    'test-metrics',
+    'test_metrics',
     {
       description:
         'Analyze test metrics. Count test cases, check 3+12 rule violations, or run the decision tree for module actions.',
@@ -210,7 +218,7 @@ export function createServer(): McpServer {
   );
 
   server.registerTool(
-    'fractal-scan',
+    'fractal_scan',
     {
       description:
         '프로젝트 디렉토리를 스캔하여 프랙탈 구조 트리(FractalTree)를 분석하고 ScanReport를 반환한다. ' +
@@ -241,7 +249,7 @@ export function createServer(): McpServer {
   );
 
   server.registerTool(
-    'drift-detect',
+    'drift_detect',
     {
       description:
         '현재 프로젝트 구조와 filid 프랙탈 구조 규칙 사이의 이격(drift)을 감지한다. ' +
@@ -275,7 +283,7 @@ export function createServer(): McpServer {
   );
 
   server.registerTool(
-    'lca-resolve',
+    'lca_resolve',
     {
       description:
         '두 모듈의 Lowest Common Ancestor(LCA)를 프랙탈 트리에서 계산한다. ' +
@@ -306,7 +314,7 @@ export function createServer(): McpServer {
   );
 
   server.registerTool(
-    'rule-query',
+    'rule_query',
     {
       description:
         '현재 프로젝트에 적용되는 filid 프랙탈 구조 규칙을 조회하거나, 특정 경로의 규칙 준수 여부를 확인한다. ' +
@@ -352,7 +360,7 @@ export function createServer(): McpServer {
   );
 
   server.registerTool(
-    'structure-validate',
+    'structure_validate',
     {
       description:
         '프로젝트 전체 또는 특정 규칙 집합에 대해 프랙탈 구조 유효성을 종합 검증한다. ' +
@@ -383,7 +391,7 @@ export function createServer(): McpServer {
   );
 
   server.registerTool(
-    'review-manage',
+    'review_manage',
     {
       description:
         '코드 리뷰 거버넌스 세션을 관리한다. ' +
@@ -434,7 +442,7 @@ export function createServer(): McpServer {
   );
 
   server.registerTool(
-    'debt-manage',
+    'debt_manage',
     {
       description:
         '기술 부채 항목을 관리한다. ' +
@@ -516,7 +524,7 @@ export function createServer(): McpServer {
   );
 
   server.registerTool(
-    'cache-manage',
+    'cache_manage',
     {
       description:
         'Manage the filid incremental cache. ' +
@@ -541,6 +549,104 @@ export function createServer(): McpServer {
     async (args) => {
       try {
         const result = await handleCacheManage(args);
+        return toolResult(result);
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  // AST Grep tools — gracefully degrade if @ast-grep/napi is unavailable
+  server.registerTool(
+    'ast_grep_search',
+    {
+      description:
+        'Search for code patterns using AST matching. More precise than text search.\n\n' +
+        'Use meta-variables in patterns:\n' +
+        '- $NAME - matches any single AST node (identifier, expression, etc.)\n' +
+        '- $$$ARGS - matches multiple nodes (for function arguments, list items, etc.)\n\n' +
+        'Examples:\n' +
+        '- "function $NAME($$$ARGS)" - find all function declarations\n' +
+        '- "console.log($MSG)" - find all console.log calls\n' +
+        '- "if ($COND) { $$$BODY }" - find all if statements\n' +
+        '- "$X === null" - find null equality checks\n' +
+        '- "import $$$IMPORTS from \'$MODULE\'" - find imports',
+      inputSchema: z.object({
+        pattern: z
+          .string()
+          .describe('AST pattern with meta-variables ($VAR, $$$VARS)'),
+        language: z.enum(SUPPORTED_LANGUAGES).describe('Programming language'),
+        path: z
+          .string()
+          .optional()
+          .describe('Directory or file to search (default: current directory)'),
+        context: z
+          .number()
+          .int()
+          .min(0)
+          .max(10)
+          .optional()
+          .describe('Lines of context around matches (default: 2)'),
+        max_results: z
+          .number()
+          .int()
+          .min(1)
+          .max(100)
+          .optional()
+          .describe('Maximum results to return (default: 20)'),
+      }),
+    },
+    async (args) => {
+      try {
+        const result = await handleAstGrepSearch(args);
+        if ('error' in result) {
+          return {
+            content: [{ type: 'text' as const, text: result.error }],
+          };
+        }
+        return toolResult(result);
+      } catch (error) {
+        return toolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'ast_grep_replace',
+    {
+      description:
+        'Replace code patterns using AST matching. Preserves matched content via meta-variables.\n\n' +
+        'Use meta-variables in both pattern and replacement:\n' +
+        '- $NAME in pattern captures a node, use $NAME in replacement to insert it\n' +
+        '- $$$ARGS captures multiple nodes\n\n' +
+        'Examples:\n' +
+        '- Pattern: "console.log($MSG)" → Replacement: "logger.info($MSG)"\n' +
+        '- Pattern: "var $NAME = $VALUE" → Replacement: "const $NAME = $VALUE"\n\n' +
+        'IMPORTANT: dry_run=true (default) only previews changes. Set dry_run=false to apply.',
+      inputSchema: z.object({
+        pattern: z.string().describe('Pattern to match'),
+        replacement: z
+          .string()
+          .describe('Replacement pattern (use same meta-variables)'),
+        language: z.enum(SUPPORTED_LANGUAGES).describe('Programming language'),
+        path: z
+          .string()
+          .optional()
+          .describe('Directory or file to search (default: current directory)'),
+        dry_run: z
+          .boolean()
+          .optional()
+          .describe("Preview only, don't apply changes (default: true)"),
+      }),
+    },
+    async (args) => {
+      try {
+        const result = await handleAstGrepReplace(args);
+        if ('error' in result) {
+          return {
+            content: [{ type: 'text' as const, text: result.error }],
+          };
+        }
         return toolResult(result);
       } catch (error) {
         return toolError(error);

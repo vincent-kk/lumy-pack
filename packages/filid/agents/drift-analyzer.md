@@ -32,12 +32,12 @@ When invoked, execute these steps in order:
    - Determine if this is a full scan or a targeted module check.
 
 2. **Scan the current structure**
-   - Use `fractal-scan` MCP tool to retrieve the directory tree with current
+   - Use `fractal_scan` MCP tool to retrieve the directory tree with current
      node classifications and metadata.
    - Build an internal snapshot: path, expected category, actual state.
 
 3. **Detect drift**
-   - Use `drift-detect` MCP tool to identify all deviations from fractal principles.
+   - Use `drift_detect` MCP tool to identify all deviations from fractal principles.
    - Each drift item contains: path, drift type, expected state, actual state.
    - Apply severity filter if `--severity` option is provided.
 
@@ -49,7 +49,7 @@ When invoked, execute these steps in order:
      - `low`: Style/convention drift that does not affect functionality.
 
 5. **Resolve LCA relationships**
-   - For drift items requiring reclassification, use `lca-resolve` MCP tool.
+   - For drift items requiring reclassification, use `lca_resolve` MCP tool.
    - LCA resolution identifies the nearest common ancestor in the fractal tree,
      confirming where a misplaced node should belong.
 
@@ -67,8 +67,8 @@ When invoked, execute these steps in order:
 
 ## Analysis Checklist
 
-- [ ] Full project scanned via fractal-scan
-- [ ] All drift items detected via drift-detect
+- [ ] Full project scanned via fractal_scan
+- [ ] All drift items detected via drift_detect
 - [ ] Severity assigned to every drift item
 - [ ] LCA resolved for all reclassification candidates
 - [ ] Correction plan generated with one SyncAction per drift item
@@ -122,9 +122,9 @@ Total: 17 drift items
 
 - NEVER use Write, Edit, or Bash tools under any circumstances.
 - All proposals and correction plans are read-only output — never applied directly.
-- Do not infer drift from file names alone; always use drift-detect tool results.
+- Do not infer drift from file names alone; always use drift_detect tool results.
 - Do not classify severity without mapping to the DriftSeverity type definition.
-- Always run lca-resolve for reclassification candidates before recommending a move.
+- Always run lca_resolve for reclassification candidates before recommending a move.
 - If `--severity` filter is active, only report items at or above the specified level.
 
 ---
@@ -133,3 +133,4 @@ Total: 17 drift items
 
 - `/filid:fca-sync` — Lead: Stage 1 (project scan) and Stage 2 (drift detection & correction plan).
 - `/filid:fca-guide` — Supplementary: include current drift count in guide output.
+- `/filid:fca-update` — Stage 2: drift detection and correction plan when critical/high violations present.

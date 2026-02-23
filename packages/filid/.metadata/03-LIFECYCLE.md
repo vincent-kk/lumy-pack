@@ -58,14 +58,14 @@
 
 ### 사용 MCP 도구
 
-- `fractal-navigate` (action: `tree`): 전체 계층 구조 스캔
-- `fractal-navigate` (action: `classify`): 개별 디렉토리 분류
+- `fractal_navigate` (action: `tree`): 전체 계층 구조 스캔
+- `fractal_navigate` (action: `classify`): 개별 디렉토리 분류
 
 ### 워크플로우
 
 ```
 1. 디렉토리 트리 스캔
-   fractal-navigate(action: 'tree', entries: [...])
+   fractal_navigate(action: 'tree', entries: [...])
        │
        ▼
 2. 각 디렉토리 분류
@@ -113,14 +113,14 @@
 
 ### 사용 MCP 도구
 
-- `fractal-navigate` (action: `tree`): 프로젝트 구조 스캔
-- `test-metrics` (action: `check-312`): 3+12 규칙 검사
+- `fractal_navigate` (action: `tree`): 프로젝트 구조 스캔
+- `test_metrics` (action: `check-312`): 3+12 규칙 검사
 
 ### 워크플로우
 
 ```
 1. 프로젝트 트리 구축
-   fractal-navigate(action: 'tree')
+   fractal_navigate(action: 'tree')
        │
        ▼
 2. CLAUDE.md 검증
@@ -135,7 +135,7 @@
        │
        ▼
 4. 테스트 파일 검증
-   test-metrics(action: 'check-312', files: [...])
+   test_metrics(action: 'check-312', files: [...])
    └── spec.ts 파일별 15 케이스 초과 검사
        │
        ▼
@@ -162,28 +162,28 @@
 
 ### 사용 MCP 도구
 
-- `fractal-scan`: 프로젝트 구조 스캔
-- `drift-detect`: 프랙탈 원칙 이탈 감지
-- `lca-resolve`: 이동 대상 LCA 계산
-- `structure-validate`: 실행 후 구조 검증
+- `fractal_scan`: 프로젝트 구조 스캔
+- `drift_detect`: 프랙탈 원칙 이탈 감지
+- `lca_resolve`: 이동 대상 LCA 계산
+- `structure_validate`: 실행 후 구조 검증
 
 ### 워크플로우
 
 ```
 1. 프로젝트 스캔
-   fractal-scan(path) → FractalTree
+   fractal_scan(path) → FractalTree
        │
        ▼
 2. Drift 감지
-   drift-detect(path, severity?) → DriftItem[]
+   drift_detect(path, severity?) → DriftItem[]
    ├── 각 이탈 항목: expected, actual, severity, correction
    └── --severity 필터 적용
        │
        ▼
 3. 수정 계획 수립
-   drift-detect(path, generatePlan: true) → SyncPlan
+   drift_detect(path, generatePlan: true) → SyncPlan
    ├── 파일 이동, 디렉토리 재분류
-   └── lca-resolve로 최적 배치 경로 결정
+   └── lca_resolve로 최적 배치 경로 결정
        │
        ▼
 4. 수정 실행 (승인 후)
@@ -194,7 +194,7 @@
        │
        ▼
 5. 검증
-   structure-validate(path) → 위반 0건 확인
+   structure_validate(path) → 위반 0건 확인
 ```
 
 ### 설계 배경
@@ -219,9 +219,9 @@
 
 ### 사용 MCP 도구
 
-- `fractal-navigate`: Stage 1 (구조), Stage 5 (의존성)
-- `test-metrics`: Stage 3 (테스트), Stage 4 (메트릭)
-- `doc-compress`: Stage 2 (문서 크기 검사)
+- `fractal_navigate`: Stage 1 (구조), Stage 5 (의존성)
+- `test_metrics`: Stage 3 (테스트), Stage 4 (메트릭)
+- `doc_compress`: Stage 2 (문서 크기 검사)
 
 ### 6단계 파이프라인
 
@@ -291,13 +291,13 @@
 
 ### 사용 MCP 도구
 
-- `test-metrics` (action: `count`): 테스트 케이스 분석
+- `test_metrics` (action: `count`): 테스트 케이스 분석
 
 ### 워크플로우
 
 ```
 1. test.ts 파일 탐색 및 분석
-   test-metrics(action: 'count', files: [...])
+   test_metrics(action: 'count', files: [...])
        │
        ▼
 2. 승격 자격 검사
@@ -331,8 +331,8 @@
 
 ### 사용 MCP 도구
 
-- `fractal-navigate`: 관련 모듈 탐색
-- `doc-compress` (mode: `auto`): 컨텍스트 과다 시 압축
+- `fractal_navigate`: 관련 모듈 탐색
+- `doc_compress` (mode: `auto`): 컨텍스트 과다 시 압축
 
 ### 3-Prompt Limit 규칙
 
@@ -453,13 +453,13 @@ T4  에이전트가 서브에이전트 생성
 ```
 Phase A (haiku subagent)
 ├── git diff 분석
-├── review-manage(elect-committee) → 결정론적 위원회 선출
-├── review-manage(ensure-dir) → 리뷰 디렉토리 생성
+├── review_manage(elect-committee) → 결정론적 위원회 선출
+├── review_manage(ensure-dir) → 리뷰 디렉토리 생성
 └── 출력: session.md
 
 Phase B (sonnet subagent)
-├── 기존 MCP tool 기반 기술 검증 (ast-analyze, test-metrics, ...)
-├── debt-manage(calculate-bias) → 부채 바이어스 계산
+├── 기존 MCP tool 기반 기술 검증 (ast_analyze, test_metrics, ...)
+├── debt_manage(calculate-bias) → 부채 바이어스 계산
 └── 출력: verification.md
 
 Phase C (의장 직접)
@@ -475,7 +475,7 @@ Phase C (의장 직접)
 1. 브랜치 감지 + fix-requests.md 로딩
 2. AskUserQuestion으로 각 fix 항목 수용/거부
 3. 수용 → 코드 패치 안내
-4. 거부 → 소명 수집 → ADR 정제 → debt-manage(create)
+4. 거부 → 소명 수집 → ADR 정제 → debt_manage(create)
 5. justifications.md 출력 (resolve_commit_sha 포함)
 ```
 
@@ -485,7 +485,7 @@ Phase C (의장 직접)
 1. resolve_commit_sha 기반 Delta 추출
 2. 수용된 fix 항목별 MCP tool 재검증
 3. 거부된 항목의 소명 헌법 검사
-4. 기존 부채 해소 확인 → debt-manage(resolve)
+4. 기존 부채 해소 확인 → debt_manage(resolve)
 5. PASS/FAIL 판정 → re-validate.md 출력
 6. (선택) gh pr comment으로 PR 코멘트
 ```
@@ -498,9 +498,9 @@ Phase C (의장 직접)
 │ (create) │     │ (bias)    │     │ (resolve) │
 └─────────┘     └───────────┘     └──────────┘
 
-발생: /resolve-review에서 거부 시 debt-manage(create)
+발생: /resolve-review에서 거부 시 debt_manage(create)
 누적: 이후 리뷰에서 동일 프랙탈 수정 시 touch_count++ → 가중치 2배
-해소: /re-validate에서 규칙 충족 시 debt-manage(resolve)
+해소: /re-validate에서 규칙 충족 시 debt_manage(resolve)
 ```
 
 ### .filid/ 디렉토리 구조

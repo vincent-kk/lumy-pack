@@ -1,5 +1,5 @@
 /**
- * LCOM4 (Lack of Cohesion of Methods) calculator using @babel/parser.
+ * LCOM4 (Lack of Cohesion of Methods) calculator using @ast-grep/napi.
  *
  * LCOM4 measures class cohesion by building an undirected graph where:
  * - Nodes = methods
@@ -9,70 +9,100 @@
  * - >=2 = fragmented (should consider splitting)
  * - 0 = no methods to analyze
  */
+import type { SgNode } from '@ast-grep/napi';
+
 import type { ClassInfo, MethodInfo } from '../types/ast.js';
 import type { LCOM4Result } from '../types/metrics.js';
 
 import { parseSource, walk } from './parser.js';
 
-function findThisAccesses(body: any): string[] {
+function findThisAccesses(bodyNode: SgNode): string[] {
   const accessed = new Set<string>();
-  walk(body, (node) => {
-    if (
-      node.type === 'MemberExpression' &&
-      node.object?.type === 'ThisExpression' &&
-      node.property?.type === 'Identifier'
-    ) {
-      accessed.add(node.property.name);
+  walk(bodyNode, (node: SgNode) => {
+    if (node.kind() === 'member_expression') {
+      const children = node.children();
+      const obj = children.find((c: SgNode) => c.kind() === 'this');
+      const prop = children.find(
+        (c: SgNode) => c.kind() === 'property_identifier',
+      );
+      if (obj && prop) {
+        accessed.add(prop.text());
+      }
     }
   });
   return [...accessed];
 }
 
-export function extractClassInfo(
+export async function extractClassInfo(
   source: string,
   className: string,
-): ClassInfo | null {
-  const ast = parseSource(source);
+): Promise<ClassInfo | null> {
+  const root = await parseSource(source);
 
-  let classNode: any = null;
-  for (const stmt of ast.program.body) {
-    const node =
-      stmt.type === 'ExportNamedDeclaration' ? stmt.declaration : stmt;
-    if (node?.type === 'ClassDeclaration' && node.id?.name === className) {
-      classNode = node;
-      break;
+  let classNode: SgNode | null = null;
+
+  // Find class declaration matching className
+  walk(root, (node: SgNode) => {
+    if (classNode) return;
+    if (node.kind() === 'class_declaration') {
+      const nameNode = node
+        .children()
+        .find((c: SgNode) => c.kind() === 'type_identifier');
+      if (nameNode && nameNode.text() === className) {
+        classNode = node;
+      }
     }
-  }
+  });
+
   if (!classNode) return null;
+
+  // Find the class_body
+  const classBody = (classNode as SgNode)
+    .children()
+    .find((c: SgNode) => c.kind() === 'class_body');
+  if (!classBody) return null;
 
   const fields: string[] = [];
   const methods: MethodInfo[] = [];
 
-  for (const member of classNode.body.body) {
-    if (
-      (member.type === 'ClassProperty' ||
-        member.type === 'ClassAccessorProperty') &&
-      member.key?.type === 'Identifier'
-    ) {
-      fields.push(member.key.name);
+  for (const member of classBody.children()) {
+    const kind = member.kind();
+
+    // Fields: public_field_definition
+    if (kind === 'public_field_definition') {
+      const nameNode = member
+        .children()
+        .find((c: SgNode) => c.kind() === 'property_identifier');
+      if (nameNode) {
+        fields.push(nameNode.text());
+      }
     }
-    if (
-      member.type === 'ClassMethod' &&
-      member.key?.type === 'Identifier' &&
-      member.body
-    ) {
-      methods.push({
-        name: member.key.name,
-        accessedFields: findThisAccesses(member.body),
-      });
+
+    // Methods: method_definition
+    if (kind === 'method_definition') {
+      const nameNode = member
+        .children()
+        .find((c: SgNode) => c.kind() === 'property_identifier');
+      const bodyNode = member
+        .children()
+        .find((c: SgNode) => c.kind() === 'statement_block');
+      if (nameNode && bodyNode) {
+        methods.push({
+          name: nameNode.text(),
+          accessedFields: findThisAccesses(bodyNode),
+        });
+      }
     }
   }
 
   return { name: className, fields, methods };
 }
 
-export function calculateLCOM4(source: string, className: string): LCOM4Result {
-  const info = extractClassInfo(source, className);
+export async function calculateLCOM4(
+  source: string,
+  className: string,
+): Promise<LCOM4Result> {
+  const info = await extractClassInfo(source, className);
 
   if (!info || info.methods.length === 0) {
     return {

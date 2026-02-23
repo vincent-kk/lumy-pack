@@ -39,7 +39,7 @@ Identify: existing test files and current pass/fail state.
 Use Glob to list relevant source and test files.
 Use Grep to find existing implementations and usages.
 Use Bash to run the current test suite: identify which tests fail, which pass.
-Use ast-analyze (dependency-graph) to map current imports and verify no circular deps.
+Use ast_analyze (dependency-graph) to map current imports and verify no circular deps.
 ```
 
 ### 3. TEST — Red Phase (Failing Test First)
@@ -49,7 +49,7 @@ Write the failing test in the appropriate spec.ts file.
 Test must be specific, deterministic, and map to a SPEC.md requirement.
 Run tests via Bash — confirm the new test FAILS before writing implementation.
 Enforce 3+12 rule: count existing tests; abort if adding would exceed 15.
-Use test-metrics (count) to validate test count against the 3+12 rule.
+Use test_metrics (count) to validate test count against the 3+12 rule.
 ```
 
 ### 4. IMPLEMENT — Green Phase (Minimal Code)
@@ -74,8 +74,8 @@ Use Grep to check for leftover debug code, TODOs, or dead branches.
 
 ```
 Run the full test suite: bash test command from the nearest package.json.
-Use ast-analyze (dependency-graph) to verify all imports are valid (no missing deps, no cycles).
-Use test-metrics (count) to confirm test count is within 3+12 rule.
+Use ast_analyze (dependency-graph) to verify all imports are valid (no missing deps, no cycles).
+Use test_metrics (count) to confirm test count is within 3+12 rule.
 Confirm all SPEC.md acceptance criteria are satisfied.
 If anything fails, return to step 3.
 ```
@@ -84,8 +84,8 @@ If anything fails, return to step 3.
 
 | Tool           | Mode               | When to Use                                                                   |
 | -------------- | ------------------ | ----------------------------------------------------------------------------- |
-| `ast-analyze`  | `dependency-graph` | After writing code — verify imports are valid and no circular dependencies    |
-| `test-metrics` | `count`            | Before adding tests — confirm 3+12 rule; after writing — validate final count |
+| `ast_analyze`  | `dependency-graph` | After writing code — verify imports are valid and no circular dependencies    |
+| `test_metrics` | `count`            | Before adding tests — confirm 3+12 rule; after writing — validate final count |
 
 ## TDD Rules
 
@@ -121,3 +121,8 @@ After completing work:
 - Confirm 3+12 rule compliance.
 - Confirm all SPEC.md acceptance criteria are met.
 - Flag any unresolved issues or scope gaps discovered.
+
+## Skill Participation
+
+- `/filid:fca-promote` — Phase 4 (spec generation) and Phase 6 (migration: write spec.ts, remove test.ts).
+- `/filid:fca-update` — Stage 3: test organization (test.ts / spec.ts update for changed files).

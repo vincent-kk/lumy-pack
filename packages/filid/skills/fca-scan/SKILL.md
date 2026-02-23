@@ -24,16 +24,16 @@ violation report and, with `--fix`, applies automatic remediation.
 - Running a periodic governance health check
 - Preparing a baseline report before `/filid:fca-structure-review` or `/filid:fca-promote`
 
-### Integration with fca-update
+### Relationship with fca-update
 
-When invoked via `/filid:fca-update`, this skill runs as Stage 1 and restricts its scan to files
-changed in the current branch. Standalone execution (`/filid:fca-scan`) always scans the full project.
+`/filid:fca-update` Stage 1 performs a similar branch-scoped violation scan using a `qa-reviewer` agent
+with direct MCP calls. This standalone skill (`/filid:fca-scan`) always scans the full project independently.
 
 ## Core Workflow
 
 ### Phase 1 — Tree Construction
 
-Build the project hierarchy using `fractal-scan` and partition into fractal
+Build the project hierarchy using `fractal_scan` and partition into fractal
 nodes, organ nodes, and spec files.
 See [reference.md Section 1](./reference.md#section-1--tree-construction).
 
@@ -42,16 +42,19 @@ See [reference.md Section 1](./reference.md#section-1--tree-construction).
 Phases 2, 3, and 4 are **independent** and run **in parallel** as separate Task
 subagents (`run_in_background: true`). Await all three before Phase 5.
 
-**Phase 2 — CLAUDE.md Validation**
-Check line count (≤100) and 3-tier boundary sections for every CLAUDE.md.
+### Phase 2 — CLAUDE.md Validation
+
+Check line count (≤100) and 3-tier boundary sections for every CLAUDE.md using Read and Grep.
 See [reference.md Section 2](./reference.md#section-2--claudemd-validation).
 
-**Phase 3 — Organ Directory Validation**
-Verify no organ directory contains a CLAUDE.md file.
+### Phase 3 — Organ Directory Validation
+
+Verify no organ directory contains a CLAUDE.md file using `fractal_scan` results from Phase 1.
 See [reference.md Section 3](./reference.md#section-3--organ-directory-validation).
 
-**Phase 4 — Test File Validation (3+12 Rule)**
-Validate all `*.spec.ts` files against the 15-case limit using `test-metrics`.
+### Phase 4 — Test File Validation (3+12 Rule)
+
+Validate all `*.spec.ts` files against the 15-case limit using `test_metrics`.
 See [reference.md Section 4](./reference.md#section-4--test-file-validation-312-rule).
 
 ### Phase 5 — Report Generation (Sequential — after Phases 2–4)
@@ -64,8 +67,8 @@ See [reference.md Section 5](./reference.md#section-5--report-formats).
 
 | Tool               | Action      | Purpose                                   |
 | ------------------ | ----------- | ----------------------------------------- |
-| `fractal-scan`     | —           | Build complete project hierarchy for scan |
-| `test-metrics`     | `check-312` | Validate 3+12 rule across all spec files  |
+| `fractal_scan`     | —           | Build complete project hierarchy for scan |
+| `test_metrics`     | `check-312` | Validate 3+12 rule across all spec files  |
 
 ## Options
 
