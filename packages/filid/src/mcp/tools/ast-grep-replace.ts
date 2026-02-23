@@ -9,7 +9,7 @@ import {
   getSgLoadError,
   getSgModule,
   toLangEnum,
-} from './ast-grep-shared.js';
+} from '../../ast/ast-grep-shared.js';
 
 export interface AstGrepReplaceInput {
   /** Pattern to match */

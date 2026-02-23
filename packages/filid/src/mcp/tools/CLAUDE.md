@@ -9,9 +9,8 @@ MCP 서버에 등록된 14개 도구의 실제 비즈니스 로직을 구현한�
 | 파일                    | MCP 도구               | 주요 의존                                    |
 | ----------------------- | ---------------------- | -------------------------------------------- |
 | `ast-analyze.ts`        | `ast_analyze`          | `ast/`                                       |
-| `ast-grep-search.ts`    | `ast_grep_search`      | `ast-grep-shared` (`@ast-grep/napi` optional)|
-| `ast-grep-replace.ts`   | `ast_grep_replace`     | `ast-grep-shared` (`@ast-grep/napi` optional)|
-| `ast-grep-shared.ts`    | —                      | `@ast-grep/napi` (lazy load, optional)       |
+| `ast-grep-search.ts`    | `ast_grep_search`      | `ast/ast-grep-shared` (`@ast-grep/napi`)     |
+| `ast-grep-replace.ts`   | `ast_grep_replace`     | `ast/ast-grep-shared` (`@ast-grep/napi`)     |
 | `fractal-navigate.ts`   | `fractal_navigate`     | `core/fractal-tree`, `core/organ-classifier` |
 | `fractal-scan.ts`       | `fractal_scan`         | `core/fractal-tree`, `core/project-analyzer` |
 | `drift-detect.ts`       | `drift_detect`         | `core/drift-detector`                        |

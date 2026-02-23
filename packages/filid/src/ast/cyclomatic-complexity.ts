@@ -1,5 +1,5 @@
 /**
- * Cyclomatic Complexity (CC) calculator using @babel/parser.
+ * Cyclomatic Complexity (CC) calculator using @ast-grep/napi.
  *
  * CC = 1 (base) + number of decision points per function.
  * Decision points: if, for, while, do-while, case (non-default),
@@ -9,91 +9,171 @@ import type { CyclomaticComplexityResult } from '../types/metrics.js';
 
 import { parseSource, walk } from './parser.js';
 
-function computeCC(body: any): number {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SgNode = any;
+
+/** Decision point node kinds that always add +1 */
+const DECISION_KINDS = new Set([
+  'if_statement',
+  'for_statement',
+  'for_in_statement',
+  'while_statement',
+  'do_statement',
+  'ternary_expression',
+]);
+
+function computeCC(bodyNode: SgNode): number {
   let cc = 1;
-  walk(body, (node) => {
-    switch (node.type) {
-      case 'IfStatement':
-      case 'ForStatement':
-      case 'ForInStatement':
-      case 'ForOfStatement':
-      case 'WhileStatement':
-      case 'DoWhileStatement':
-      case 'ConditionalExpression':
-        cc++;
-        break;
-      case 'SwitchCase':
-        if (node.test !== null) cc++; // non-default case
-        break;
-      case 'LogicalExpression':
-        if (node.operator === '&&' || node.operator === '||') cc++;
-        break;
+  walk(bodyNode, (node: SgNode) => {
+    const kind = node.kind();
+
+    if (DECISION_KINDS.has(kind)) {
+      cc++;
+      return;
+    }
+
+    // switch_case: only non-default cases (those with a test expression)
+    if (kind === 'switch_case') {
+      // A default case in tree-sitter has kind 'switch_default'
+      // switch_case always has a condition
+      cc++;
+      return;
+    }
+
+    // switch_default is separate, don't count it
+    // (tree-sitter separates switch_case and switch_default)
+
+    // Logical && and || operators
+    if (kind === 'binary_expression') {
+      const children = node.children();
+      for (const child of children) {
+        const text = child.text();
+        if (text === '&&' || text === '||') {
+          cc++;
+          break;
+        }
+      }
     }
   });
   return cc;
 }
 
-export function calculateCC(
+function getNodeName(node: SgNode): string | null {
+  const children = node.children();
+  // function_declaration: name is an identifier child
+  const nameNode = children.find(
+    (c: SgNode) =>
+      c.kind() === 'identifier' || c.kind() === 'property_identifier',
+  );
+  return nameNode ? nameNode.text() : null;
+}
+
+export async function calculateCC(
   source: string,
   _filePath = 'analysis.ts',
-): CyclomaticComplexityResult {
-  const ast = parseSource(source);
+): Promise<CyclomaticComplexityResult> {
+  const root = await parseSource(source);
   const perFunction = new Map<string, number>();
+  const rootChildren = root.children();
 
-  for (const stmt of ast.program.body) {
+  for (const stmt of rootChildren) {
+    const kind = stmt.kind();
+
     // function foo() {}
-    if (stmt.type === 'FunctionDeclaration' && stmt.id && stmt.body) {
-      perFunction.set(stmt.id.name, computeCC(stmt.body));
+    if (kind === 'function_declaration') {
+      const name = getNodeName(stmt);
+      const body = stmt
+        .children()
+        .find((c: SgNode) => c.kind() === 'statement_block');
+      if (name && body) {
+        perFunction.set(name, computeCC(body));
+      }
     }
 
     // const foo = () => {} or const foo = function() {}
-    if (stmt.type === 'VariableDeclaration') {
-      for (const decl of stmt.declarations) {
-        if (decl.id?.type === 'Identifier' && decl.init) {
-          const init = decl.init;
-          if (
-            (init.type === 'ArrowFunctionExpression' ||
-              init.type === 'FunctionExpression') &&
-            init.body
-          ) {
-            perFunction.set(decl.id.name, computeCC(init.body));
+    if (kind === 'lexical_declaration' || kind === 'variable_declaration') {
+      for (const decl of stmt.children()) {
+        if (decl.kind() === 'variable_declarator') {
+          const nameNode = decl
+            .children()
+            .find((c: SgNode) => c.kind() === 'identifier');
+          const initChildren = decl.children();
+          const init = initChildren.find(
+            (c: SgNode) =>
+              c.kind() === 'arrow_function' || c.kind() === 'function_expression',
+          );
+          if (nameNode && init) {
+            const body = init
+              .children()
+              .find((c: SgNode) => c.kind() === 'statement_block');
+            if (body) {
+              perFunction.set(nameNode.text(), computeCC(body));
+            }
           }
         }
       }
     }
 
-    // export function foo() {}
-    if (
-      stmt.type === 'ExportNamedDeclaration' &&
-      stmt.declaration?.type === 'FunctionDeclaration' &&
-      stmt.declaration.id &&
-      stmt.declaration.body
-    ) {
-      perFunction.set(
-        stmt.declaration.id.name,
-        computeCC(stmt.declaration.body),
+    // export function foo() {} or export class Foo {}
+    if (kind === 'export_statement') {
+      const exportedDecl = stmt.children();
+
+      const funcDecl = exportedDecl.find(
+        (c: SgNode) => c.kind() === 'function_declaration',
       );
+      if (funcDecl) {
+        const name = getNodeName(funcDecl);
+        const body = funcDecl
+          .children()
+          .find((c: SgNode) => c.kind() === 'statement_block');
+        if (name && body) {
+          perFunction.set(name, computeCC(body));
+        }
+      }
+
+      // export class Foo { method() {} }
+      const classDecl = exportedDecl.find(
+        (c: SgNode) => c.kind() === 'class_declaration',
+      );
+      if (classDecl) {
+        processClassMethods(classDecl, perFunction);
+      }
+
+      // export const foo = () => {}
+      const lexDecl = exportedDecl.find(
+        (c: SgNode) =>
+          c.kind() === 'lexical_declaration' ||
+          c.kind() === 'variable_declaration',
+      );
+      if (lexDecl) {
+        for (const decl of lexDecl.children()) {
+          if (decl.kind() === 'variable_declarator') {
+            const nameNode = decl
+              .children()
+              .find((c: SgNode) => c.kind() === 'identifier');
+            const init = decl
+              .children()
+              .find(
+                (c: SgNode) =>
+                  c.kind() === 'arrow_function' ||
+                  c.kind() === 'function_expression',
+              );
+            if (nameNode && init) {
+              const body = init
+                .children()
+                .find((c: SgNode) => c.kind() === 'statement_block');
+              if (body) {
+                perFunction.set(nameNode.text(), computeCC(body));
+              }
+            }
+          }
+        }
+      }
     }
 
     // class Foo { method() {} }
-    const classNode =
-      stmt.type === 'ClassDeclaration'
-        ? stmt
-        : stmt.type === 'ExportNamedDeclaration' &&
-            stmt.declaration?.type === 'ClassDeclaration'
-          ? stmt.declaration
-          : null;
-
-    if (classNode?.body) {
-      for (const member of classNode.body.body) {
-        if (
-          member.type === 'ClassMethod' &&
-          member.key?.type === 'Identifier' &&
-          member.body
-        ) {
-          perFunction.set(member.key.name, computeCC(member.body));
-        }
-      }
+    if (kind === 'class_declaration') {
+      processClassMethods(stmt, perFunction);
     }
   }
 
@@ -105,4 +185,28 @@ export function calculateCC(
   for (const cc of perFunction.values()) fileTotal += cc;
 
   return { value: fileTotal, perFunction, fileTotal };
+}
+
+function processClassMethods(
+  classNode: SgNode,
+  perFunction: Map<string, number>,
+): void {
+  const classBody = classNode
+    .children()
+    .find((c: SgNode) => c.kind() === 'class_body');
+  if (!classBody) return;
+
+  for (const member of classBody.children()) {
+    if (member.kind() === 'method_definition') {
+      const nameNode = member
+        .children()
+        .find((c: SgNode) => c.kind() === 'property_identifier');
+      const body = member
+        .children()
+        .find((c: SgNode) => c.kind() === 'statement_block');
+      if (nameNode && body) {
+        perFunction.set(nameNode.text(), computeCC(body));
+      }
+    }
+  }
 }

@@ -7,7 +7,7 @@ import { VERSION } from '../version.js';
 import { handleAstAnalyze } from './tools/ast-analyze.js';
 import { handleAstGrepReplace } from './tools/ast-grep-replace.js';
 import { handleAstGrepSearch } from './tools/ast-grep-search.js';
-import { SUPPORTED_LANGUAGES } from './tools/ast-grep-shared.js';
+import { SUPPORTED_LANGUAGES } from '../ast/ast-grep-shared.js';
 import { handleCacheManage } from './tools/cache-manage.js';
 import { handleDebtManage } from './tools/debt-manage.js';
 import { handleDocCompress } from './tools/doc-compress.js';

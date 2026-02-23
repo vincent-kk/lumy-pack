@@ -12,7 +12,7 @@ import {
   getSgLoadError,
   getSgModule,
   toLangEnum,
-} from '../../../mcp/tools/ast-grep-shared.js';
+} from '../../../ast/ast-grep-shared.js';
 
 // ─── getSgModule ──────────────────────────────────────────────────────────────
 

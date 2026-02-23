@@ -10,7 +10,7 @@ import {
   getSgLoadError,
   getSgModule,
   toLangEnum,
-} from './ast-grep-shared.js';
+} from '../../ast/ast-grep-shared.js';
 
 export interface AstGrepSearchInput {
   /** AST pattern with meta-variables ($VAR, $$$VARS) */

@@ -77,7 +77,7 @@ yarn version:sync
 | 경로            | 역할                                                                     |
 | --------------- | ------------------------------------------------------------------------ |
 | `src/core/`     | 핵심 비즈니스 로직 (FractalTree, RuleEngine, DriftDetector 등 12개 모듈) |
-| `src/ast/`      | TypeScript Compiler API 기반 AST 분석 (LCOM4, CC, 의존성 추출)           |
+| `src/ast/`      | `@ast-grep/napi` 기반 AST 분석 (LCOM4, CC, 의존성 추출)                 |
 | `src/mcp/`      | MCP 서버 + 14개 도구 핸들러                                              |
 | `src/hooks/`    | 훅 구현체 + `entries/` (esbuild 진입점)                                  |
 | `src/metrics/`  | 테스트 밀도, 모듈 분리 결정 메트릭                                       |
@@ -125,7 +125,7 @@ yarn version:sync
 
 ## Development Notes
 
-- **AST 파싱**: `@babel/parser` 대신 TypeScript Compiler API 사용 (네이티브 바인딩 불필요, ADR-1)
+- **AST 파싱**: `@ast-grep/napi` (tree-sitter) 단일 엔진 사용 (OMC와 동일 구조)
 - **훅 수정 시**: `src/hooks/entries/*.entry.ts`를 통해 진입점이 분리됨. 수정 후 `yarn build:plugin`으로 `libs/*.mjs` 재빌드
 - **버전 관리**: `src/version.ts`는 자동 생성 파일 — 직접 수정하지 말 것. `package.json`의 version 변경 후 `yarn version:sync` 실행
 - **테스트 패턴**: `src/**/__tests__/**/*.test.ts`, fixtures 제외. 벤치마크는 `**/*.bench.ts`

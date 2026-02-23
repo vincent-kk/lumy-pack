@@ -120,7 +120,7 @@ export {
   getFilesForLanguage,
   formatMatch,
   toLangEnum,
-} from './mcp/tools/ast-grep-shared.js';
+} from './ast/ast-grep-shared.js';
 
 // MCP tool handlers
 export { handleAstAnalyze } from './mcp/tools/ast-analyze.js';

@@ -1,8 +1,8 @@
 /**
- * Shared utilities for ast-grep MCP tools.
+ * Shared utilities for ast-grep based AST analysis.
  *
  * Provides lazy-loaded @ast-grep/napi module, language mapping,
- * file discovery, and match formatting used by search and replace handlers.
+ * file discovery, and match formatting used by all ast modules.
  */
 import { readdirSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';

@@ -31,8 +31,8 @@ const sampleSource = `
 `;
 
 describe('handleAstAnalyze', () => {
-  it('should extract dependencies with dependency-graph analysis', () => {
-    const result = handleAstAnalyze({
+  it('should extract dependencies with dependency-graph analysis', async () => {
+    const result = await handleAstAnalyze({
       source: sampleSource,
       filePath: 'calc.ts',
       analysisType: 'dependency-graph',
@@ -44,8 +44,8 @@ describe('handleAstAnalyze', () => {
     expect(result.calls).toBeDefined();
   });
 
-  it('should calculate LCOM4 for a class', () => {
-    const result = handleAstAnalyze({
+  it('should calculate LCOM4 for a class', async () => {
+    const result = await handleAstAnalyze({
       source: sampleSource,
       filePath: 'calc.ts',
       analysisType: 'lcom4',
@@ -58,8 +58,8 @@ describe('handleAstAnalyze', () => {
     expect(result.components).toBeDefined();
   });
 
-  it('should calculate cyclomatic complexity', () => {
-    const result = handleAstAnalyze({
+  it('should calculate cyclomatic complexity', async () => {
+    const result = await handleAstAnalyze({
       source: sampleSource,
       filePath: 'calc.ts',
       analysisType: 'cyclomatic-complexity',
@@ -69,13 +69,13 @@ describe('handleAstAnalyze', () => {
     expect(result.perFunction).toBeDefined();
   });
 
-  it('should compute tree diff', () => {
+  it('should compute tree diff', async () => {
     const oldSource = `export function foo() { return 1; }`;
     const newSource = `
       export function foo() { return 2; }
       export function bar() { return 3; }
     `;
-    const result = handleAstAnalyze({
+    const result = await handleAstAnalyze({
       source: newSource,
       filePath: 'diff.ts',
       analysisType: 'tree-diff',
@@ -86,8 +86,8 @@ describe('handleAstAnalyze', () => {
     expect((result.changes as unknown[]).length).toBeGreaterThan(0);
   });
 
-  it('should run full analysis combining all types', () => {
-    const result = handleAstAnalyze({
+  it('should run full analysis combining all types', async () => {
+    const result = await handleAstAnalyze({
       source: sampleSource,
       filePath: 'calc.ts',
       analysisType: 'full',
@@ -99,13 +99,13 @@ describe('handleAstAnalyze', () => {
     expect(result.cyclomaticComplexity).toBeDefined();
   });
 
-  it('should throw for lcom4 without className', () => {
-    expect(() =>
+  it('should throw for lcom4 without className', async () => {
+    await expect(
       handleAstAnalyze({
         source: sampleSource,
         filePath: 'calc.ts',
         analysisType: 'lcom4',
       }),
-    ).toThrow('className');
+    ).rejects.toThrow('className');
   });
 });

@@ -60,8 +60,8 @@ describe('sync pipeline', () => {
     }
   `;
 
-  it('should detect semantic changes between versions', () => {
-    const diff = computeTreeDiff(oldSource, newSource);
+  it('should detect semantic changes between versions', async () => {
+    const diff = await computeTreeDiff(oldSource, newSource);
 
     expect(diff.hasSemanticChanges).toBe(true);
     // DataService modified + createService added
@@ -72,8 +72,8 @@ describe('sync pipeline', () => {
     expect(added.some((c) => c.name === 'createService')).toBe(true);
   });
 
-  it('should extract updated dependencies from new version', () => {
-    const deps = extractDependencies(newSource, 'data-service.ts');
+  it('should extract updated dependencies from new version', async () => {
+    const deps = await extractDependencies(newSource, 'data-service.ts');
 
     expect(deps.imports).toHaveLength(2);
     expect(deps.imports.some((i) => i.source === './logger.js')).toBe(true);
@@ -81,8 +81,8 @@ describe('sync pipeline', () => {
     expect(deps.exports.some((e) => e.name === 'createService')).toBe(true);
   });
 
-  it('should measure LCOM4 for the updated class', () => {
-    const lcom4 = calculateLCOM4(newSource, 'DataService');
+  it('should measure LCOM4 for the updated class', async () => {
+    const lcom4 = await calculateLCOM4(newSource, 'DataService');
 
     // All methods share logger and/or cache → expect LCOM4 = 1
     expect(lcom4.value).toBe(1);
@@ -90,16 +90,16 @@ describe('sync pipeline', () => {
     expect(lcom4.fieldCount).toBe(2);
   });
 
-  it('should calculate cyclomatic complexity', () => {
-    const cc = calculateCC(newSource, 'data-service.ts');
+  it('should calculate cyclomatic complexity', async () => {
+    const cc = await calculateCC(newSource, 'data-service.ts');
 
     expect(cc.fileTotal).toBeGreaterThan(0);
     expect(cc.perFunction.has('createService')).toBe(true);
   });
 
-  it('should produce a decision based on combined metrics', () => {
-    const lcom4 = calculateLCOM4(newSource, 'DataService');
-    const cc = calculateCC(newSource, 'data-service.ts');
+  it('should produce a decision based on combined metrics', async () => {
+    const lcom4 = await calculateLCOM4(newSource, 'DataService');
+    const cc = await calculateCC(newSource, 'data-service.ts');
 
     const decision = decide({
       testCount: 10,
@@ -112,7 +112,7 @@ describe('sync pipeline', () => {
     expect(decision.reason).toBeTruthy();
   });
 
-  it('should detect when a class becomes fragmented after changes', () => {
+  it('should detect when a class becomes fragmented after changes', async () => {
     const fragmentedSource = `
       export class MixedService {
         private db: any;
@@ -125,7 +125,7 @@ describe('sync pipeline', () => {
       }
     `;
 
-    const lcom4 = calculateLCOM4(fragmentedSource, 'MixedService');
+    const lcom4 = await calculateLCOM4(fragmentedSource, 'MixedService');
     expect(lcom4.value).toBe(2);
 
     // testCount must exceed 15 to trigger LCOM4 check in decision tree

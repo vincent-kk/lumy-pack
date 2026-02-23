@@ -3,18 +3,18 @@ import { describe, expect, it } from 'vitest';
 import { calculateCC } from '../../../ast/cyclomatic-complexity.js';
 
 describe('cyclomatic-complexity', () => {
-  it('should return 1 for a simple function with no branches', () => {
+  it('should return 1 for a simple function with no branches', async () => {
     const source = `
       function greet(name: string): string {
         return \`Hello, \${name}\`;
       }
     `;
-    const result = calculateCC(source);
+    const result = await calculateCC(source);
 
     expect(result.perFunction.get('greet')).toBe(1);
   });
 
-  it('should count if statements', () => {
+  it('should count if statements', async () => {
     const source = `
       function check(x: number): string {
         if (x > 0) {
@@ -25,13 +25,13 @@ describe('cyclomatic-complexity', () => {
         return 'zero';
       }
     `;
-    const result = calculateCC(source);
+    const result = await calculateCC(source);
 
     // Base 1 + 2 if branches = 3
     expect(result.perFunction.get('check')).toBe(3);
   });
 
-  it('should count for/while/do-while loops', () => {
+  it('should count for/while/do-while loops', async () => {
     const source = `
       function loops(items: number[]): number {
         let sum = 0;
@@ -47,13 +47,13 @@ describe('cyclomatic-complexity', () => {
         return sum;
       }
     `;
-    const result = calculateCC(source);
+    const result = await calculateCC(source);
 
     // Base 1 + for + while + do-while = 4
     expect(result.perFunction.get('loops')).toBe(4);
   });
 
-  it('should count switch cases', () => {
+  it('should count switch cases', async () => {
     const source = `
       function classify(code: string): string {
         switch (code) {
@@ -64,37 +64,37 @@ describe('cyclomatic-complexity', () => {
         }
       }
     `;
-    const result = calculateCC(source);
+    const result = await calculateCC(source);
 
     // Base 1 + 3 non-default cases = 4
     expect(result.perFunction.get('classify')).toBe(4);
   });
 
-  it('should count logical operators && and ||', () => {
+  it('should count logical operators && and ||', async () => {
     const source = `
       function validate(a: boolean, b: boolean, c: boolean): boolean {
         return a && b || c;
       }
     `;
-    const result = calculateCC(source);
+    const result = await calculateCC(source);
 
     // Base 1 + && + || = 3
     expect(result.perFunction.get('validate')).toBe(3);
   });
 
-  it('should count ternary operator', () => {
+  it('should count ternary operator', async () => {
     const source = `
       function choose(x: number): string {
         return x > 0 ? 'positive' : 'non-positive';
       }
     `;
-    const result = calculateCC(source);
+    const result = await calculateCC(source);
 
     // Base 1 + ternary = 2
     expect(result.perFunction.get('choose')).toBe(2);
   });
 
-  it('should calculate file-level total CC', () => {
+  it('should calculate file-level total CC', async () => {
     const source = `
       function a(x: number) {
         if (x > 0) return true;
@@ -108,7 +108,7 @@ describe('cyclomatic-complexity', () => {
         }
       }
     `;
-    const result = calculateCC(source);
+    const result = await calculateCC(source);
 
     // a: 1+1 = 2, b: 1+2 = 3, total = 5
     expect(result.perFunction.get('a')).toBe(2);
@@ -117,7 +117,7 @@ describe('cyclomatic-complexity', () => {
     expect(result.value).toBe(5);
   });
 
-  it('should handle arrow functions and method declarations', () => {
+  it('should handle arrow functions and method declarations', async () => {
     const source = `
       const fn = (x: number) => {
         if (x > 0) return x;
@@ -129,7 +129,7 @@ describe('cyclomatic-complexity', () => {
         }
       }
     `;
-    const result = calculateCC(source);
+    const result = await calculateCC(source);
 
     expect(result.perFunction.get('fn')).toBe(2);
     expect(result.perFunction.get('bar')).toBe(2);
