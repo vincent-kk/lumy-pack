@@ -129,6 +129,13 @@ If there were NO accepted fixes (all rejected):
   Automatically invoke /filid:fca-revalidate — no pending code changes needed.
 ```
 
+## Available MCP Tools
+
+| Tool             | Action             | Purpose                                                  |
+| ---------------- | ------------------ | -------------------------------------------------------- |
+| `review_manage`  | `normalize-branch` | Normalize branch name for review directory path          |
+| `debt_manage`    | `create`           | Create a technical debt record for each rejected fix     |
+
 ## Options
 
 > Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well.

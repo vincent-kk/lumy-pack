@@ -121,3 +121,8 @@ After completing work:
 - Confirm 3+12 rule compliance.
 - Confirm all SPEC.md acceptance criteria are met.
 - Flag any unresolved issues or scope gaps discovered.
+
+## Skill Participation
+
+- `/filid:fca-promote` — Phase 4 (spec generation) and Phase 6 (migration: write spec.ts, remove test.ts).
+- `/filid:fca-update` — Stage 3: test organization (test.ts / spec.ts update for changed files).

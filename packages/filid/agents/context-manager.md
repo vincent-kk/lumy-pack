@@ -165,3 +165,7 @@ After completing work:
 - Confirm each SPEC.md was restructured (not appended).
 - Report any compression operations performed (tool, mode, lines saved).
 - Flag any doc rule violations found and corrected.
+
+## Skill Participation
+
+- `/filid:fca-update` — Stage 3: document updates (CLAUDE.md / SPEC.md sync after code changes).

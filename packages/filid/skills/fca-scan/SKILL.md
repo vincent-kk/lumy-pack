@@ -42,15 +42,18 @@ See [reference.md Section 1](./reference.md#section-1--tree-construction).
 Phases 2, 3, and 4 are **independent** and run **in parallel** as separate Task
 subagents (`run_in_background: true`). Await all three before Phase 5.
 
-**Phase 2 — CLAUDE.md Validation**
+### Phase 2 — CLAUDE.md Validation
+
 Check line count (≤100) and 3-tier boundary sections for every CLAUDE.md using Read and Grep.
 See [reference.md Section 2](./reference.md#section-2--claudemd-validation).
 
-**Phase 3 — Organ Directory Validation**
+### Phase 3 — Organ Directory Validation
+
 Verify no organ directory contains a CLAUDE.md file using `fractal_scan` results from Phase 1.
 See [reference.md Section 3](./reference.md#section-3--organ-directory-validation).
 
-**Phase 4 — Test File Validation (3+12 Rule)**
+### Phase 4 — Test File Validation (3+12 Rule)
+
 Validate all `*.spec.ts` files against the 15-case limit using `test_metrics`.
 See [reference.md Section 4](./reference.md#section-4--test-file-validation-312-rule).
 

@@ -195,3 +195,4 @@ Date: <ISO 8601>
 - `/filid:fca-scan` — Lead: run full QA scan on a module or directory.
 - `/filid:fca-structure-review` — Lead: execute the complete 6-stage PR review pipeline.
 - `/filid:fca-promote` — Analysis contributor: provide metric and quality assessment before promotion decision.
+- `/filid:fca-update` — Stage 1: branch diff-based violation scan.

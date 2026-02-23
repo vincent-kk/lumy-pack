@@ -52,7 +52,7 @@ ast_analyze(source: <new>, oldSource: <old>, analysisType: "tree-diff")
 Steps 3, 4, and 5 are **independent** and run **in parallel** as separate Task
 subagents (`run_in_background: true`). Await all three before Step 6.
 
-**Step 3 — Verify Accepted Fixes**
+### Step 3 — Verify Accepted Fixes
 
 For each accepted fix item from `justifications.md`:
 
@@ -64,7 +64,7 @@ For each accepted fix item from `justifications.md`:
    - Structure violation → `structure_validate` — verify PASS
 3. Mark each fix as RESOLVED or UNRESOLVED
 
-**Step 4 — Verify Justifications (Constitutional Check)**
+### Step 4 — Verify Justifications (Constitutional Check)
 
 For each rejected fix with justification:
 
@@ -74,7 +74,7 @@ For each rejected fix with justification:
 2. Verify debt file was created via `debt_manage(list)`
 3. Mark as DEFERRED (valid) or UNCONSTITUTIONAL (invalid justification)
 
-**Step 5 — Resolve Cleared Debt**
+### Step 5 — Resolve Cleared Debt
 
 Check if any Delta changes also resolve existing debt items:
 
@@ -128,6 +128,20 @@ separately by `debt_manage`.
 
 If the verdict is **FAIL**, skip cleanup so the developer can inspect the
 remaining unresolved items.
+
+## Available MCP Tools
+
+| Tool                 | Action             | Purpose                                                         |
+| -------------------- | ------------------ | --------------------------------------------------------------- |
+| `review_manage`      | `normalize-branch` | Normalize branch name for review directory path                 |
+| `review_manage`      | `cleanup`          | Delete review session directory on PASS                         |
+| `ast_analyze`        | `tree-diff`        | Semantic diff of changed files since resolve_commit_sha         |
+| `ast_analyze`        | `lcom4`            | Verify LCOM4 < 2 after accepted fix                             |
+| `ast_analyze`        | `cyclomatic-complexity` | Verify CC <= 15 after accepted fix                         |
+| `test_metrics`       | `check-312`        | Verify 3+12 rule PASS after accepted fix                        |
+| `structure_validate` | —                  | Verify structure violation resolved after accepted fix          |
+| `debt_manage`        | `list`             | Retrieve existing debt items to check for resolution            |
+| `debt_manage`        | `resolve`          | Mark a debt item as resolved when its rule is now satisfied     |
 
 ## Options
 

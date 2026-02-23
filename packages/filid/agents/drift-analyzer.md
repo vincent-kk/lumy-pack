@@ -133,3 +133,4 @@ Total: 17 drift items
 
 - `/filid:fca-sync` — Lead: Stage 1 (project scan) and Stage 2 (drift detection & correction plan).
 - `/filid:fca-guide` — Supplementary: include current drift count in guide output.
+- `/filid:fca-update` — Stage 2: drift detection and correction plan when critical/high violations present.

@@ -188,3 +188,4 @@ Never make out-of-scope structural decisions as a shortcut.
 
 - `/filid:fca-restructure` — Stage 3 (execution); Stage 2 plan review support.
 - `/filid:fca-sync` — Stage 4 (correction execution after drift-analyzer + fractal-architect approval).
+- `/filid:fca-update` — Stage 2: correction execution when critical/high violations are detected.

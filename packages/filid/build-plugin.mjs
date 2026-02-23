@@ -62,7 +62,8 @@ console.log('  MCP server  -> libs/server.cjs');
 const hookEntries = [
   'pre-tool-validator',
   'structure-guard',
-  'change-tracker',
+  // NOTE: disabled for now
+  // 'change-tracker',
   'agent-enforcer',
   'context-injector',
 ];
