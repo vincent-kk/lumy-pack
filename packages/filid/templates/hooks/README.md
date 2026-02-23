@@ -112,16 +112,38 @@ Never blocks user prompts (always `continue: true`).
 ## Hook Registration
 
 Hooks are registered via `hooks/hooks.json` in the package root.
-Each entry maps an event name to a built `.mjs` file in `libs/`.
+Each hook command uses `find-node.sh` to locate the Node.js binary (nvm/fnm 환경 대응),
+then executes the built `.mjs` file in `libs/`.
 
 ```json
 {
-  "hooks": [
-    { "event": "PreToolUse", "command": "node libs/pre-tool-validator.mjs" },
-    { "event": "PreToolUse", "command": "node libs/structure-guard.mjs" },
-    { "event": "SubagentStart", "command": "node libs/agent-enforcer.mjs" },
-    { "event": "UserPromptSubmit", "command": "node libs/context-injector.mjs" }
-  ]
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/pre-tool-validator.mjs\"", "timeout": 3 },
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/structure-guard.mjs\"", "timeout": 3 }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/agent-enforcer.mjs\"", "timeout": 3 }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/context-injector.mjs\"", "timeout": 5 }
+        ]
+      }
+    ]
+  }
 }
 ```
 
