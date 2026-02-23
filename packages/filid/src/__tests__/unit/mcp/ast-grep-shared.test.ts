@@ -96,17 +96,12 @@ describe('SUPPORTED_LANGUAGES', () => {
     expect(SUPPORTED_LANGUAGES.length).toBeGreaterThan(0);
   });
 
-  it.each([
-    'javascript',
-    'typescript',
-    'python',
-    'go',
-    'rust',
-    'json',
-    'yaml',
-  ])('contains "%s"', (lang) => {
-    expect(SUPPORTED_LANGUAGES).toContain(lang);
-  });
+  it.each(['javascript', 'typescript', 'python', 'go', 'rust', 'json', 'yaml'])(
+    'contains "%s"',
+    (lang) => {
+      expect(SUPPORTED_LANGUAGES).toContain(lang);
+    },
+  );
 });
 
 // ─── EXT_TO_LANG ─────────────────────────────────────────────────────────────

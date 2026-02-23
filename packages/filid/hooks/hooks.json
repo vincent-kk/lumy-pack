@@ -15,6 +15,16 @@
             "timeout": 3
           }
         ]
+      },
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/find-node.sh\" \"${CLAUDE_PLUGIN_ROOT}/libs/plan-gate.mjs\"",
+            "timeout": 3
+          }
+        ]
       }
     ],
     "PostToolUse": [],

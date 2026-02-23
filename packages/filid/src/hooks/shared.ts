@@ -1,6 +1,16 @@
 /**
  * Shared utilities for hook modules.
  */
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+
+/**
+ * Check if the cwd is an FCA-AI project.
+ * Treats presence of .filid/ directory or CLAUDE.md as indicator.
+ */
+export function isFcaProject(cwd: string): boolean {
+  return existsSync(join(cwd, '.filid')) || existsSync(join(cwd, 'CLAUDE.md'));
+}
 
 /**
  * Check if a file path targets CLAUDE.md.

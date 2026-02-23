@@ -101,6 +101,14 @@ describe('context-injector', () => {
     expect(ctx).toContain('pure-function');
   });
 
+  it('should include development workflow guide', async () => {
+    const result = await injectContext(baseInput);
+    const ctx = result.hookSpecificOutput?.additionalContext ?? '';
+    expect(ctx).toContain('Development Workflow');
+    expect(ctx).toContain('SPEC.md');
+    expect(ctx).toContain('CLAUDE.md');
+  });
+
   // === Session-based inject tests ===
 
   it('should not inject on second call in same session', async () => {

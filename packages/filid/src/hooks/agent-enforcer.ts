@@ -1,5 +1,7 @@
 import type { HookOutput, SubagentStartInput } from '../types/hooks.js';
 
+import { isFcaProject } from './shared.js';
+
 /**
  * FCA-AI agent role definitions with tool restrictions.
  *
@@ -27,26 +29,73 @@ const ROLE_RESTRICTIONS: Record<string, string> = {
 };
 
 /**
- * SubagentStart hook: inject role-based tool restrictions.
+ * FCA-AI workflow guidance for planning-related agents.
+ * Injected to OMC planner/architect/analyst/critic and native Plan agents.
+ */
+const PLANNING_GUIDANCE = [
+  '[FCA-AI Development Workflow]',
+  'When designing a plan, include CLAUDE.md/SPEC.md update steps:',
+  '1. Identify affected fractal modules (directories with CLAUDE.md)',
+  '2. Plan SPEC.md updates for requirements/API changes BEFORE code',
+  '3. Plan CLAUDE.md updates if boundaries or conventions change',
+  '4. New modules need CLAUDE.md (max 100 lines, 3-tier) + SPEC.md',
+].join('\n');
+
+/**
+ * FCA-AI pre-implementation reminder for executor agents.
+ * Injected to OMC executor/deep-executor and native general-purpose agents.
+ */
+const IMPLEMENTATION_REMINDER = [
+  '[FCA-AI Pre-Implementation Check]',
+  'Before writing code, verify CLAUDE.md/SPEC.md are updated for planned changes.',
+  'SPEC.md first (requirements), then CLAUDE.md if boundaries change.',
+].join('\n');
+
+const PLANNING_AGENT_RE =
+  /^oh-my-claudecode:(planner|architect|analyst|critic)$/;
+const EXECUTOR_AGENT_RE = /^oh-my-claudecode:(executor|deep-executor)$/;
+
+/**
+ * SubagentStart hook: inject role-based tool restrictions and FCA-AI workflow guidance.
  *
- * When a subagent starts, this hook checks its type against
- * FCA-AI role definitions and injects appropriate restrictions
- * via additionalContext. The agent is not blocked — instead,
- * role constraints are communicated as instructions.
+ * Priority order:
+ * 1. filid agent role restrictions (exact match, always applied)
+ * 2. FCA project check (skip non-FCA projects for workflow guidance)
+ * 3. Planning agent guidance (OMC planner/architect/analyst/critic, native Plan)
+ * 4. Implementation agent reminder (OMC executor/deep-executor, native general-purpose)
  */
 export function enforceAgentRole(input: SubagentStartInput): HookOutput {
   const agentType = input.agent_type ?? '';
 
+  // 1. filid agent role restrictions (unchanged)
   const restriction = ROLE_RESTRICTIONS[agentType];
+  if (restriction) {
+    return {
+      continue: true,
+      hookSpecificOutput: { additionalContext: restriction },
+    };
+  }
 
-  if (!restriction) {
+  // 2. Skip workflow guidance for non-FCA projects
+  if (!isFcaProject(input.cwd)) {
     return { continue: true };
   }
 
-  return {
-    continue: true,
-    hookSpecificOutput: {
-      additionalContext: restriction,
-    },
-  };
+  // 3. Planning agents: inject development workflow
+  if (PLANNING_AGENT_RE.test(agentType) || agentType === 'Plan') {
+    return {
+      continue: true,
+      hookSpecificOutput: { additionalContext: PLANNING_GUIDANCE },
+    };
+  }
+
+  // 4. Implementation agents: inject pre-implementation reminder
+  if (EXECUTOR_AGENT_RE.test(agentType) || agentType === 'general-purpose') {
+    return {
+      continue: true,
+      hookSpecificOutput: { additionalContext: IMPLEMENTATION_REMINDER },
+    };
+  }
+
+  return { continue: true };
 }

@@ -22,6 +22,7 @@ const hookEntries = [
   'structure-guard',
   'agent-enforcer',
   'context-injector',
+  'plan-gate',
 ];
 
 await Promise.all(
