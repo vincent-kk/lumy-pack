@@ -98,8 +98,9 @@ export { injectContext } from './hooks/context-injector.js';
 export {
   cwdHash,
   getCacheDir,
-  readCachedContext,
-  writeCachedContext,
+  readPromptContext,
+  writePromptContext,
+  hasPromptContext,
   sessionIdHash,
   isFirstInSession,
   pruneOldSessions,

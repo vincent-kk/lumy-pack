@@ -67,6 +67,8 @@ export interface HookOutput {
   continue: boolean;
   /** Hook-specific output */
   hookSpecificOutput?: {
+    /** Hook event name (required by Claude Code for structured output) */
+    hookEventName?: string;
     /** Additional context to inject into agent */
     additionalContext?: string;
   };

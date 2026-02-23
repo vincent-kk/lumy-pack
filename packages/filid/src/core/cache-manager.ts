@@ -13,7 +13,7 @@ import { join } from 'node:path';
 
 // Cache directory layout:
 //   {cwdHash}/session-context-{hash}   — Layer 2: session inject marker (24h TTL)
-//   {cwdHash}/cached-context-{hash}    — Layer 2: per-session FCA rules text cache
+//   {cwdHash}/prompt-context-{hash}    — Layer 2: per-session FCA rules text cache
 //   {cwdHash}/run-{skillName}.hash     — Layer 4: skill run hash for incremental mode
 
 export function cwdHash(cwd: string): string {
@@ -25,14 +25,14 @@ export function getCacheDir(cwd: string): string {
   return join(configDir, 'plugins', 'filid', cwdHash(cwd));
 }
 
-export function readCachedContext(
+export function readPromptContext(
   cwd: string,
   sessionId: string,
 ): string | null {
   const cacheDir = getCacheDir(cwd);
   const contextFile = join(
     cacheDir,
-    `cached-context-${sessionIdHash(sessionId)}`,
+    `prompt-context-${sessionIdHash(sessionId)}`,
   );
   try {
     if (!existsSync(contextFile)) return null;
@@ -42,7 +42,7 @@ export function readCachedContext(
   }
 }
 
-export function writeCachedContext(
+export function writePromptContext(
   cwd: string,
   context: string,
   sessionId: string,
@@ -50,13 +50,25 @@ export function writeCachedContext(
   const cacheDir = getCacheDir(cwd);
   const contextFile = join(
     cacheDir,
-    `cached-context-${sessionIdHash(sessionId)}`,
+    `prompt-context-${sessionIdHash(sessionId)}`,
   );
   try {
     if (!existsSync(cacheDir)) mkdirSync(cacheDir, { recursive: true });
     writeFileSync(contextFile, context, 'utf-8');
   } catch {
     // silently ignore cache write failures
+  }
+}
+
+export function hasPromptContext(sessionId: string, cwd: string): boolean {
+  const contextFile = join(
+    getCacheDir(cwd),
+    `prompt-context-${sessionIdHash(sessionId)}`,
+  );
+  try {
+    return existsSync(contextFile);
+  } catch {
+    return false;
   }
 }
 
@@ -89,9 +101,9 @@ export function pruneOldSessions(cwd: string): void {
       try {
         if (now - statSync(fp).mtimeMs > TTL_MS) {
           unlinkSync(fp);
-          // also remove the paired cached-context file
+          // also remove the paired prompt-context file
           const hash = file.replace('session-context-', '');
-          const contextFp = join(dir, `cached-context-${hash}`);
+          const contextFp = join(dir, `prompt-context-${hash}`);
           try {
             if (existsSync(contextFp)) unlinkSync(contextFp);
           } catch {
@@ -111,7 +123,7 @@ export function removeSessionFiles(sessionId: string, cwd: string): void {
   const cacheDir = getCacheDir(cwd);
   const hash = sessionIdHash(sessionId);
   const marker = join(cacheDir, `session-context-${hash}`);
-  const contextFile = join(cacheDir, `cached-context-${hash}`);
+  const contextFile = join(cacheDir, `prompt-context-${hash}`);
   try {
     if (existsSync(marker)) unlinkSync(marker);
   } catch {

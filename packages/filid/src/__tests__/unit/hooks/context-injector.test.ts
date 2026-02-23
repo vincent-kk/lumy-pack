@@ -3,17 +3,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserPromptSubmitInput } from '../../../types/hooks.js';
 
 // Default existsSync behavior:
-//   .filid path    → true  (passes isFcaProject gate)
-//   /session-context-* path → false (treated as first session)
-//   others         → false (cache files absent = cache miss)
+//   .filid path          → true  (passes isFcaProject gate)
+//   /prompt-context-*    → false (no cached context = triggers fresh build)
+//   others               → false
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>();
   return {
     ...actual,
     existsSync: vi.fn((p: unknown) => {
       if (typeof p === 'string' && p.endsWith('.filid')) return true;
-      if (typeof p === 'string' && p.includes('/session-context-'))
-        return false;
+      if (typeof p === 'string' && p.includes('/prompt-context-')) return false;
       return false;
     }),
     statSync: vi.fn(() => {
@@ -44,7 +43,7 @@ describe('context-injector', () => {
     (existsSync as ReturnType<typeof vi.fn>).mockImplementation(
       (p: unknown) => {
         if (typeof p === 'string' && p.endsWith('.filid')) return true;
-        if (typeof p === 'string' && p.includes('/session-context-'))
+        if (typeof p === 'string' && p.includes('/prompt-context-'))
           return false;
         return false;
       },
@@ -113,13 +112,15 @@ describe('context-injector', () => {
 
   // === Session-based inject tests ===
 
-  it('should not inject on second call in same session', async () => {
-    // simulate second call: session marker already exists
+  it('should not inject when prompt-context exists', async () => {
+    // both session-context AND prompt-context exist → skip injection
     (existsSync as ReturnType<typeof vi.fn>).mockImplementation(
       (p: unknown) => {
         if (typeof p === 'string' && p.endsWith('.filid')) return true;
         if (typeof p === 'string' && p.includes('/session-context-'))
-          return true; // marker exists
+          return true;
+        if (typeof p === 'string' && p.includes('/prompt-context-'))
+          return true;
         return false;
       },
     );
@@ -127,6 +128,23 @@ describe('context-injector', () => {
     const result = await injectContext(baseInput);
     expect(result.continue).toBe(true);
     expect(result.hookSpecificOutput).toBeUndefined();
+  });
+
+  it('should re-inject when prompt-context is missing', async () => {
+    // prompt-context missing → rebuild regardless of session-context state
+    (existsSync as ReturnType<typeof vi.fn>).mockImplementation(
+      (p: unknown) => {
+        if (typeof p === 'string' && p.endsWith('.filid')) return true;
+        if (typeof p === 'string' && p.includes('/prompt-context-'))
+          return false;
+        return false;
+      },
+    );
+
+    const result = await injectContext(baseInput);
+    expect(result.continue).toBe(true);
+    expect(result.hookSpecificOutput?.additionalContext).toBeDefined();
+    expect(result.hookSpecificOutput?.additionalContext).toContain('FCA-AI');
   });
 
   it('should inject independently for different session IDs', async () => {
@@ -140,12 +158,12 @@ describe('context-injector', () => {
     expect(result2.hookSpecificOutput?.additionalContext).toBeDefined();
   });
 
-  it('should safely inject when session marker I/O fails', async () => {
-    // existsSync throws on session marker check → isFirstInSession returns true (safe fallback)
+  it('should safely inject when prompt-context I/O fails', async () => {
+    // existsSync throws on prompt-context check → hasPromptContext returns false (safe fallback)
     (existsSync as ReturnType<typeof vi.fn>).mockImplementation(
       (p: unknown) => {
         if (typeof p === 'string' && p.endsWith('.filid')) return true;
-        if (typeof p === 'string' && p.includes('/session-context-'))
+        if (typeof p === 'string' && p.includes('/prompt-context-'))
           throw new Error('fs error');
         return false;
       },

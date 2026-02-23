@@ -74,7 +74,7 @@ yarn version:sync   # 버전 동기화 (package.json → src/version.ts)
 
 - `.claude-plugin/plugin.json` — 매니페스트 (name, version, skills, mcp)
 - `.mcp.json` — MCP 서버 등록 (`bridge/mcp-server.cjs`)
-- `hooks/hooks.json` — 훅 이벤트 매핑 (PreToolUse→Write/Edit/ExitPlanMode, SubagentStart→*, UserPromptSubmit→*, SessionEnd→*)
+- `hooks/hooks.json` — 훅 이벤트 매핑 (PreToolUse→Write/Edit/ExitPlanMode, SubagentStart→*, UserPromptSubmit→*, SessionEnd→\*)
 
 ### Agents (7)
 

@@ -97,18 +97,18 @@ describe('cache-manager', () => {
     delete process.env.CLAUDE_CONFIG_DIR;
   });
 
-  // Test 5: readCachedContext — returns null when cache absent
-  it('readCachedContext: returns null when cache files are absent', async () => {
+  // Test 5: readPromptContext — returns null when cache absent
+  it('readPromptContext: returns null when cache files are absent', async () => {
     const { existsSync } = await import('node:fs');
     vi.mocked(existsSync).mockReturnValue(false);
-    const { readCachedContext } =
+    const { readPromptContext } =
       await import('../../../core/cache-manager.js');
-    const result = readCachedContext('/proj', 'sid-test');
+    const result = readPromptContext('/proj', 'sid-test');
     expect(result).toBeNull();
   });
 
-  // Test 6: writeCachedContext + readCachedContext — stored text is returned
-  it('writeCachedContext + readCachedContext: returns stored context text', async () => {
+  // Test 6: writePromptContext + readPromptContext — stored text is returned
+  it('writePromptContext + readPromptContext: returns stored context text', async () => {
     const { existsSync, readFileSync, writeFileSync } = await import('node:fs');
     const store: Record<string, string> = {};
 
@@ -122,21 +122,21 @@ describe('cache-manager', () => {
       return v;
     });
 
-    const { writeCachedContext, readCachedContext } =
+    const { writePromptContext, readPromptContext } =
       await import('../../../core/cache-manager.js');
-    writeCachedContext('/proj', 'hello context', 'sid-test');
-    const result = readCachedContext('/proj', 'sid-test');
+    writePromptContext('/proj', 'hello context', 'sid-test');
+    const result = readPromptContext('/proj', 'sid-test');
     expect(result).toBe('hello context');
   });
 
-  // Test 7: readCachedContext — different sessions have independent caches
-  it('readCachedContext: returns null for different session', async () => {
+  // Test 7: readPromptContext — different sessions have independent caches
+  it('readPromptContext: returns null for different session', async () => {
     const { existsSync } = await import('node:fs');
     vi.mocked(existsSync).mockReturnValue(false);
 
-    const { readCachedContext } =
+    const { readPromptContext } =
       await import('../../../core/cache-manager.js');
-    const result = readCachedContext('/proj', 'other-session');
+    const result = readPromptContext('/proj', 'other-session');
     expect(result).toBeNull();
   });
 

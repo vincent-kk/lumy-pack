@@ -12,15 +12,15 @@
  * Layer 2 (UserPromptSubmit hook) — THIS FILE
  *   - Role: Inject FCA-AI rules + fractal structure rules on session's first prompt
  *   - Session gate: session-context-{sessionIdHash} marker file in cache directory
- *   - Cache: per-session cached-context-{sessionIdHash} file
+ *   - Cache: per-session prompt-context-{sessionIdHash} file
  *
  * Cache functions are provided by src/core/cache-manager.ts.
  */
 import {
+  hasPromptContext,
   isFirstInSession,
   markSessionInjected,
-  readCachedContext,
-  writeCachedContext,
+  writePromptContext,
 } from '../core/cache-manager.js';
 import { getActiveRules, loadBuiltinRules } from '../core/rule-engine.js';
 import type { HookOutput, UserPromptSubmitInput } from '../types/hooks.js';
@@ -71,19 +71,9 @@ export async function injectContext(
     return { continue: true };
   }
 
-  // Gate 2: skip if not the first prompt in this session
-  if (!isFirstInSession(session_id, cwd)) {
+  // Gate 2: skip only when both session marker AND prompt-context exist
+  if (!isFirstInSession(session_id, cwd) && hasPromptContext(session_id, cwd)) {
     return { continue: true };
-  }
-
-  // use cached context if available for this session
-  const cached = readCachedContext(cwd, session_id);
-  if (cached) {
-    markSessionInjected(session_id, cwd);
-    return {
-      continue: true,
-      hookSpecificOutput: { additionalContext: cached },
-    };
   }
 
   // Step 1: FCA-AI rules (always included)
@@ -112,12 +102,13 @@ export async function injectContext(
   const additionalContext = (fcaContext + fractalSection).trim();
 
   // persist cache and record session marker
-  writeCachedContext(cwd, additionalContext, session_id);
+  writePromptContext(cwd, additionalContext, session_id);
   markSessionInjected(session_id, cwd);
 
   return {
     continue: true,
     hookSpecificOutput: {
+      hookEventName: 'UserPromptSubmit',
       additionalContext,
     },
   };
