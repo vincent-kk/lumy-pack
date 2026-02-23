@@ -12,7 +12,7 @@ fractal_scan({ path: "<target-path>" })
 ```
 
 The response is a `ScanReport` containing:
-- `tree.nodes`: Map of path → FractalNode (with `name`, `path`, `type`, `hasClaudeMd`, `hasSpecMd`)
+- `tree.nodes`: Map of path → FractalNode (with `name`, `path`, `type`, `hasClaudeMd`, `hasSpecMd`, `children`)
 - `tree.root`: root directory path
 - `modules`: optional ModuleInfo list (empty unless `includeModuleInfo: true`)
 

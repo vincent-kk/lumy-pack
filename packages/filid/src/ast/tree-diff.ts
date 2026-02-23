@@ -3,11 +3,11 @@
  * added, removed, or modified top-level declarations while ignoring
  * formatting-only changes. Uses @ast-grep/napi.
  */
+import type { SgNode } from '@ast-grep/napi';
+
 import type { TreeDiffChange, TreeDiffResult } from '../types/ast.js';
 
 import { parseSource } from './parser.js';
-
-import type { SgNode } from '@ast-grep/napi';
 
 interface DeclSignature {
   name: string;

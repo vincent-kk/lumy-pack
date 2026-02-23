@@ -4,14 +4,14 @@
  */
 import { readFileSync } from 'node:fs';
 
+import type { SgNode } from '@ast-grep/napi';
+
 import {
   EXT_TO_LANG,
   getSgLoadError,
   getSgModule,
   toLangEnum,
 } from './ast-grep-shared.js';
-
-import type { SgNode } from '@ast-grep/napi';
 
 /**
  * Parse TypeScript/JavaScript source into an AST root node.

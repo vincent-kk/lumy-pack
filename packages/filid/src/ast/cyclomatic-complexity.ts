@@ -5,11 +5,11 @@
  * Decision points: if, for, while, do-while, case (non-default),
  * conditional (?:), && and ||.
  */
+import type { SgNode } from '@ast-grep/napi';
+
 import type { CyclomaticComplexityResult } from '../types/metrics.js';
 
 import { parseSource, walk } from './parser.js';
-
-import type { SgNode } from '@ast-grep/napi';
 
 /** Decision point node kinds that always add +1 */
 const DECISION_KINDS = new Set([

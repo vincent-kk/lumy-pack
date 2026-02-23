@@ -16,8 +16,8 @@ import { extname, join, resolve } from 'node:path';
 // because ESM resolution does NOT respect NODE_PATH or Module._initPaths().
 // In the MCP server plugin context, @ast-grep/napi is installed globally and resolved
 // via NODE_PATH set in the bundle's startup banner.
-
 import type * as AstGrepNapi from '@ast-grep/napi';
+
 type SgModule = typeof AstGrepNapi;
 
 let sgModule: SgModule | null = null;

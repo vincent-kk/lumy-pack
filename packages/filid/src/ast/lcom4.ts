@@ -9,12 +9,12 @@
  * - >=2 = fragmented (should consider splitting)
  * - 0 = no methods to analyze
  */
+import type { SgNode } from '@ast-grep/napi';
+
 import type { ClassInfo, MethodInfo } from '../types/ast.js';
 import type { LCOM4Result } from '../types/metrics.js';
 
 import { parseSource, walk } from './parser.js';
-
-import type { SgNode } from '@ast-grep/napi';
 
 function findThisAccesses(bodyNode: SgNode): string[] {
   const accessed = new Set<string>();

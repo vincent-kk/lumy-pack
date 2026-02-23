@@ -48,15 +48,15 @@ yarn version:sync   # 버전 동기화 (package.json → src/version.ts)
 
 ### Key Source Directories
 
-| 경로 | 역할 |
-|------|------|
-| `src/core/` | 핵심 로직 (FractalTree, RuleEngine, DriftDetector 등 12개 모듈) |
-| `src/ast/` | `@ast-grep/napi` AST 분석 (LCOM4, CC, 의존성) |
-| `src/mcp/` | MCP 서버 + 14개 도구 핸들러 |
-| `src/hooks/` | 훅 구현체 + `entries/` (esbuild 진입점) |
-| `src/metrics/` | 테스트 밀도, 모듈 분리 결정 메트릭 |
-| `src/compress/` | 컨텍스트 압축 (가역/비가역) |
-| `src/types/` | 타입 정의 (index.ts에서 중앙 export) |
+| 경로            | 역할                                                            |
+| --------------- | --------------------------------------------------------------- |
+| `src/core/`     | 핵심 로직 (FractalTree, RuleEngine, DriftDetector 등 12개 모듈) |
+| `src/ast/`      | `@ast-grep/napi` AST 분석 (LCOM4, CC, 의존성)                   |
+| `src/mcp/`      | MCP 서버 + 14개 도구 핸들러                                     |
+| `src/hooks/`    | 훅 구현체 + `entries/` (esbuild 진입점)                         |
+| `src/metrics/`  | 테스트 밀도, 모듈 분리 결정 메트릭                              |
+| `src/compress/` | 컨텍스트 압축 (가역/비가역)                                     |
+| `src/types/`    | 타입 정의 (index.ts에서 중앙 export)                            |
 
 ### Key Files
 

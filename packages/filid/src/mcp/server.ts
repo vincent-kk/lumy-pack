@@ -2,12 +2,12 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
+import { SUPPORTED_LANGUAGES } from '../ast/ast-grep-shared.js';
 import { VERSION } from '../version.js';
 
 import { handleAstAnalyze } from './tools/ast-analyze.js';
 import { handleAstGrepReplace } from './tools/ast-grep-replace.js';
 import { handleAstGrepSearch } from './tools/ast-grep-search.js';
-import { SUPPORTED_LANGUAGES } from '../ast/ast-grep-shared.js';
 import { handleCacheManage } from './tools/cache-manage.js';
 import { handleDebtManage } from './tools/debt-manage.js';
 import { handleDocCompress } from './tools/doc-compress.js';

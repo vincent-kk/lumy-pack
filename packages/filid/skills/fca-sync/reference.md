@@ -10,7 +10,7 @@ node classifications.
 
 ```
 fractal_scan({ path: "<target-path>" })
-// Returns: { nodes: FractalNode[], summary: ScanSummary, violations: Violation[] }
+// Returns: ScanReport { tree: { nodes: Map<path, FractalNode>, root: string }, modules: ModuleInfo[], timestamp, duration }
 ```
 
 For each node, confirm:

@@ -32,7 +32,7 @@ Restrict scan to changed files only:
 
 ```
 fractal_scan({ path: "<target-path>" })
-// Returns: { nodes: FractalNode[], summary: ScanSummary }
+// Returns: ScanReport { tree: { nodes: Map<path, FractalNode>, root: string }, modules: ModuleInfo[], timestamp, duration }
 
 test_metrics({ action: "check-312", files: [{ filePath, content }] })
 // Returns: { violations: TestViolation[], summary: { total, passing, failing } }

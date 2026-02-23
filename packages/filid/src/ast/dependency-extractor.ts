@@ -2,6 +2,8 @@
  * Extract import/export/call dependencies from TypeScript/JavaScript source
  * using @ast-grep/napi.
  */
+import type { SgNode } from '@ast-grep/napi';
+
 import type {
   CallInfo,
   DependencyInfo,
@@ -10,8 +12,6 @@ import type {
 } from '../types/ast.js';
 
 import { parseSource, walk } from './parser.js';
-
-import type { SgNode } from '@ast-grep/napi';
 
 function getCallee(node: SgNode): string | null {
   const kind = node.kind();

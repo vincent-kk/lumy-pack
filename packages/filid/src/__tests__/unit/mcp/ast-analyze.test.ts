@@ -6,10 +6,7 @@ function isAstAnalyzeError(
   r: unknown,
 ): r is { error: string; sgLoadError: string } {
   return (
-    typeof r === 'object' &&
-    r !== null &&
-    'error' in r &&
-    'sgLoadError' in r
+    typeof r === 'object' && r !== null && 'error' in r && 'sgLoadError' in r
   );
 }
 

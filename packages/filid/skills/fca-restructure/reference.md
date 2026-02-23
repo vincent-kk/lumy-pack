@@ -10,7 +10,7 @@ fractal structure restructuring skill. For the quick-start overview, see [SKILL.
 ```
 // Parallel batch — fire all three simultaneously:
 fractal_scan({ path: "<target-path>" })
-// Returns: { nodes: FractalNode[], summary: ScanSummary, violations: Violation[] }
+// Returns: ScanReport { tree: { nodes: Map<path, FractalNode>, root: string }, modules: ModuleInfo[], timestamp, duration }
 
 drift_detect({ path: "<target-path>" })
 // Returns: { drifts: DriftItem[], total: number }
