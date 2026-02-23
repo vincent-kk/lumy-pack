@@ -193,9 +193,9 @@ Score: 72/100
 
 ## Skill Participation
 
-- `/filid:fca-init` — Lead: design initial fractal structure from requirements.
-- `/filid:fca-guide` — Lead: scan structure, query rules, produce rule guidance document.
+- `/filid:fca-init` — Reference role: this skill runs directly via MCP tools (fractal_scan, fractal_navigate) without delegating to this agent. Invoke this agent manually for complex classification decisions.
+- `/filid:fca-guide` — Reference role: this skill runs directly via MCP tools (fractal_scan, rule_query) without delegating to this agent. Invoke this agent manually for structural guidance.
 - `/filid:fca-structure-review` — Stage 1 (structure compliance) and Stage 5 (dependency verification) assist.
-- `/filid:fca-context-query` — Lead: answer any architectural question about the codebase.
+- `/filid:fca-context-query` — Reference role: this skill runs directly via MCP tools (fractal_scan, fractal_navigate, doc_compress) without delegating to this agent. Invoke this agent for deep architectural queries.
 - `/filid:fca-restructure` — Stage 1 (analysis & proposal) and Stage 4 (post-execution validation).
-- `/filid:fca-sync` — Analysis phase: review drift-analyzer output, refine correction plan.
+- `/filid:fca-sync` — Stage 3 analysis phase: review drift-analyzer output, refine correction plan using lca_resolve.

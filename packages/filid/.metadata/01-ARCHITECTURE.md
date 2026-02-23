@@ -247,7 +247,7 @@ mcp/server-entry.ts (시작점)
 
 **근거**:
 
-- `libs/server.cjs`: CJS 형식 → Node.js 호환성 극대화
+- `bridge/mcp-server.cjs`: CJS 형식 → Node.js 호환성 극대화
 - `scripts/*.mjs`: ESM 형식 → `#!/usr/bin/env node` + `for await` 지원
 - `typescript`를 `external`로 처리 → 사용자가 `npm install` 시 자동 설치
 - 단일 파일 번들 → `dist/` 디렉토리 없이 동작

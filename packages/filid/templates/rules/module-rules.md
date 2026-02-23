@@ -65,7 +65,7 @@ When a fractal module grows large, filid uses additional metrics to signal when 
 | Metric | Threshold | Action |
 |---|---|---|
 | LCOM4 (Lack of Cohesion) | >= 2 | Split into separate modules |
-| Cyclomatic Complexity | > 20 | Compress or abstract |
+| Cyclomatic Complexity | > 15 | Compress or abstract |
 | File size | > 500 lines | Consider splitting |
 
 These are reported by the `fca-scan` skill and the `module-split-decision` MCP tool.

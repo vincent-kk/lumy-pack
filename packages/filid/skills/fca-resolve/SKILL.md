@@ -114,16 +114,19 @@ After writing justifications.md, prompt the developer:
 ```
 If there were accepted fixes (already applied to files by Step 4):
   AskUserQuestion(
-    question: "Fixes have been applied to the files above. Commit the changes,
-               then run /filid:fca-revalidate for the final PASS/FAIL verdict.
-               \n\nReady to run fca-revalidate now?",
+    question: "Fixes have been applied to the files above.\n\n"
+              + "IMPORTANT: You must commit the changes BEFORE running fca-revalidate.\n"
+              + "fca-revalidate computes a Delta from resolve_commit_sha..HEAD —\n"
+              + "if you run it before committing, the Delta will be empty and fixes\n"
+              + "will appear UNRESOLVED.\n\n"
+              + "Have you committed the changes and are ready to run fca-revalidate?",
     options: [
-      { label: "Run now",   description: "Invoke /filid:fca-revalidate immediately" },
-      { label: "Not yet",   description: "Commit the changes first, then run manually" }
+      { label: "Yes, committed — run now", description: "Invoke /filid:fca-revalidate (changes already committed)" },
+      { label: "Not yet",                  description: "Commit the changes first, then run manually" }
     ]
   )
-  → On "Run now": invoke /filid:fca-revalidate
-  → On "Not yet": remind the developer with the command to run
+  → On "Yes, committed — run now": invoke /filid:fca-revalidate
+  → On "Not yet": remind the developer: "Run `git commit` first, then run /filid:fca-revalidate"
 
 If there were NO accepted fixes (all rejected):
   Automatically invoke /filid:fca-revalidate — no pending code changes needed.

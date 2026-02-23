@@ -28,7 +28,7 @@ Read the CLAUDE.md content and count lines.
 
 | Condition         | Severity | Violation ID           |
 | ----------------- | -------- | ---------------------- |
-| `lineCount > 100` | critical | `CLAUDE_MD_LINE_LIMIT` |
+| `lineCount > 100` | high     | `CLAUDE_MD_LINE_LIMIT` |
 
 **Check 2b — 3-tier boundary sections**
 
@@ -126,7 +126,7 @@ Skipped : <n> (require manual remediation)
 
 | ID                             | Severity | Auto-fix |
 | ------------------------------ | -------- | -------- |
-| `CLAUDE_MD_LINE_LIMIT`         | critical | No       |
+| `CLAUDE_MD_LINE_LIMIT`         | high     | No       |
 | `CLAUDE_MD_MISSING_BOUNDARIES` | high     | Yes      |
 | `ORGAN_CLAUDE_MD_PRESENT`      | critical | Yes      |
 | `TEST_312_EXCEEDED`            | high     | No       |

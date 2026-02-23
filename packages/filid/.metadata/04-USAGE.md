@@ -47,7 +47,7 @@ node build-plugin.mjs
 
 이 명령은 esbuild로 두 가지 산출물을 생성:
 
-1. **MCP 서버 번들**: `libs/server.cjs` (~516KB, CJS)
+1. **MCP 서버 번들**: `bridge/mcp-server.cjs` (~516KB, CJS)
 2. **Hook 스크립트 번들**: `scripts/*.mjs` (5개, ESM)
 
 ### TypeScript 컴파일 (라이브러리 빌드)
@@ -103,9 +103,9 @@ yarn test:run   # 1회 실행
 ```json
 {
   "mcpServers": {
-    "filid": {
+    "t": {
       "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/libs/server.cjs"]
+      "args": ["${CLAUDE_PLUGIN_ROOT}/bridge/mcp-server.cjs"]
     }
   }
 }
@@ -505,7 +505,7 @@ disallowedTools: # 선택적 — 도구 제한
 
 **원인 및 해결**:
 
-1. `libs/server.cjs` 미존재 → `node build-plugin.mjs` 실행
+1. `bridge/mcp-server.cjs` 미존재 → `node build-plugin.mjs` 실행
 2. `typescript` 미설치 → `npm install` 실행
 3. Node.js 버전 < 20 → 업그레이드
 
