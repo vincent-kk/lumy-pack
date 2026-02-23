@@ -28,7 +28,7 @@ eligibility, analysis, generation, validation, and migration in one pass.
 
 ### Phase 1 — Discovery
 
-Locate all `test.ts` files and analyze metrics via `test-metrics(action: "count")`.
+Locate all `test.ts` files and analyze metrics via `test_metrics(action: "count")`.
 See [reference.md Section 1](./reference.md#section-1--discovery-details).
 
 ### Phase 2 — Eligibility Check
@@ -48,7 +48,7 @@ See [reference.md Section 4](./reference.md#section-4--spec-generation-312-rule)
 
 ### Phase 5 — Validation
 
-Verify generated specs pass `test-metrics(action: "check-312")` before writing.
+Verify generated specs pass `test_metrics(action: "check-312")` before writing.
 See [reference.md Section 5](./reference.md#section-5--validation-and-migration).
 
 ### Phase 6 — Migration
@@ -60,8 +60,8 @@ See [reference.md Section 5](./reference.md#section-5--validation-and-migration)
 
 | Tool           | Action      | Purpose                                                  |
 | -------------- | ----------- | -------------------------------------------------------- |
-| `test-metrics` | `count`     | Analyze test case counts, stability, and failure history |
-| `test-metrics` | `check-312` | Validate generated spec.ts against 3+12 rule             |
+| `test_metrics` | `count`     | Analyze test case counts, stability, and failure history |
+| `test_metrics` | `check-312` | Validate generated spec.ts against 3+12 rule             |
 
 ## Options
 

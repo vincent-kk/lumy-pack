@@ -35,13 +35,13 @@ operates independently.
 
 ### Stage 1 — Scan
 
-`drift-analyzer` scans the full project using `fractal-scan` to establish the
+`drift-analyzer` scans the full project using `fractal_scan` to establish the
 current structural state.
 See [reference.md Section 1](./reference.md#section-1--scan).
 
 ### Stage 2 — Detect & Classify
 
-`drift-detect` identifies all drift items and classifies them by severity:
+`drift_detect` identifies all drift items and classifies them by severity:
 `critical`, `high`, `medium`, `low`. The `--severity` option restricts which
 items are included in the correction plan.
 See [reference.md Section 2](./reference.md#section-2--detect--classify).
@@ -49,13 +49,13 @@ See [reference.md Section 2](./reference.md#section-2--detect--classify).
 ### Stage 3 — Plan & Approval
 
 `drift-analyzer` generates the correction plan. `fractal-architect` reviews
-reclassification candidates using `lca-resolve`. The plan is presented to the
+reclassification candidates using `lca_resolve`. The plan is presented to the
 user for approval unless `--auto-approve` is set.
 See [reference.md Section 3](./reference.md#section-3--plan--approval).
 
 ### Stage 4 — Correction Execution
 
-`restructurer` executes the approved corrections and `structure-validate` confirms
+`restructurer` executes the approved corrections and `structure_validate` confirms
 the result.
 See [reference.md Section 4](./reference.md#section-4--correction-execution).
 
@@ -63,10 +63,10 @@ See [reference.md Section 4](./reference.md#section-4--correction-execution).
 
 | Tool                 | Stage | Purpose                                                     |
 | -------------------- | ----- | ----------------------------------------------------------- |
-| `fractal-scan`       | 1     | Full project structure scan                                 |
-| `drift-detect`       | 2     | Identify drift items                                        |
-| `lca-resolve`        | 3     | Determine correct placement for reclassification candidates |
-| `structure-validate` | 4     | Validate post-correction structure                          |
+| `fractal_scan`       | 1     | Full project structure scan                                 |
+| `drift_detect`       | 2     | Identify drift items                                        |
+| `lca_resolve`        | 3     | Determine correct placement for reclassification candidates |
+| `structure_validate` | 4     | Validate post-correction structure                          |
 
 ## Options
 

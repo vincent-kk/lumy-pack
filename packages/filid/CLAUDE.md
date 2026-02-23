@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```
 Layer 1 (자동)  → Hooks (PreToolUse, SubagentStart, UserPromptSubmit)
-Layer 2 (도구)  → MCP Server (11개 분석/관리 도구)
+Layer 2 (도구)  → MCP Server (14개 분석/관리 도구)
 Layer 3 (에이전트) → 6개 특화 에이전트 (architect, implementer, QA 등)
 Layer 4 (사용자) → 11개 Skills (/filid:fca-init, /filid:fca-review 등)
 ```
@@ -31,7 +31,7 @@ yarn test:run      # 단일 실행 (CI)
 yarn test:coverage # 커버리지
 
 # 특정 테스트 실행
-yarn test:run src/__tests__/unit/core/drift-detector.test.ts
+yarn test:run src/__tests__/unit/core/drift_detector.test.ts
 
 # 벤치마크
 yarn bench:run
@@ -78,7 +78,7 @@ yarn version:sync
 | --------------- | ------------------------------------------------------------------------ |
 | `src/core/`     | 핵심 비즈니스 로직 (FractalTree, RuleEngine, DriftDetector 등 12개 모듈) |
 | `src/ast/`      | TypeScript Compiler API 기반 AST 분석 (LCOM4, CC, 의존성 추출)           |
-| `src/mcp/`      | MCP 서버 + 11개 도구 핸들러                                              |
+| `src/mcp/`      | MCP 서버 + 14개 도구 핸들러                                              |
 | `src/hooks/`    | 훅 구현체 + `entries/` (esbuild 진입점)                                  |
 | `src/metrics/`  | 테스트 밀도, 모듈 분리 결정 메트릭                                       |
 | `src/compress/` | 컨텍스트 압축 (가역/비가역)                                              |
@@ -89,7 +89,7 @@ yarn version:sync
 - `src/index.ts` — 33개 함수 + 30개 타입 공개 export
 - `src/core/rule-engine.ts` — 7개 내장 규칙 (naming, structure, dependency, documentation, index, module)
 - `src/core/document-validator.ts` — CLAUDE.md/SPEC.md 100줄 제한 + 3-tier 경계 검증
-- `src/mcp/server.ts` — MCP 서버 초기화 + 11개 도구 등록
+- `src/mcp/server.ts` — MCP 서버 초기화 + 14개 도구 등록
 - `src/hooks/context-injector.ts` — UserPromptSubmit 시 FCA-AI 규칙 컨텍스트 주입
 - `build-plugin.mjs` — esbuild 번들러 스크립트
 

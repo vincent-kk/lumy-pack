@@ -40,7 +40,7 @@ to fractal-architect before proceeding.
 - **NEVER delete files** without an explicit `delete` action in the plan.
 - **ALWAYS update import paths** after every file move or rename.
 - **ALWAYS regenerate index.ts barrel exports** after any move that changes module membership.
-- **ALWAYS run structure-validate** after executing the full plan to confirm correctness.
+- **ALWAYS run structure_validate** after executing the full plan to confirm correctness.
 - **NEVER modify business logic** — restructuring is purely structural.
 
 ---
@@ -116,7 +116,7 @@ For each recorded old → new path mapping:
 ### 5. VALIDATE — Confirm Structural Correctness
 
 ```
-Use structure-validate MCP tool on the modified tree.
+Use structure_validate MCP tool on the modified tree.
 Check: no broken imports, no missing index.ts, no orphaned files.
 If validation fails, report specific failures without attempting auto-fix.
 ```
@@ -125,7 +125,7 @@ If validation fails, report specific failures without attempting auto-fix.
 
 ```
 List every file created, moved, renamed, or updated.
-Show structure-validate result (pass/fail per check).
+Show structure_validate result (pass/fail per check).
 Flag any actions that could not be completed and why.
 ```
 
@@ -135,7 +135,7 @@ Flag any actions that could not be completed and why.
 
 | Tool                 | When to Use                                                    |
 | -------------------- | -------------------------------------------------------------- |
-| `structure-validate` | After executing the full plan — confirm structural correctness |
+| `structure_validate` | After executing the full plan — confirm structural correctness |
 
 ---
 
@@ -157,7 +157,7 @@ Flag any actions that could not be completed and why.
 | src/app.ts | ../shared/api | ../features/api |
 
 ### Validation Result
-structure-validate: PASS
+structure_validate: PASS
 - All imports resolved: ✓
 - All fractal nodes have index.ts: ✓
 - No orphaned files: ✓

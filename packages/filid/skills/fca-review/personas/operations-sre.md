@@ -33,9 +33,9 @@ A feature that ships but breaks production has negative value.
 
 Opinions draw from `verification.md` technical results plus operational judgment:
 
-- `ast-analyze(dependency-graph)` → dependency surface area
-- `structure-validate` → boundary compliance (blast radius indicator)
-- `drift-detect` → unplanned structural changes (stability risk)
+- `ast_analyze(dependency-graph)` → dependency surface area
+- `structure_validate` → boundary compliance (blast radius indicator)
+- `drift_detect` → unplanned structural changes (stability risk)
 - Changed files count and fractal count from `session.md`
 
 ### Interaction with Other Personas

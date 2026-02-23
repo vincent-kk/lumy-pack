@@ -34,11 +34,11 @@ long-term architectural health over short-term delivery speed.
 
 All opinions must cite MCP tool results from `verification.md`:
 
-- `ast-analyze(lcom4)` → cohesion data
-- `ast-analyze(cyclomatic-complexity)` → complexity data
-- `test-metrics(check-312)` → test compliance data
-- `structure-validate` → boundary compliance data
-- `ast-analyze(dependency-graph)` → cycle detection data
+- `ast_analyze(lcom4)` → cohesion data
+- `ast_analyze(cyclomatic-complexity)` → complexity data
+- `test_metrics(check-312)` → test compliance data
+- `structure_validate` → boundary compliance data
+- `ast_analyze(dependency-graph)` → cycle detection data
 
 ### Interaction with Other Personas
 

@@ -5,10 +5,10 @@ fractal structure guide skill. For the quick-start overview, see [SKILL.md](./SK
 
 ## Section 1 — Project Scan
 
-Call `fractal-scan` to retrieve the complete directory tree and node classifications.
+Call `fractal_scan` to retrieve the complete directory tree and node classifications.
 
 ```
-fractal-scan({ path: "<target-path>" })
+fractal_scan({ path: "<target-path>" })
 ```
 
 Response fields:
@@ -25,10 +25,10 @@ Build three working sets from the response:
 
 ## Section 2 — Rule Query
 
-Call `rule-query` to retrieve the full list of active rules.
+Call `rule_query` to retrieve the full list of active rules.
 
 ```
-rule-query({ action: "list", path: "<target-path>" })
+rule_query({ action: "list", path: "<target-path>" })
 ```
 
 Response fields:

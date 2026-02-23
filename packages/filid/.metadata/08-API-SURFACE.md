@@ -363,11 +363,11 @@ function handleDebtManage(input: DebtManageInput): Promise<DebtManageOutput>;
 
 ## MCP 도구 스키마
 
-### ast-analyze
+### ast_analyze
 
 ```json
 {
-  "name": "ast-analyze",
+  "name": "ast_analyze",
   "required": ["source", "analysisType"],
   "properties": {
     "source": "string — 분석할 소스 코드",
@@ -379,11 +379,11 @@ function handleDebtManage(input: DebtManageInput): Promise<DebtManageOutput>;
 }
 ```
 
-### fractal-navigate
+### fractal_navigate
 
 ```json
 {
-  "name": "fractal-navigate",
+  "name": "fractal_navigate",
   "required": ["action", "path", "entries"],
   "properties": {
     "action": "enum: classify | sibling-list | tree",
@@ -393,11 +393,11 @@ function handleDebtManage(input: DebtManageInput): Promise<DebtManageOutput>;
 }
 ```
 
-### doc-compress
+### doc_compress
 
 ```json
 {
-  "name": "doc-compress",
+  "name": "doc_compress",
   "required": ["mode"],
   "properties": {
     "mode": "enum: reversible | lossy | auto",
@@ -409,11 +409,11 @@ function handleDebtManage(input: DebtManageInput): Promise<DebtManageOutput>;
 }
 ```
 
-### test-metrics
+### test_metrics
 
 ```json
 {
-  "name": "test-metrics",
+  "name": "test_metrics",
   "required": ["action"],
   "properties": {
     "action": "enum: count | check-312 | decide",
@@ -423,11 +423,11 @@ function handleDebtManage(input: DebtManageInput): Promise<DebtManageOutput>;
 }
 ```
 
-### fractal-scan
+### fractal_scan
 
 ```json
 {
-  "name": "fractal-scan",
+  "name": "fractal_scan",
   "required": ["path"],
   "properties": {
     "path": "string — 프로젝트 루트 디렉토리 (절대 경로)",
@@ -437,11 +437,11 @@ function handleDebtManage(input: DebtManageInput): Promise<DebtManageOutput>;
 }
 ```
 
-### drift-detect
+### drift_detect
 
 ```json
 {
-  "name": "drift-detect",
+  "name": "drift_detect",
   "required": ["path"],
   "properties": {
     "path": "string — 프로젝트 루트 디렉토리 (절대 경로)",
@@ -451,11 +451,11 @@ function handleDebtManage(input: DebtManageInput): Promise<DebtManageOutput>;
 }
 ```
 
-### lca-resolve
+### lca_resolve
 
 ```json
 {
-  "name": "lca-resolve",
+  "name": "lca_resolve",
   "required": ["path", "moduleA", "moduleB"],
   "properties": {
     "path": "string — 프로젝트 루트 디렉토리 (절대 경로)",
@@ -465,11 +465,11 @@ function handleDebtManage(input: DebtManageInput): Promise<DebtManageOutput>;
 }
 ```
 
-### rule-query
+### rule_query
 
 ```json
 {
-  "name": "rule-query",
+  "name": "rule_query",
   "required": ["action", "path"],
   "properties": {
     "action": "enum: list | get | check",
@@ -481,11 +481,11 @@ function handleDebtManage(input: DebtManageInput): Promise<DebtManageOutput>;
 }
 ```
 
-### structure-validate
+### structure_validate
 
 ```json
 {
-  "name": "structure-validate",
+  "name": "structure_validate",
   "required": ["path"],
   "properties": {
     "path": "string — 프로젝트 루트 디렉토리 (절대 경로)",
@@ -495,11 +495,11 @@ function handleDebtManage(input: DebtManageInput): Promise<DebtManageOutput>;
 }
 ```
 
-### review-manage
+### review_manage
 
 ```json
 {
-  "name": "review-manage",
+  "name": "review_manage",
   "required": ["action", "projectRoot"],
   "properties": {
     "action": "enum: normalize-branch | ensure-dir | checkpoint | elect-committee | cleanup",
@@ -512,11 +512,11 @@ function handleDebtManage(input: DebtManageInput): Promise<DebtManageOutput>;
 }
 ```
 
-### debt-manage
+### debt_manage
 
 ```json
 {
-  "name": "debt-manage",
+  "name": "debt_manage",
   "required": ["action", "projectRoot"],
   "properties": {
     "action": "enum: create | list | resolve | calculate-bias",

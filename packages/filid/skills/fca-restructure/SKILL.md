@@ -31,8 +31,8 @@ moves, renames, index.ts creations, and import path updates.
 
 `fractal-architect` performs analysis using **parallel MCP calls**:
 
-- `fractal-scan`, `drift-detect`, and `rule-query` run **simultaneously**.
-- `lca-resolve` runs after `drift-detect` completes (requires its output).
+- `fractal_scan`, `drift_detect`, and `rule_query` run **simultaneously**.
+- `lca_resolve` runs after `drift_detect` completes (requires its output).
 
 After all calls complete, `fractal-architect` generates a concrete restructuring proposal.
 See [reference.md Section 1](./reference.md#section-1--analysis--proposal).
@@ -52,7 +52,7 @@ See [reference.md Section 3](./reference.md#section-3--execution).
 
 ### Stage 4 — Validation
 
-`fractal-architect` validates the result using `structure-validate` and reports any
+`fractal-architect` validates the result using `structure_validate` and reports any
 remaining violations.
 See [reference.md Section 4](./reference.md#section-4--validation).
 
@@ -60,11 +60,11 @@ See [reference.md Section 4](./reference.md#section-4--validation).
 
 | Tool                 | Stage | Purpose                             |
 | -------------------- | ----- | ----------------------------------- |
-| `fractal-scan`       | 1     | Full structure scan                 |
-| `drift-detect`       | 1     | Detect fractal principle deviations |
-| `lca-resolve`        | 1     | Resolve move targets via LCA        |
-| `rule-query`         | 1     | Fetch active rules                  |
-| `structure-validate` | 4     | Validate post-execution structure   |
+| `fractal_scan`       | 1     | Full structure scan                 |
+| `drift_detect`       | 1     | Detect fractal principle deviations |
+| `lca_resolve`        | 1     | Resolve move targets via LCA        |
+| `rule_query`         | 1     | Fetch active rules                  |
+| `structure_validate` | 4     | Validate post-execution structure   |
 
 ## Options
 
@@ -96,8 +96,8 @@ See [reference.md Section 4](./reference.md#section-4--validation).
 /filid:fca-restructure --auto-approve
 
 Stages:  Analysis → Plan → Execute → Validate
-         Stage 1: fractal-scan + drift-detect + rule-query run in parallel;
-                  lca-resolve runs after drift-detect
+         Stage 1: fractal_scan + drift_detect + rule_query run in parallel;
+                  lca_resolve runs after drift_detect
 Agents:  fractal-architect (Stage 1, 4), restructurer (Stage 3)
 Dry-run: Prints plan then exits — no file changes
 ```

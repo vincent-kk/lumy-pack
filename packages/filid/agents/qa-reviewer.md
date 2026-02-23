@@ -42,8 +42,8 @@ final report. Do NOT stop early on failures — complete every stage.
 
 ### Stage 1 — Structure: Fractal/Organ Boundary Compliance
 
-1. Use `fractal-navigate` MCP: `action: "classify"` (with `path` and `entries` from `fractal-scan`) on every changed directory.
-2. Use `fractal-scan` MCP for the full hierarchy view.
+1. Use `fractal_navigate` MCP: `action: "classify"` (with `path` and `entries` from `fractal_scan`) on every changed directory.
+2. Use `fractal_scan` MCP for the full hierarchy view.
 3. Check: organ directories (`components`, `utils`, `types`, `hooks`, `helpers`,
    `lib`, `styles`, `assets`, `constants`) must NOT contain a CLAUDE.md file.
 4. Check: fractal modules must have a CLAUDE.md.
@@ -63,8 +63,8 @@ final report. Do NOT stop early on failures — complete every stage.
 
 ### Stage 3 — Tests: 3+12 Rule Verification
 
-1. Use `test-metrics` MCP: `action: "check-312", files: [{ filePath: "<spec-path>", content: "<source>" }]` on each spec.ts file in scope.
-2. Use `test-metrics` MCP: `action: "count", files: [{ filePath: "<spec-path>", content: "<source>" }]` to get exact test case counts.
+1. Use `test_metrics` MCP: `action: "check-312", files: [{ filePath: "<spec-path>", content: "<source>" }]` on each spec.ts file in scope.
+2. Use `test_metrics` MCP: `action: "count", files: [{ filePath: "<spec-path>", content: "<source>" }]` to get exact test case counts.
 3. Rules:
    - Total test cases per spec.ts: <= 15 (`TEST_THRESHOLD`).
    - Distribution: 3 basic (happy path / trivial) + up to 12 complex (edge cases,
@@ -74,18 +74,18 @@ final report. Do NOT stop early on failures — complete every stage.
 
 ### Stage 4 — Metrics: LCOM4 and Cyclomatic Complexity
 
-1. Use `ast-analyze` MCP: `analysisType: "lcom4"` with `source` (file content) on every non-trivial module touched in the PR.
+1. Use `ast_analyze` MCP: `analysisType: "lcom4"` with `source` (file content) on every non-trivial module touched in the PR.
    - LCOM4 >= `LCOM4_SPLIT_THRESHOLD` (2) → recommend **split**.
-2. Use `ast-analyze` MCP: `analysisType: "cyclomatic-complexity"` with `source` (file content) on every function with branching logic.
+2. Use `ast_analyze` MCP: `analysisType: "cyclomatic-complexity"` with `source` (file content) on every function with branching logic.
    - CC > `CC_THRESHOLD` (15) → recommend **compress** (extract helpers) or
      **abstract** (introduce interface/strategy pattern).
-3. Use `test-metrics` MCP: `action: "decide"` with `decisionInput: { testCount, lcom4, cyclomaticComplexity }` for automated action recommendation.
-4. Use `ast-analyze` MCP: `analysisType: "dependency-graph"` with `source` (file content) to build dependency map.
+3. Use `test_metrics` MCP: `action: "decide"` with `decisionInput: { testCount, lcom4, cyclomaticComplexity }` for automated action recommendation.
+4. Use `ast_analyze` MCP: `analysisType: "dependency-graph"` with `source` (file content) to build dependency map.
 5. Record all metric violations with exact values.
 
 ### Stage 5 — Dependencies: DAG and Cycle Detection
 
-1. Use `ast-analyze` MCP: `source: <file content>, analysisType: "dependency-graph"` on each module to build the full DAG.
+1. Use `ast_analyze` MCP: `source: <file content>, analysisType: "dependency-graph"` on each module to build the full DAG.
 2. Check for circular dependencies (cycles in the DAG).
    - Any cycle is a **critical** severity finding.
 3. Check that organ directories are not imported by modules outside their parent fractal.
@@ -102,16 +102,16 @@ final report. Do NOT stop early on failures — complete every stage.
 
 ## Analysis Checklist
 
-- [ ] All changed directories classified via `fractal-navigate`
+- [ ] All changed directories classified via `fractal_navigate`
 - [ ] Organ directories confirmed to have no CLAUDE.md
 - [ ] All CLAUDE.md files within 100-line limit
 - [ ] All CLAUDE.md files contain 3-tier structure (Always do / Ask first / Never do)
 - [ ] All SPEC.md files have required sections and are not append-only
-- [ ] All spec.ts files checked with `test-metrics check-312`
+- [ ] All spec.ts files checked with `test_metrics check-312`
 - [ ] Test counts confirmed <= 15 per spec.ts
 - [ ] LCOM4 measured for all non-trivial modules
 - [ ] CC measured for all functions with significant branching
-- [ ] `test-metrics decide` run for all flagged modules
+- [ ] `test_metrics decide` run for all flagged modules
 - [ ] Dependency graph built and checked for cycles
 - [ ] Inter-fractal import boundaries verified
 
@@ -184,7 +184,7 @@ Date: <ISO 8601>
 - Always run all 6 stages — do not short-circuit on first failure.
 - Always report exact metric values alongside threshold constants.
 - Always include file path and line number when available.
-- Do not speculate about metrics — run `ast-analyze` and `test-metrics` tools to get real data.
+- Do not speculate about metrics — run `ast_analyze` and `test_metrics` tools to get real data.
 - If an MCP tool is unavailable, note the gap and use Grep/Read to approximate the check manually.
 - Never approve a PR with a critical finding.
 

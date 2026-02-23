@@ -97,13 +97,13 @@ Action required: address unresolved items before merge.
 
 | Fix Type            | Verification Tool                    | Pass Condition         |
 | ------------------- | ------------------------------------ | ---------------------- |
-| LCOM4 violation     | `ast-analyze(lcom4)`                 | LCOM4 < 2              |
-| CC violation        | `ast-analyze(cyclomatic-complexity)` | CC <= 15               |
-| 3+12 violation      | `test-metrics(check-312)`            | All files PASS         |
-| Structure violation | `structure-validate`                 | No violations          |
-| Circular dependency | `ast-analyze(dependency-graph)`      | No cycles              |
-| Drift               | `drift-detect`                       | No drift               |
-| Document compliance | `doc-compress(auto)` + Read          | CLAUDE.md <= 100 lines |
+| LCOM4 violation     | `ast_analyze(lcom4)`                 | LCOM4 < 2              |
+| CC violation        | `ast_analyze(cyclomatic-complexity)` | CC <= 15               |
+| 3+12 violation      | `test_metrics(check-312)`            | All files PASS         |
+| Structure violation | `structure_validate`                 | No violations          |
+| Circular dependency | `ast_analyze(dependency-graph)`      | No cycles              |
+| Drift               | `drift_detect`                       | No drift               |
+| Document compliance | `doc_compress(auto)` + Read          | CLAUDE.md <= 100 lines |
 
 ## Non-Negotiable Rules (Constitutional)
 
@@ -120,6 +120,6 @@ A debt item is considered resolved when:
 
 1. The file at `debt.file_path` was modified in the Delta
 2. The violated rule is re-verified and now passes
-3. Both conditions must be true for `debt-manage(resolve)` to execute
+3. Both conditions must be true for `debt_manage(resolve)` to execute
 
 Partial resolution is not supported (1 debt = 1 rule violation).

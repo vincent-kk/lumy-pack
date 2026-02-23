@@ -38,14 +38,14 @@ If a list is empty for a given stage, record the stage as `SKIP`.
 For each directory in `CHANGED_DIRS`:
 
 ```
-fractal-navigate(action: "classify", path: <directory>, entries: [/* nodes from fractal-scan */])
-structure-validate(path: <directory>)
+fractal_navigate(action: "classify", path: <directory>, entries: [/* nodes from fractal_scan */])
+structure_validate(path: <directory>)
 ```
 
 Checks:
 - If a changed directory is a fractal node → must have a CLAUDE.md
 - If a changed directory is an organ node → must NOT have a CLAUDE.md
-- `fractal-navigate(classify)` result must match the directory's actual role
+- `fractal_navigate(classify)` result must match the directory's actual role
 
 Severity mapping:
 - Organ directory has CLAUDE.md → HIGH
@@ -57,7 +57,7 @@ Severity mapping:
 For each file in `CHANGED_CLAUDE_MDS`:
 - Line count must be <= 100
 - Must contain all three tier sections: "Always do", "Ask first", "Never do"
-- Run `doc-compress(mode: "auto")` — warning if >= 90 lines
+- Run `doc_compress(mode: "auto")` — warning if >= 90 lines
 
 For each file in `CHANGED_SPEC_MDS`:
 - Check for append-only patterns (duplicate section headings from prior iterations)
@@ -72,7 +72,7 @@ Severity mapping:
 ### A.3 — Stage 3: Test Compliance (3+12 Rule)
 
 ```
-test-metrics(action: "check-312", files: CHANGED_SPEC_FILES)
+test_metrics(action: "check-312", files: CHANGED_SPEC_FILES)
 ```
 
 Threshold: total test cases per spec.ts file <= 15 (TEST_THRESHOLD = 15).
@@ -89,9 +89,9 @@ Severity mapping:
 For each file in `CHANGED_FILES` (skip index.ts, *.d.ts, *.spec.ts):
 
 ```
-ast-analyze(source: <file content>, analysisType: "lcom4", className: <class>)
-ast-analyze(source: <file content>, analysisType: "cyclomatic-complexity")
-test-metrics(action: "decide", decisionInput: { testCount, lcom4, cyclomaticComplexity })
+ast_analyze(source: <file content>, analysisType: "lcom4", className: <class>)
+ast_analyze(source: <file content>, analysisType: "cyclomatic-complexity")
+test_metrics(action: "decide", decisionInput: { testCount, lcom4, cyclomaticComplexity })
 ```
 
 Thresholds:
@@ -110,7 +110,7 @@ Severity mapping:
 For each file in `CHANGED_FILES`:
 
 ```
-ast-analyze(source: <file content>, analysisType: "dependency-graph")
+ast_analyze(source: <file content>, analysisType: "dependency-graph")
 ```
 
 Checks:

@@ -95,10 +95,10 @@ Options:
 
 | Tool            | Action             | When                               |
 | --------------- | ------------------ | ---------------------------------- |
-| `review-manage` | `normalize-branch` | Step 1: branch detection           |
-| `debt-manage`   | `create`           | Step 5: for each rejected fix item |
+| `review_manage` | `normalize-branch` | Step 1: branch detection           |
+| `debt_manage`   | `create`           | Step 5: for each rejected fix item |
 
-## debt-manage(create) Input Schema
+## debt_manage(create) Input Schema
 
 ```json
 {

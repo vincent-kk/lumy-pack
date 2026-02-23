@@ -29,8 +29,8 @@ An incremental gate (Stage 0) skips execution when no changes have occurred sinc
 
 Without `--force`, exits immediately if no changes have occurred since the last run.
 
-1. `cache-manage({ action: "compute-hash", cwd: "<path>" })` → `currentHash`
-2. `cache-manage({ action: "get-hash", cwd: "<path>", skillName: "fca-update" })` → `lastHash`
+1. `cache_manage({ action: "compute-hash", cwd: "<path>" })` → `currentHash`
+2. `cache_manage({ action: "get-hash", cwd: "<path>", skillName: "fca-update" })` → `lastHash`
 3. `currentHash === lastHash` and no `--force` → output "No changes since last run. Use --force to override." and exit
 4. Changes detected → proceed to Stage 1
 
@@ -48,7 +48,7 @@ See [reference.md Section 1](./reference.md#section-1--scan).
 Runs only when Stage 1 detects `critical` or `high` severity violations.
 
 Agents: `drift-analyzer` (haiku) → `restructurer` (sonnet)
-MCP: `drift-detect`, `lca-resolve`, `structure-validate`
+MCP: `drift_detect`, `lca_resolve`, `structure_validate`
 See [reference.md Section 2](./reference.md#section-2--sync).
 
 ### Stage 3 — Doc & Test Update
@@ -61,7 +61,7 @@ See [reference.md Section 3](./reference.md#section-3--doc--test-update).
 
 ### Stage 4 — Finalize
 
-1. `cache-manage({ action: "save-hash", cwd: "<path>", skillName: "fca-update", hash: currentHash })`
+1. `cache_manage({ action: "save-hash", cwd: "<path>", skillName: "fca-update", hash: currentHash })`
 2. Output consolidated report
 See [reference.md Section 4](./reference.md#section-4--finalize).
 
@@ -69,15 +69,15 @@ See [reference.md Section 4](./reference.md#section-4--finalize).
 
 | Tool | Stage | Purpose |
 |------|-------|---------|
-| `cache-manage` | 0, 4 | Incremental gate: compute and persist project hash |
-| `fractal-scan` | 1 | Project structure scan |
-| `fractal-navigate` | 1 | Tree traversal and classification |
-| `test-metrics` | 1, 3 | 3+12 rule validation |
-| `drift-detect` | 2 | Drift detection |
-| `lca-resolve` | 2 | Determine correct placement for reclassification |
-| `structure-validate` | 2 | Structure validity check |
-| `doc-compress` | 3 | Document size check |
-| `ast-analyze` | 3 | LCOM4, CC metrics |
+| `cache_manage` | 0, 4 | Incremental gate: compute and persist project hash |
+| `fractal_scan` | 1 | Project structure scan |
+| `fractal_navigate` | 1 | Tree traversal and classification |
+| `test_metrics` | 1, 3 | 3+12 rule validation |
+| `drift_detect` | 2 | Drift detection |
+| `lca_resolve` | 2 | Determine correct placement for reclassification |
+| `structure_validate` | 2 | Structure validity check |
+| `doc_compress` | 3 | Document size check |
+| `ast_analyze` | 3 | LCOM4, CC metrics |
 
 ## Options
 

@@ -33,7 +33,7 @@ changed in the current branch. Standalone execution (`/filid:fca-scan`) always s
 
 ### Phase 1 — Tree Construction
 
-Build the project hierarchy using `fractal-scan` and partition into fractal
+Build the project hierarchy using `fractal_scan` and partition into fractal
 nodes, organ nodes, and spec files.
 See [reference.md Section 1](./reference.md#section-1--tree-construction).
 
@@ -51,7 +51,7 @@ Verify no organ directory contains a CLAUDE.md file.
 See [reference.md Section 3](./reference.md#section-3--organ-directory-validation).
 
 **Phase 4 — Test File Validation (3+12 Rule)**
-Validate all `*.spec.ts` files against the 15-case limit using `test-metrics`.
+Validate all `*.spec.ts` files against the 15-case limit using `test_metrics`.
 See [reference.md Section 4](./reference.md#section-4--test-file-validation-312-rule).
 
 ### Phase 5 — Report Generation (Sequential — after Phases 2–4)
@@ -64,8 +64,8 @@ See [reference.md Section 5](./reference.md#section-5--report-formats).
 
 | Tool               | Action      | Purpose                                   |
 | ------------------ | ----------- | ----------------------------------------- |
-| `fractal-scan`     | —           | Build complete project hierarchy for scan |
-| `test-metrics`     | `check-312` | Validate 3+12 rule across all spec files  |
+| `fractal_scan`     | —           | Build complete project hierarchy for scan |
+| `test_metrics`     | `check-312` | Validate 3+12 rule across all spec files  |
 
 ## Options
 

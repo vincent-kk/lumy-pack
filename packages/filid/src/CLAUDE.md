@@ -12,7 +12,7 @@
 | `version.ts` | 자동 생성 버전 상수 (직접 수정 금지) |
 | `core/` | FractalTree, RuleEngine, DriftDetector 등 12개 핵심 모듈 |
 | `ast/` | TypeScript Compiler API 기반 AST 분석 (LCOM4, CC, 의존성) |
-| `mcp/` | MCP 서버 + 11개 도구 핸들러 |
+| `mcp/` | MCP 서버 + 14개 도구 핸들러 |
 | `hooks/` | Claude Code 훅 구현체 + esbuild 진입점 |
 | `metrics/` | 테스트 밀도 · 모듈 분리 결정 메트릭 |
 | `compress/` | 컨텍스트 압축 (가역/비가역) |

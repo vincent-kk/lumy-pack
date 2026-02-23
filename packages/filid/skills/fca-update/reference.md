@@ -8,10 +8,10 @@ code-docs-tests synchronization skill. For the quick-start overview, see [SKILL.
 Stage 0 MCP calls:
 
 ```
-cache-manage({ action: "compute-hash", cwd: "<target-path>" })
+cache_manage({ action: "compute-hash", cwd: "<target-path>" })
 // Returns: { hash: string, cwd: string }
 
-cache-manage({ action: "get-hash", cwd: "<target-path>", skillName: "fca-update" })
+cache_manage({ action: "get-hash", cwd: "<target-path>", skillName: "fca-update" })
 // Returns: { hash: string | null, skillName: string, found: boolean }
 ```
 
@@ -31,10 +31,10 @@ git diff --name-only main...HEAD   # list of changed files (default base: main)
 Restrict scan to changed files only:
 
 ```
-fractal-scan({ path: "<target-path>" })
+fractal_scan({ path: "<target-path>" })
 // Returns: { nodes: FractalNode[], summary: ScanSummary }
 
-test-metrics({ action: "check-312", files: [{ filePath, content }] })
+test_metrics({ action: "check-312", files: [{ filePath, content }] })
 // Returns: { violations: TestViolation[], summary: { total, passing, failing } }
 ```
 
@@ -49,7 +49,7 @@ Scan result categories:
 **Execution condition**: runs only when Stage 1 detects `critical` or `high` severity violations.
 
 ```
-drift-detect({ path: "<target-path>", severity: "high" })
+drift_detect({ path: "<target-path>", severity: "high" })
 // Returns: { items: DriftItem[], bySeverity: { critical, high, medium, low } }
 ```
 
@@ -72,10 +72,10 @@ fca-sync DriftSeverity ordering: `critical > high > medium > low`
 
 Correction calls:
 ```
-lca-resolve({ path: "<target-path>", moduleA: "...", moduleB: "..." })
+lca_resolve({ path: "<target-path>", moduleA: "...", moduleB: "..." })
 // Returns: { lcaPath: string, suggestedPlacement: string }
 
-structure-validate({ path: "<target-path>" })
+structure_validate({ path: "<target-path>" })
 // Returns: { passed: boolean, violations: Violation[] }
 ```
 
@@ -102,7 +102,7 @@ For each fractal node containing changed files:
 3. **Update CLAUDE.md if present**: reflect implemented changes; compress if > 100 lines
 
 ```
-doc-compress({ mode: "auto", filePath: "<path>", content: "<content>", exports: [...] })
+doc_compress({ mode: "auto", filePath: "<path>", content: "<content>", exports: [...] })
 // Suggests compression when content exceeds 100 lines
 ```
 
@@ -116,10 +116,10 @@ For each changed source file:
 2. **Create if missing**: scaffold 3 basic tests + 12 extended test slots
 
 ```
-ast-analyze({ source: "<source>", analysisType: "full" })
+ast_analyze({ source: "<source>", analysisType: "full" })
 // Checks LCOM4, CC metrics → recommends module split or compression
 
-test-metrics({ action: "check-312", files: [...] })
+test_metrics({ action: "check-312", files: [...] })
 // Validates 3+12 rule compliance
 ```
 
@@ -129,7 +129,7 @@ test-metrics({ action: "check-312", files: [...] })
 
 Save run hash:
 ```
-cache-manage({ action: "save-hash", cwd: "<path>", skillName: "fca-update", hash: "<currentHash>" })
+cache_manage({ action: "save-hash", cwd: "<path>", skillName: "fca-update", hash: "<currentHash>" })
 // Returns: { saved: true, skillName: "fca-update", hash: "..." }
 ```
 

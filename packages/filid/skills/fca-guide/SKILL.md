@@ -28,13 +28,13 @@ and how the current project is classified, so new modules are placed correctly.
 
 ### Phase 1 — Project Scan
 
-Retrieve the full directory tree and node classifications using the `fractal-scan`
+Retrieve the full directory tree and node classifications using the `fractal_scan`
 MCP tool.
 See [reference.md Section 1](./reference.md#section-1--project-scan).
 
 ### Phase 2 — Rule Query
 
-Fetch all active rules using `rule-query` (`action: "list"`) to build the rule
+Fetch all active rules using `rule_query` (`action: "list"`) to build the rule
 reference table included in the guide.
 See [reference.md Section 2](./reference.md#section-2--rule-query).
 
@@ -54,8 +54,8 @@ See [reference.md Section 4](./reference.md#section-4--guide-document-output).
 
 | Tool           | Action | Purpose                                                      |
 | -------------- | ------ | ------------------------------------------------------------ |
-| `fractal-scan` | —      | Retrieve complete project hierarchy and node classifications |
-| `rule-query`   | `list` | Fetch all active rules                                       |
+| `fractal_scan` | —      | Retrieve complete project hierarchy and node classifications |
+| `rule_query`   | `list` | Fetch all active rules                                       |
 
 ## Options
 

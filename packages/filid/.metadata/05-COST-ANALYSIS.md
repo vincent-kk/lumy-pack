@@ -77,21 +77,21 @@ CLAUDE.md/SPEC.md가 아닌 일반 파일 Write 시:
 
 | 도구               | 액션                  | AST 파싱 | 예상 응답 시간            |
 | ------------------ | --------------------- | -------- | ------------------------- |
-| `ast-analyze`      | dependency-graph      | O        | 50-200ms (소스 크기 비례) |
-| `ast-analyze`      | lcom4                 | O        | 50-200ms                  |
-| `ast-analyze`      | cyclomatic-complexity | O        | 30-100ms                  |
-| `ast-analyze`      | tree-diff             | O (2회)  | 100-400ms                 |
-| `ast-analyze`      | full                  | O        | 100-500ms                 |
-| `fractal-navigate` | classify              | X        | <10ms                     |
-| `fractal-navigate` | sibling-list          | X        | <20ms (트리 구축 포함)    |
-| `fractal-navigate` | tree                  | X        | <30ms                     |
-| `doc-compress`     | reversible            | X        | <5ms                      |
-| `doc-compress`     | lossy                 | X        | <10ms                     |
-| `test-metrics`     | count                 | X        | <10ms (파일 수 비례)      |
-| `test-metrics`     | check-312             | X        | <15ms                     |
-| `test-metrics`     | decide                | X        | <5ms                      |
+| `ast_analyze`      | dependency-graph      | O        | 50-200ms (소스 크기 비례) |
+| `ast_analyze`      | lcom4                 | O        | 50-200ms                  |
+| `ast_analyze`      | cyclomatic-complexity | O        | 30-100ms                  |
+| `ast_analyze`      | tree-diff             | O (2회)  | 100-400ms                 |
+| `ast_analyze`      | full                  | O        | 100-500ms                 |
+| `fractal_navigate` | classify              | X        | <10ms                     |
+| `fractal_navigate` | sibling-list          | X        | <20ms (트리 구축 포함)    |
+| `fractal_navigate` | tree                  | X        | <30ms                     |
+| `doc_compress`     | reversible            | X        | <5ms                      |
+| `doc_compress`     | lossy                 | X        | <10ms                     |
+| `test_metrics`     | count                 | X        | <10ms (파일 수 비례)      |
+| `test_metrics`     | check-312             | X        | <15ms                     |
+| `test_metrics`     | decide                | X        | <5ms                      |
 
-> AST 파싱이 포함된 `ast-analyze` 도구가 가장 느림.
+> AST 파싱이 포함된 `ast_analyze` 도구가 가장 느림.
 > `ts.createSourceFile()`의 시간 복잡도: O(n) where n = 소스 코드 크기.
 
 ### TypeScript Compiler API 메모리 사용량

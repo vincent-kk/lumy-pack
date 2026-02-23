@@ -41,7 +41,7 @@ If `SCOPE=pr`, also run `gh pr view --json title,body` for intent context.
 For each changed file directory, call:
 
 ```
-fractal-navigate(action: "classify", path: <directory>, entries: [/* nodes from fractal-scan */])
+fractal_navigate(action: "classify", path: <directory>, entries: [/* nodes from fractal_scan */])
 ```
 
 Build a list of unique fractal paths affected by the change.
@@ -52,7 +52,7 @@ Detect whether any interface files (index.ts, public API) are modified.
 Call the deterministic committee election MCP tool:
 
 ```
-review-manage(
+review_manage(
   action: "elect-committee",
   projectRoot: <PROJECT_ROOT>,
   changedFilesCount: <count>,
@@ -71,7 +71,7 @@ even when the diff is small.
 ### B.4 — Ensure Review Directory
 
 ```
-review-manage(
+review_manage(
   action: "ensure-dir",
   projectRoot: <PROJECT_ROOT>,
   branchName: <BRANCH>
@@ -122,4 +122,4 @@ Adversarial pairs: <persona A> ↔ <persona B list>
 - Use MCP tools for deterministic operations (committee election, branch normalization)
 - Do NOT load persona files — that happens in Phase D only
 - Write ONLY `session.md` — no other files
-- If `fractal-navigate` fails for a path, classify it as "unknown" and continue
+- If `fractal_navigate` fails for a path, classify it as "unknown" and continue

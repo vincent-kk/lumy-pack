@@ -14,7 +14,7 @@ src/
 ├── metrics/    4 모듈   4 함수               소프트웨어 메트릭
 ├── compress/   2 모듈   3 함수               컨텍스트 압축
 ├── hooks/      5 모듈   5 함수 + 5 엔트리     Claude Code Hook 연동
-└── mcp/tools/  6 모듈                        MCP tool 핸들러 (+review-manage, debt-manage)
+└── mcp/tools/  6 모듈                        MCP tool 핸들러 (+review_manage, debt_manage)
 ```
 
 ---
@@ -501,7 +501,7 @@ skills/code-review/
     └── design-hci.md
 ```
 
-**MCP tool 의존**: `review-manage` (5 actions), `debt-manage` (1 action: calculate-bias), 기존 9개 MCP tool
+**MCP tool 의존**: `review_manage` (5 actions), `debt_manage` (1 action: calculate-bias), 기존 9개 MCP tool
 
 ### skills/resolve-review/
 
@@ -515,7 +515,7 @@ skills/resolve-review/
 └── reference.md   # justifications.md 포맷, ADR 가이드라인, AskUserQuestion 패턴
 ```
 
-**MCP tool 의존**: `review-manage` (normalize-branch), `debt-manage` (create)
+**MCP tool 의존**: `review_manage` (normalize-branch), `debt_manage` (create)
 
 ### skills/re-validate/
 
@@ -529,13 +529,13 @@ skills/re-validate/
 └── reference.md   # re-validate.md 포맷, PR 코멘트 포맷, 비협상 규칙
 ```
 
-**MCP tool 의존**: `review-manage` (normalize-branch), `debt-manage` (list, resolve), 기존 MCP tool (재검증용)
+**MCP tool 의존**: `review_manage` (normalize-branch), `debt_manage` (list, resolve), 기존 MCP tool (재검증용)
 
 ---
 
 ## 8. 거버넌스 MCP tool 모듈
 
-### src/mcp/tools/review-manage.ts (217줄)
+### src/mcp/tools/review_manage.ts (217줄)
 
 **목적**: 리뷰 세션 결정론적 관리
 
@@ -549,7 +549,7 @@ skills/re-validate/
 
 **의존**: `types/review.ts`
 
-### src/mcp/tools/debt-manage.ts (301줄)
+### src/mcp/tools/debt_manage.ts (301줄)
 
 **목적**: 기술 부채 결정론적 관리
 

@@ -5,10 +5,10 @@ For the quick-start guide, see [SKILL.md](./SKILL.md).
 
 ## Section 1 — Directory Scan Details
 
-Call `fractal-scan` to retrieve the complete project hierarchy by scanning the filesystem.
+Call `fractal_scan` to retrieve the complete project hierarchy by scanning the filesystem.
 
 ```
-fractal-scan({ path: "<target-path>" })
+fractal_scan({ path: "<target-path>" })
 ```
 
 The response is a `ScanReport` containing:
@@ -18,20 +18,20 @@ The response is a `ScanReport` containing:
 
 Build an internal working list of all directories from `tree.nodes` for Phase 2 classification.
 
-> **Note**: Do NOT use `fractal-navigate(action: "tree")` for scanning — that tool
+> **Note**: Do NOT use `fractal_navigate(action: "tree")` for scanning — that tool
 > builds a tree only from a pre-supplied `entries` array and does not read the filesystem.
 
-> **Important**: `tree.nodes` in the `fractal-scan` response contains **all**
+> **Important**: `tree.nodes` in the `fractal_scan` response contains **all**
 > directories, including those nested inside organ nodes. In Phase 2, always
 > iterate over the full `tree.nodes.values()`. Traversing only `children` from
 > `tree.root` will miss fractal nodes that live inside organ boundaries.
 
 ## Section 2 — Node Classification Rules
 
-For each directory, call `fractal-navigate` with `action: "classify"`:
+For each directory, call `fractal_navigate` with `action: "classify"`:
 
 ```
-fractal-navigate({
+fractal_navigate({
   action: "classify",
   path: "<directory-path>",
   entries: [/* child entries from tree */]

@@ -5,10 +5,10 @@ rule scanner. For the quick-start guide, see [SKILL.md](./SKILL.md).
 
 ## Section 1 — Tree Construction
 
-Call `fractal-scan` to build the complete hierarchy by scanning the filesystem.
+Call `fractal_scan` to build the complete hierarchy by scanning the filesystem.
 
 ```
-fractal-scan({ path: "<target-path>" })
+fractal_scan({ path: "<target-path>" })
 ```
 
 The response is a `ScanReport` with `tree.nodes` (Map of path → FractalNode).
@@ -56,10 +56,10 @@ CLAUDE.md is present inside it.
 
 ## Section 4 — Test File Validation (3+12 Rule)
 
-Collect all spec files and call `test-metrics` with `action: "check-312"`.
+Collect all spec files and call `test_metrics` with `action: "check-312"`.
 
 ```
-test-metrics({
+test_metrics({
   action: "check-312",
   files: [{ filePath: "<path>", content: "<source>" }, ...]
 })

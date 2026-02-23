@@ -39,13 +39,13 @@ When invoked, execute these steps in order:
    - Determine the target path(s) using Glob and Read.
 
 2. **Scan the fractal structure**
-   - Use `fractal-scan` MCP tool to retrieve the complete directory tree with node
+   - Use `fractal_scan` MCP tool to retrieve the complete directory tree with node
      classifications and metadata.
    - Build an internal map of all nodes: path, category, children, index presence,
      main presence.
 
 3. **Classify each node**
-   - Apply category classification logic using `fractal-scan` results.
+   - Apply category classification logic using `fractal_scan` results.
    - Category priority (highest to lowest):
      1. Has CLAUDE.md or SPEC.md → `fractal`
      2. Leaf directory with no fractal children → `organ`
@@ -56,21 +56,21 @@ When invoked, execute these steps in order:
      fractal children containing only leaf files is classified as organ.
 
 4. **Validate against rules**
-   - Use `rule-query` MCP tool (`action: "list"`) to retrieve all active rules.
-   - Use `structure-validate` MCP tool to check the full tree for violations.
+   - Use `rule_query` MCP tool (`action: "list"`) to retrieve all active rules.
+   - Use `structure_validate` MCP tool to check the full tree for violations.
    - Categorize violations by severity: `error`, `warning`, `info`.
 
 5. **Analyze metrics** (when evaluating module quality)
-   - Use `ast-analyze` MCP tool: `analysisType: "lcom4"` with `source` (file content) for cohesion measurement.
+   - Use `ast_analyze` MCP tool: `analysisType: "lcom4"` with `source` (file content) for cohesion measurement.
      - LCOM4 >= 2 → recommend **split** into focused sub-modules.
-   - Use `ast-analyze` MCP tool: `analysisType: "cyclomatic-complexity"` with `source` (file content) for complexity measurement.
+   - Use `ast_analyze` MCP tool: `analysisType: "cyclomatic-complexity"` with `source` (file content) for complexity measurement.
      - CC > 15 → recommend **compress** (extract helpers) or **abstract** (introduce interface).
-   - Use `test-metrics` MCP tool: `action: "decide"` with `decisionInput: { testCount, lcom4, cyclomaticComplexity }` for automated decision recommendation.
+   - Use `test_metrics` MCP tool: `action: "decide"` with `decisionInput: { testCount, lcom4, cyclomaticComplexity }` for automated decision recommendation.
 
 6. **Analyze drift** (when performing sync-related analysis)
-   - Use `drift-detect` MCP tool to identify deviations between current structure
+   - Use `drift_detect` MCP tool to identify deviations between current structure
      and expected fractal principles.
-   - Use `lca-resolve` MCP tool to resolve LCA (Lowest Common Ancestor) relationships
+   - Use `lca_resolve` MCP tool to resolve LCA (Lowest Common Ancestor) relationships
      for nodes requiring reclassification.
    - Classify each drift item by severity: `critical`, `high`, `medium`, `low`.
 
@@ -94,14 +94,14 @@ When invoked, execute these steps in order:
 
 ## Analysis Checklist
 
-- [ ] All directories scanned via fractal-scan
+- [ ] All directories scanned via fractal_scan
 - [ ] Every node classified (fractal / organ / pure-function / hybrid)
 - [ ] Organ directories confirmed to have no fractal children
 - [ ] LCOM4 checked for all non-trivial modules (split if >= 2)
 - [ ] CC checked for all functions with significant branching (compress if > 15)
 - [ ] Test case counts verified (<= 15 per spec.ts)
-- [ ] All rule violations identified via structure-validate
-- [ ] Drift items detected and severity assigned via drift-detect
+- [ ] All rule violations identified via structure_validate
+- [ ] Drift items detected and severity assigned via drift_detect
 - [ ] LCA relationships resolved for reclassification candidates
 - [ ] Sync action proposed for every violation/drift item
 - [ ] Health score computed
@@ -181,9 +181,9 @@ Score: 72/100
 - NEVER use Write, Edit, or Bash tools under any circumstances.
 - All proposed content (restructuring plans, new file contents) must be presented as
   fenced code blocks labeled "proposal" — never applied directly.
-- Do not assume a node's category without running `fractal-scan`.
-- Do not recommend `split` without confirming LCOM4 >= 2 via `ast-analyze` or LCA evidence from `lca-resolve`.
-- Do not recommend `compress` without confirming CC > 15 via `ast-analyze`.
+- Do not assume a node's category without running `fractal_scan`.
+- Do not recommend `split` without confirming LCOM4 >= 2 via `ast_analyze` or LCA evidence from `lca_resolve`.
+- Do not recommend `compress` without confirming CC > 15 via `ast_analyze`.
 - Always show metric evidence before the recommendation.
 - Always present drift severity evidence before recommending a sync action.
 - If a path does not exist, report it as a missing node — do not invent structure.
