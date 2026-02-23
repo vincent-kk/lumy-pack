@@ -32,9 +32,9 @@ yarn version:sync   # 버전 동기화 (package.json → src/version.ts)
 1. **TypeScript 컴파일** (`tsconfig.build.json`): `src/` → `dist/` (ESM + `.d.ts`)
 2. **esbuild 번들링** (개별 빌드 스크립트):
    - `scripts/build-mcp-server.mjs`: `src/mcp/server-entry.ts` → `bridge/mcp-server.cjs` (CJS)
-   - `scripts/build-hooks.mjs`: `src/hooks/entries/*.entry.ts` → `scripts/*.mjs` (ESM, 각 훅)
+   - `scripts/build-hooks.mjs`: `src/hooks/entries/*.entry.ts` → `libs/*.mjs` (ESM, 각 훅)
 
-`dist/`는 라이브러리 export용, `bridge/`는 MCP 서버 런타임용, `scripts/*.mjs`는 훅 런타임용. 변경 후 `yarn build`로 재생성.
+`dist/`는 라이브러리 export용, `bridge/`는 MCP 서버 런타임용, `libs/*.mjs`는 훅 런타임용. 변경 후 `yarn build`로 재생성.
 
 ## Architecture
 

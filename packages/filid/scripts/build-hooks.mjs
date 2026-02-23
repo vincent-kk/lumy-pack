@@ -3,7 +3,7 @@
  * Build script for hook entry point bundles
  * Bundles each hook into a self-contained ESM file for plugin distribution
  *
- * Output: scripts/<name>.mjs
+ * Output: libs/<name>.mjs
  */
 
 import * as esbuild from 'esbuild';
@@ -28,7 +28,7 @@ await Promise.all(
       platform: 'node',
       target: 'node20',
       format: 'esm',
-      outfile: resolve(root, `scripts/${name}.mjs`),
+      outfile: resolve(root, `libs/${name}.mjs`),
       minify: true,
       sourcemap: false,
       treeShaking: true,
@@ -36,4 +36,4 @@ await Promise.all(
   ),
 );
 
-console.log(`  Hook scripts (${hookEntries.length}) -> scripts/*.mjs`);
+console.log(`  Hook scripts (${hookEntries.length}) -> libs/*.mjs`);

@@ -32,6 +32,7 @@
     "dist",
     "agents",
     "bridge",
+    "libs",
     "hooks",
     "scripts",
     "skills",
@@ -41,7 +42,7 @@
     "README.md"
   ],
   "scripts": {
-    "clean": "rm -rf bridge/mcp-server.cjs scripts/pre-tool-validator.mjs scripts/structure-guard.mjs scripts/agent-enforcer.mjs scripts/context-injector.mjs",
+    "clean": "rm -rf bridge libs",
     "version:sync": "node scripts/inject-version.mjs",
     "build": "yarn clean && yarn version:sync && tsc -p tsconfig.build.json && node scripts/build-mcp-server.mjs && node scripts/build-hooks.mjs",
     "build:plugin": "node scripts/build-mcp-server.mjs && node scripts/build-hooks.mjs",
