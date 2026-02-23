@@ -40,14 +40,14 @@ See [reference.md Section 0](./reference.md#section-0--change-detection).
 
 Scan only files changed in this branch for FCA-AI rule violations.
 
-Agent: `qa-reviewer` (haiku)
+Agent: `qa-reviewer` (sonnet)
 See [reference.md Section 1](./reference.md#section-1--scan).
 
 ### Stage 2 — Sync (Conditional Structure Correction)
 
 Runs only when Stage 1 detects `critical` or `high` severity violations.
 
-Agents: `drift-analyzer` (haiku) → `restructurer` (sonnet)
+Agents: `drift-analyzer` (sonnet) → `restructurer` (sonnet)
 MCP: `drift_detect`, `lca_resolve`, `structure_validate`
 See [reference.md Section 2](./reference.md#section-2--sync).
 

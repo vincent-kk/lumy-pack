@@ -90,10 +90,10 @@ CRITICAL (<n>)
     Organ directories must not contain CLAUDE.md.
     Remediation: delete the file or reclassify the directory.
 
-HIGH (<n>)
   [CLAUDE_MD_LINE_LIMIT] src/payments/CLAUDE.md — 117 lines (limit: 100)
     Remediation: compress or split the document.
 
+HIGH (<n>)
   [TEST_312_EXCEEDED] src/payments/payment.spec.ts — 18 tests (limit: 15)
     Remediation: split into multiple spec files or parameterise cases.
 

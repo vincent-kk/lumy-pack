@@ -1,6 +1,6 @@
 # State Machine — Deliberation Rules
 
-The chairperson executes this state machine during Phase C to drive
+The chairperson executes this state machine during Phase D to drive
 multi-persona political consensus. Maximum **5 rounds** before forced conclusion.
 
 ## State Transition Diagram

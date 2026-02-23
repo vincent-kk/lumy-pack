@@ -24,10 +24,10 @@ violation report and, with `--fix`, applies automatic remediation.
 - Running a periodic governance health check
 - Preparing a baseline report before `/filid:fca-structure-review` or `/filid:fca-promote`
 
-### Integration with fca-update
+### Relationship with fca-update
 
-When invoked via `/filid:fca-update`, this skill runs as Stage 1 and restricts its scan to files
-changed in the current branch. Standalone execution (`/filid:fca-scan`) always scans the full project.
+`/filid:fca-update` Stage 1 performs a similar branch-scoped violation scan using a `qa-reviewer` agent
+with direct MCP calls. This standalone skill (`/filid:fca-scan`) always scans the full project independently.
 
 ## Core Workflow
 
@@ -43,11 +43,11 @@ Phases 2, 3, and 4 are **independent** and run **in parallel** as separate Task
 subagents (`run_in_background: true`). Await all three before Phase 5.
 
 **Phase 2 — CLAUDE.md Validation**
-Check line count (≤100) and 3-tier boundary sections for every CLAUDE.md.
+Check line count (≤100) and 3-tier boundary sections for every CLAUDE.md using Read and Grep.
 See [reference.md Section 2](./reference.md#section-2--claudemd-validation).
 
 **Phase 3 — Organ Directory Validation**
-Verify no organ directory contains a CLAUDE.md file.
+Verify no organ directory contains a CLAUDE.md file using `fractal_scan` results from Phase 1.
 See [reference.md Section 3](./reference.md#section-3--organ-directory-validation).
 
 **Phase 4 — Test File Validation (3+12 Rule)**

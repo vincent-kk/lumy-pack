@@ -85,7 +85,7 @@ See [reference.md Section 5](./reference.md#section-5--3-prompt-limit-protocol).
 /filid:fca-context-query "What does the auth CLAUDE.md say we must never do?"
 
 # 3-Prompt Limit
-Prompt 1  →  fractal_navigate (locate module)
+Prompt 1  →  fractal_scan (full tree) + fractal_navigate (classify target)
 Prompt 2  →  load/analyse CLAUDE.md chain
 Prompt 3  →  final answer (hard limit)
 

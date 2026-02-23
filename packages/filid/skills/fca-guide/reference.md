@@ -11,17 +11,17 @@ Call `fractal_scan` to retrieve the complete directory tree and node classificat
 fractal_scan({ path: "<target-path>" })
 ```
 
-Response fields:
+The response is a `ScanReport` containing:
 
-- `nodes`: Array of directory nodes (`path`, `category`, `hasIndex`, `hasMain`, `children`)
-- `summary`: Total node count and per-category counts
-- `violations`: Currently detected rule violations (may be empty)
+- `tree.nodes`: Map of path → FractalNode (with `name`, `path`, `type`, `hasClaudeMd`, `hasSpecMd`, `children`)
+- `tree.root`: root directory path
+- `modules`: optional ModuleInfo list (empty unless `includeModuleInfo: true`)
 
-Build three working sets from the response:
+Build three working sets from `tree.nodes`:
 
-- **fractal nodes** — `category === "fractal"`
-- **organ nodes** — `category === "organ"`
-- **pure-function / hybrid nodes** — remaining categories
+- **fractal nodes** — `type === "fractal"` or `hasClaudeMd === true`
+- **organ nodes** — `type === "organ"`
+- **pure-function / hybrid nodes** — remaining types
 
 ## Section 2 — Rule Query
 

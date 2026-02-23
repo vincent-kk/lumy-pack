@@ -23,7 +23,7 @@ Extract from its frontmatter:
 - `stage_results`: per-stage PASS/FAIL map
 - `overall`: overall PASS/FAIL
 
-Store as `STRUCTURE_CRITICAL_COUNT` for use in A.3 and A.5.
+Store as `STRUCTURE_CRITICAL_COUNT` for use in B.3 and B.5.
 If `structure-check.md` does not exist, set `STRUCTURE_CRITICAL_COUNT = 0`.
 
 ### B.1 — Collect Git Diff
@@ -87,7 +87,7 @@ Write the following to `<REVIEW_DIR>/session.md`:
 branch: <BRANCH>
 normalized_branch: <NORMALIZED>
 base_ref: <BASE_REF>
-complexity: <complexity from A.3 after structure-bias adjustment>
+complexity: <complexity from B.3 after structure-bias adjustment>
 committee:
   - <persona-id>
   - ...

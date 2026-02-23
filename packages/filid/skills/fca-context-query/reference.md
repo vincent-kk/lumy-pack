@@ -52,12 +52,13 @@ If the combined CLAUDE.md chain exceeds working context limits, call
 `doc_compress` before generating the response:
 
 ```
-doc_compress({ mode: "auto" })
+doc_compress({ mode: "auto", filePath: "<CLAUDE.md path>", content: "<file content>" })
 ```
 
 `auto` mode selects `reversible` compression for structured documents
-and `lossy` compression for tool-call history. The original files remain
-on disk; only the in-context representation is compressed.
+(when `filePath`/`content` are provided) and `lossy` compression for
+tool-call history (when `toolCallEntries` are provided). The original
+files remain on disk; only the in-context representation is compressed.
 
 Apply compression only when necessary. Skip if the chain fits in context.
 

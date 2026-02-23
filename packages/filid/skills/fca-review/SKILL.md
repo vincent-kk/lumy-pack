@@ -105,6 +105,14 @@ The chairperson executes Phase D directly:
 When `--scope=pr`: check `gh auth status` (Bash), if authenticated post
 `gh pr comment --body "<summary>"` (Bash), otherwise skip with info message.
 
+## Available MCP Tools
+
+| Tool             | Action             | Purpose                                          |
+| ---------------- | ------------------ | ------------------------------------------------ |
+| `review_manage`  | `normalize-branch` | Normalize branch name for review directory path  |
+| `review_manage`  | `checkpoint`       | Check existing review progress for resume        |
+| `review_manage`  | `cleanup`          | Delete review session files (--force or on pass) |
+
 ## Options
 
 > Options are LLM-interpreted hints, not strict CLI flags. Natural language works equally well (e.g., "review this PR" instead of `--scope=pr`).

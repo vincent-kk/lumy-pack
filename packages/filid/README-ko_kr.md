@@ -36,8 +36,8 @@ claude --plugin-dir ./packages/filid
 
 빌드하면 두 가지 산출물이 생성됩니다:
 
-- `libs/server.cjs` — MCP 서버 (분석 도구 11개)
-- `scripts/*.mjs` — Hook 스크립트 5개 (자동 규칙 시행)
+- `libs/server.cjs` — MCP 서버 (분석 도구 14개)
+- `libs/*.mjs` — Hook 스크립트 5개 (자동 규칙 시행)
 
 ---
 

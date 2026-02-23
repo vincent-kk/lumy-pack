@@ -195,7 +195,7 @@ Score: 72/100
 
 - `/filid:fca-init` — Lead: design initial fractal structure from requirements.
 - `/filid:fca-guide` — Lead: scan structure, query rules, produce rule guidance document.
-- `/filid:fca-structure-review` — Stage 1 (structure compliance) and Stage 5 (SPEC.md completeness) assist.
+- `/filid:fca-structure-review` — Stage 1 (structure compliance) and Stage 5 (dependency verification) assist.
 - `/filid:fca-context-query` — Lead: answer any architectural question about the codebase.
 - `/filid:fca-restructure` — Stage 1 (analysis & proposal) and Stage 4 (post-execution validation).
 - `/filid:fca-sync` — Analysis phase: review drift-analyzer output, refine correction plan.
