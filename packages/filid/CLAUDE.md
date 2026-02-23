@@ -87,7 +87,7 @@ yarn version:sync   # 버전 동기화 (package.json → src/version.ts)
 
 ## Development Notes
 
-- **AST**: `@ast-grep/napi` (tree-sitter) 단일 엔진 (OMC 동일 구조)
+- **AST**: `@ast-grep/napi` (tree-sitter) 단일 엔진
 - **훅 수정**: `src/hooks/entries/*.entry.ts` 수정 후 `yarn build:plugin`으로 재빌드
 - **버전**: `src/version.ts` 직접 수정 금지 → `yarn version:sync` 사용
 - **테스트**: `src/**/__tests__/**/*.test.ts`, 벤치마크는 `**/*.bench.ts`

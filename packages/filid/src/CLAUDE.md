@@ -22,7 +22,7 @@
 ## Conventions
 
 - ESM modules (`"type": "module"`), 확장자 `.js` import
-- `@ast-grep/napi` (tree-sitter) AST 엔진 사용 (OMC 동일 구조)
+- `@ast-grep/napi` (tree-sitter) AST 엔진 사용
 - `version.ts`는 `yarn version:sync`로만 갱신
 - 모든 공개 API는 `index.ts`에서 re-export
 

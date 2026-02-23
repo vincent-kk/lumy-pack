@@ -17,7 +17,7 @@
 
 ## Conventions
 
-- `@ast-grep/napi` (tree-sitter) 단일 AST 엔진 사용 (OMC와 동일 구조)
+- `@ast-grep/napi` (tree-sitter) 단일 AST 엔진 사용
 - 모든 분석 함수는 async (ast-grep 모듈 지연 로딩)
 - 에러는 예외로 throw, 호출자가 처리
 
