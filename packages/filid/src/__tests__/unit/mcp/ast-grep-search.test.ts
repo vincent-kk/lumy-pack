@@ -42,7 +42,7 @@ function isNoMatchesMessage(
     r !== null &&
     'message' in r &&
     'filesSearched' in r &&
-    (r as Record<string, unknown>).filesSearched > 0
+    Number((r as Record<string, unknown>).filesSearched) > 0
   );
 }
 
