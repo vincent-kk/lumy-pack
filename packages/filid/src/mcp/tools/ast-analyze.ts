@@ -7,6 +7,7 @@ import { calculateCC } from '../../ast/cyclomatic-complexity.js';
 import { extractDependencies } from '../../ast/dependency-extractor.js';
 import { calculateLCOM4 } from '../../ast/lcom4.js';
 import { computeTreeDiff } from '../../ast/tree-diff.js';
+import { getSgLoadError, getSgModule } from '../../ast/ast-grep-shared.js';
 
 export interface AstAnalyzeInput {
   /** Source code to analyze */
@@ -32,6 +33,14 @@ export interface AstAnalyzeInput {
 export async function handleAstAnalyze(
   input: AstAnalyzeInput,
 ): Promise<Record<string, unknown>> {
+  const sg = await getSgModule();
+  if (!sg) {
+    return {
+      error: `@ast-grep/napi is not available. Install it with: npm install -g @ast-grep/napi`,
+      sgLoadError: getSgLoadError(),
+    };
+  }
+
   const filePath = input.filePath ?? 'anonymous.ts';
 
   switch (input.analysisType) {

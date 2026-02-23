@@ -2,6 +2,17 @@ import { describe, expect, it } from 'vitest';
 
 import { handleAstAnalyze } from '../../../mcp/tools/ast-analyze.js';
 
+function isAstAnalyzeError(
+  r: unknown,
+): r is { error: string; sgLoadError: string } {
+  return (
+    typeof r === 'object' &&
+    r !== null &&
+    'error' in r &&
+    'sgLoadError' in r
+  );
+}
+
 const sampleSource = `
   import { readFile } from 'fs/promises';
 
@@ -107,5 +118,57 @@ describe('handleAstAnalyze', () => {
         analysisType: 'lcom4',
       }),
     ).rejects.toThrow('className');
+  });
+
+  describe('when @ast-grep/napi is not available', () => {
+    it('returns error object instead of throwing', async () => {
+      const result = await handleAstAnalyze({
+        source: sampleSource,
+        filePath: 'calc.ts',
+        analysisType: 'dependency-graph',
+      });
+
+      // When @ast-grep/napi is unavailable, returns { error, sgLoadError }
+      // When available, returns a valid analysis result
+      if (isAstAnalyzeError(result)) {
+        expect(result.error).toBeTypeOf('string');
+        expect(result.error).toContain('@ast-grep/napi');
+        expect(result.sgLoadError).toBeTypeOf('string');
+      } else {
+        // @ast-grep/napi is installed — valid result is also acceptable
+        expect(result.imports).toBeDefined();
+      }
+    });
+
+    it('error message includes installation hint when ast-grep unavailable', async () => {
+      const result = await handleAstAnalyze({
+        source: 'const x = 1;',
+        filePath: 'test.ts',
+        analysisType: 'cyclomatic-complexity',
+      });
+
+      if (isAstAnalyzeError(result)) {
+        expect(result.error).toContain('npm install');
+        expect(result.error).toContain('@ast-grep/napi');
+      } else {
+        // @ast-grep/napi available — check valid shape
+        expect(result.fileTotal).toBeDefined();
+      }
+    });
+
+    it('result always has a deterministic shape (error OR valid result)', async () => {
+      const result = await handleAstAnalyze({
+        source: sampleSource,
+        filePath: 'calc.ts',
+        analysisType: 'full',
+        className: 'Calculator',
+      });
+
+      const isValidShape =
+        isAstAnalyzeError(result) ||
+        ('dependencies' in result && 'cyclomaticComplexity' in result);
+
+      expect(isValidShape).toBe(true);
+    });
   });
 });

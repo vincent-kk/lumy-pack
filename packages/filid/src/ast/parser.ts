@@ -4,10 +4,14 @@
  */
 import { readFileSync } from 'node:fs';
 
-import { EXT_TO_LANG, getSgLoadError, getSgModule, toLangEnum } from './ast-grep-shared.js';
+import {
+  EXT_TO_LANG,
+  getSgLoadError,
+  getSgModule,
+  toLangEnum,
+} from './ast-grep-shared.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SgNode = any;
+import type { SgNode } from '@ast-grep/napi';
 
 /**
  * Parse TypeScript/JavaScript source into an AST root node.
@@ -20,8 +24,8 @@ export async function parseSource(
   const sg = await getSgModule();
   if (!sg) {
     throw new Error(
-      `@ast-grep/napi is not available: ${getSgLoadError()}. ` +
-        'Install it with: npm install -g @ast-grep/napi',
+      `@ast-grep/napi is not available. Install it with: npm install -g @ast-grep/napi` +
+        (getSgLoadError() ? ` (${getSgLoadError()})` : ''),
     );
   }
 

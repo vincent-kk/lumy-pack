@@ -7,8 +7,7 @@ import type { TreeDiffChange, TreeDiffResult } from '../types/ast.js';
 
 import { parseSource } from './parser.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SgNode = any;
+import type { SgNode } from '@ast-grep/napi';
 
 interface DeclSignature {
   name: string;

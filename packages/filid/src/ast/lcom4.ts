@@ -14,8 +14,7 @@ import type { LCOM4Result } from '../types/metrics.js';
 
 import { parseSource, walk } from './parser.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SgNode = any;
+import type { SgNode } from '@ast-grep/napi';
 
 function findThisAccesses(bodyNode: SgNode): string[] {
   const accessed = new Set<string>();
@@ -46,9 +45,9 @@ export async function extractClassInfo(
   walk(root, (node: SgNode) => {
     if (classNode) return;
     if (node.kind() === 'class_declaration') {
-      const nameNode = node.children().find(
-        (c: SgNode) => c.kind() === 'type_identifier',
-      );
+      const nameNode = node
+        .children()
+        .find((c: SgNode) => c.kind() === 'type_identifier');
       if (nameNode && nameNode.text() === className) {
         classNode = node;
       }

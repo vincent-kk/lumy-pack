@@ -83,6 +83,11 @@ export function createServer(): McpServer {
     async (args) => {
       try {
         const result = await handleAstAnalyze(args);
+        if ('error' in result) {
+          return {
+            content: [{ type: 'text' as const, text: result.error as string }],
+          };
+        }
         return toolResult(result);
       } catch (error) {
         return toolError(error);

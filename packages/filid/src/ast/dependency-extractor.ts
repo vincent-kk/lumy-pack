@@ -11,8 +11,7 @@ import type {
 
 import { parseSource, walk } from './parser.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SgNode = any;
+import type { SgNode } from '@ast-grep/napi';
 
 function getCallee(node: SgNode): string | null {
   const kind = node.kind();

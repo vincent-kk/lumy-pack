@@ -9,8 +9,7 @@ import type { CyclomaticComplexityResult } from '../types/metrics.js';
 
 import { parseSource, walk } from './parser.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SgNode = any;
+import type { SgNode } from '@ast-grep/napi';
 
 /** Decision point node kinds that always add +1 */
 const DECISION_KINDS = new Set([
@@ -100,7 +99,8 @@ export async function calculateCC(
           const initChildren = decl.children();
           const init = initChildren.find(
             (c: SgNode) =>
-              c.kind() === 'arrow_function' || c.kind() === 'function_expression',
+              c.kind() === 'arrow_function' ||
+              c.kind() === 'function_expression',
           );
           if (nameNode && init) {
             const body = init

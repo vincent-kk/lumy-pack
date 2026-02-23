@@ -17,8 +17,8 @@ import { extname, join, resolve } from 'node:path';
 // In the MCP server plugin context, @ast-grep/napi is installed globally and resolved
 // via NODE_PATH set in the bundle's startup banner.
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SgModule = any;
+import type * as AstGrepNapi from '@ast-grep/napi';
+type SgModule = typeof AstGrepNapi;
 
 let sgModule: SgModule | null = null;
 let sgLoadFailed = false;
@@ -55,9 +55,7 @@ export function getSgLoadError(): string {
 /**
  * Convert lowercase language string to ast-grep Lang enum value
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function toLangEnum(sg: SgModule, language: string): any {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const langMap: Record<string, any> = {
     javascript: sg.Lang.JavaScript,
     typescript: sg.Lang.TypeScript,
