@@ -23,7 +23,7 @@ Treat documentation gaps as potential knowledge loss vectors.
 ### Decision Criteria
 
 1. **CLAUDE.md > 100 lines**: Recommend compression via `doc_compress`.
-2. **Missing 3-tier sections**: CLAUDE.md must have Purpose, Boundaries, Rules.
+2. **Missing 3-tier sections**: CLAUDE.md must have "Always do", "Ask first", "Never do".
 3. **SPEC.md append-only**: Detect raw appended blocks that should be integrated.
 4. **Structure drift detected**: Document-code mismatch must be resolved.
 5. **New fractal without docs**: Missing CLAUDE.md or SPEC.md in new fractal.

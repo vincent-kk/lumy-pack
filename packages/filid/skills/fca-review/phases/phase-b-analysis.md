@@ -38,10 +38,19 @@ If `SCOPE=pr`, also run `gh pr view --json title,body` for intent context.
 
 ### B.2 — Identify Fractal Paths
 
+First, scan the full project hierarchy to obtain node entries:
+
+```
+fractal_scan(path: <PROJECT_ROOT>)
+// Returns: ScanReport { tree: { nodes: Map<path, FractalNode>, root: string }, ... }
+```
+
+Store `tree.nodes` as `SCAN_NODES` for use in classify calls below.
+
 For each changed file directory, call:
 
 ```
-fractal_navigate(action: "classify", path: <directory>, entries: [/* nodes from fractal_scan */])
+fractal_navigate(action: "classify", path: <directory>, entries: SCAN_NODES)
 ```
 
 Build a list of unique fractal paths affected by the change.

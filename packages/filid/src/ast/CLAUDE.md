@@ -26,7 +26,7 @@
 ### Always do
 
 - `parseSource`를 통해 AST root 노드를 얻은 후 분석 함수에 전달
-- LCOM4 ≥ 2 또는 CC > 20 결과는 `decision-tree.ts`에서 활용
+- LCOM4 ≥ 2 또는 CC > 15 결과는 `decision-tree.ts`에서 활용
 - `types/ast.ts`의 타입만 사용 (로컬 타입 추가 금지)
 
 ### Ask first

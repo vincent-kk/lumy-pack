@@ -44,7 +44,7 @@ yarn version:sync   # 버전 동기화 (package.json → src/version.ts)
 - **3-Tier Boundary**: "Always do" / "Ask first" / "Never do" 섹션 필수
 - **100-line Limit**: CLAUDE.md/SPEC.md 각 100줄 이하
 - **3+12 Test Rule**: 핵심 3 + 엣지 12 = 최대 15개 테스트
-- **Module Split**: LCOM4 ≥ 2 또는 CC > 20 또는 500줄 초과 → 분리 권장
+- **Module Split**: LCOM4 ≥ 2 또는 CC > 15 또는 500줄 초과 → 분리 권장
 
 ### Key Source Directories
 
