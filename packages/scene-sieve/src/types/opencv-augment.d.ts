@@ -1,4 +1,6 @@
 declare module '@techstark/opencv-js' {
+  export let onRuntimeInitialized: (() => void) | undefined;
+
   export class Mat {
     constructor();
     rows: number;

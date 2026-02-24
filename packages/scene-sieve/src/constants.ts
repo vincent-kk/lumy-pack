@@ -41,7 +41,6 @@ export const ANIMATION_FRAME_THRESHOLD = 5;
 
 // Vision Analysis — Feature Matching
 export const MATCH_DISTANCE_THRESHOLD = 0.75;
-export const HOMOGRAPHY_INLIER_RATIO = 0.8;
 
 export function getTempWorkspaceDir(sessionId: string): string {
   return join(TEMP_BASE_DIR, `${WORKSPACE_PREFIX}${sessionId}`);

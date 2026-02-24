@@ -20,7 +20,7 @@ import type { Point2D } from './dbscan.js';
 
 // ── OpenCV WASM Initialization (lazy) ──
 
-type CvLib = any;
+type CvLib = typeof import('@techstark/opencv-js');
 
 const OPENCV_INIT_TIMEOUT_MS = 30_000;
 
@@ -51,7 +51,7 @@ async function ensureOpenCV(): Promise<CvLib> {
 
 // ── Sharp Preprocessing ──
 
-async function preprocessFrame(
+export async function preprocessFrame(
   framePath: string,
   scale: number,
 ): Promise<{ data: Uint8Array; width: number; height: number }> {
@@ -71,7 +71,7 @@ async function preprocessFrame(
 
 // ── IoU Utilities ──
 
-function computeIoU(a: BoundingBox, b: BoundingBox): number {
+export function computeIoU(a: BoundingBox, b: BoundingBox): number {
   const ix1 = Math.max(a.x, b.x);
   const iy1 = Math.max(a.y, b.y);
   const ix2 = Math.min(a.x + a.width, b.x + b.width);
@@ -99,7 +99,7 @@ interface TrackedRegion {
   weight: number;
 }
 
-class IoUTracker {
+export class IoUTracker {
   private regions: TrackedRegion[] = [];
 
   update(boxes: BoundingBox[], pairIndex: number): Set<number> {
@@ -172,7 +172,7 @@ class IoUTracker {
 
 // ── Stage 1: AKAZE Feature Set Difference ──
 
-interface AKAZEResult {
+export interface AKAZEResult {
   sNew: Point2D[];
   sLoss: Point2D[];
 }
@@ -262,7 +262,7 @@ async function computeAKAZEDiff(
 
 // ── Stage 4: G(t) Information Gain Scoring ──
 
-function computeInformationGain(
+export function computeInformationGain(
   clusters: BoundingBox[],
   clusterPoints: number[],
   imageArea: number,

@@ -25,6 +25,7 @@ export function dbscan(
   }
 
   const eps = (alpha ?? DBSCAN_ALPHA) * Math.sqrt(imageWidth ** 2 + imageHeight ** 2);
+  const epsSquared = eps * eps;
   const minPoints = minPts ?? DBSCAN_MIN_PTS;
 
   const labels = new Array<number>(points.length).fill(UNVISITED);
@@ -33,7 +34,7 @@ export function dbscan(
   for (let i = 0; i < points.length; i++) {
     if (labels[i] !== UNVISITED) continue;
 
-    const neighbors = findNeighbors(points, i, eps);
+    const neighbors = findNeighbors(points, i, epsSquared);
 
     if (neighbors.length < minPoints) {
       labels[i] = NOISE;
@@ -56,7 +57,7 @@ export function dbscan(
 
       labels[q] = clusterId;
 
-      const qNeighbors = findNeighbors(points, q, eps);
+      const qNeighbors = findNeighbors(points, q, epsSquared);
       if (qNeighbors.length >= minPoints) {
         for (const n of qNeighbors) {
           if (!seedSet.has(n)) {
@@ -96,21 +97,18 @@ export function dbscan(
     });
   }
 
-  // Replace UNVISITED (shouldn't happen) and return labels with NOISE as -1
-  const finalLabels = labels.map((l) => (l === UNVISITED ? NOISE : l));
-
-  return { labels: finalLabels, boundingBoxes };
+  return { labels, boundingBoxes };
 }
 
-function findNeighbors(points: Point2D[], idx: number, eps: number): number[] {
+function findNeighbors(points: Point2D[], idx: number, epsSquared: number): number[] {
   const p = points[idx];
   const neighbors: number[] = [];
 
   for (let i = 0; i < points.length; i++) {
     if (i === idx) continue;
     const q = points[i];
-    const dist = Math.sqrt((p.x - q.x) ** 2 + (p.y - q.y) ** 2);
-    if (dist <= eps) {
+    const distSq = (p.x - q.x) ** 2 + (p.y - q.y) ** 2;
+    if (distSq <= epsSquared) {
       neighbors.push(i);
     }
   }
