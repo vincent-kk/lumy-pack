@@ -92,3 +92,33 @@ export function pruneTo(
 
   return surviving;
 }
+
+/**
+ * Threshold-based pruning — O(N).
+ *
+ * Keeps all frames where the incoming edge score >= threshold.
+ * First and last frames are always preserved (boundary protection).
+ *
+ * Unlike pruneTo (which targets an exact count via greedy merge),
+ * this function has no count limit — every significant scene transition
+ * above the threshold is preserved.
+ */
+export function pruneByThreshold(
+  graph: ScoreEdge[],
+  frames: FrameNode[],
+  threshold: number,
+): Set<number> {
+  if (frames.length === 0) return new Set();
+
+  const surviving = new Set<number>();
+  surviving.add(frames[0]!.id);
+  surviving.add(frames[frames.length - 1]!.id);
+
+  for (const edge of graph) {
+    if (edge.score >= threshold) {
+      surviving.add(edge.targetId);
+    }
+  }
+
+  return surviving;
+}

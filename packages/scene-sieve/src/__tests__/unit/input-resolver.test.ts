@@ -32,6 +32,31 @@ describe('resolveOptions', () => {
     expect(typeof result.outputPath).toBe('string');
   });
 
+  it('threshold가 올바르게 전달됨', () => {
+    const result = resolveOptions({
+      mode: 'file',
+      inputPath: '/video.mp4',
+      threshold: 0.5,
+    });
+    expect(result.threshold).toBe(0.5);
+  });
+
+  it('threshold <= 0이면 에러', () => {
+    expect(() =>
+      resolveOptions({ mode: 'file', inputPath: '/video.mp4', threshold: 0 }),
+    ).toThrow('threshold must be greater than 0');
+
+    expect(() =>
+      resolveOptions({ mode: 'file', inputPath: '/video.mp4', threshold: -0.1 }),
+    ).toThrow('threshold must be greater than 0');
+  });
+
+  it('threshold 미지정 시 undefined (count 모드 유지)', () => {
+    const result = resolveOptions({ mode: 'file', inputPath: '/video.mp4' });
+    expect(result.threshold).toBeUndefined();
+    expect(result.count).toBe(5);
+  });
+
   it('커스텀 값이 올바르게 반영됨', () => {
     const result = resolveOptions({
       mode: 'file',

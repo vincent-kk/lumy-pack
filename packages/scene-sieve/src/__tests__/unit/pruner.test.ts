@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pruneTo } from '../../core/pruner.js';
+import { pruneTo, pruneByThreshold } from '../../core/pruner.js';
 import type { FrameNode, ScoreEdge } from '../../types/index.js';
 
 function makeFrames(count: number): FrameNode[] {
@@ -146,5 +146,70 @@ describe('pruneTo', () => {
     expect(result.size).toBe(10);
     expect(result.has(0)).toBe(true);
     expect(result.has(99)).toBe(true);
+  });
+});
+
+describe('pruneByThreshold', () => {
+  it('empty frames — returns empty set', () => {
+    const result = pruneByThreshold([], [], 0.5);
+    expect(result.size).toBe(0);
+  });
+
+  it('single frame — returns that frame', () => {
+    const frames = makeFrames(1);
+    const result = pruneByThreshold([], frames, 0.5);
+    expect(result.size).toBe(1);
+    expect(result.has(0)).toBe(true);
+  });
+
+  it('all edges >= threshold — all frames preserved', () => {
+    const frames = makeFrames(4);
+    const edges = makeChainEdges(4, [0.8, 0.9, 0.7]);
+    const result = pruneByThreshold(edges, frames, 0.5);
+    expect(result.size).toBe(4);
+  });
+
+  it('all edges < threshold — only first and last preserved', () => {
+    const frames = makeFrames(5);
+    const edges = makeChainEdges(5, [0.1, 0.2, 0.1, 0.2]);
+    const result = pruneByThreshold(edges, frames, 0.5);
+    expect(result.size).toBe(2);
+    expect(result.has(0)).toBe(true);
+    expect(result.has(4)).toBe(true);
+  });
+
+  it('partial edges above threshold — keeps boundary + matching targetIds', () => {
+    const frames = makeFrames(5);
+    // edges: 0->1(0.1), 1->2(0.8), 2->3(0.1), 3->4(0.9)
+    const edges = makeChainEdges(5, [0.1, 0.8, 0.1, 0.9]);
+    const result = pruneByThreshold(edges, frames, 0.5);
+    expect(result.has(0)).toBe(true);   // boundary
+    expect(result.has(1)).toBe(false);  // edge 0->1 score 0.1 < 0.5
+    expect(result.has(2)).toBe(true);   // edge 1->2 score 0.8 >= 0.5
+    expect(result.has(3)).toBe(false);  // edge 2->3 score 0.1 < 0.5
+    expect(result.has(4)).toBe(true);   // boundary + edge 3->4 score 0.9 >= 0.5
+  });
+
+  it('boundary value: score === threshold — preserved (>= comparison)', () => {
+    const frames = makeFrames(3);
+    const edges = makeChainEdges(3, [0.5, 0.5]);
+    const result = pruneByThreshold(edges, frames, 0.5);
+    expect(result.size).toBe(3);
+  });
+
+  it('large input (100 frames) — correct threshold filtering', () => {
+    const frames = makeFrames(100);
+    const scores = Array.from({ length: 99 }, (_, i) =>
+      i % 10 === 0 ? 0.9 : 0.05,
+    );
+    const edges = makeChainEdges(100, scores);
+    const result = pruneByThreshold(edges, frames, 0.5);
+    // high-score edges at i=0,10,20,...,90 -> targetIds: 1,11,21,31,41,51,61,71,81,91
+    // + boundary: 0, 99
+    expect(result.size).toBe(12);
+    expect(result.has(0)).toBe(true);
+    expect(result.has(99)).toBe(true);
+    expect(result.has(1)).toBe(true);   // targetId of edge 0->1 (score 0.9)
+    expect(result.has(11)).toBe(true);  // targetId of edge 10->11 (score 0.9)
   });
 });

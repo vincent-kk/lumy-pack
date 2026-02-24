@@ -12,6 +12,7 @@ program
   .version(VERSION)
   .argument('<input>', 'Input video or GIF file path')
   .option('-n, --count <number>', 'Number of frames to keep', '5')
+  .option('-t, --threshold <number>', 'G(t) score threshold (keeps all frames above, ignores --count)')
   .option('-o, --output <path>', 'Output directory path')
   .option('--fps <number>', 'Fallback FPS for frame extraction', '5')
   .option('-s, --scale <number>', 'Scale size for vision analysis', '720')
@@ -37,7 +38,9 @@ program
       const result = await extractScenes({
         mode: 'file',
         inputPath: input,
-        count: parseInt(opts.count, 10),
+        ...(opts.threshold !== undefined
+          ? { threshold: parseFloat(opts.threshold) }
+          : { count: parseInt(opts.count, 10) }),
         outputPath: opts.output,
         fps: parseInt(opts.fps, 10),
         scale: parseInt(opts.scale, 10),

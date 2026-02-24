@@ -14,10 +14,16 @@ export function resolveOptions(options: SieveOptions): ResolvedOptions {
       ? deriveOutputPath(inputPath)
       : join(process.cwd(), 'scene-sieve-output'));
 
+  const threshold = options.threshold;
+  if (threshold !== undefined && threshold <= 0) {
+    throw new Error(`threshold must be greater than 0, received: ${threshold}`);
+  }
+
   return {
     mode,
     inputPath,
     count: options.count ?? DEFAULT_COUNT,
+    threshold,
     outputPath,
     fps: options.fps ?? DEFAULT_FPS,
     scale: options.scale ?? DEFAULT_SCALE,

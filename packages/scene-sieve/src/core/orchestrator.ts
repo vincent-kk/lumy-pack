@@ -5,7 +5,7 @@ import { logger, setDebugMode } from '../utils/logger.js';
 import { analyzeFrames } from './analyzer.js';
 import { extractFrames } from './extractor.js';
 import { resolveInput, resolveOptions } from './input-resolver.js';
-import { pruneTo } from './pruner.js';
+import { pruneTo, pruneByThreshold } from './pruner.js';
 import {
   cleanupWorkspace,
   createWorkspace,
@@ -73,9 +73,12 @@ export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
     ctx.status = 'ANALYZING';
     ctx.graph = await analyzeFrames(ctx);
 
-    // 4. Prune to target count
+    // 4. Prune: threshold mode (keep all above threshold) or count mode (keep exact N)
     ctx.status = 'PRUNING';
-    const survivingIds = pruneTo(ctx.graph, ctx.frames, resolvedOptions.count);
+    const survivingIds =
+      resolvedOptions.threshold !== undefined
+        ? pruneByThreshold(ctx.graph, ctx.frames, resolvedOptions.threshold)
+        : pruneTo(ctx.graph, ctx.frames, resolvedOptions.count);
     const prunedFrames = ctx.frames.filter((f) => survivingIds.has(f.id));
     ctx.emitProgress(100);
 
