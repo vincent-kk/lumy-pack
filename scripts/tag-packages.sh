@@ -222,7 +222,7 @@ main() {
     # Show final tag list
     echo
     print_info "Current package tags:"
-    git tag -l | grep -E "@(winglet|canard|lerx)" | sort | while read -r tag; do
+    git tag -l | grep -E "@lumy-pack/" | sort | while read -r tag; do
         echo "  📌 $tag"
     done
 }
