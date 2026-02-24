@@ -16,6 +16,7 @@ program
   .option('-o, --output <path>', 'Output directory path')
   .option('--fps <number>', 'Fallback FPS for frame extraction', '5')
   .option('-s, --scale <number>', 'Scale size for vision analysis', '720')
+  .option('-q, --quality <number>', 'JPEG output quality 1-100', '80')
   .option('--debug', 'Enable debug mode (preserve temp workspace)')
   .action(async (input: string, opts) => {
     const { default: ora } = await import('ora');
@@ -47,6 +48,7 @@ program
         outputPath: opts.output,
         fps: parseInt(opts.fps, 10),
         scale: parseInt(opts.scale, 10),
+        quality: parseInt(opts.quality, 10),
         debug: opts.debug ?? false,
         onProgress: (phase: ProgressPhase, percent: number) => {
           bar.update(Math.round(percent), { phase });

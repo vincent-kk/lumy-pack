@@ -7,6 +7,7 @@ export const APP_NAME = 'scene-sieve';
 export const DEFAULT_COUNT = 5;
 export const DEFAULT_FPS = 5;
 export const DEFAULT_SCALE = 720;
+export const DEFAULT_QUALITY = 80;
 
 // Workspace
 export const WORKSPACE_PREFIX = `${APP_NAME}-`;

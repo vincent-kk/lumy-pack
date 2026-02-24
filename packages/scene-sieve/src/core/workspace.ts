@@ -1,5 +1,7 @@
-import { cp, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+
+import sharp from 'sharp';
 
 import type { FrameNode, ProcessContext } from '../types/index.js';
 import { FRAME_OUTPUT_EXTENSION, getTempWorkspaceDir } from '../constants.js';
@@ -19,12 +21,16 @@ export async function finalizeOutput(
   const stagingDir = join(ctx.workspacePath, 'output');
   const outputPath = ctx.options.outputPath;
 
+  const quality = ctx.options.quality;
+
   const outputFiles: string[] = [];
   for (let i = 0; i < selectedFrames.length; i++) {
     const frame = selectedFrames[i];
     const destName = `scene_${String(i + 1).padStart(3, '0')}.jpg`;
     const destPath = join(stagingDir, destName);
-    await cp(frame.extractPath, destPath);
+    await sharp(frame.extractPath)
+      .jpeg({ quality, mozjpeg: true })
+      .toFile(destPath);
     outputFiles.push(join(outputPath, destName));
   }
 
@@ -80,9 +86,15 @@ export async function writeInputFrames(
 }
 
 /**
- * Read selected FrameNode files as Buffers.
+ * Read selected FrameNode files as Buffers with JPEG compression.
  * Used to return output buffers in 'buffer' and 'frames' modes.
  */
-export async function readFramesAsBuffers(frameNodes: FrameNode[]): Promise<Buffer[]> {
-  return Promise.all(frameNodes.map((f) => readFile(f.extractPath)));
+export async function readFramesAsBuffers(frameNodes: FrameNode[], quality: number): Promise<Buffer[]> {
+  return Promise.all(
+    frameNodes.map((f) =>
+      sharp(f.extractPath)
+        .jpeg({ quality, mozjpeg: true })
+        .toBuffer(),
+    ),
+  );
 }

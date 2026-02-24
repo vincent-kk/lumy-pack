@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 
 import type { FrameNode, SieveOptions, ResolvedOptions } from '../types/index.js';
-import { DEFAULT_COUNT, DEFAULT_FPS, DEFAULT_SCALE } from '../constants.js';
+import { DEFAULT_COUNT, DEFAULT_FPS, DEFAULT_QUALITY, DEFAULT_SCALE } from '../constants.js';
 import { deriveOutputPath } from '../utils/paths.js';
 import { writeInputBuffer, writeInputFrames } from './workspace.js';
 
@@ -40,6 +40,7 @@ export function resolveOptions(options: SieveOptions): ResolvedOptions {
     outputPath,
     fps: options.fps ?? DEFAULT_FPS,
     scale: options.scale ?? DEFAULT_SCALE,
+    quality: options.quality ?? DEFAULT_QUALITY,
     debug: options.debug ?? false,
   };
 }

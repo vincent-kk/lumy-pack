@@ -104,7 +104,7 @@ export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
 
     if (resolvedOptions.mode === 'buffer' || resolvedOptions.mode === 'frames') {
       // Return buffers instead of writing to disk
-      outputBuffers = await readFramesAsBuffers(prunedFrames);
+      outputBuffers = await readFramesAsBuffers(prunedFrames, resolvedOptions.quality);
       ctx.emitProgress(100);
     } else {
       // 'file' mode: write to output directory

@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it, afterEach } from 'vitest';
+import sharp from 'sharp';
 import {
   createWorkspace,
   finalizeOutput,
@@ -13,6 +14,13 @@ import {
 } from '../../core/workspace.js';
 import type { ProcessContext } from '../../types/index.js';
 import { fileExists } from '../../utils/paths.js';
+
+/** Create a tiny valid JPEG buffer for testing */
+async function createTestJpeg(): Promise<Buffer> {
+  return sharp({
+    create: { width: 4, height: 4, channels: 3, background: { r: 128, g: 128, b: 128 } },
+  }).jpeg({ quality: 80 }).toBuffer();
+}
 
 const testWorkspaces: string[] = [];
 
@@ -48,9 +56,9 @@ describe('finalizeOutput', () => {
     await mkdir(framesDir, { recursive: true });
     await mkdir(outputDir, { recursive: true });
 
-    // Create a fake frame file
+    // Create a valid JPEG frame file
     const framePath = join(framesDir, 'frame_000001.jpg');
-    await writeFile(framePath, Buffer.from('fake-jpeg-data'));
+    await writeFile(framePath, await createTestJpeg());
 
     const outputPath = join(ws, 'final_output');
     const ctx: ProcessContext = {
@@ -61,6 +69,7 @@ describe('finalizeOutput', () => {
         outputPath,
         fps: 5,
         scale: 720,
+        quality: 80,
         debug: false,
       },
       workspacePath: ws,
@@ -134,18 +143,20 @@ describe('readFramesAsBuffers', () => {
     const framesDir = join(ws, 'frames');
     await mkdir(framesDir, { recursive: true });
 
-    const testData = [Buffer.from('data-0'), Buffer.from('data-1')];
+    const jpegBuf = await createTestJpeg();
     const frameNodes = [];
 
-    for (let i = 0; i < testData.length; i++) {
+    for (let i = 0; i < 2; i++) {
       const p = join(framesDir, `frame_${i}.jpg`);
-      await writeFile(p, testData[i]);
+      await writeFile(p, jpegBuf);
       frameNodes.push({ id: i, timestamp: i, extractPath: p });
     }
 
-    const buffers = await readFramesAsBuffers(frameNodes);
+    const buffers = await readFramesAsBuffers(frameNodes, 80);
     expect(buffers).toHaveLength(2);
-    expect(buffers[0]).toEqual(testData[0]);
-    expect(buffers[1]).toEqual(testData[1]);
+    for (const buf of buffers) {
+      expect(Buffer.isBuffer(buf)).toBe(true);
+      expect(buf.length).toBeGreaterThan(0);
+    }
   });
 });

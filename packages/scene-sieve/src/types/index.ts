@@ -21,6 +21,7 @@ export interface SieveOptionsBase {
   outputPath?: string;   // default: derived from inputPath (file mode only)
   fps?: number;          // default: 5
   scale?: number;        // default: 720
+  quality?: number;      // JPEG output quality 1-100 (default: 80)
   debug?: boolean;       // default: false
   onProgress?: (phase: ProgressPhase, percent: number) => void;
 }
@@ -40,6 +41,7 @@ export interface ResolvedOptions {
   outputPath: string;
   fps: number;
   scale: number;
+  quality: number;
   debug: boolean;
 }
 
