@@ -5,6 +5,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/__tests__/integration/**/*.{test,spec}.ts'],
+    globalSetup: 'src/__tests__/helpers/globalSetup.ts',
     testTimeout: 120000,
     pool: 'forks',
     poolOptions: {

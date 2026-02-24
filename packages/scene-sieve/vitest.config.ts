@@ -18,6 +18,7 @@ export default defineConfig({
       exclude: ['src/__tests__/**', 'src/cli.ts', 'src/version.ts'],
     },
     setupFiles: ['src/__tests__/helpers/setup.ts'],
+    globalSetup: 'src/__tests__/helpers/globalSetup.ts',
     testTimeout: 60000,
   },
 });

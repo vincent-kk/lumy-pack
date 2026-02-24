@@ -8,6 +8,7 @@ export default defineConfig({
       'src/__tests__/e2e/**/*.{test,spec}.{ts,tsx}',
       'src/__tests__/docker/**/*.{test,spec}.{ts,tsx}',
     ],
+    globalSetup: 'src/__tests__/helpers/globalSetup.ts',
     testTimeout: 30000,
   },
 });
