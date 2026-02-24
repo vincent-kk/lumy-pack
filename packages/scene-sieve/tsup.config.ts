@@ -28,5 +28,6 @@ export default defineConfig([
     clean: false,
     dts: false,
     banner: { js: '#!/usr/bin/env node' },
+    loader: { '.tsx': 'tsx' },
   },
 ]);

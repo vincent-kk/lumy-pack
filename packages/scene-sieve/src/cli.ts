@@ -1,9 +1,10 @@
 import { createRequire } from 'node:module';
 
 import { Command } from 'commander';
+import { render } from 'ink';
+import React from 'react';
 
-import { extractScenes } from './index.js';
-import type { ProgressPhase } from './types/index.js';
+import { SieveView } from './commands/Sieve.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json') as { version: string };
@@ -26,59 +27,23 @@ program
   .option('-q, --quality <number>', 'JPEG output quality 1-100', '80')
   .option('--debug', 'Enable debug mode (preserve temp workspace)')
   .action(async (input: string, opts) => {
-    const { default: ora } = await import('ora');
-    const { default: cliProgress } = await import('cli-progress');
-
-    const spinner = ora('Initializing...').start();
-
-    try {
-      spinner.stop();
-
-      const bar = new cliProgress.SingleBar({
-        format: '{phase} |{bar}| {percentage}%',
-        barCompleteChar: '\u2588',
-        barIncompleteChar: '\u2591',
-        hideCursor: true,
-      });
-
-      bar.start(100, 0, { phase: 'EXTRACTING' });
-
-      const result = await extractScenes({
-        mode: 'file',
-        inputPath: input,
+    const { waitUntilExit } = render(
+      React.createElement(SieveView, {
+        input,
         ...(opts.threshold !== undefined
           ? { threshold: parseFloat(opts.threshold) }
           : {}),
         ...(opts.count !== undefined
           ? { count: parseInt(opts.count, 10) }
           : {}),
-        outputPath: opts.output,
+        output: opts.output,
         fps: parseInt(opts.fps, 10),
         scale: parseInt(opts.scale, 10),
         quality: parseInt(opts.quality, 10),
         debug: opts.debug ?? false,
-        onProgress: (phase: ProgressPhase, percent: number) => {
-          bar.update(Math.round(percent), { phase });
-        },
-      });
-
-      bar.stop();
-
-      console.log(
-        `\nDone! ${result.originalFramesCount} frames -> ${result.prunedFramesCount} scenes (${result.executionTimeMs}ms)`,
-      );
-      if (opts.debug) {
-        console.log(
-          `Output: ${result.outputFiles[0]?.replace(/\/[^/]+$/, '/')}`,
-        );
-        result.outputFiles.forEach((f) => console.log(`  - ${f}`));
-      }
-    } catch (error) {
-      spinner.fail(
-        `Failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
-      process.exit(1);
-    }
+      }),
+    );
+    await waitUntilExit();
   });
 
 program.parseAsync(process.argv).catch((error: Error) => {
