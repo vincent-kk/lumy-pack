@@ -223,7 +223,8 @@ async function computeAKAZEDiff(
     if (desc1.rows > 0 && desc2.rows > 0) {
       const matcher = new cvLib.BFMatcher(cvLib.NORM_HAMMING, false);
       try {
-        matches = matcher.knnMatch(desc1, desc2, 2);
+        matches = new cvLib.DMatchVectorVector();
+        matcher.knnMatch(desc1, desc2, matches, 2);
 
         for (let i = 0; i < matches.size(); i++) {
           const pair = matches.get(i);

@@ -27,8 +27,9 @@ declare module '@techstark/opencv-js' {
     knnMatch(
       queryDescriptors: Mat,
       trainDescriptors: Mat,
+      matches: DMatchVectorVector,
       k: number,
-    ): DMatchVectorVector;
+    ): void;
     delete(): void;
   }
 
