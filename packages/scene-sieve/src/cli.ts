@@ -35,6 +35,7 @@ program
       bar.start(100, 0, { phase: 'EXTRACTING' });
 
       const result = await extractScenes({
+        mode: 'file',
         inputPath: input,
         count: parseInt(opts.count, 10),
         outputPath: opts.output,

@@ -1,13 +1,17 @@
 import { randomUUID } from 'node:crypto';
 
 import type { ProcessContext, SieveOptions, SieveResult } from '../types/index.js';
-import { DEFAULT_COUNT, DEFAULT_FPS, DEFAULT_SCALE } from '../constants.js';
 import { logger, setDebugMode } from '../utils/logger.js';
-import { deriveOutputPath } from '../utils/paths.js';
 import { analyzeFrames } from './analyzer.js';
 import { extractFrames } from './extractor.js';
+import { resolveInput, resolveOptions } from './input-resolver.js';
 import { pruneTo } from './pruner.js';
-import { cleanupWorkspace, createWorkspace, finalizeOutput } from './workspace.js';
+import {
+  cleanupWorkspace,
+  createWorkspace,
+  finalizeOutput,
+  readFramesAsBuffers,
+} from './workspace.js';
 
 export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
   const startTime = Date.now();
@@ -16,14 +20,7 @@ export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
 
   if (debug) setDebugMode(true);
 
-  const resolvedOptions: ProcessContext['options'] = {
-    inputPath: options.inputPath,
-    count: options.count ?? DEFAULT_COUNT,
-    outputPath: options.outputPath ?? deriveOutputPath(options.inputPath),
-    fps: options.fps ?? DEFAULT_FPS,
-    scale: options.scale ?? DEFAULT_SCALE,
-    debug,
-  };
+  const resolvedOptions = resolveOptions(options);
 
   const ctx: ProcessContext = {
     options: resolvedOptions,
@@ -48,9 +45,29 @@ export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
     ctx.workspacePath = await createWorkspace(sessionId);
     logger.debug(`Workspace created: ${ctx.workspacePath}`);
 
-    // 2. Extract frames
+    // 2. Resolve input
     ctx.status = 'EXTRACTING';
-    ctx.frames = await extractFrames(ctx);
+    const { frames: resolvedFrames, resolvedInputPath } = await resolveInput(
+      options,
+      ctx.workspacePath,
+    );
+
+    if (resolvedOptions.mode === 'frames') {
+      // 'frames' mode: buffers already written as FrameNodes
+      ctx.frames = resolvedFrames;
+    } else {
+      // 'file' or 'buffer' mode: extract frames via FFmpeg
+      const extractCtx: ProcessContext = {
+        ...ctx,
+        options: {
+          ...resolvedOptions,
+          inputPath: resolvedInputPath,
+        },
+      };
+      ctx.frames = await extractFrames(extractCtx);
+    }
+
+    ctx.emitProgress(100);
 
     // 3. Analyze frame similarity
     ctx.status = 'ANALYZING';
@@ -64,8 +81,19 @@ export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
 
     // 5. Finalize output
     ctx.status = 'FINALIZING';
-    const outputFiles = await finalizeOutput(ctx, prunedFrames);
-    ctx.emitProgress(100);
+
+    let outputFiles: string[] = [];
+    let outputBuffers: Buffer[] | undefined;
+
+    if (resolvedOptions.mode === 'buffer' || resolvedOptions.mode === 'frames') {
+      // Return buffers instead of writing to disk
+      outputBuffers = await readFramesAsBuffers(prunedFrames);
+      ctx.emitProgress(100);
+    } else {
+      // 'file' mode: write to output directory
+      outputFiles = await finalizeOutput(ctx, prunedFrames);
+      ctx.emitProgress(100);
+    }
 
     ctx.status = 'SUCCESS';
     logger.success(
@@ -77,6 +105,7 @@ export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
       originalFramesCount: ctx.frames.length,
       prunedFramesCount: prunedFrames.length,
       outputFiles,
+      outputBuffers,
       executionTimeMs: Date.now() - startTime,
     };
   } catch (error) {

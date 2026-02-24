@@ -30,6 +30,19 @@ export const OPENCV_BATCH_SIZE = 10;
 // Minimum I-Frame count before falling back to FPS extraction
 export const MIN_IFRAME_COUNT = 3;
 
+// Vision Analysis — DBSCAN
+export const DBSCAN_ALPHA = 0.03;
+export const DBSCAN_MIN_PTS = 4;
+
+// Vision Analysis — IoU Tracking
+export const IOU_THRESHOLD = 0.9;
+export const DECAY_LAMBDA = 0.95;
+export const ANIMATION_FRAME_THRESHOLD = 5;
+
+// Vision Analysis — Feature Matching
+export const MATCH_DISTANCE_THRESHOLD = 0.75;
+export const HOMOGRAPHY_INLIER_RATIO = 0.8;
+
 export function getTempWorkspaceDir(sessionId: string): string {
   return join(TEMP_BASE_DIR, `${WORKSPACE_PREFIX}${sessionId}`);
 }
