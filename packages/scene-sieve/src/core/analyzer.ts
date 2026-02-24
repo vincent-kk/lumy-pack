@@ -8,6 +8,10 @@ import {
   IOU_THRESHOLD,
   MATCH_DISTANCE_THRESHOLD,
   OPENCV_BATCH_SIZE,
+  PIXELDIFF_BINARY_THRESHOLD,
+  PIXELDIFF_CONTOUR_MIN_AREA,
+  PIXELDIFF_GAUSSIAN_KERNEL,
+  PIXELDIFF_SAMPLE_SPACING,
 } from '../constants.js';
 import type {
   BoundingBox,
@@ -23,6 +27,72 @@ import type { Point2D } from './dbscan.js';
 // ── OpenCV WASM Initialization (lazy) ──
 
 type CvLib = typeof import('@techstark/opencv-js');
+
+/**
+ * imgproc API subset used by computePixelDiff.
+ *
+ * @techstark/opencv-js declares these in individual .d.ts files
+ * (core_array, imgproc_filter, imgproc_misc, imgproc_shape, _hacks),
+ * but TypeScript's `typeof import(...)` fails to resolve them through
+ * the deep barrel re-export chain. This interface provides explicit
+ * type coverage so we avoid `as any`.
+ */
+interface CvImgProc {
+  Mat: {
+    new (): CvMat;
+    new (rows: number, cols: number, type: number): CvMat;
+  };
+  MatVector: {
+    new (): CvMatVector;
+  };
+  Size: {
+    new (width: number, height: number): { width: number; height: number };
+  };
+  CV_8UC1: number;
+  THRESH_BINARY: number;
+  RETR_EXTERNAL: number;
+  CHAIN_APPROX_SIMPLE: number;
+  absdiff(src1: CvMat, src2: CvMat, dst: CvMat): void;
+  GaussianBlur(
+    src: CvMat,
+    dst: CvMat,
+    ksize: { width: number; height: number },
+    sigmaX: number,
+  ): void;
+  threshold(
+    src: CvMat,
+    dst: CvMat,
+    thresh: number,
+    maxval: number,
+    type: number,
+  ): number;
+  findContours(
+    image: CvMat,
+    contours: CvMatVector,
+    hierarchy: CvMat,
+    mode: number,
+    method: number,
+  ): void;
+  boundingRect(array: CvMat): {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
+
+interface CvMat {
+  data: Uint8Array;
+  rows: number;
+  cols: number;
+  delete(): void;
+}
+
+interface CvMatVector {
+  size(): number;
+  get(i: number): CvMat;
+  delete(): void;
+}
 
 const OPENCV_INIT_TIMEOUT_MS = 30_000;
 
@@ -272,6 +342,100 @@ async function computeAKAZEDiff(
   }
 }
 
+// ── Stage 1b: Pixel-Diff Fallback ──
+
+/**
+ * Pixel-level difference fallback for AKAZE blind spots.
+ *
+ * When AKAZE produces sparse results (typical for UI screen recordings
+ * where form fields, dropdowns, or overlays change), this function
+ * detects changed regions via cv.absdiff and generates synthetic
+ * Point2D[] that feed into the existing DBSCAN → IoU → G(t) pipeline.
+ *
+ * Algorithm:
+ * 1. absdiff(frame1, frame2) → grayscale difference
+ * 2. GaussianBlur → reduce JPEG compression noise
+ * 3. threshold → binary mask of significant changes
+ * 4. findContours → bounding rects of changed regions
+ * 5. Grid sampling within each bounding rect → Point2D[]
+ */
+export function computePixelDiff(
+  cvLib: CvLib,
+  frame1: { data: Uint8Array; width: number; height: number },
+  frame2: { data: Uint8Array; width: number; height: number },
+): Point2D[] {
+  const cv = cvLib as unknown as CvImgProc;
+
+  const mat1 = new cv.Mat(frame1.height, frame1.width, cv.CV_8UC1);
+  const mat2 = new cv.Mat(frame2.height, frame2.width, cv.CV_8UC1);
+  const diff = new cv.Mat();
+  const blurred = new cv.Mat();
+  const binary = new cv.Mat();
+  const contours = new cv.MatVector();
+  const hierarchy = new cv.Mat();
+
+  try {
+    mat1.data.set(frame1.data);
+    mat2.data.set(frame2.data);
+
+    cv.absdiff(mat1, mat2, diff);
+
+    const ksize = new cv.Size(
+      PIXELDIFF_GAUSSIAN_KERNEL,
+      PIXELDIFF_GAUSSIAN_KERNEL,
+    );
+    cv.GaussianBlur(diff, blurred, ksize, 0);
+
+    cv.threshold(
+      blurred,
+      binary,
+      PIXELDIFF_BINARY_THRESHOLD,
+      255,
+      cv.THRESH_BINARY,
+    );
+
+    cv.findContours(
+      binary,
+      contours,
+      hierarchy,
+      cv.RETR_EXTERNAL,
+      cv.CHAIN_APPROX_SIMPLE,
+    );
+
+    const points: Point2D[] = [];
+    for (let c = 0; c < contours.size(); c++) {
+      const contour = contours.get(c);
+      const rect = cv.boundingRect(contour);
+
+      if (rect.width * rect.height < PIXELDIFF_CONTOUR_MIN_AREA) continue;
+
+      for (
+        let y = rect.y;
+        y < rect.y + rect.height;
+        y += PIXELDIFF_SAMPLE_SPACING
+      ) {
+        for (
+          let x = rect.x;
+          x < rect.x + rect.width;
+          x += PIXELDIFF_SAMPLE_SPACING
+        ) {
+          points.push({ x, y });
+        }
+      }
+    }
+
+    return points;
+  } finally {
+    mat1.delete();
+    mat2.delete();
+    diff.delete();
+    blurred.delete();
+    binary.delete();
+    contours.delete();
+    hierarchy.delete();
+  }
+}
+
 // ── Stage 4: G(t) Information Gain Scoring ──
 
 export function computeInformationGain(
@@ -334,8 +498,34 @@ async function analyzeBatch(
         preprocessed[i + 1]!,
       );
 
-      const dbscanResult = dbscan(sNew, imageWidth, imageHeight);
-      const clusters = dbscanResult.boundingBoxes;
+      let dbscanResult = dbscan(sNew, imageWidth, imageHeight);
+      let clusters = dbscanResult.boundingBoxes;
+
+      // Pixel-diff fallback: when AKAZE → DBSCAN produces no clusters,
+      // try pixel-level difference to catch UI changes AKAZE misses
+      // (dropdowns, form fields, overlays on low-texture backgrounds).
+      if (clusters.length === 0) {
+        const pixelDiffPoints = computePixelDiff(
+          cvLib,
+          preprocessed[i]!,
+          preprocessed[i + 1]!,
+        );
+
+        if (pixelDiffPoints.length > 0) {
+          logger.debug(
+            `Edge ${frames[i]!.id}->${frames[i + 1]!.id}: pixel-diff fallback (${pixelDiffPoints.length} points)`,
+          );
+          // minPts=2 for grid-sampled points (default MIN_PTS=4 is too strict for sparse grids)
+          dbscanResult = dbscan(
+            pixelDiffPoints,
+            imageWidth,
+            imageHeight,
+            undefined,
+            2,
+          );
+          clusters = dbscanResult.boundingBoxes;
+        }
+      }
 
       const clusterPointCounts = new Array<number>(clusters.length).fill(0);
       for (const label of dbscanResult.labels) {

@@ -144,15 +144,19 @@ function normalizeScores(graph: ScoreEdge[]): number[] {
  * Consecutive edges share overlapping frames (edge i: frame i->i+1,
  * edge i+1: frame i+1->i+2), so consecutive passing edges indicate
  * the same visual transition region. This function groups consecutive
- * passing edge indices into "runs" and keeps only the peak (highest
- * normalized score) per run.
+ * passing edge indices into "runs" and keeps all distinct peaks per run.
+ *
+ * Multi-peak detection: within each run, strict local maxima (score higher
+ * than both neighbors) are identified. Each local maximum represents a
+ * distinct visual transition. If no strict local maxima exist (plateau or
+ * monotonic sequence), the global peak of the run is selected as fallback.
  *
  * Single-element runs are unaffected (isolated transitions preserved).
  *
  * @param graph - full ScoreEdge array (for targetId lookup)
  * @param passingIndices - edge indices that passed threshold filtering (sorted ascending)
  * @param normalizedScores - normalized score array (same length as graph)
- * @returns Set of targetIds to add to surviving set (one per run)
+ * @returns Set of targetIds to add to surviving set (one or more per run)
  */
 export function suppressConsecutiveRuns(
   graph: ScoreEdge[],
@@ -173,17 +177,45 @@ export function suppressConsecutiveRuns(
       runEnd++;
     }
 
-    // Find the peak within this run
-    let peakIdx = passingIndices[runStart]!;
-    for (let j = runStart; j <= runEnd; j++) {
-      const idx = passingIndices[j]!;
-      if (normalizedScores[idx]! > normalizedScores[peakIdx]!) {
-        peakIdx = idx;
+    const runLen = runEnd - runStart + 1;
+
+    if (runLen === 1) {
+      // Single-element run: always keep
+      result.add(graph[passingIndices[runStart]!]!.targetId);
+    } else {
+      // Multi-element run: find all strict local maxima
+      const peaks: number[] = [];
+
+      for (let j = runStart; j <= runEnd; j++) {
+        const idx = passingIndices[j]!;
+        const score = normalizedScores[idx]!;
+        const prevScore =
+          j > runStart ? normalizedScores[passingIndices[j - 1]!]! : -Infinity;
+        const nextScore =
+          j < runEnd ? normalizedScores[passingIndices[j + 1]!]! : -Infinity;
+
+        if (score > prevScore && score > nextScore) {
+          peaks.push(idx);
+        }
+      }
+
+      if (peaks.length > 0) {
+        // Keep all distinct peaks
+        for (const peakIdx of peaks) {
+          result.add(graph[peakIdx]!.targetId);
+        }
+      } else {
+        // Plateau or monotonic: fallback to global peak
+        let peakIdx = passingIndices[runStart]!;
+        for (let j = runStart + 1; j <= runEnd; j++) {
+          const idx = passingIndices[j]!;
+          if (normalizedScores[idx]! > normalizedScores[peakIdx]!) {
+            peakIdx = idx;
+          }
+        }
+        result.add(graph[peakIdx]!.targetId);
       }
     }
-
-    // Keep only the peak frame (targetId of the peak edge)
-    result.add(graph[peakIdx]!.targetId);
 
     runStart = runEnd + 1;
   }

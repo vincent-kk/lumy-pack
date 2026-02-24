@@ -479,17 +479,19 @@ describe('pruneByThreshold (NMS)', () => {
     expect(result.has(1)).toBe(true);
   });
 
-  it('threshold=0 -- all edges pass, NMS groups consecutive runs', () => {
+  it('threshold=0 -- all edges pass, multi-peak NMS finds distinct peaks', () => {
     const frames = makeFrames(6);
     const scores = [0.3, 0.5, 0.4, 0.2, 0.6];
     // All positive -> all normalized > 0. threshold=0: all pass
-    // One giant run [0,1,2,3,4], peak at index 4 (0.6 is highest)
-    // targetId of edge 4 = frame 5 (which is also last boundary)
+    // One run [0,1,2,3,4], normalized: [0.5, 0.833, 0.667, 0.333, 1.0]
+    // Strict local maxima: idx 1 (0.833 > 0.5 & > 0.667), idx 4 (1.0 > 0.333)
+    // targetIds: edge 1 -> frame 2, edge 4 -> frame 5
     const edges = makeChainEdges(6, scores);
     const result = pruneByThreshold(edges, frames, 0);
     expect(result.has(0)).toBe(true); // boundary
-    expect(result.has(5)).toBe(true); // boundary + peak targetId
-    expect(result.size).toBe(2);
+    expect(result.has(2)).toBe(true); // peak at idx 1
+    expect(result.has(5)).toBe(true); // boundary + peak at idx 4
+    expect(result.size).toBe(3);
   });
 
   it('threshold=1 -- only max-normalized edges pass', () => {
@@ -511,20 +513,23 @@ describe('pruneByThreshold (NMS)', () => {
 describe('pruneByThresholdWithCap (NMS + cap integration)', () => {
   it('NMS reduces survivors below cap -- Stage 2 skipped', () => {
     // Without NMS: all 9 consecutive edges pass -> 9 + 2 boundary = 11 survivors > cap
-    // With NMS: 9 consecutive -> 1 peak -> 1 + 2 boundary = 3 survivors < cap of 5
+    // With multi-peak NMS: 3 local maxima -> 3 peaks + 2 boundary = 4 survivors < cap of 5
     const frames = makeFrames(10);
     const scores = [0.9, 0.8, 0.7, 0.85, 0.95, 0.6, 0.75, 0.88, 0.92];
     // P90: sorted [0.6, 0.7, 0.75, 0.8, 0.85, 0.88, 0.9, 0.92, 0.95], pIdx=8, ref=0.95
     // normalized: [0.947, 0.842, 0.737, 0.895, 1.0, 0.632, 0.789, 0.926, 0.968]
-    // threshold=0.5: all pass -> one giant run -> peak at index 4 (norm 1.0) -> targetId=5
-    // survivors: boundary{0,9} + peak{5} = 3
-    // cap=5: 3 <= 5 -> Stage 2 skipped
+    // threshold=0.5: all pass -> one run
+    // Strict local maxima: idx 0 (0.947 > 0.842), idx 4 (1.0), idx 8 (0.968 > 0.926)
+    // targetIds: edge 0 -> frame 1, edge 4 -> frame 5, edge 8 -> frame 9 (boundary)
+    // survivors: boundary{0,9} + peaks{1,5,9} = {0,1,5,9} = 4
+    // cap=5: 4 <= 5 -> Stage 2 skipped
     const edges = makeChainEdges(10, scores);
     const result = pruneByThresholdWithCap(edges, frames, 0.5, 5);
-    expect(result.size).toBe(3);
+    expect(result.size).toBe(4);
     expect(result.has(0)).toBe(true); // boundary
-    expect(result.has(5)).toBe(true); // NMS peak
-    expect(result.has(9)).toBe(true); // boundary
+    expect(result.has(1)).toBe(true); // peak at idx 0
+    expect(result.has(5)).toBe(true); // peak at idx 4
+    expect(result.has(9)).toBe(true); // boundary + peak at idx 8
   });
 
   it('NMS still leaves survivors above cap -- Stage 2 reduces', () => {
