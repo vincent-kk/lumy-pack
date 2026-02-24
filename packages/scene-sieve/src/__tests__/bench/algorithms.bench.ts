@@ -13,8 +13,9 @@
 
 import { computeIoU, computeInformationGain } from '../../core/analyzer.js';
 import { dbscan } from '../../core/dbscan.js';
+import { pruneTo } from '../../core/pruner.js';
 import type { Point2D } from '../../core/dbscan.js';
-import type { BoundingBox } from '../../types/index.js';
+import type { BoundingBox, FrameNode, ScoreEdge } from '../../types/index.js';
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
 
@@ -239,6 +240,66 @@ async function benchInformationGain(): Promise<BenchResult[]> {
   return results;
 }
 
+// ── Pruner Benchmark ─────────────────────────────────────────────────────────
+
+function makeBenchFrames(n: number): FrameNode[] {
+  return Array.from({ length: n }, (_, i) => ({
+    id: i,
+    timestamp: i * 0.2,
+    extractPath: `/tmp/frame_${i}.jpg`,
+  }));
+}
+
+function makeBenchEdges(n: number): ScoreEdge[] {
+  return Array.from({ length: n - 1 }, (_, i) => ({
+    sourceId: i,
+    targetId: i + 1,
+    // Alternating pattern to stress re-linking
+    score: i % 3 === 0 ? 0.8 : 0.1 + Math.random() * 0.2,
+  }));
+}
+
+async function benchPruneTo(): Promise<BenchResult[]> {
+  const sizes = [50, 100, 500, 1000, 3000];
+  const results: BenchResult[] = [];
+
+  console.log('Running pruneTo (min-heap) benchmarks...');
+
+  for (const n of sizes) {
+    const times: bigint[] = [];
+    let memDelta = 0;
+    const target = Math.max(5, Math.floor(n * 0.1));
+
+    for (let r = 0; r < RUNS; r++) {
+      const frames = makeBenchFrames(n);
+      const edges = makeBenchEdges(n);
+
+      const memBefore = process.memoryUsage().heapUsed;
+      const t0 = process.hrtime.bigint();
+      pruneTo(edges, frames, target);
+      const t1 = process.hrtime.bigint();
+      const memAfter = process.memoryUsage().heapUsed;
+
+      times.push(t1 - t0);
+      memDelta += (memAfter - memBefore) / 1024;
+    }
+
+    const { meanMs, stdDevMs } = stats(times);
+    results.push({
+      algorithm: 'pruneTo (min-heap)',
+      inputSize: `N=${n} → ${target}`,
+      runs: RUNS,
+      meanMs,
+      stdDevMs,
+      memDeltaKB: memDelta / RUNS,
+    });
+
+    console.log(`  pruneTo N=${n} → ${target}: ${meanMs.toFixed(3)} ms (±${stdDevMs.toFixed(3)})`);
+  }
+
+  return results;
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
@@ -263,6 +324,11 @@ async function main(): Promise<void> {
   const igResults = await benchInformationGain();
   allResults.push(...igResults);
 
+  console.log();
+
+  const prunerResults = await benchPruneTo();
+  allResults.push(...prunerResults);
+
   console.log('\n\n=== RESULTS TABLE ===');
   formatTable(allResults);
 
@@ -278,6 +344,28 @@ async function main(): Promise<void> {
       const empiricalExponent = Math.log(timeRatio) / Math.log(sizeRatio);
       console.log(
         `  n: ${prev.inputSize} -> ${curr.inputSize}  ` +
+        `(${sizeRatio.toFixed(1)}x size, ${timeRatio.toFixed(2)}x time, ` +
+        `empirical O(n^${empiricalExponent.toFixed(2)}))`,
+      );
+    }
+  }
+  console.log();
+
+  // Summary of Pruner complexity
+  console.log('=== Pruner Complexity Analysis ===');
+  const prunerRows = allResults.filter((r) => r.algorithm === 'pruneTo (min-heap)');
+  if (prunerRows.length >= 2) {
+    for (let i = 1; i < prunerRows.length; i++) {
+      const prev = prunerRows[i - 1]!;
+      const curr = prunerRows[i]!;
+      const prevN = Number(String(prev.inputSize).match(/N=(\d+)/)?.[1] ?? 0);
+      const currN = Number(String(curr.inputSize).match(/N=(\d+)/)?.[1] ?? 0);
+      if (prevN === 0 || currN === 0) continue;
+      const sizeRatio = currN / prevN;
+      const timeRatio = curr.meanMs / prev.meanMs;
+      const empiricalExponent = Math.log(timeRatio) / Math.log(sizeRatio);
+      console.log(
+        `  n: ${prevN} -> ${currN}  ` +
         `(${sizeRatio.toFixed(1)}x size, ${timeRatio.toFixed(2)}x time, ` +
         `empirical O(n^${empiricalExponent.toFixed(2)}))`,
       );
