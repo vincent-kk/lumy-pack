@@ -5,7 +5,7 @@ import { logger, setDebugMode } from '../utils/logger.js';
 import { analyzeFrames } from './analyzer.js';
 import { extractFrames } from './extractor.js';
 import { resolveInput, resolveOptions } from './input-resolver.js';
-import { pruneTo, pruneByThreshold, pruneByThresholdWithCap } from './pruner.js';
+import { pruneByThresholdWithCap } from './pruner.js';
 import {
   cleanupWorkspace,
   createWorkspace,
@@ -73,26 +73,11 @@ export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
     ctx.status = 'ANALYZING';
     ctx.graph = await analyzeFrames(ctx);
 
-    // 4. Prune: select strategy based on pruneMode
+    // 4. Prune: threshold + count cap
     ctx.status = 'PRUNING';
-    let survivingIds: Set<number>;
-
-    switch (resolvedOptions.pruneMode) {
-      case 'threshold-with-cap':
-        survivingIds = pruneByThresholdWithCap(
-          ctx.graph, ctx.frames, resolvedOptions.threshold!, resolvedOptions.count,
-        );
-        break;
-      case 'threshold':
-        survivingIds = pruneByThreshold(
-          ctx.graph, ctx.frames, resolvedOptions.threshold!,
-        );
-        break;
-      case 'count':
-      default:
-        survivingIds = pruneTo(ctx.graph, ctx.frames, resolvedOptions.count);
-        break;
-    }
+    const survivingIds = pruneByThresholdWithCap(
+      ctx.graph, ctx.frames, resolvedOptions.threshold, resolvedOptions.count,
+    );
     const prunedFrames = ctx.frames.filter((f) => survivingIds.has(f.id));
     ctx.emitProgress(100);
 

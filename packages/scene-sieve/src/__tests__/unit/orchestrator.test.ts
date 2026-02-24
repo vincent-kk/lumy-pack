@@ -9,8 +9,6 @@ const mockCreateWorkspace = vi.fn();
 const mockCleanupWorkspace = vi.fn();
 const mockFinalizeOutput = vi.fn();
 const mockReadFramesAsBuffers = vi.fn();
-const mockPruneTo = vi.fn();
-const mockPruneByThreshold = vi.fn();
 const mockPruneByThresholdWithCap = vi.fn();
 const mockSetDebugMode = vi.fn();
 
@@ -35,8 +33,6 @@ vi.mock('../../core/workspace.js', () => ({
 }));
 
 vi.mock('../../core/pruner.js', () => ({
-  pruneTo: mockPruneTo,
-  pruneByThreshold: mockPruneByThreshold,
   pruneByThresholdWithCap: mockPruneByThresholdWithCap,
 }));
 
@@ -48,8 +44,9 @@ vi.mock('../../utils/logger.js', () => ({
 const defaultResolvedOptions = {
   mode: 'file' as const,
   inputPath: '/input.mp4',
-  count: 5,
-  pruneMode: 'count' as const,
+  count: 20,
+  threshold: 0.5,
+  pruneMode: 'threshold-with-cap' as const,
   outputPath: '/out',
   fps: 5,
   scale: 720,
@@ -77,8 +74,6 @@ function setupDefaultMocks(modeOverride?: 'file' | 'buffer' | 'frames') {
   });
   mockExtractFrames.mockResolvedValue(mockFrames);
   mockAnalyzeFrames.mockResolvedValue(mockEdges);
-  mockPruneTo.mockReturnValue(new Set([0, 1, 2]));
-  mockPruneByThreshold.mockReturnValue(new Set([0, 1, 2]));
   mockPruneByThresholdWithCap.mockReturnValue(new Set([0, 1, 2]));
   mockFinalizeOutput.mockResolvedValue(['/out/scene_001.jpg', '/out/scene_002.jpg', '/out/scene_003.jpg']);
   mockReadFramesAsBuffers.mockResolvedValue([
@@ -177,44 +172,13 @@ describe('runPipeline', () => {
     expect(result.executionTimeMs).toBeGreaterThanOrEqual(0);
   });
 
-  it('threshold 모드: pruneByThreshold가 호출된다', async () => {
-    setupDefaultMocks('file');
-    mockResolveOptions.mockReturnValue({ ...defaultResolvedOptions, threshold: 0.5, pruneMode: 'threshold' });
-    const { runPipeline } = await import('../../core/orchestrator.js');
-
-    const options: SieveOptions = { mode: 'file', inputPath: '/input.mp4', threshold: 0.5 };
-    await runPipeline(options);
-
-    expect(mockPruneByThreshold).toHaveBeenCalledTimes(1);
-    expect(mockPruneTo).not.toHaveBeenCalled();
-  });
-
-  it('count 모드 (기본): pruneTo가 호출된다', async () => {
+  it('기본 동작: pruneByThresholdWithCap이 호출된다', async () => {
     setupDefaultMocks('file');
     const { runPipeline } = await import('../../core/orchestrator.js');
 
     const options: SieveOptions = { mode: 'file', inputPath: '/input.mp4' };
     await runPipeline(options);
 
-    expect(mockPruneTo).toHaveBeenCalledTimes(1);
-    expect(mockPruneByThreshold).not.toHaveBeenCalled();
-  });
-
-  it('threshold-with-cap 모드: pruneByThresholdWithCap이 호출된다', async () => {
-    setupDefaultMocks('file');
-    mockResolveOptions.mockReturnValue({
-      ...defaultResolvedOptions,
-      threshold: 0.5,
-      count: 3,
-      pruneMode: 'threshold-with-cap',
-    });
-    const { runPipeline } = await import('../../core/orchestrator.js');
-
-    const options: SieveOptions = { mode: 'file', inputPath: '/input.mp4', threshold: 0.5, count: 3 };
-    await runPipeline(options);
-
     expect(mockPruneByThresholdWithCap).toHaveBeenCalledTimes(1);
-    expect(mockPruneTo).not.toHaveBeenCalled();
-    expect(mockPruneByThreshold).not.toHaveBeenCalled();
   });
 });

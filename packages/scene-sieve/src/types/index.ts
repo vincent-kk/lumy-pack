@@ -16,8 +16,8 @@ export type SieveInput =
 // ── Common Options ──
 
 export interface SieveOptionsBase {
-  count?: number;        // default: 5 (when no threshold specified)
-  threshold?: number;    // G(t) score threshold. Keeps frames with score >= threshold. When combined with count, caps result to at most count frames.
+  count?: number;        // default: 20
+  threshold?: number;    // default: 0.5. G(t) score threshold. Keeps frames with score >= threshold, capped by count.
   outputPath?: string;   // default: derived from inputPath (file mode only)
   fps?: number;          // default: 5
   scale?: number;        // default: 720
@@ -36,8 +36,8 @@ export interface ResolvedOptions {
   mode: 'file' | 'buffer' | 'frames';
   inputPath?: string;
   count: number;
-  threshold?: number;    // undefined = count mode, number = threshold mode
-  pruneMode: 'count' | 'threshold' | 'threshold-with-cap';
+  threshold: number;     // default: 0.5
+  pruneMode: 'threshold-with-cap';
   outputPath: string;
   fps: number;
   scale: number;

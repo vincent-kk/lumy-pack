@@ -4,7 +4,8 @@ import { join } from 'node:path';
 export const APP_NAME = 'scene-sieve';
 
 // Pipeline defaults
-export const DEFAULT_COUNT = 5;
+export const DEFAULT_COUNT = 20;
+export const DEFAULT_THRESHOLD = 0.5;
 export const DEFAULT_FPS = 5;
 export const DEFAULT_SCALE = 720;
 export const DEFAULT_QUALITY = 80;

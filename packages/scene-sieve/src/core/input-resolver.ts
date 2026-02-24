@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 
 import type { FrameNode, SieveOptions, ResolvedOptions } from '../types/index.js';
-import { DEFAULT_COUNT, DEFAULT_FPS, DEFAULT_QUALITY, DEFAULT_SCALE } from '../constants.js';
+import { DEFAULT_COUNT, DEFAULT_FPS, DEFAULT_QUALITY, DEFAULT_SCALE, DEFAULT_THRESHOLD } from '../constants.js';
 import { deriveOutputPath } from '../utils/paths.js';
 import { writeInputBuffer, writeInputFrames } from './workspace.js';
 
@@ -14,22 +14,14 @@ export function resolveOptions(options: SieveOptions): ResolvedOptions {
       ? deriveOutputPath(inputPath)
       : join(process.cwd(), 'scene-sieve-output'));
 
-  const threshold = options.threshold;
-  if (threshold !== undefined && (threshold <= 0 || threshold > 1)) {
+  const threshold = options.threshold ?? DEFAULT_THRESHOLD;
+  if (threshold <= 0 || threshold > 1) {
     throw new Error(
       `threshold must be in range (0, 1], received: ${threshold}`,
     );
   }
 
-  const hasThreshold = threshold !== undefined;
-  const hasExplicitCount = options.count !== undefined;
-
-  const pruneMode: ResolvedOptions['pruneMode'] =
-    hasThreshold && hasExplicitCount
-      ? 'threshold-with-cap'
-      : hasThreshold
-        ? 'threshold'
-        : 'count';
+  const pruneMode: ResolvedOptions['pruneMode'] = 'threshold-with-cap';
 
   return {
     mode,

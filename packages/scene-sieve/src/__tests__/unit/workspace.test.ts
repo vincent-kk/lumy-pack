@@ -65,7 +65,8 @@ describe('finalizeOutput', () => {
       options: {
         mode: 'file',
         count: 5,
-        pruneMode: 'count',
+        threshold: 0.5,
+        pruneMode: 'threshold-with-cap',
         outputPath,
         fps: 5,
         scale: 720,

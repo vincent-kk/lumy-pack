@@ -12,13 +12,14 @@ vi.mock('../../utils/paths.js', () => ({
 }));
 
 describe('resolveOptions', () => {
-  it('file mode: 기본값 적용 (count=5, fps=5, scale=720, debug=false)', () => {
+  it('file mode: 기본값 적용 (count=20, threshold=0.5, fps=5, scale=720, debug=false)', () => {
     const result = resolveOptions({ mode: 'file', inputPath: '/video.mp4' });
-    expect(result.count).toBe(5);
+    expect(result.count).toBe(20);
+    expect(result.threshold).toBe(0.5);
     expect(result.fps).toBe(5);
     expect(result.scale).toBe(720);
     expect(result.debug).toBe(false);
-    expect(result.pruneMode).toBe('count');
+    expect(result.pruneMode).toBe('threshold-with-cap');
   });
 
   it('file mode: outputPath 미지정 시 deriveOutputPath 호출', async () => {
@@ -65,10 +66,10 @@ describe('resolveOptions', () => {
     expect(result.threshold).toBe(1.0);
   });
 
-  it('threshold 미지정 시 undefined (count 모드 유지)', () => {
+  it('threshold 미지정 시 기본값 0.5 적용', () => {
     const result = resolveOptions({ mode: 'file', inputPath: '/video.mp4' });
-    expect(result.threshold).toBeUndefined();
-    expect(result.count).toBe(5);
+    expect(result.threshold).toBe(0.5);
+    expect(result.count).toBe(20);
   });
 
   it('커스텀 값이 올바르게 반영됨', () => {
@@ -90,25 +91,28 @@ describe('resolveOptions', () => {
 });
 
 describe('resolveOptions - pruneMode', () => {
-  it('count만 지정: pruneMode=count', () => {
-    const result = resolveOptions({ mode: 'file', inputPath: '/video.mp4', count: 10 });
-    expect(result.pruneMode).toBe('count');
-  });
-
-  it('threshold만 지정: pruneMode=threshold', () => {
-    const result = resolveOptions({ mode: 'file', inputPath: '/video.mp4', threshold: 0.5 });
-    expect(result.pruneMode).toBe('threshold');
-  });
-
-  it('count와 threshold 모두 지정: pruneMode=threshold-with-cap', () => {
-    const result = resolveOptions({ mode: 'file', inputPath: '/video.mp4', threshold: 0.5, count: 3 });
+  it('항상 threshold-with-cap 모드로 동작한다', () => {
+    const result = resolveOptions({ mode: 'file', inputPath: '/video.mp4' });
     expect(result.pruneMode).toBe('threshold-with-cap');
   });
 
-  it('아무것도 지정하지 않으면: pruneMode=count, count=5', () => {
+  it('count 지정 시에도 threshold-with-cap 모드', () => {
+    const result = resolveOptions({ mode: 'file', inputPath: '/video.mp4', count: 10 });
+    expect(result.pruneMode).toBe('threshold-with-cap');
+    expect(result.count).toBe(10);
+  });
+
+  it('threshold 지정 시에도 threshold-with-cap 모드', () => {
+    const result = resolveOptions({ mode: 'file', inputPath: '/video.mp4', threshold: 0.7 });
+    expect(result.pruneMode).toBe('threshold-with-cap');
+    expect(result.threshold).toBe(0.7);
+  });
+
+  it('아무것도 지정하지 않으면: 기본값 threshold=0.5, count=20', () => {
     const result = resolveOptions({ mode: 'file', inputPath: '/video.mp4' });
-    expect(result.pruneMode).toBe('count');
-    expect(result.count).toBe(5);
+    expect(result.pruneMode).toBe('threshold-with-cap');
+    expect(result.threshold).toBe(0.5);
+    expect(result.count).toBe(20);
   });
 });
 
