@@ -15,8 +15,10 @@ export function resolveOptions(options: SieveOptions): ResolvedOptions {
       : join(process.cwd(), 'scene-sieve-output'));
 
   const threshold = options.threshold;
-  if (threshold !== undefined && threshold <= 0) {
-    throw new Error(`threshold must be greater than 0, received: ${threshold}`);
+  if (threshold !== undefined && (threshold <= 0 || threshold > 1)) {
+    throw new Error(
+      `threshold must be in range (0, 1], received: ${threshold}`,
+    );
   }
 
   return {

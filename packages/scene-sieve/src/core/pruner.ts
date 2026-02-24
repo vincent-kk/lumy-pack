@@ -94,9 +94,34 @@ export function pruneTo(
 }
 
 /**
+ * Normalize raw G(t) scores to [0, 1] range via max-normalization.
+ *
+ * - Filters out non-finite and negative scores (treated as 0)
+ * - If all scores are 0 or no valid scores exist, returns all zeros
+ * - Avoids division by zero: only divides when maxScore > 0
+ *
+ * @returns normalized scores array (same length as input graph)
+ */
+function normalizeScores(graph: ScoreEdge[]): number[] {
+  if (graph.length === 0) return [];
+
+  const safeScores = graph.map((e) =>
+    Number.isFinite(e.score) && e.score > 0 ? e.score : 0,
+  );
+  const maxScore = Math.max(...safeScores);
+
+  if (maxScore === 0) return safeScores;
+
+  return safeScores.map((s) => s / maxScore);
+}
+
+/**
  * Threshold-based pruning — O(N).
  *
- * Keeps all frames where the incoming edge score >= threshold.
+ * Scores are normalized to [0, 1] via max-normalization.
+ * threshold=0.5 means "keep frames where the change is at least 50%
+ * of the maximum change observed in this sequence".
+ *
  * First and last frames are always preserved (boundary protection).
  *
  * Unlike pruneTo (which targets an exact count via greedy merge),
@@ -114,9 +139,11 @@ export function pruneByThreshold(
   surviving.add(frames[0]!.id);
   surviving.add(frames[frames.length - 1]!.id);
 
-  for (const edge of graph) {
-    if (edge.score >= threshold) {
-      surviving.add(edge.targetId);
+  const normalized = normalizeScores(graph);
+
+  for (let i = 0; i < graph.length; i++) {
+    if (normalized[i]! >= threshold) {
+      surviving.add(graph[i]!.targetId);
     }
   }
 

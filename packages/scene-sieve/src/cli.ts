@@ -12,7 +12,7 @@ program
   .version(VERSION)
   .argument('<input>', 'Input video or GIF file path')
   .option('-n, --count <number>', 'Number of frames to keep', '5')
-  .option('-t, --threshold <number>', 'G(t) score threshold (keeps all frames above, ignores --count)')
+  .option('-t, --threshold <number>', 'Normalized threshold 0~1 (keeps frames above ratio of max change, ignores --count)')
   .option('-o, --output <path>', 'Output directory path')
   .option('--fps <number>', 'Fallback FPS for frame extraction', '5')
   .option('-s, --scale <number>', 'Scale size for vision analysis', '720')

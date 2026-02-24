@@ -41,14 +41,27 @@ describe('resolveOptions', () => {
     expect(result.threshold).toBe(0.5);
   });
 
-  it('threshold <= 0이면 에러', () => {
+  it('threshold 범위 밖이면 에러 (0 이하 또는 1 초과)', () => {
     expect(() =>
       resolveOptions({ mode: 'file', inputPath: '/video.mp4', threshold: 0 }),
-    ).toThrow('threshold must be greater than 0');
+    ).toThrow('threshold must be in range (0, 1]');
 
     expect(() =>
       resolveOptions({ mode: 'file', inputPath: '/video.mp4', threshold: -0.1 }),
-    ).toThrow('threshold must be greater than 0');
+    ).toThrow('threshold must be in range (0, 1]');
+
+    expect(() =>
+      resolveOptions({ mode: 'file', inputPath: '/video.mp4', threshold: 1.5 }),
+    ).toThrow('threshold must be in range (0, 1]');
+  });
+
+  it('threshold=1.0은 유효 (최대 변화만 추출)', () => {
+    const result = resolveOptions({
+      mode: 'file',
+      inputPath: '/video.mp4',
+      threshold: 1.0,
+    });
+    expect(result.threshold).toBe(1.0);
   });
 
   it('threshold 미지정 시 undefined (count 모드 유지)', () => {
