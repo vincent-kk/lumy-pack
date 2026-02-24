@@ -25,7 +25,8 @@ Each package has its own `README.md` with usage, dependencies, and examples.
 
 | Package                                                      | Type          | Description                                                                                              |
 | ------------------------------------------------------------ | ------------- | -------------------------------------------------------------------------------------------------------- |
-| **[`@lumy-pack/syncpoint`](./packages/syncpoint/README.md)** | npm module    | CLI for personal environment sync, backup/restore, and machine provisioning. Published to npm.           |
+| **[`@lumy-pack/syncpoint`](./packages/syncpoint/README.md)**     | npm module | CLI for personal environment sync, backup/restore, and machine provisioning. Published to npm.            |
+| **[`@lumy-pack/scene-sieve`](./packages/scene-sieve/README.md)** | npm module | CLI and library for extracting key frames from video/GIF using computer vision. Published to npm.         |
 
 ---
 
