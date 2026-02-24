@@ -16,7 +16,10 @@ program
   .version(version)
   .argument('<input>', 'Input video or GIF file path')
   .option('-n, --count <number>', 'Max number of frames to keep (default: 20)')
-  .option('-t, --threshold <number>', 'Normalized threshold 0~1 (default: 0.5; keeps frames above ratio of max change)')
+  .option(
+    '-t, --threshold <number>',
+    'Normalized threshold 0~1 (default: 0.5; keeps frames above ratio of max change)',
+  )
   .option('-o, --output <path>', 'Output directory path')
   .option('--fps <number>', 'Fallback FPS for frame extraction', '5')
   .option('-s, --scale <number>', 'Scale size for vision analysis', '720')
@@ -64,8 +67,12 @@ program
       console.log(
         `\nDone! ${result.originalFramesCount} frames -> ${result.prunedFramesCount} scenes (${result.executionTimeMs}ms)`,
       );
-      console.log(`Output: ${result.outputFiles[0]?.replace(/\/[^/]+$/, '/')}`);
-      result.outputFiles.forEach((f) => console.log(`  - ${f}`));
+      if (opts.debug) {
+        console.log(
+          `Output: ${result.outputFiles[0]?.replace(/\/[^/]+$/, '/')}`,
+        );
+        result.outputFiles.forEach((f) => console.log(`  - ${f}`));
+      }
     } catch (error) {
       spinner.fail(
         `Failed: ${error instanceof Error ? error.message : String(error)}`,

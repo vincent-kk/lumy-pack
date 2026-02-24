@@ -1,8 +1,11 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { ProcessContext } from '../../types/index.js';
 
 // Mock execa
-const mockExeca = vi.fn().mockResolvedValue({ stdout: '', stderr: '', exitCode: 0 });
+const mockExeca = vi
+  .fn()
+  .mockResolvedValue({ stdout: '', stderr: '', exitCode: 0 });
 vi.mock('execa', () => ({ execa: mockExeca }));
 
 vi.mock('ffmpeg-static', () => ({ default: '/usr/bin/ffmpeg' }));
@@ -27,7 +30,9 @@ vi.mock('node:fs/promises', () => ({
   readdir: vi.fn().mockResolvedValue([]),
 }));
 
-function makeCtx(overrides: Partial<ProcessContext['options']> = {}): ProcessContext {
+function makeCtx(
+  overrides: Partial<ProcessContext['options']> = {},
+): ProcessContext {
   return {
     options: {
       mode: 'file',
@@ -60,7 +65,9 @@ describe('extractFrames', () => {
   it('inputPath 미제공 시 에러를 throw한다', async () => {
     const { extractFrames } = await import('../../core/extractor.js');
     const ctx = makeCtx({ inputPath: undefined });
-    await expect(extractFrames(ctx)).rejects.toThrow('inputPath is required for frame extraction');
+    await expect(extractFrames(ctx)).rejects.toThrow(
+      'inputPath is required for frame extraction',
+    );
   });
 
   it('파일이 존재하지 않으면 에러를 throw한다', async () => {
@@ -69,7 +76,9 @@ describe('extractFrames', () => {
     mockIsSupportedFile.mockReturnValue(true);
 
     const ctx = makeCtx({ inputPath: '/tmp/nonexistent.mp4' });
-    await expect(extractFrames(ctx)).rejects.toThrow('Input file not found: /tmp/nonexistent.mp4');
+    await expect(extractFrames(ctx)).rejects.toThrow(
+      'Input file not found: /tmp/nonexistent.mp4',
+    );
   });
 
   it('미지원 포맷이면 에러를 throw한다', async () => {
@@ -78,7 +87,9 @@ describe('extractFrames', () => {
     mockIsSupportedFile.mockReturnValue(false);
 
     const ctx = makeCtx({ inputPath: '/tmp/test.xyz' });
-    await expect(extractFrames(ctx)).rejects.toThrow('Unsupported file format: /tmp/test.xyz');
+    await expect(extractFrames(ctx)).rejects.toThrow(
+      'Unsupported file format: /tmp/test.xyz',
+    );
   });
 
   it('GIF 파일은 FPS 모드로 분기한다', async () => {
@@ -86,12 +97,14 @@ describe('extractFrames', () => {
     mockFileExists.mockResolvedValue(true);
     // First call: allExtensions check → supported, Second call: isGif check → true
     mockIsSupportedFile
-      .mockReturnValueOnce(true)  // allExtensions check
+      .mockReturnValueOnce(true) // allExtensions check
       .mockReturnValueOnce(true); // isGif check
 
     const { readdir } = await import('node:fs/promises');
     const mockReaddir = vi.mocked(readdir);
-    mockReaddir.mockResolvedValue(['frame_000001.jpg'] as unknown as Awaited<ReturnType<typeof readdir>>);
+    mockReaddir.mockResolvedValue(['frame_000001.jpg'] as unknown as Awaited<
+      ReturnType<typeof readdir>
+    >);
 
     // ffprobe mock for duration query
     mockExeca.mockResolvedValue({
@@ -113,7 +126,7 @@ describe('extractFrames', () => {
     mockFileExists.mockResolvedValue(true);
     // First: allExtensions → supported, Second: isGif → false (not a gif, triggers I-frame path)
     mockIsSupportedFile
-      .mockReturnValueOnce(true)   // allExtensions check
+      .mockReturnValueOnce(true) // allExtensions check
       .mockReturnValueOnce(false); // isGif check → use I-frame first
 
     const { readdir } = await import('node:fs/promises');
@@ -122,7 +135,9 @@ describe('extractFrames', () => {
     // First call (I-frame): 1 file (< 3, triggers fallback)
     // Second call (FPS): 5 files
     mockReaddir
-      .mockResolvedValueOnce(['frame_000001.jpg'] as unknown as Awaited<ReturnType<typeof readdir>>)
+      .mockResolvedValueOnce(['frame_000001.jpg'] as unknown as Awaited<
+        ReturnType<typeof readdir>
+      >)
       .mockResolvedValueOnce([
         'frame_000001.jpg',
         'frame_000002.jpg',

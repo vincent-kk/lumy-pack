@@ -1,27 +1,25 @@
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { path as ffprobePath } from '@ffprobe-installer/ffprobe';
 import { execa } from 'execa';
 import ffmpegPath from 'ffmpeg-static';
-import { path as ffprobePath } from '@ffprobe-installer/ffprobe';
 
-import type { FrameNode, ProcessContext } from '../types/index.js';
 import {
   MIN_IFRAME_COUNT,
   SUPPORTED_GIF_EXTENSIONS,
   SUPPORTED_VIDEO_EXTENSIONS,
 } from '../constants.js';
-import { ensureDir, fileExists, isSupportedFile } from '../utils/paths.js';
+import type { FrameNode, ProcessContext } from '../types/index.js';
 import { logger } from '../utils/logger.js';
+import { ensureDir, fileExists, isSupportedFile } from '../utils/paths.js';
 
 /**
  * Extract frames from video/GIF using FFmpeg.
  * Attempts I-Frame extraction first; falls back to fixed FPS if insufficient.
  * GIF inputs always use FPS fallback.
  */
-export async function extractFrames(
-  ctx: ProcessContext,
-): Promise<FrameNode[]> {
+export async function extractFrames(ctx: ProcessContext): Promise<FrameNode[]> {
   const framesDir = join(ctx.workspacePath, 'frames');
   const { inputPath, fps, scale } = ctx.options;
 
@@ -35,7 +33,10 @@ export async function extractFrames(
     throw new Error(`Input file not found: ${inputPath}`);
   }
 
-  const allExtensions = [...SUPPORTED_VIDEO_EXTENSIONS, ...SUPPORTED_GIF_EXTENSIONS];
+  const allExtensions = [
+    ...SUPPORTED_VIDEO_EXTENSIONS,
+    ...SUPPORTED_GIF_EXTENSIONS,
+  ];
   if (!isSupportedFile(inputPath, allExtensions)) {
     throw new Error(`Unsupported file format: ${inputPath}`);
   }
@@ -75,10 +76,14 @@ async function extractIFrames(
   const outputPattern = join(outputDir, 'frame_%06d.jpg');
 
   await execa(ffmpegPath!, [
-    '-i', inputPath,
-    '-vf', `select='eq(pict_type,I)',scale=-1:${scale}`,
-    '-vsync', 'vfr',
-    '-q:v', '2',
+    '-i',
+    inputPath,
+    '-vf',
+    `select='eq(pict_type,I)',scale=-1:${scale}`,
+    '-vsync',
+    'vfr',
+    '-q:v',
+    '2',
     outputPattern,
   ]);
 
@@ -94,9 +99,12 @@ async function extractByFps(
   const outputPattern = join(outputDir, 'frame_%06d.jpg');
 
   await execa(ffmpegPath!, [
-    '-i', inputPath,
-    '-vf', `fps=${fps},scale=-1:${scale}`,
-    '-q:v', '2',
+    '-i',
+    inputPath,
+    '-vf',
+    `fps=${fps},scale=-1:${scale}`,
+    '-q:v',
+    '2',
     outputPattern,
   ]);
 
@@ -105,8 +113,10 @@ async function extractByFps(
 
 async function getVideoDuration(inputPath: string): Promise<number> {
   const { stdout } = await execa(ffprobePath, [
-    '-v', 'quiet',
-    '-print_format', 'json',
+    '-v',
+    'quiet',
+    '-print_format',
+    'json',
     '-show_format',
     inputPath,
   ]);
@@ -114,7 +124,10 @@ async function getVideoDuration(inputPath: string): Promise<number> {
   return parseFloat(metadata.format?.duration ?? '0');
 }
 
-async function buildFrameList(framesDir: string, inputPath: string): Promise<FrameNode[]> {
+async function buildFrameList(
+  framesDir: string,
+  inputPath: string,
+): Promise<FrameNode[]> {
   const files = await readdir(framesDir);
   const jpgFiles = files.filter((f) => f.endsWith('.jpg')).sort();
 
@@ -127,7 +140,9 @@ async function buildFrameList(framesDir: string, inputPath: string): Promise<Fra
   try {
     duration = await getVideoDuration(inputPath);
   } catch {
-    logger.debug('Could not determine video duration; using frame index for timestamps');
+    logger.debug(
+      'Could not determine video duration; using frame index for timestamps',
+    );
   }
 
   return jpgFiles.map((file, index) => ({

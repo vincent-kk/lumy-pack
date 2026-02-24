@@ -1,7 +1,12 @@
 import { randomUUID } from 'node:crypto';
 
-import type { ProcessContext, SieveOptions, SieveResult } from '../types/index.js';
+import type {
+  ProcessContext,
+  SieveOptions,
+  SieveResult,
+} from '../types/index.js';
 import { logger, setDebugMode } from '../utils/logger.js';
+
 import { analyzeFrames } from './analyzer.js';
 import { extractFrames } from './extractor.js';
 import { resolveInput, resolveOptions } from './input-resolver.js';
@@ -76,7 +81,10 @@ export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
     // 4. Prune: threshold + count cap
     ctx.status = 'PRUNING';
     const survivingIds = pruneByThresholdWithCap(
-      ctx.graph, ctx.frames, resolvedOptions.threshold, resolvedOptions.count,
+      ctx.graph,
+      ctx.frames,
+      resolvedOptions.threshold,
+      resolvedOptions.count,
     );
     const prunedFrames = ctx.frames.filter((f) => survivingIds.has(f.id));
     ctx.emitProgress(100);
@@ -87,9 +95,15 @@ export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
     let outputFiles: string[] = [];
     let outputBuffers: Buffer[] | undefined;
 
-    if (resolvedOptions.mode === 'buffer' || resolvedOptions.mode === 'frames') {
+    if (
+      resolvedOptions.mode === 'buffer' ||
+      resolvedOptions.mode === 'frames'
+    ) {
       // Return buffers instead of writing to disk
-      outputBuffers = await readFramesAsBuffers(prunedFrames, resolvedOptions.quality);
+      outputBuffers = await readFramesAsBuffers(
+        prunedFrames,
+        resolvedOptions.quality,
+      );
       ctx.emitProgress(100);
     } else {
       // 'file' mode: write to output directory

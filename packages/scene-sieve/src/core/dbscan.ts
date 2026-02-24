@@ -1,5 +1,5 @@
-import type { BoundingBox, DBSCANResult } from '../types/index.js';
 import { DBSCAN_ALPHA, DBSCAN_MIN_PTS } from '../constants.js';
+import type { BoundingBox, DBSCANResult } from '../types/index.js';
 
 export interface Point2D {
   x: number;
@@ -24,7 +24,8 @@ export function dbscan(
     return { labels: [], boundingBoxes: [] };
   }
 
-  const eps = (alpha ?? DBSCAN_ALPHA) * Math.sqrt(imageWidth ** 2 + imageHeight ** 2);
+  const eps =
+    (alpha ?? DBSCAN_ALPHA) * Math.sqrt(imageWidth ** 2 + imageHeight ** 2);
   const epsSquared = eps * eps;
   const minPoints = minPts ?? DBSCAN_MIN_PTS;
 
@@ -100,7 +101,11 @@ export function dbscan(
   return { labels, boundingBoxes };
 }
 
-function findNeighbors(points: Point2D[], idx: number, epsSquared: number): number[] {
+function findNeighbors(
+  points: Point2D[],
+  idx: number,
+  epsSquared: number,
+): number[] {
   const p = points[idx];
   const neighbors: number[] = [];
 

@@ -1,8 +1,19 @@
 import { join } from 'node:path';
 
-import type { FrameNode, SieveOptions, ResolvedOptions } from '../types/index.js';
-import { DEFAULT_COUNT, DEFAULT_FPS, DEFAULT_QUALITY, DEFAULT_SCALE, DEFAULT_THRESHOLD } from '../constants.js';
+import {
+  DEFAULT_COUNT,
+  DEFAULT_FPS,
+  DEFAULT_QUALITY,
+  DEFAULT_SCALE,
+  DEFAULT_THRESHOLD,
+} from '../constants.js';
+import type {
+  FrameNode,
+  ResolvedOptions,
+  SieveOptions,
+} from '../types/index.js';
 import { deriveOutputPath } from '../utils/paths.js';
+
 import { writeInputBuffer, writeInputFrames } from './workspace.js';
 
 export function resolveOptions(options: SieveOptions): ResolvedOptions {
@@ -54,7 +65,10 @@ export async function resolveInput(
   }
 
   if (options.mode === 'buffer') {
-    const resolvedInputPath = await writeInputBuffer(options.inputBuffer, workspacePath);
+    const resolvedInputPath = await writeInputBuffer(
+      options.inputBuffer,
+      workspacePath,
+    );
     return { frames: [], resolvedInputPath };
   }
 

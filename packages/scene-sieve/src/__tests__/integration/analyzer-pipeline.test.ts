@@ -1,11 +1,13 @@
-import { mkdir, rm } from 'node:fs/promises';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
-import { describe, expect, it, beforeAll, afterAll } from 'vitest';
+import { mkdir, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import sharp from 'sharp';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { analyzeFrames } from '../../core/analyzer.js';
-import type { ProcessContext, FrameNode } from '../../types/index.js';
+import type { FrameNode, ProcessContext } from '../../types/index.js';
 
 // Integration test: uses real sharp + OpenCV WASM
 // Timeout set high due to WASM initialization
@@ -20,9 +22,9 @@ beforeAll(async () => {
 
   // Generate 5 distinct colored rectangles as grayscale PNG test images
   const colors: Array<{ r: number; g: number; b: number }> = [
-    { r: 255, g: 0, b: 0 },   // red
-    { r: 0, g: 255, b: 0 },   // green
-    { r: 0, g: 0, b: 255 },   // blue
+    { r: 255, g: 0, b: 0 }, // red
+    { r: 0, g: 255, b: 0 }, // green
+    { r: 0, g: 0, b: 255 }, // blue
     { r: 255, g: 255, b: 0 }, // yellow
     { r: 128, g: 0, b: 128 }, // purple
   ];

@@ -3,8 +3,8 @@ import { join } from 'node:path';
 
 import sharp from 'sharp';
 
-import type { FrameNode, ProcessContext } from '../types/index.js';
 import { FRAME_OUTPUT_EXTENSION, getTempWorkspaceDir } from '../constants.js';
+import type { FrameNode, ProcessContext } from '../types/index.js';
 import { ensureDir } from '../utils/paths.js';
 
 export async function createWorkspace(sessionId: string): Promise<string> {
@@ -89,12 +89,13 @@ export async function writeInputFrames(
  * Read selected FrameNode files as Buffers with JPEG compression.
  * Used to return output buffers in 'buffer' and 'frames' modes.
  */
-export async function readFramesAsBuffers(frameNodes: FrameNode[], quality: number): Promise<Buffer[]> {
+export async function readFramesAsBuffers(
+  frameNodes: FrameNode[],
+  quality: number,
+): Promise<Buffer[]> {
   return Promise.all(
     frameNodes.map((f) =>
-      sharp(f.extractPath)
-        .jpeg({ quality, mozjpeg: true })
-        .toBuffer(),
+      sharp(f.extractPath).jpeg({ quality, mozjpeg: true }).toBuffer(),
     ),
   );
 }

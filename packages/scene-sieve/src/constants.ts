@@ -10,6 +10,9 @@ export const DEFAULT_FPS = 5;
 export const DEFAULT_SCALE = 720;
 export const DEFAULT_QUALITY = 80;
 
+// Pruner -- Percentile-based normalization
+export const NORMALIZATION_PERCENTILE = 0.9;
+
 // Workspace
 export const WORKSPACE_PREFIX = `${APP_NAME}-`;
 export const TEMP_BASE_DIR = tmpdir();

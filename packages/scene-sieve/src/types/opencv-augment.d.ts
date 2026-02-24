@@ -35,7 +35,14 @@ declare module '@techstark/opencv-js' {
 
   export class KeyPointVector {
     size(): number;
-    get(index: number): { pt: { x: number; y: number }; size: number; angle: number; response: number; octave: number; class_id: number };
+    get(index: number): {
+      pt: { x: number; y: number };
+      size: number;
+      angle: number;
+      response: number;
+      octave: number;
+      class_id: number;
+    };
     delete(): void;
   }
 
@@ -47,11 +54,19 @@ declare module '@techstark/opencv-js' {
 
   export class DMatchVector {
     size(): number;
-    get(index: number): { queryIdx: number; trainIdx: number; distance: number };
+    get(index: number): {
+      queryIdx: number;
+      trainIdx: number;
+      distance: number;
+    };
     delete(): void;
   }
 
   export const NORM_HAMMING: number;
 
-  export function matFromImageData(imageData: { data: Uint8Array; width: number; height: number }): Mat;
+  export function matFromImageData(imageData: {
+    data: Uint8Array;
+    width: number;
+    height: number;
+  }): Mat;
 }

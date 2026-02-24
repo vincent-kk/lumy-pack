@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { dbscan } from '../../core/dbscan.js';
 import type { Point2D } from '../../core/dbscan.js';
 
@@ -84,8 +85,10 @@ describe('dbscan', () => {
     // Large image: eps = 0.03 * sqrt(1920^2 + 1080^2) ≈ 66
     const largeResult = dbscan(points, 1920, 1080, 0.03, 2);
 
-    const smallClusters = new Set(smallResult.labels.filter((l) => l >= 0)).size;
-    const largeClusters = new Set(largeResult.labels.filter((l) => l >= 0)).size;
+    const smallClusters = new Set(smallResult.labels.filter((l) => l >= 0))
+      .size;
+    const largeClusters = new Set(largeResult.labels.filter((l) => l >= 0))
+      .size;
 
     // Large image has larger eps so it should cluster at least as much as small
     expect(largeClusters).toBeGreaterThanOrEqual(smallClusters);

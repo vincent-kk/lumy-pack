@@ -1,5 +1,6 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { resolveOptions, resolveInput } from '../../core/input-resolver.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { resolveInput, resolveOptions } from '../../core/input-resolver.js';
 import * as workspace from '../../core/workspace.js';
 
 vi.mock('../../core/workspace.js', () => ({
@@ -29,7 +30,10 @@ describe('resolveOptions', () => {
   });
 
   it('buffer mode: outputPath는 빈 문자열이 아님 (process.cwd() 기반 폴백)', () => {
-    const result = resolveOptions({ mode: 'buffer', inputBuffer: Buffer.from('') });
+    const result = resolveOptions({
+      mode: 'buffer',
+      inputBuffer: Buffer.from(''),
+    });
     expect(result.outputPath).toBeTruthy();
     expect(typeof result.outputPath).toBe('string');
   });
@@ -49,7 +53,11 @@ describe('resolveOptions', () => {
     ).toThrow('threshold must be in range (0, 1]');
 
     expect(() =>
-      resolveOptions({ mode: 'file', inputPath: '/video.mp4', threshold: -0.1 }),
+      resolveOptions({
+        mode: 'file',
+        inputPath: '/video.mp4',
+        threshold: -0.1,
+      }),
     ).toThrow('threshold must be in range (0, 1]');
 
     expect(() =>
@@ -97,13 +105,21 @@ describe('resolveOptions - pruneMode', () => {
   });
 
   it('count 지정 시에도 threshold-with-cap 모드', () => {
-    const result = resolveOptions({ mode: 'file', inputPath: '/video.mp4', count: 10 });
+    const result = resolveOptions({
+      mode: 'file',
+      inputPath: '/video.mp4',
+      count: 10,
+    });
     expect(result.pruneMode).toBe('threshold-with-cap');
     expect(result.count).toBe(10);
   });
 
   it('threshold 지정 시에도 threshold-with-cap 모드', () => {
-    const result = resolveOptions({ mode: 'file', inputPath: '/video.mp4', threshold: 0.7 });
+    const result = resolveOptions({
+      mode: 'file',
+      inputPath: '/video.mp4',
+      threshold: 0.7,
+    });
     expect(result.pruneMode).toBe('threshold-with-cap');
     expect(result.threshold).toBe(0.7);
   });
@@ -118,7 +134,9 @@ describe('resolveOptions - pruneMode', () => {
 
 describe('resolveInput', () => {
   beforeEach(() => {
-    vi.mocked(workspace.writeInputBuffer).mockResolvedValue('/tmp/mock-input.mp4');
+    vi.mocked(workspace.writeInputBuffer).mockResolvedValue(
+      '/tmp/mock-input.mp4',
+    );
     vi.mocked(workspace.writeInputFrames).mockResolvedValue([
       { id: 0, timestamp: 0, extractPath: '/tmp/frame_000000.jpg' },
     ]);

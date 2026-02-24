@@ -1,16 +1,18 @@
-import { mkdir, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
-import { describe, expect, it, afterEach } from 'vitest';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import sharp from 'sharp';
+import { afterEach, describe, expect, it } from 'vitest';
+
 import {
+  cleanupWorkspace,
   createWorkspace,
   finalizeOutput,
-  cleanupWorkspace,
+  readFramesAsBuffers,
   writeInputBuffer,
   writeInputFrames,
-  readFramesAsBuffers,
 } from '../../core/workspace.js';
 import type { ProcessContext } from '../../types/index.js';
 import { fileExists } from '../../utils/paths.js';
@@ -18,8 +20,15 @@ import { fileExists } from '../../utils/paths.js';
 /** Create a tiny valid JPEG buffer for testing */
 async function createTestJpeg(): Promise<Buffer> {
   return sharp({
-    create: { width: 4, height: 4, channels: 3, background: { r: 128, g: 128, b: 128 } },
-  }).jpeg({ quality: 80 }).toBuffer();
+    create: {
+      width: 4,
+      height: 4,
+      channels: 3,
+      background: { r: 128, g: 128, b: 128 },
+    },
+  })
+    .jpeg({ quality: 80 })
+    .toBuffer();
 }
 
 const testWorkspaces: string[] = [];
@@ -102,7 +111,9 @@ describe('cleanupWorkspace', () => {
   });
 
   it('does not throw if path does not exist', async () => {
-    await expect(cleanupWorkspace('/tmp/nonexistent-path-xyz-123')).resolves.not.toThrow();
+    await expect(
+      cleanupWorkspace('/tmp/nonexistent-path-xyz-123'),
+    ).resolves.not.toThrow();
   });
 });
 

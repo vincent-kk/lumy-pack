@@ -4,13 +4,12 @@
  * - computeInformationGain
  * - IoUTracker
  */
-
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
-  computeIoU,
-  computeInformationGain,
   IoUTracker,
+  computeInformationGain,
+  computeIoU,
 } from '../../core/analyzer.js';
 import type { BoundingBox } from '../../types/index.js';
 
@@ -103,8 +102,7 @@ describe('computeInformationGain', () => {
     const clusterPoints = [10, 5];
     // cluster0: normalizedArea=0.01, density=10/10000=0.001, contribution=0.00001
     // cluster1: normalizedArea=0.0025, density=5/2500=0.002, contribution=0.000005
-    const expected =
-      (0.01 * (10 / 10000)) + (0.0025 * (5 / 2500));
+    const expected = 0.01 * (10 / 10000) + 0.0025 * (5 / 2500);
     const result = computeInformationGain(
       clusters,
       clusterPoints,

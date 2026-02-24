@@ -10,11 +10,10 @@
  *   cd /Users/Vincent/Workspace/lumy-pack/packages/scene-sieve
  *   npx tsx src/__tests__/bench/algorithms.bench.ts
  */
-
-import { computeIoU, computeInformationGain } from '../../core/analyzer.js';
+import { computeInformationGain, computeIoU } from '../../core/analyzer.js';
 import { dbscan } from '../../core/dbscan.js';
-import { pruneTo } from '../../core/pruner.js';
 import type { Point2D } from '../../core/dbscan.js';
+import { pruneTo } from '../../core/pruner.js';
 import type { BoundingBox, FrameNode, ScoreEdge } from '../../types/index.js';
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
@@ -125,7 +124,9 @@ async function benchDBSCAN(): Promise<BenchResult[]> {
       memDeltaKB: memDelta / RUNS,
     });
 
-    console.log(`  DBSCAN n=${n}: ${meanMs.toFixed(3)} ms (±${stdDevMs.toFixed(3)})`);
+    console.log(
+      `  DBSCAN n=${n}: ${meanMs.toFixed(3)} ms (±${stdDevMs.toFixed(3)})`,
+    );
   }
 
   return results;
@@ -175,7 +176,9 @@ async function benchIoU(): Promise<BenchResult[]> {
       memDeltaKB: memDelta / RUNS,
     });
 
-    console.log(`  IoU N=${n} (${pairs} pairs): ${meanMs.toFixed(3)} ms (±${stdDevMs.toFixed(3)})`);
+    console.log(
+      `  IoU N=${n} (${pairs} pairs): ${meanMs.toFixed(3)} ms (±${stdDevMs.toFixed(3)})`,
+    );
   }
 
   return results;
@@ -194,7 +197,9 @@ async function benchInformationGain(): Promise<BenchResult[]> {
 
     for (let r = 0; r < RUNS; r++) {
       const clusters = randomBoxes(n, IMAGE_WIDTH, IMAGE_HEIGHT);
-      const clusterPoints = clusters.map(() => Math.floor(Math.random() * 50) + 1);
+      const clusterPoints = clusters.map(
+        () => Math.floor(Math.random() * 50) + 1,
+      );
       const animationIndices = new Set<number>(
         Array.from({ length: Math.floor(n * 0.2) }, (_, i) => i * 5),
       );
@@ -234,7 +239,9 @@ async function benchInformationGain(): Promise<BenchResult[]> {
       memDeltaKB: memDelta / RUNS,
     });
 
-    console.log(`  InformationGain clusters=${n}: ${meanMs.toFixed(4)} ms (±${stdDevMs.toFixed(4)})`);
+    console.log(
+      `  InformationGain clusters=${n}: ${meanMs.toFixed(4)} ms (±${stdDevMs.toFixed(4)})`,
+    );
   }
 
   return results;
@@ -294,7 +301,9 @@ async function benchPruneTo(): Promise<BenchResult[]> {
       memDeltaKB: memDelta / RUNS,
     });
 
-    console.log(`  pruneTo N=${n} → ${target}: ${meanMs.toFixed(3)} ms (±${stdDevMs.toFixed(3)})`);
+    console.log(
+      `  pruneTo N=${n} → ${target}: ${meanMs.toFixed(3)} ms (±${stdDevMs.toFixed(3)})`,
+    );
   }
 
   return results;
@@ -344,8 +353,8 @@ async function main(): Promise<void> {
       const empiricalExponent = Math.log(timeRatio) / Math.log(sizeRatio);
       console.log(
         `  n: ${prev.inputSize} -> ${curr.inputSize}  ` +
-        `(${sizeRatio.toFixed(1)}x size, ${timeRatio.toFixed(2)}x time, ` +
-        `empirical O(n^${empiricalExponent.toFixed(2)}))`,
+          `(${sizeRatio.toFixed(1)}x size, ${timeRatio.toFixed(2)}x time, ` +
+          `empirical O(n^${empiricalExponent.toFixed(2)}))`,
       );
     }
   }
@@ -353,7 +362,9 @@ async function main(): Promise<void> {
 
   // Summary of Pruner complexity
   console.log('=== Pruner Complexity Analysis ===');
-  const prunerRows = allResults.filter((r) => r.algorithm === 'pruneTo (min-heap)');
+  const prunerRows = allResults.filter(
+    (r) => r.algorithm === 'pruneTo (min-heap)',
+  );
   if (prunerRows.length >= 2) {
     for (let i = 1; i < prunerRows.length; i++) {
       const prev = prunerRows[i - 1]!;
@@ -366,8 +377,8 @@ async function main(): Promise<void> {
       const empiricalExponent = Math.log(timeRatio) / Math.log(sizeRatio);
       console.log(
         `  n: ${prevN} -> ${currN}  ` +
-        `(${sizeRatio.toFixed(1)}x size, ${timeRatio.toFixed(2)}x time, ` +
-        `empirical O(n^${empiricalExponent.toFixed(2)}))`,
+          `(${sizeRatio.toFixed(1)}x size, ${timeRatio.toFixed(2)}x time, ` +
+          `empirical O(n^${empiricalExponent.toFixed(2)}))`,
       );
     }
   }

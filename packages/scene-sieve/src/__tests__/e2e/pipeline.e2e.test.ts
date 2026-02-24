@@ -1,12 +1,14 @@
-import { mkdir, rm } from 'node:fs/promises';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
-import { randomUUID } from 'node:crypto';
 import { exec } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
+import { mkdir, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { describe, expect, it, beforeAll, afterAll } from 'vitest';
-import { fileExists } from '../../utils/paths.js';
+
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { extractScenes } from '../../index.js';
+import { fileExists } from '../../utils/paths.js';
 
 const execAsync = promisify(exec);
 

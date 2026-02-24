@@ -1,4 +1,5 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { SieveOptions } from '../../types/index.js';
 
 const mockAnalyzeFrames = vi.fn();
@@ -75,7 +76,11 @@ function setupDefaultMocks(modeOverride?: 'file' | 'buffer' | 'frames') {
   mockExtractFrames.mockResolvedValue(mockFrames);
   mockAnalyzeFrames.mockResolvedValue(mockEdges);
   mockPruneByThresholdWithCap.mockReturnValue(new Set([0, 1, 2]));
-  mockFinalizeOutput.mockResolvedValue(['/out/scene_001.jpg', '/out/scene_002.jpg', '/out/scene_003.jpg']);
+  mockFinalizeOutput.mockResolvedValue([
+    '/out/scene_001.jpg',
+    '/out/scene_002.jpg',
+    '/out/scene_003.jpg',
+  ]);
   mockReadFramesAsBuffers.mockResolvedValue([
     Buffer.from('frame1'),
     Buffer.from('frame2'),
@@ -101,7 +106,10 @@ describe('runPipeline', () => {
 
   it('buffer 모드: readFramesAsBuffers가 호출되고 outputBuffers를 반환한다', async () => {
     setupDefaultMocks('buffer');
-    mockResolveOptions.mockReturnValue({ ...defaultResolvedOptions, mode: 'buffer' });
+    mockResolveOptions.mockReturnValue({
+      ...defaultResolvedOptions,
+      mode: 'buffer',
+    });
     const { runPipeline } = await import('../../core/orchestrator.js');
 
     const options: SieveOptions = {
@@ -117,7 +125,10 @@ describe('runPipeline', () => {
 
   it('frames 모드: extractFrames가 호출되지 않는다', async () => {
     setupDefaultMocks('frames');
-    mockResolveOptions.mockReturnValue({ ...defaultResolvedOptions, mode: 'frames' });
+    mockResolveOptions.mockReturnValue({
+      ...defaultResolvedOptions,
+      mode: 'frames',
+    });
     const { runPipeline } = await import('../../core/orchestrator.js');
 
     const options: SieveOptions = {
@@ -142,7 +153,10 @@ describe('runPipeline', () => {
 
   it('debug=true 시 cleanupWorkspace가 호출되지 않는다', async () => {
     setupDefaultMocks('file');
-    mockResolveOptions.mockReturnValue({ ...defaultResolvedOptions, debug: true });
+    mockResolveOptions.mockReturnValue({
+      ...defaultResolvedOptions,
+      debug: true,
+    });
     const { runPipeline } = await import('../../core/orchestrator.js');
 
     const options: SieveOptions = {

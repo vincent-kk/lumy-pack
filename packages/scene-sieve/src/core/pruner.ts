@@ -1,3 +1,4 @@
+import { NORMALIZATION_PERCENTILE } from '../constants.js';
 import type { FrameNode, ScoreEdge } from '../types/index.js';
 import { MinHeap } from '../utils/min-heap.js';
 
@@ -44,7 +45,11 @@ export function pruneTo(
 
   for (const edge of graph) {
     edgeScore.set(`${edge.sourceId}:${edge.targetId}`, edge.score);
-    heap.push({ score: edge.score, srcId: edge.sourceId, tgtId: edge.targetId });
+    heap.push({
+      score: edge.score,
+      srcId: edge.sourceId,
+      tgtId: edge.targetId,
+    });
   }
 
   const surviving = new Set(frames.map((f) => f.id));
@@ -94,11 +99,20 @@ export function pruneTo(
 }
 
 /**
- * Normalize raw G(t) scores to [0, 1] range via max-normalization.
+ * Normalize raw G(t) scores to [0, 1] range via percentile-based normalization.
+ *
+ * Uses P90 (configurable via NORMALIZATION_PERCENTILE) as the reference score
+ * instead of global max. This prevents a single outlier transition from
+ * suppressing all other meaningful changes.
+ *
+ * Scores above the percentile reference are capped at 1.0.
+ *
+ * **Graceful degradation:** When the number of positive scores is 10 or fewer,
+ * P90 equals the maximum value -- the function behaves identically to
+ * max-normalization. This is expected and acceptable for small inputs.
  *
  * - Filters out non-finite and negative scores (treated as 0)
  * - If all scores are 0 or no valid scores exist, returns all zeros
- * - Avoids division by zero: only divides when maxScore > 0
  *
  * @returns normalized scores array (same length as input graph)
  */
@@ -108,25 +122,85 @@ function normalizeScores(graph: ScoreEdge[]): number[] {
   const safeScores = graph.map((e) =>
     Number.isFinite(e.score) && e.score > 0 ? e.score : 0,
   );
-  const maxScore = Math.max(...safeScores);
 
-  if (maxScore === 0) return safeScores;
+  // Sort ascending to find percentile reference
+  const sorted = [...safeScores].filter((s) => s > 0).sort((a, b) => a - b);
+  if (sorted.length === 0) return safeScores;
 
-  return safeScores.map((s) => s / maxScore);
+  // P90 (or configured percentile) as normalization reference
+  const pIdx = Math.min(
+    Math.floor(sorted.length * NORMALIZATION_PERCENTILE),
+    sorted.length - 1,
+  );
+  const refScore = sorted[pIdx]!;
+
+  // Normalize: scores above refScore are capped at 1.0
+  return safeScores.map((s) => Math.min(s / refScore, 1.0));
 }
 
 /**
- * Threshold-based pruning — O(N).
+ * Non-Maximum Suppression (NMS) for consecutive edge runs.
  *
- * Scores are normalized to [0, 1] via max-normalization.
- * threshold=0.5 means "keep frames where the change is at least 50%
- * of the maximum change observed in this sequence".
+ * Consecutive edges share overlapping frames (edge i: frame i->i+1,
+ * edge i+1: frame i+1->i+2), so consecutive passing edges indicate
+ * the same visual transition region. This function groups consecutive
+ * passing edge indices into "runs" and keeps only the peak (highest
+ * normalized score) per run.
+ *
+ * Single-element runs are unaffected (isolated transitions preserved).
+ *
+ * @param graph - full ScoreEdge array (for targetId lookup)
+ * @param passingIndices - edge indices that passed threshold filtering (sorted ascending)
+ * @param normalizedScores - normalized score array (same length as graph)
+ * @returns Set of targetIds to add to surviving set (one per run)
+ */
+export function suppressConsecutiveRuns(
+  graph: ScoreEdge[],
+  passingIndices: number[],
+  normalizedScores: number[],
+): Set<number> {
+  const result = new Set<number>();
+
+  let runStart = 0;
+  while (runStart < passingIndices.length) {
+    let runEnd = runStart;
+
+    // Extend the run while indices are consecutive
+    while (
+      runEnd + 1 < passingIndices.length &&
+      passingIndices[runEnd + 1]! === passingIndices[runEnd]! + 1
+    ) {
+      runEnd++;
+    }
+
+    // Find the peak within this run
+    let peakIdx = passingIndices[runStart]!;
+    for (let j = runStart; j <= runEnd; j++) {
+      const idx = passingIndices[j]!;
+      if (normalizedScores[idx]! > normalizedScores[peakIdx]!) {
+        peakIdx = idx;
+      }
+    }
+
+    // Keep only the peak frame (targetId of the peak edge)
+    result.add(graph[peakIdx]!.targetId);
+
+    runStart = runEnd + 1;
+  }
+
+  return result;
+}
+
+/**
+ * Threshold-based pruning with NMS -- O(N).
+ *
+ * 1. Scores are normalized to [0, 1] via percentile normalization.
+ * 2. Edges with normalized score >= threshold are collected.
+ * 3. Non-Maximum Suppression groups consecutive passing edges and keeps
+ *    only the peak per run, preventing near-duplicate frame selection
+ *    from a single visual transition.
  *
  * First and last frames are always preserved (boundary protection).
- *
- * Unlike pruneTo (which targets an exact count via greedy merge),
- * this function has no count limit — every significant scene transition
- * above the threshold is preserved.
  */
 export function pruneByThreshold(
   graph: ScoreEdge[],
@@ -141,10 +215,18 @@ export function pruneByThreshold(
 
   const normalized = normalizeScores(graph);
 
+  // Stage 1: threshold filtering (collect indices that pass)
+  const passingIndices: number[] = [];
   for (let i = 0; i < graph.length; i++) {
     if (normalized[i]! >= threshold) {
-      surviving.add(graph[i]!.targetId);
+      passingIndices.push(i);
     }
+  }
+
+  // Stage 2: Non-Maximum Suppression -- one peak per consecutive run
+  const nmsTargets = suppressConsecutiveRuns(graph, passingIndices, normalized);
+  for (const id of nmsTargets) {
+    surviving.add(id);
   }
 
   return surviving;

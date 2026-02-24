@@ -16,13 +16,13 @@ export type SieveInput =
 // ── Common Options ──
 
 export interface SieveOptionsBase {
-  count?: number;        // default: 20
-  threshold?: number;    // default: 0.5. G(t) score threshold. Keeps frames with score >= threshold, capped by count.
-  outputPath?: string;   // default: derived from inputPath (file mode only)
-  fps?: number;          // default: 5
-  scale?: number;        // default: 720
-  quality?: number;      // JPEG output quality 1-100 (default: 80)
-  debug?: boolean;       // default: false
+  count?: number; // default: 20
+  threshold?: number; // default: 0.5. G(t) score threshold. Keeps frames with score >= threshold, capped by count.
+  outputPath?: string; // default: derived from inputPath (file mode only)
+  fps?: number; // default: 5
+  scale?: number; // default: 720
+  quality?: number; // JPEG output quality 1-100 (default: 80)
+  debug?: boolean; // default: false
   onProgress?: (phase: ProgressPhase, percent: number) => void;
 }
 
@@ -36,7 +36,7 @@ export interface ResolvedOptions {
   mode: 'file' | 'buffer' | 'frames';
   inputPath?: string;
   count: number;
-  threshold: number;     // default: 0.5
+  threshold: number; // default: 0.5
   pruneMode: 'threshold-with-cap';
   outputPath: string;
   fps: number;

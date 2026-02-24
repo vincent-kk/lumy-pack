@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { pruneTo, pruneByThreshold, pruneByThresholdWithCap } from '../../core/pruner.js';
+
+import {
+  pruneByThreshold,
+  pruneByThresholdWithCap,
+  pruneTo,
+} from '../../core/pruner.js';
 import type { FrameNode, ScoreEdge } from '../../types/index.js';
 
 function makeFrames(count: number): FrameNode[] {
@@ -10,10 +15,7 @@ function makeFrames(count: number): FrameNode[] {
   }));
 }
 
-function makeChainEdges(
-  count: number,
-  scores: number[],
-): ScoreEdge[] {
+function makeChainEdges(count: number, scores: number[]): ScoreEdge[] {
   return scores.slice(0, count - 1).map((score, i) => ({
     sourceId: i,
     targetId: i + 1,
@@ -74,7 +76,9 @@ describe('pruneTo', () => {
   it('chain 15 frames → target 5 — always reaches exact targetCount', () => {
     const frames = makeFrames(15);
     // 교대 패턴: 낮은/높은 score (기존 알고리즘에서 targetCount 미달 유발)
-    const scores = [0.1, 0.8, 0.1, 0.7, 0.1, 0.6, 0.1, 0.5, 0.1, 0.4, 0.1, 0.3, 0.1, 0.2];
+    const scores = [
+      0.1, 0.8, 0.1, 0.7, 0.1, 0.6, 0.1, 0.5, 0.1, 0.4, 0.1, 0.3, 0.1, 0.2,
+    ];
     const edges = makeChainEdges(15, scores);
     const result = pruneTo(edges, frames, 5);
     expect(result.size).toBe(5);
@@ -171,13 +175,22 @@ describe('pruneByThreshold (normalized 0~1)', () => {
     expect(result.has(4)).toBe(true);
   });
 
-  it('all normalized scores >= threshold — all frames preserved', () => {
-    const frames = makeFrames(4);
-    // scores: [0.8, 0.9, 0.7], max=0.9
-    // normalized: [0.889, 1.0, 0.778] — all >= 0.5
-    const edges = makeChainEdges(4, [0.8, 0.9, 0.7]);
+  it('all normalized scores >= threshold (non-consecutive) -- all passing frames preserved', () => {
+    const frames = makeFrames(6);
+    // High scores at isolated positions, low scores between them
+    // scores: [0.8, 0.1, 0.9, 0.1, 0.7]
+    // P90: sorted positive [0.1, 0.1, 0.7, 0.8, 0.9], pIdx=floor(5*0.9)=4, ref=0.9
+    // normalized: [0.889, 0.111, 1.0, 0.111, 0.778]
+    // threshold=0.5: indices 0,2,4 pass (non-consecutive) -> NMS: all isolated, all kept
+    // targetIds: 1, 3, 5; boundaries: 0, 5
+    // result: {0, 1, 3, 5} = size 4
+    const edges = makeChainEdges(6, [0.8, 0.1, 0.9, 0.1, 0.7]);
     const result = pruneByThreshold(edges, frames, 0.5);
     expect(result.size).toBe(4);
+    expect(result.has(0)).toBe(true); // boundary
+    expect(result.has(1)).toBe(true); // edge 0 targetId
+    expect(result.has(3)).toBe(true); // edge 2 targetId
+    expect(result.has(5)).toBe(true); // boundary + edge 4 targetId
   });
 
   it('partial edges above threshold — keeps boundary + matching targetIds', () => {
@@ -187,21 +200,29 @@ describe('pruneByThreshold (normalized 0~1)', () => {
     // threshold=0.5: edges 1->2(0.889) and 3->4(1.0) pass
     const edges = makeChainEdges(5, [0.1, 0.8, 0.1, 0.9]);
     const result = pruneByThreshold(edges, frames, 0.5);
-    expect(result.has(0)).toBe(true);   // boundary
-    expect(result.has(1)).toBe(false);  // normalized 0.111 < 0.5
-    expect(result.has(2)).toBe(true);   // normalized 0.889 >= 0.5
-    expect(result.has(3)).toBe(false);  // normalized 0.111 < 0.5
-    expect(result.has(4)).toBe(true);   // boundary + normalized 1.0
+    expect(result.has(0)).toBe(true); // boundary
+    expect(result.has(1)).toBe(false); // normalized 0.111 < 0.5
+    expect(result.has(2)).toBe(true); // normalized 0.889 >= 0.5
+    expect(result.has(3)).toBe(false); // normalized 0.111 < 0.5
+    expect(result.has(4)).toBe(true); // boundary + normalized 1.0
   });
 
-  it('boundary value: normalized score === threshold — preserved (>= comparison)', () => {
-    const frames = makeFrames(3);
-    // scores: [0.3, 0.6], max=0.6
-    // normalized: [0.5, 1.0]
-    // threshold=0.5: both pass (0.5 >= 0.5)
-    const edges = makeChainEdges(3, [0.3, 0.6]);
+  it('boundary value: normalized score === threshold -- preserved (>= comparison)', () => {
+    const frames = makeFrames(5);
+    // scores: [0.3, 0.1, 0.6, 0.1]
+    // P90: sorted positive [0.1, 0.1, 0.3, 0.6], pIdx=floor(4*0.9)=3, ref=0.6
+    // normalized: [0.5, 0.167, 1.0, 0.167]
+    // threshold=0.5: indices 0 (0.5 >= 0.5, exact boundary!) and 2 (1.0) pass
+    // NMS: indices [0, 2] non-consecutive -> both kept
+    // targetIds: 1, 3; boundaries: 0, 4
+    // result: {0, 1, 3, 4} = size 4
+    const edges = makeChainEdges(5, [0.3, 0.1, 0.6, 0.1]);
     const result = pruneByThreshold(edges, frames, 0.5);
-    expect(result.size).toBe(3);
+    expect(result.size).toBe(4);
+    expect(result.has(0)).toBe(true); // boundary
+    expect(result.has(1)).toBe(true); // edge 0 targetId (norm exactly 0.5)
+    expect(result.has(3)).toBe(true); // edge 2 targetId (norm 1.0)
+    expect(result.has(4)).toBe(true); // boundary
   });
 
   it('high threshold filters to only the strongest transitions', () => {
@@ -248,11 +269,11 @@ describe('pruneByThreshold (normalized 0~1)', () => {
     // normalized: [0, 1.0, 0, 0]
     // threshold=0.5: only edge 1->2 (1.0) passes
     const result = pruneByThreshold(edges, frames, 0.5);
-    expect(result.has(0)).toBe(true);   // boundary
-    expect(result.has(2)).toBe(true);   // normalized 1.0 >= 0.5
-    expect(result.has(4)).toBe(true);   // boundary
-    expect(result.has(1)).toBe(false);  // NaN → 0
-    expect(result.has(3)).toBe(false);  // negative → 0
+    expect(result.has(0)).toBe(true); // boundary
+    expect(result.has(2)).toBe(true); // normalized 1.0 >= 0.5
+    expect(result.has(4)).toBe(true); // boundary
+    expect(result.has(1)).toBe(false); // NaN → 0
+    expect(result.has(3)).toBe(false); // negative → 0
   });
 });
 
@@ -266,13 +287,23 @@ describe('pruneByThresholdWithCap', () => {
   });
 
   it('survivors > cap -- reduces to cap count', () => {
-    const frames = makeFrames(10);
-    const scores = [0.9, 0.8, 0.7, 0.85, 0.95, 0.6, 0.75, 0.88, 0.92];
-    const edges = makeChainEdges(10, scores);
+    const frames = makeFrames(12);
+    // High scores at non-consecutive positions to survive NMS
+    // scores: [0.9, 0.1, 0.85, 0.1, 0.95, 0.1, 0.8, 0.1, 0.88, 0.1, 0.92]
+    // P90: sorted positive [0.1,0.1,0.1,0.1,0.1, 0.8,0.85,0.88,0.9,0.92,0.95]
+    //   11 positive scores, pIdx = floor(11*0.9) = 9, sorted[9] = 0.92, ref = 0.92
+    // normalized: [0.978, 0.109, 0.924, 0.109, 1.0, 0.109, 0.870, 0.109, 0.957, 0.109, 1.0]
+    // threshold=0.5: indices 0,2,4,6,8,10 pass (all >= 0.870)
+    // NMS: [0,2,4,6,8,10] -- all non-consecutive (gaps of 1) -> all kept (6 peaks)
+    // targetIds: {1, 3, 5, 7, 9, 11}; boundaries: {0, 11}
+    // survivors: {0, 1, 3, 5, 7, 9, 11} = 7 frames
+    // Cap = 4, 7 > 4 -> Stage 2 triggers pruneTo
+    const scores = [0.9, 0.1, 0.85, 0.1, 0.95, 0.1, 0.8, 0.1, 0.88, 0.1, 0.92];
+    const edges = makeChainEdges(12, scores);
     const result = pruneByThresholdWithCap(edges, frames, 0.5, 4);
     expect(result.size).toBe(4);
     expect(result.has(0)).toBe(true);
-    expect(result.has(9)).toBe(true);
+    expect(result.has(11)).toBe(true);
   });
 
   it('survivors === cap -- returns exact cap count', () => {
@@ -283,7 +314,12 @@ describe('pruneByThresholdWithCap', () => {
     // threshold=0.8: edges with norm >= 0.8: 1->2(1.0), 3->4(0.889)
     // survivors: {0, 2, 4, 5} = 4 frames
     const thresholdOnly = pruneByThreshold(edges, frames, 0.8);
-    const result = pruneByThresholdWithCap(edges, frames, 0.8, thresholdOnly.size);
+    const result = pruneByThresholdWithCap(
+      edges,
+      frames,
+      0.8,
+      thresholdOnly.size,
+    );
     expect(result).toEqual(thresholdOnly);
   });
 
@@ -327,5 +363,192 @@ describe('pruneByThresholdWithCap', () => {
   it('empty frames -- returns empty set', () => {
     const result = pruneByThresholdWithCap([], [], 0.5, 5);
     expect(result.size).toBe(0);
+  });
+});
+
+describe('pruneByThreshold (percentile normalization)', () => {
+  it('percentile normalization recovers suppressed transitions', () => {
+    // 30 edges: 1 outlier at position 10, 3 meaningful transitions at non-consecutive isolated positions
+    // Rest are noise (0.1). This demonstrates percentile normalization rescuing
+    // transitions that max-normalization would suppress.
+    const frames31 = makeFrames(31);
+    const scores30: number[] = Array.from({ length: 30 }, () => 0.1);
+    scores30[5] = 0.5; // meaningful transition (isolated)
+    scores30[15] = 0.5; // meaningful transition (isolated)
+    scores30[25] = 0.5; // meaningful transition (isolated)
+    scores30[10] = 2.0; // outlier
+
+    // P90 calculation:
+    //   sorted positive (30): [0.1 x26, 0.5 x3, 2.0 x1]
+    //   pIdx = floor(30 * 0.9) = 27, sorted[27] = 0.5
+    //   ref = 0.5
+    // normalized: 0.1/0.5 = 0.2, 0.5/0.5 = 1.0, 2.0/0.5 = min(4.0, 1.0) = 1.0
+    // threshold=0.5: edges at indices 5, 10, 15, 25 pass (norm >= 0.5 -> all are 1.0)
+    // NMS: indices [5, 10, 15, 25] are all non-consecutive -> all 4 kept
+    //
+    // With max-normalization: ref = 2.0, so 0.5/2.0 = 0.25 < 0.5 -> only index 10 passes!
+    // Percentile normalization rescues 3 transitions.
+
+    const edges30 = makeChainEdges(31, scores30);
+    const result = pruneByThreshold(edges30, frames31, 0.5);
+
+    expect(result.has(0)).toBe(true); // boundary
+    expect(result.has(30)).toBe(true); // boundary
+    expect(result.has(6)).toBe(true); // edge 5 targetId
+    expect(result.has(11)).toBe(true); // edge 10 targetId
+    expect(result.has(16)).toBe(true); // edge 15 targetId
+    expect(result.has(26)).toBe(true); // edge 25 targetId
+    expect(result.size).toBe(6); // 2 boundary + 4 transitions
+  });
+});
+
+describe('pruneByThreshold (NMS)', () => {
+  it('consecutive high-score edges -- keeps only peak per run', () => {
+    // Simulate the real bug: frames 3,4,5,6 all have high scores
+    const frames = makeFrames(10);
+    const scores = [0.1, 0.1, 0.8, 0.9, 0.7, 0.6, 0.1, 0.1, 0.1];
+    // P90: sorted positive [0.1x5, 0.6, 0.7, 0.8, 0.9], pIdx=floor(9*0.9)=8, ref=0.9
+    // normalized: [0.111, 0.111, 0.889, 1.0, 0.778, 0.667, 0.111, 0.111, 0.111]
+    // threshold=0.5: edges 2,3,4,5 pass
+    // NMS: one consecutive run [2,3,4,5], peak at index 3 (norm 1.0)
+    // Keeps targetId of edge 3 = frame 4
+    const edges = makeChainEdges(10, scores);
+    const result = pruneByThreshold(edges, frames, 0.5);
+    expect(result.has(0)).toBe(true); // boundary
+    expect(result.has(9)).toBe(true); // boundary
+    expect(result.has(4)).toBe(true); // peak of run (edge 3 targetId)
+    expect(result.has(3)).toBe(false); // suppressed by NMS
+    expect(result.has(5)).toBe(false); // suppressed by NMS
+    expect(result.has(6)).toBe(false); // suppressed by NMS
+    expect(result.size).toBe(3); // boundary(0,9) + peak(4)
+  });
+
+  it('two separate runs -- keeps one peak per run', () => {
+    const frames = makeFrames(12);
+    const scores = [0.1, 0.7, 0.9, 0.8, 0.1, 0.1, 0.6, 0.8, 0.7, 0.1, 0.1];
+    // Two clusters of high scores: edges [1,2,3] and [6,7,8]
+    // P90: sorted positive [0.1x5, 0.6, 0.7x2, 0.8x2, 0.9], pIdx=floor(11*0.9)=9, ref=0.8
+    // normalized: [0.125, 0.875, 1.0, 1.0, 0.125, 0.125, 0.75, 1.0, 0.875, 0.125, 0.125]
+    // threshold=0.5: indices 1,2,3,6,7,8 pass
+    // Run 1: [1,2,3] -- index 2 and 3 both have norm 1.0, first (index 2) wins -> targetId=3
+    // Run 2: [6,7,8] -- index 7 has norm 1.0 -> targetId=8
+    const edges = makeChainEdges(12, scores);
+    const result = pruneByThreshold(edges, frames, 0.5);
+    expect(result.has(0)).toBe(true); // boundary
+    expect(result.has(11)).toBe(true); // boundary
+    expect(result.has(3)).toBe(true); // peak of run 1 (edge 2 targetId)
+    expect(result.has(8)).toBe(true); // peak of run 2 (edge 7 targetId)
+    expect(result.size).toBe(4);
+  });
+
+  it('single-frame runs -- no suppression, all kept', () => {
+    const frames = makeFrames(10);
+    // High scores at isolated positions (non-consecutive)
+    const scores = [0.1, 0.8, 0.1, 0.9, 0.1, 0.7, 0.1, 0.1, 0.1];
+    // P90: sorted positive [0.1x6, 0.7, 0.8, 0.9], pIdx=floor(9*0.9)=8, ref=0.9
+    // normalized: [0.111, 0.889, 0.111, 1.0, 0.111, 0.778, 0.111, 0.111, 0.111]
+    // threshold=0.5: indices 1, 3, 5 pass (all non-consecutive)
+    const edges = makeChainEdges(10, scores);
+    const result = pruneByThreshold(edges, frames, 0.5);
+    expect(result.has(2)).toBe(true); // edge 1 targetId
+    expect(result.has(4)).toBe(true); // edge 3 targetId
+    expect(result.has(6)).toBe(true); // edge 5 targetId
+    expect(result.size).toBe(5); // boundary(0,9) + 3 isolated peaks
+  });
+
+  it('all scores equal -- all form one run, keeps first peak', () => {
+    const frames = makeFrames(5);
+    const scores = [0.5, 0.5, 0.5, 0.5];
+    // All normalized to 1.0, threshold=0.5: all pass
+    // One run [0,1,2,3], all tied at 1.0, first occurrence (index 0) wins
+    // Keeps targetId of edge 0 = frame 1
+    const edges = makeChainEdges(5, scores);
+    const result = pruneByThreshold(edges, frames, 0.5);
+    expect(result.has(0)).toBe(true); // boundary
+    expect(result.has(4)).toBe(true); // boundary
+    expect(result.has(1)).toBe(true); // peak of single run (first tied)
+    expect(result.size).toBe(3);
+  });
+
+  it('only 2 frames -- no edges to suppress', () => {
+    const frames = makeFrames(2);
+    const edges = makeChainEdges(2, [0.8]);
+    const result = pruneByThreshold(edges, frames, 0.5);
+    expect(result.size).toBe(2);
+    expect(result.has(0)).toBe(true);
+    expect(result.has(1)).toBe(true);
+  });
+
+  it('threshold=0 -- all edges pass, NMS groups consecutive runs', () => {
+    const frames = makeFrames(6);
+    const scores = [0.3, 0.5, 0.4, 0.2, 0.6];
+    // All positive -> all normalized > 0. threshold=0: all pass
+    // One giant run [0,1,2,3,4], peak at index 4 (0.6 is highest)
+    // targetId of edge 4 = frame 5 (which is also last boundary)
+    const edges = makeChainEdges(6, scores);
+    const result = pruneByThreshold(edges, frames, 0);
+    expect(result.has(0)).toBe(true); // boundary
+    expect(result.has(5)).toBe(true); // boundary + peak targetId
+    expect(result.size).toBe(2);
+  });
+
+  it('threshold=1 -- only max-normalized edges pass', () => {
+    const frames = makeFrames(5);
+    const scores = [0.3, 0.6, 0.3, 0.6];
+    // P90: sorted [0.3, 0.3, 0.6, 0.6], pIdx=3, ref=0.6
+    // normalized: [0.5, 1.0, 0.5, 1.0]
+    // threshold=1: only edges 1 and 3 pass (norm=1.0)
+    // indices 1,3 non-consecutive -> both kept
+    const edges = makeChainEdges(5, scores);
+    const result = pruneByThreshold(edges, frames, 1);
+    expect(result.has(0)).toBe(true); // boundary
+    expect(result.has(4)).toBe(true); // boundary + edge 3 targetId
+    expect(result.has(2)).toBe(true); // edge 1 targetId
+    expect(result.size).toBe(3);
+  });
+});
+
+describe('pruneByThresholdWithCap (NMS + cap integration)', () => {
+  it('NMS reduces survivors below cap -- Stage 2 skipped', () => {
+    // Without NMS: all 9 consecutive edges pass -> 9 + 2 boundary = 11 survivors > cap
+    // With NMS: 9 consecutive -> 1 peak -> 1 + 2 boundary = 3 survivors < cap of 5
+    const frames = makeFrames(10);
+    const scores = [0.9, 0.8, 0.7, 0.85, 0.95, 0.6, 0.75, 0.88, 0.92];
+    // P90: sorted [0.6, 0.7, 0.75, 0.8, 0.85, 0.88, 0.9, 0.92, 0.95], pIdx=8, ref=0.95
+    // normalized: [0.947, 0.842, 0.737, 0.895, 1.0, 0.632, 0.789, 0.926, 0.968]
+    // threshold=0.5: all pass -> one giant run -> peak at index 4 (norm 1.0) -> targetId=5
+    // survivors: boundary{0,9} + peak{5} = 3
+    // cap=5: 3 <= 5 -> Stage 2 skipped
+    const edges = makeChainEdges(10, scores);
+    const result = pruneByThresholdWithCap(edges, frames, 0.5, 5);
+    expect(result.size).toBe(3);
+    expect(result.has(0)).toBe(true); // boundary
+    expect(result.has(5)).toBe(true); // NMS peak
+    expect(result.has(9)).toBe(true); // boundary
+  });
+
+  it('NMS still leaves survivors above cap -- Stage 2 reduces', () => {
+    // 20 frames, non-consecutive high scores that survive NMS but exceed cap
+    const frames = makeFrames(20);
+    const scores: number[] = Array.from({ length: 19 }, () => 0.1);
+    // Place 6 isolated high scores (non-consecutive)
+    scores[1] = 0.8;
+    scores[4] = 0.9;
+    scores[7] = 0.85;
+    scores[10] = 0.7;
+    scores[13] = 0.95;
+    scores[16] = 0.75;
+    // P90: 19 scores, sorted positive: [0.1x13, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+    //   pIdx = floor(19*0.9) = 17, sorted[17] = 0.9, ref = 0.9
+    // normalized at high positions: 0.8/0.9=0.889, 0.9/0.9=1.0, 0.85/0.9=0.944,
+    //   0.7/0.9=0.778, 0.95/0.9=min(1.056,1.0)=1.0, 0.75/0.9=0.833
+    // threshold=0.5: all 6 high indices pass (all >= 0.778), all non-consecutive -> NMS keeps all 6
+    // survivors: boundary{0,19} + 6 peaks = 8 frames
+    // cap=4: 8 > 4 -> Stage 2 triggers pruneTo
+    const edges = makeChainEdges(20, scores);
+    const result = pruneByThresholdWithCap(edges, frames, 0.5, 4);
+    expect(result.size).toBe(4);
+    expect(result.has(0)).toBe(true); // boundary
+    expect(result.has(19)).toBe(true); // boundary
   });
 });

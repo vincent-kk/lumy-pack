@@ -357,7 +357,9 @@ async function analyzeBatch(
         animationWeights,
       );
 
-      logger.debug(`Edge ${frames[i]!.id}->${frames[i + 1]!.id} G(t)=${score.toFixed(6)}`);
+      logger.debug(
+        `Edge ${frames[i]!.id}->${frames[i + 1]!.id} G(t)=${score.toFixed(6)}`,
+      );
 
       edges.push({
         sourceId: frames[i]!.id,
