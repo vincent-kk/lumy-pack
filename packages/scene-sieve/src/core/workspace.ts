@@ -35,6 +35,7 @@ export async function finalizeOutput(
   }
 
   await ensureDir(join(outputPath, '..'));
+  await rm(outputPath, { recursive: true, force: true });
   await rename(stagingDir, outputPath);
 
   return outputFiles;

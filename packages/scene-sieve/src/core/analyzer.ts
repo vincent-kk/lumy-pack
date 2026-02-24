@@ -144,7 +144,7 @@ export async function preprocessFrame(
     .toBuffer({ resolveWithObject: true });
 
   return {
-    data: new Uint8Array(data.buffer),
+    data: new Uint8Array(data.buffer, data.byteOffset, data.byteLength),
     width: info.width,
     height: info.height,
   };
@@ -263,16 +263,11 @@ async function computeAKAZEDiff(
   frame1: { data: Uint8Array; width: number; height: number },
   frame2: { data: Uint8Array; width: number; height: number },
 ): Promise<AKAZEResult> {
-  const mat1 = cvLib.matFromImageData({
-    data: frame1.data,
-    width: frame1.width,
-    height: frame1.height,
-  });
-  const mat2 = cvLib.matFromImageData({
-    data: frame2.data,
-    width: frame2.width,
-    height: frame2.height,
-  });
+  const cv = cvLib as unknown as CvImgProc;
+  const mat1 = new cv.Mat(frame1.height, frame1.width, cv.CV_8UC1);
+  mat1.data.set(frame1.data);
+  const mat2 = new cv.Mat(frame2.height, frame2.width, cv.CV_8UC1);
+  mat2.data.set(frame2.data);
 
   const kp1 = new cvLib.KeyPointVector();
   const kp2 = new cvLib.KeyPointVector();

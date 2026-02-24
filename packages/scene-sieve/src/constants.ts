@@ -45,7 +45,7 @@ export const DECAY_LAMBDA = 0.95;
 export const ANIMATION_FRAME_THRESHOLD = 5;
 
 // Vision Analysis — Feature Matching
-export const MATCH_DISTANCE_THRESHOLD = 0.75;
+export const MATCH_DISTANCE_THRESHOLD = 0.25;
 
 // Vision Analysis — Pixel-Diff Fallback (AKAZE blind spot 보완)
 export const PIXELDIFF_GAUSSIAN_KERNEL = 3; // absdiff 노이즈 제거 블러 커널
