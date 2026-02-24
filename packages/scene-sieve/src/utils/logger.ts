@@ -15,7 +15,7 @@ export const logger = {
     console.log(`${pc.blue('info')} ${message}`);
   },
   success(message: string): void {
-    console.log(`${pc.green('done')} ${message}`);
+    console.log(`\n${pc.green('done')} ${message}`);
   },
   warn(message: string): void {
     console.warn(`${pc.yellow('warn')} ${message}`);
