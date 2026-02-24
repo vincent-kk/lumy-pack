@@ -1,6 +1,6 @@
 {
   "name": "@lumy-pack/scene-sieve",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "CLI tool for extracting key frames from video and GIF files",
   "keywords": [
     "cli",
