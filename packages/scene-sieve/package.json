@@ -47,6 +47,7 @@
     "publish:npm": "yarn npm publish --access public",
     "test": "vitest",
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:run": "vitest run",
     "version:major": "yarn version major",
     "version:minor": "yarn version minor",

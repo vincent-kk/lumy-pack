@@ -29,12 +29,7 @@ async function createTestVideo(outputPath: string): Promise<void> {
   const { default: ffmpegStatic } = await import('ffmpeg-static');
   if (!ffmpegStatic) throw new Error('ffmpeg-static not available');
 
-  // Generate a 2-second test video: 5 frames at 320x240 with color changes
-  await execAsync(
-    `"${ffmpegStatic}" -y -f lavfi -i "color=c=red:size=320x240:rate=5:duration=0.4,color=c=blue:size=320x240:rate=5:duration=0.4,color=c=green:size=320x240:rate=5:duration=0.4,color=c=yellow:size=320x240:rate=5:duration=0.4,color=c=purple:size=320x240:rate=5:duration=0.4" -vf "fps=5,scale=320:240" -t 2 "${outputPath}" 2>&1 || true`,
-  );
-
-  // Simpler approach: generate a 2-second solid color video
+  // Generate a 2-second test pattern video at 320x240, 5fps
   await execAsync(
     `"${ffmpegStatic}" -y -f lavfi -i "testsrc=size=320x240:rate=5" -t 2 "${outputPath}"`,
   );

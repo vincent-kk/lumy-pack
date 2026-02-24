@@ -43,6 +43,7 @@ export function dbscan(
     // Start a new cluster
     labels[i] = clusterId;
     const seeds = [...neighbors];
+    const seedSet = new Set(seeds);
 
     for (let si = 0; si < seeds.length; si++) {
       const q = seeds[si];
@@ -58,7 +59,8 @@ export function dbscan(
       const qNeighbors = findNeighbors(points, q, eps);
       if (qNeighbors.length >= minPoints) {
         for (const n of qNeighbors) {
-          if (!seeds.includes(n)) {
+          if (!seedSet.has(n)) {
+            seedSet.add(n);
             seeds.push(n);
           }
         }

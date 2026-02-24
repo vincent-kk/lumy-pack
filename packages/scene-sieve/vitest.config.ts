@@ -5,7 +5,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/__tests__/**/*.{test,spec}.ts'],
-    exclude: ['src/__tests__/e2e/**'],
+    exclude: ['src/__tests__/e2e/**', 'src/__tests__/integration/**'],
     pool: 'forks',
     poolOptions: {
       forks: {

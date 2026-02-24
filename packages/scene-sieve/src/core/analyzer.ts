@@ -1,33 +1,50 @@
-import * as cvNs from '@techstark/opencv-js';
 import sharp from 'sharp';
-import type { FrameNode, ProcessContext, ScoreEdge, BoundingBox } from '../types/index.js';
+
 import {
-  OPENCV_BATCH_SIZE,
-  MATCH_DISTANCE_THRESHOLD,
-  IOU_THRESHOLD,
-  DECAY_LAMBDA,
   ANIMATION_FRAME_THRESHOLD,
+  DECAY_LAMBDA,
+  IOU_THRESHOLD,
+  MATCH_DISTANCE_THRESHOLD,
+  OPENCV_BATCH_SIZE,
 } from '../constants.js';
-import { dbscan } from './dbscan.js';
-import type { Point2D } from './dbscan.js';
+import type {
+  BoundingBox,
+  FrameNode,
+  ProcessContext,
+  ScoreEdge,
+} from '../types/index.js';
 import { logger } from '../utils/logger.js';
 
-// ── OpenCV WASM Initialization ──
+import { dbscan } from './dbscan.js';
+import type { Point2D } from './dbscan.js';
 
-type CvLib = typeof cvNs & { onRuntimeInitialized?: () => void };
+// ── OpenCV WASM Initialization (lazy) ──
+
+type CvLib = any;
+
+const OPENCV_INIT_TIMEOUT_MS = 30_000;
 
 let cvReady: Promise<CvLib> | null = null;
 
 async function ensureOpenCV(): Promise<CvLib> {
   if (!cvReady) {
-    cvReady = new Promise((resolve) => {
-      const cvObj = cvNs as CvLib;
-      if (cvObj.Mat) {
-        resolve(cvObj);
-      } else {
-        cvObj.onRuntimeInitialized = () => resolve(cvObj);
-      }
-    });
+    cvReady = (async () => {
+      const cvModule = await import('@techstark/opencv-js');
+      const cvObj = (cvModule.default ?? cvModule) as CvLib;
+
+      if (cvObj.Mat) return cvObj;
+
+      return new Promise<CvLib>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('OpenCV WASM initialization timed out after 30s'));
+        }, OPENCV_INIT_TIMEOUT_MS);
+
+        cvObj.onRuntimeInitialized = () => {
+          clearTimeout(timeout);
+          resolve(cvObj);
+        };
+      });
+    })();
   }
   return cvReady;
 }
@@ -165,8 +182,16 @@ async function computeAKAZEDiff(
   frame1: { data: Uint8Array; width: number; height: number },
   frame2: { data: Uint8Array; width: number; height: number },
 ): Promise<AKAZEResult> {
-  const mat1 = cvLib.matFromImageData({ data: frame1.data, width: frame1.width, height: frame1.height });
-  const mat2 = cvLib.matFromImageData({ data: frame2.data, width: frame2.width, height: frame2.height });
+  const mat1 = cvLib.matFromImageData({
+    data: frame1.data,
+    width: frame1.width,
+    height: frame1.height,
+  });
+  const mat2 = cvLib.matFromImageData({
+    data: frame2.data,
+    width: frame2.width,
+    height: frame2.height,
+  });
 
   const kp1 = new cvLib.KeyPointVector();
   const kp2 = new cvLib.KeyPointVector();
@@ -259,7 +284,7 @@ function computeInformationGain(
 
     if (animationIndices.has(i)) {
       const animWeight = animationWeights[i] ?? 0;
-      contribution *= (1 - animWeight);
+      contribution *= 1 - animWeight;
     }
 
     gain += contribution;
@@ -291,7 +316,11 @@ async function analyzeBatch(
     const pairIndex = pairOffset + i;
 
     try {
-      const { sNew } = await computeAKAZEDiff(cvLib, preprocessed[i]!, preprocessed[i + 1]!);
+      const { sNew } = await computeAKAZEDiff(
+        cvLib,
+        preprocessed[i]!,
+        preprocessed[i + 1]!,
+      );
 
       const dbscanResult = dbscan(sNew, imageWidth, imageHeight);
       const clusters = dbscanResult.boundingBoxes;
@@ -350,7 +379,9 @@ export async function analyzeFrames(ctx: ProcessContext): Promise<ScoreEdge[]> {
   const { frames } = ctx;
   if (frames.length < 2) return [];
 
-  logger.debug(`Analyzing ${frames.length} frames in batches of ${OPENCV_BATCH_SIZE}`);
+  logger.debug(
+    `Analyzing ${frames.length} frames in batches of ${OPENCV_BATCH_SIZE}`,
+  );
 
   const cvLib = await ensureOpenCV();
   const edges: ScoreEdge[] = [];
@@ -363,7 +394,10 @@ export async function analyzeFrames(ctx: ProcessContext): Promise<ScoreEdge[]> {
     const batchEdges = await analyzeBatch(cvLib, batch, scale, tracker, i);
     edges.push(...batchEdges);
 
-    const progress = Math.min(100, ((i + OPENCV_BATCH_SIZE) / (frames.length - 1)) * 100);
+    const progress = Math.min(
+      100,
+      ((i + OPENCV_BATCH_SIZE) / (frames.length - 1)) * 100,
+    );
     ctx.emitProgress(progress);
   }
 
