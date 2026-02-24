@@ -1,4 +1,4 @@
-import { readdir, rm, rename, stat, writeFile } from 'node:fs/promises';
+import { readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import sharp from 'sharp';

@@ -3,8 +3,8 @@ import React, { useEffect, useState } from 'react';
 
 import { PhaseStep } from '../components/PhaseStep.js';
 import type { PhaseState } from '../components/PhaseStep.js';
+import { runPipelineInWorker } from '../core/run-in-worker.js';
 import { cleanupStaleWorkspaces } from '../core/workspace.js';
-import { extractScenes } from '../index.js';
 import type { ProgressPhase, SieveResult } from '../types/index.js';
 
 const PHASE_DEFS: { key: string; label: string; hasProgress: boolean }[] = [
@@ -62,19 +62,21 @@ export const SieveView: React.FC<SieveViewProps> = (props) => {
           return next;
         });
 
-        const res = await extractScenes({
-          mode: 'file',
-          inputPath: props.input,
-          ...(props.threshold !== undefined
-            ? { threshold: props.threshold }
-            : {}),
-          ...(props.count !== undefined ? { count: props.count } : {}),
-          outputPath: props.output,
-          fps: props.fps,
-          scale: props.scale,
-          quality: props.quality,
-          debug: props.debug,
-          onProgress: (phase: ProgressPhase, percent: number) => {
+        const res = await runPipelineInWorker(
+          {
+            mode: 'file',
+            inputPath: props.input,
+            ...(props.threshold !== undefined
+              ? { threshold: props.threshold }
+              : {}),
+            ...(props.count !== undefined ? { count: props.count } : {}),
+            outputPath: props.output,
+            fps: props.fps,
+            scale: props.scale,
+            quality: props.quality,
+            debug: props.debug,
+          },
+          (phase: ProgressPhase, percent: number) => {
             const phaseIdx = phaseKeyToIndex(phase);
             if (phaseIdx < 0) return;
 
@@ -118,7 +120,7 @@ export const SieveView: React.FC<SieveViewProps> = (props) => {
               return next;
             });
           },
-        });
+        );
 
         // Mark all remaining phases as done
         const now = Date.now();

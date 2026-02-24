@@ -12,10 +12,7 @@ import type {
   ResolvedOptions,
   SieveOptions,
 } from '../types/index.js';
-import {
-  deriveOutputPath,
-  resolveAbsolute,
-} from '../utils/paths.js';
+import { deriveOutputPath, resolveAbsolute } from '../utils/paths.js';
 
 import { writeInputBuffer, writeInputFrames } from './workspace.js';
 

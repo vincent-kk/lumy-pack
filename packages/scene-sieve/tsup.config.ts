@@ -30,4 +30,17 @@ export default defineConfig([
     banner: { js: '#!/usr/bin/env node' },
     loader: { '.tsx': 'tsx' },
   },
+  {
+    entry: { 'pipeline-worker': 'src/core/pipeline-worker.ts' },
+    format: ['esm'],
+    outExtension() {
+      return { js: '.mjs' };
+    },
+    splitting: false,
+    sourcemap: false,
+    target: 'node20',
+    platform: 'node',
+    clean: false,
+    dts: false,
+  },
 ]);

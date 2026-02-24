@@ -9,8 +9,7 @@ vi.mock('../../core/workspace.js', () => ({
 }));
 
 vi.mock('../../utils/paths.js', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('../../utils/paths.js')>();
+  const actual = await importOriginal<typeof import('../../utils/paths.js')>();
   return {
     ...actual,
     deriveOutputPath: vi.fn().mockReturnValue('/output/scenes'),
