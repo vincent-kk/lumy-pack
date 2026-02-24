@@ -35,7 +35,8 @@
   "types": "dist/index.d.ts",
   "bin": "./dist/cli.mjs",
   "files": [
-    "dist"
+    "dist",
+    "!dist/tsconfig.tsbuildinfo"
   ],
   "scripts": {
     "build": "tsup && yarn build:types",
