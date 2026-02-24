@@ -1,6 +1,13 @@
+import { homedir } from 'node:os';
+
 import { describe, expect, it } from 'vitest';
 
-import { deriveOutputPath, isSupportedFile } from '../../utils/paths.js';
+import {
+  deriveOutputPath,
+  expandTilde,
+  isSupportedFile,
+  resolveAbsolute,
+} from '../../utils/paths.js';
 
 describe('deriveOutputPath', () => {
   it('appends _scenes to the basename without extension', () => {
@@ -58,5 +65,42 @@ describe('isSupportedFile', () => {
 
   it('returns false when extension list is empty', () => {
     expect(isSupportedFile('video.mp4', [])).toBe(false);
+  });
+});
+
+describe('expandTilde', () => {
+  it('expands ~ to homedir', () => {
+    const result = expandTilde('~');
+    expect(result).toBe(homedir());
+  });
+
+  it('expands ~/ to homedir-prefixed path', () => {
+    const result = expandTilde('~/Desktop/foo.gif');
+    expect(result).toMatch(/Desktop\/foo\.gif$/);
+    expect(result).not.toContain('~');
+  });
+
+  it('leaves absolute paths unchanged', () => {
+    const abs = '/tmp/video.mp4';
+    expect(expandTilde(abs)).toBe(abs);
+  });
+
+  it('leaves relative paths without ~ unchanged', () => {
+    expect(expandTilde('Desktop/foo.gif')).toBe('Desktop/foo.gif');
+  });
+});
+
+describe('resolveAbsolute', () => {
+  it('resolves ~ path to absolute path under homedir', () => {
+    const result = resolveAbsolute('~/Desktop/screenRecord2.gif');
+    expect(result).not.toContain('~');
+    expect(result).toMatch(/screenRecord2\.gif$/);
+  });
+
+  it('deriveOutputPath with resolveAbsolute(~ path) is cwd-independent', () => {
+    const normalized = resolveAbsolute('~/Desktop/screenRecord2.gif');
+    const outDir = deriveOutputPath(normalized);
+    expect(outDir).toMatch(/screenRecord2_scenes$/);
+    expect(outDir).not.toContain('~');
   });
 });

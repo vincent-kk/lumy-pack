@@ -12,13 +12,18 @@ import type {
   ResolvedOptions,
   SieveOptions,
 } from '../types/index.js';
-import { deriveOutputPath } from '../utils/paths.js';
+import {
+  deriveOutputPath,
+  resolveAbsolute,
+} from '../utils/paths.js';
 
 import { writeInputBuffer, writeInputFrames } from './workspace.js';
 
 export function resolveOptions(options: SieveOptions): ResolvedOptions {
   const mode = options.mode;
-  const inputPath = mode === 'file' ? options.inputPath : undefined;
+  // Normalize file path so output path and I/O do not depend on process.cwd()
+  const inputPath =
+    mode === 'file' ? resolveAbsolute(options.inputPath) : undefined;
   const outputPath =
     options.outputPath ??
     (inputPath
@@ -61,7 +66,11 @@ export async function resolveInput(
 ): Promise<{ frames: FrameNode[]; resolvedInputPath?: string }> {
   if (options.mode === 'file') {
     // Frame extraction is handled by orchestrator via extractFrames()
-    return { frames: [], resolvedInputPath: options.inputPath };
+    // Use normalized path so extraction and analysis are cwd-independent
+    return {
+      frames: [],
+      resolvedInputPath: resolveAbsolute(options.inputPath),
+    };
   }
 
   if (options.mode === 'buffer') {

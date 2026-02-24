@@ -8,9 +8,14 @@ vi.mock('../../core/workspace.js', () => ({
   writeInputFrames: vi.fn(),
 }));
 
-vi.mock('../../utils/paths.js', () => ({
-  deriveOutputPath: vi.fn().mockReturnValue('/output/scenes'),
-}));
+vi.mock('../../utils/paths.js', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('../../utils/paths.js')>();
+  return {
+    ...actual,
+    deriveOutputPath: vi.fn().mockReturnValue('/output/scenes'),
+  };
+});
 
 describe('resolveOptions', () => {
   it('file mode: 기본값 적용 (count=20, threshold=0.5, fps=5, scale=720, debug=false)', () => {
