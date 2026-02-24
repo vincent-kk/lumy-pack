@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import {
   DEFAULT_COUNT,
   DEFAULT_FPS,
+  DEFAULT_MAX_FRAMES,
   DEFAULT_QUALITY,
   DEFAULT_SCALE,
   DEFAULT_THRESHOLD,
@@ -44,6 +45,7 @@ export function resolveOptions(options: SieveOptions): ResolvedOptions {
     pruneMode,
     outputPath,
     fps: options.fps ?? DEFAULT_FPS,
+    maxFrames: options.maxFrames ?? DEFAULT_MAX_FRAMES,
     scale: options.scale ?? DEFAULT_SCALE,
     quality: options.quality ?? DEFAULT_QUALITY,
     debug: options.debug ?? false,

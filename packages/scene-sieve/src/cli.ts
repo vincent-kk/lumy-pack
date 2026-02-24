@@ -22,7 +22,12 @@ program
     'Normalized threshold 0~1 (default: 0.5; keeps frames above ratio of max change)',
   )
   .option('-o, --output <path>', 'Output directory path')
-  .option('--fps <number>', 'Fallback FPS for frame extraction', '5')
+  .option('--fps <number>', 'Max FPS for frame extraction', '5')
+  .option(
+    '--max-frames <number>',
+    'Max frames to extract (auto-reduces FPS for long videos)',
+    '300',
+  )
   .option('-s, --scale <number>', 'Scale size for vision analysis', '720')
   .option('-q, --quality <number>', 'JPEG output quality 1-100', '80')
   .option('--debug', 'Enable debug mode (preserve temp workspace)')
@@ -38,6 +43,7 @@ program
           : {}),
         output: opts.output,
         fps: parseInt(opts.fps, 10),
+        maxFrames: parseInt(opts.maxFrames, 10),
         scale: parseInt(opts.scale, 10),
         quality: parseInt(opts.quality, 10),
         debug: opts.debug ?? false,

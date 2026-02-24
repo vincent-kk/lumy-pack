@@ -50,6 +50,7 @@ const defaultResolvedOptions = {
   pruneMode: 'threshold-with-cap' as const,
   outputPath: '/out',
   fps: 5,
+  maxFrames: 300,
   scale: 720,
   debug: false,
 };

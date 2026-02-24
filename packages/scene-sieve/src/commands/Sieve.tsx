@@ -34,6 +34,7 @@ export interface SieveViewProps {
   threshold?: number;
   output?: string;
   fps: number;
+  maxFrames: number;
   scale: number;
   quality: number;
   debug: boolean;
@@ -72,6 +73,7 @@ export const SieveView: React.FC<SieveViewProps> = (props) => {
             ...(props.count !== undefined ? { count: props.count } : {}),
             outputPath: props.output,
             fps: props.fps,
+            maxFrames: props.maxFrames,
             scale: props.scale,
             quality: props.quality,
             debug: props.debug,

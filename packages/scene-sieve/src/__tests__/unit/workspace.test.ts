@@ -78,6 +78,7 @@ describe('finalizeOutput', () => {
         pruneMode: 'threshold-with-cap',
         outputPath,
         fps: 5,
+        maxFrames: 300,
         scale: 720,
         quality: 80,
         debug: false,

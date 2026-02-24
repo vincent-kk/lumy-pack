@@ -9,6 +9,7 @@ export const DEFAULT_THRESHOLD = 0.5;
 export const DEFAULT_FPS = 5;
 export const DEFAULT_SCALE = 720;
 export const DEFAULT_QUALITY = 80;
+export const DEFAULT_MAX_FRAMES = 300;
 
 // Pruner -- Percentile-based normalization
 export const NORMALIZATION_PERCENTILE = 0.9;

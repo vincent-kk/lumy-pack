@@ -20,6 +20,7 @@ export interface SieveOptionsBase {
   threshold?: number; // default: 0.5. G(t) score threshold. Keeps frames with score >= threshold, capped by count.
   outputPath?: string; // default: derived from inputPath (file mode only)
   fps?: number; // default: 5
+  maxFrames?: number; // default: 300. Caps extracted frames; FPS is auto-reduced for long videos.
   scale?: number; // default: 720
   quality?: number; // JPEG output quality 1-100 (default: 80)
   debug?: boolean; // default: false
@@ -40,6 +41,7 @@ export interface ResolvedOptions {
   pruneMode: 'threshold-with-cap';
   outputPath: string;
   fps: number;
+  maxFrames: number;
   scale: number;
   quality: number;
   debug: boolean;

@@ -6,7 +6,6 @@ import { execa } from 'execa';
 import ffmpegPath from 'ffmpeg-static';
 
 import {
-  MIN_IFRAME_COUNT,
   SUPPORTED_GIF_EXTENSIONS,
   SUPPORTED_VIDEO_EXTENSIONS,
 } from '../constants.js';
@@ -16,12 +15,12 @@ import { ensureDir, fileExists, isSupportedFile } from '../utils/paths.js';
 
 /**
  * Extract frames from video/GIF using FFmpeg.
- * Attempts I-Frame extraction first; falls back to fixed FPS if insufficient.
- * GIF inputs always use FPS fallback.
+ * Always uses FPS-based extraction. For long videos, FPS is automatically
+ * reduced to stay within maxFrames budget.
  */
 export async function extractFrames(ctx: ProcessContext): Promise<FrameNode[]> {
   const framesDir = join(ctx.workspacePath, 'frames');
-  const { inputPath, fps, scale } = ctx.options;
+  const { inputPath, fps, maxFrames, scale } = ctx.options;
 
   if (!inputPath) {
     throw new Error('inputPath is required for frame extraction');
@@ -44,50 +43,25 @@ export async function extractFrames(ctx: ProcessContext): Promise<FrameNode[]> {
   logger.debug(`Extracting frames from: ${inputPath}`);
   await ensureDir(framesDir);
 
-  // GIF always uses FPS fallback (no meaningful I-frames)
-  const isGif = isSupportedFile(inputPath, SUPPORTED_GIF_EXTENSIONS);
+  // Calculate effective FPS: cap by maxFrames / duration
+  let effectiveFps = fps;
+  const duration = await getVideoDuration(inputPath).catch(() => 0);
 
-  let frames: FrameNode[];
-
-  if (isGif) {
-    logger.debug('GIF detected — using FPS extraction');
-    frames = await extractByFps(inputPath, framesDir, fps, scale);
-  } else {
-    frames = await extractIFrames(inputPath, framesDir, scale);
-
-    if (frames.length < MIN_IFRAME_COUNT) {
-      logger.debug(
-        `Insufficient I-frames (${frames.length}), falling back to FPS mode`,
-      );
-      frames = await extractByFps(inputPath, framesDir, fps, scale);
-    }
+  if (duration > 0) {
+    const fpsCap = maxFrames / duration;
+    effectiveFps = Math.min(fps, fpsCap);
+    // Ensure at least 0.5fps (1 frame per 2 seconds)
+    effectiveFps = Math.max(0.5, effectiveFps);
+    logger.debug(
+      `Duration: ${duration.toFixed(1)}s, FPS: ${fps} → effective: ${effectiveFps.toFixed(2)} (maxFrames: ${maxFrames})`,
+    );
   }
+
+  const frames = await extractByFps(inputPath, framesDir, effectiveFps, scale);
 
   ctx.emitProgress(100);
   logger.debug(`Extracted ${frames.length} frames`);
   return frames;
-}
-
-async function extractIFrames(
-  inputPath: string,
-  outputDir: string,
-  scale: number,
-): Promise<FrameNode[]> {
-  const outputPattern = join(outputDir, 'frame_%06d.jpg');
-
-  await execa(ffmpegPath!, [
-    '-i',
-    inputPath,
-    '-vf',
-    `select='eq(pict_type,I)',scale=-1:${scale}`,
-    '-vsync',
-    'vfr',
-    '-q:v',
-    '2',
-    outputPattern,
-  ]);
-
-  return buildFrameList(outputDir, inputPath);
 }
 
 async function extractByFps(

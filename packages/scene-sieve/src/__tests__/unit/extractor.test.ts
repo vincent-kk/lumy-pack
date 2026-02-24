@@ -42,6 +42,7 @@ function makeCtx(
       pruneMode: 'threshold-with-cap',
       outputPath: '/out',
       fps: 5,
+      maxFrames: 300,
       scale: 720,
       quality: 80,
       debug: false,
@@ -92,13 +93,10 @@ describe('extractFrames', () => {
     );
   });
 
-  it('GIF 파일은 FPS 모드로 분기한다', async () => {
+  it('항상 FPS 모드로 프레임을 추출한다', async () => {
     const { extractFrames } = await import('../../core/extractor.js');
     mockFileExists.mockResolvedValue(true);
-    // First call: allExtensions check → supported, Second call: isGif check → true
-    mockIsSupportedFile
-      .mockReturnValueOnce(true) // allExtensions check
-      .mockReturnValueOnce(true); // isGif check
+    mockIsSupportedFile.mockReturnValue(true);
 
     const { readdir } = await import('node:fs/promises');
     const mockReaddir = vi.mocked(readdir);
@@ -116,49 +114,45 @@ describe('extractFrames', () => {
     const ctx = makeCtx({ inputPath: '/tmp/animation.gif' });
     const frames = await extractFrames(ctx);
 
-    // GIF: extractByFps was called → frames returned (readdir returned 1 file)
     expect(frames.length).toBeGreaterThanOrEqual(0);
-    expect(mockIsSupportedFile).toHaveBeenCalledTimes(2);
+    // isSupportedFile called once for format validation
+    expect(mockIsSupportedFile).toHaveBeenCalledTimes(1);
   });
 
-  it('I-frame 수 부족 시 FPS 모드로 fallback한다', async () => {
+  it('긴 영상은 maxFrames에 맞춰 FPS를 자동 감소한다', async () => {
     const { extractFrames } = await import('../../core/extractor.js');
     mockFileExists.mockResolvedValue(true);
-    // First: allExtensions → supported, Second: isGif → false (not a gif, triggers I-frame path)
-    mockIsSupportedFile
-      .mockReturnValueOnce(true) // allExtensions check
-      .mockReturnValueOnce(false); // isGif check → use I-frame first
+    mockIsSupportedFile.mockReturnValue(true);
 
     const { readdir } = await import('node:fs/promises');
     const mockReaddir = vi.mocked(readdir);
-    // Return fewer than MIN_IFRAME_COUNT (3) files to trigger FPS fallback
-    // First call (I-frame): 1 file (< 3, triggers fallback)
-    // Second call (FPS): 5 files
-    mockReaddir
-      .mockResolvedValueOnce(['frame_000001.jpg'] as unknown as Awaited<
-        ReturnType<typeof readdir>
-      >)
-      .mockResolvedValueOnce([
-        'frame_000001.jpg',
-        'frame_000002.jpg',
-        'frame_000003.jpg',
-        'frame_000004.jpg',
-        'frame_000005.jpg',
-      ] as unknown as Awaited<ReturnType<typeof readdir>>);
+    mockReaddir.mockResolvedValue([
+      'frame_000001.jpg',
+      'frame_000002.jpg',
+      'frame_000003.jpg',
+    ] as unknown as Awaited<ReturnType<typeof readdir>>);
 
-    // ffprobe mock for duration queries
+    // 300s video, fps=5, maxFrames=300 → effectiveFps = min(5, 300/300) = 1
     mockExeca.mockResolvedValue({
-      stdout: JSON.stringify({ format: { duration: '10' } }),
+      stdout: JSON.stringify({ format: { duration: '300' } }),
       stderr: '',
       exitCode: 0,
     });
 
-    const ctx = makeCtx({ inputPath: '/tmp/test.mp4' });
+    const ctx = makeCtx({
+      inputPath: '/tmp/long-video.mp4',
+      maxFrames: 300,
+    });
     const frames = await extractFrames(ctx);
 
-    // After fallback, readdir was called twice (once for I-frame, once for FPS)
-    expect(mockReaddir).toHaveBeenCalledTimes(2);
-    // Frames should be from FPS extraction (5 frames)
-    expect(frames.length).toBe(5);
+    expect(frames.length).toBe(3);
+    // ffmpeg called with reduced fps (second call after ffprobe)
+    const ffmpegCall = mockExeca.mock.calls.find(
+      (c) => c[0] === '/usr/bin/ffmpeg',
+    );
+    expect(ffmpegCall).toBeDefined();
+    const vfArg = ffmpegCall![1].find((a: string) => a.startsWith('fps='));
+    // effectiveFps = min(5, 300/300) = 1
+    expect(vfArg).toBe('fps=1,scale=-1:720');
   });
 });
