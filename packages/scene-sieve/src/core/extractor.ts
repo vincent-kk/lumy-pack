@@ -1,8 +1,8 @@
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import ffmpeg from 'fluent-ffmpeg';
-import ffmpegStatic from 'ffmpeg-static';
+import { execa } from 'execa';
+import ffmpegPath from 'ffmpeg-static';
 import { path as ffprobePath } from '@ffprobe-installer/ffprobe';
 
 import type { FrameNode, ProcessContext } from '../types/index.js';
@@ -13,10 +13,6 @@ import {
 } from '../constants.js';
 import { ensureDir, fileExists, isSupportedFile } from '../utils/paths.js';
 import { logger } from '../utils/logger.js';
-
-// Set bundled FFmpeg and ffprobe binary paths
-if (ffmpegStatic) ffmpeg.setFfmpegPath(ffmpegStatic);
-ffmpeg.setFfprobePath(ffprobePath);
 
 /**
  * Extract frames from video/GIF using FFmpeg.
@@ -78,18 +74,13 @@ async function extractIFrames(
 ): Promise<FrameNode[]> {
   const outputPattern = join(outputDir, 'frame_%06d.jpg');
 
-  await new Promise<void>((resolve, reject) => {
-    ffmpeg(inputPath)
-      .outputOptions([
-        `-vf select='eq(pict_type,I)',scale=-1:${scale}`,
-        '-vsync vfr',
-        '-q:v 2',
-      ])
-      .output(outputPattern)
-      .on('end', () => resolve())
-      .on('error', (err: Error) => reject(err))
-      .run();
-  });
+  await execa(ffmpegPath!, [
+    '-i', inputPath,
+    '-vf', `select='eq(pict_type,I)',scale=-1:${scale}`,
+    '-vsync', 'vfr',
+    '-q:v', '2',
+    outputPattern,
+  ]);
 
   return buildFrameList(outputDir, inputPath);
 }
@@ -102,31 +93,25 @@ async function extractByFps(
 ): Promise<FrameNode[]> {
   const outputPattern = join(outputDir, 'frame_%06d.jpg');
 
-  await new Promise<void>((resolve, reject) => {
-    ffmpeg(inputPath)
-      .outputOptions([
-        `-vf fps=${fps},scale=-1:${scale}`,
-        '-q:v 2',
-      ])
-      .output(outputPattern)
-      .on('end', () => resolve())
-      .on('error', (err: Error) => reject(err))
-      .run();
-  });
+  await execa(ffmpegPath!, [
+    '-i', inputPath,
+    '-vf', `fps=${fps},scale=-1:${scale}`,
+    '-q:v', '2',
+    outputPattern,
+  ]);
 
   return buildFrameList(outputDir, inputPath);
 }
 
 async function getVideoDuration(inputPath: string): Promise<number> {
-  return new Promise((resolve, reject) => {
-    ffmpeg.ffprobe(inputPath, (err, metadata) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      resolve(metadata.format.duration ?? 0);
-    });
-  });
+  const { stdout } = await execa(ffprobePath, [
+    '-v', 'quiet',
+    '-print_format', 'json',
+    '-show_format',
+    inputPath,
+  ]);
+  const metadata = JSON.parse(stdout);
+  return parseFloat(metadata.format?.duration ?? '0');
 }
 
 async function buildFrameList(framesDir: string, inputPath: string): Promise<FrameNode[]> {

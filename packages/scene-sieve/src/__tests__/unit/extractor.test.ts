@@ -1,37 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { ProcessContext } from '../../types/index.js';
 
-// Helper to create a fluent-ffmpeg chain mock
-function makeMockChain() {
-  const chain: Record<string, unknown> = {};
-  chain['outputOptions'] = vi.fn(() => chain);
-  chain['output'] = vi.fn(() => chain);
-  chain['run'] = vi.fn(() => chain);
-  chain['on'] = vi.fn((event: string, cb: (...args: unknown[]) => void) => {
-    if (event === 'end') {
-      setTimeout(() => cb(), 0);
-    }
-    return chain;
-  });
-  return chain;
-}
-
-// Mock external deps before importing the module under test
-vi.mock('fluent-ffmpeg', () => {
-  const mockFfmpeg = vi.fn(() => makeMockChain()) as unknown as {
-    (...args: unknown[]): ReturnType<typeof makeMockChain>;
-    setFfmpegPath: ReturnType<typeof vi.fn>;
-    setFfprobePath: ReturnType<typeof vi.fn>;
-    ffprobe: ReturnType<typeof vi.fn>;
-  };
-  mockFfmpeg.setFfmpegPath = vi.fn();
-  mockFfmpeg.setFfprobePath = vi.fn();
-  mockFfmpeg.ffprobe = vi.fn((_path: string, cb: (err: Error | null, data: unknown) => void) => {
-    cb(null, { format: { duration: 10 } });
-  });
-
-  return { default: mockFfmpeg };
-});
+// Mock execa
+const mockExeca = vi.fn().mockResolvedValue({ stdout: '', stderr: '', exitCode: 0 });
+vi.mock('execa', () => ({ execa: mockExeca }));
 
 vi.mock('ffmpeg-static', () => ({ default: '/usr/bin/ffmpeg' }));
 vi.mock('@ffprobe-installer/ffprobe', () => ({ path: '/usr/bin/ffprobe' }));
@@ -79,21 +51,10 @@ function makeCtx(overrides: Partial<ProcessContext['options']> = {}): ProcessCon
 }
 
 describe('extractFrames', () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
     mockEnsureDir.mockResolvedValue(undefined);
-
-    // Re-apply ffmpeg mock implementation after clearAllMocks
-    const ffmpegMod = await import('fluent-ffmpeg');
-    const mockFfmpeg = vi.mocked(ffmpegMod.default) as unknown as ReturnType<typeof vi.fn> & {
-      setFfmpegPath: ReturnType<typeof vi.fn>;
-      setFfprobePath: ReturnType<typeof vi.fn>;
-      ffprobe: ReturnType<typeof vi.fn>;
-    };
-    mockFfmpeg.mockImplementation(() => makeMockChain());
-    mockFfmpeg.ffprobe = vi.fn((_path: string, cb: (err: Error | null, data: unknown) => void) => {
-      cb(null, { format: { duration: 10 } });
-    });
+    mockExeca.mockResolvedValue({ stdout: '', stderr: '', exitCode: 0 });
   });
 
   it('inputPath 미제공 시 에러를 throw한다', async () => {
@@ -132,6 +93,13 @@ describe('extractFrames', () => {
     const mockReaddir = vi.mocked(readdir);
     mockReaddir.mockResolvedValue(['frame_000001.jpg'] as unknown as Awaited<ReturnType<typeof readdir>>);
 
+    // ffprobe mock for duration query
+    mockExeca.mockResolvedValue({
+      stdout: JSON.stringify({ format: { duration: '10' } }),
+      stderr: '',
+      exitCode: 0,
+    });
+
     const ctx = makeCtx({ inputPath: '/tmp/animation.gif' });
     const frames = await extractFrames(ctx);
 
@@ -162,6 +130,13 @@ describe('extractFrames', () => {
         'frame_000004.jpg',
         'frame_000005.jpg',
       ] as unknown as Awaited<ReturnType<typeof readdir>>);
+
+    // ffprobe mock for duration queries
+    mockExeca.mockResolvedValue({
+      stdout: JSON.stringify({ format: { duration: '10' } }),
+      stderr: '',
+      exitCode: 0,
+    });
 
     const ctx = makeCtx({ inputPath: '/tmp/test.mp4' });
     const frames = await extractFrames(ctx);
