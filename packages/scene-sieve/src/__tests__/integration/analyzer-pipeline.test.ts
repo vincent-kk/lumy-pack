@@ -60,6 +60,7 @@ describe('analyzeFrames integration', () => {
         options: {
           mode: 'file',
           count: 5,
+          pruneMode: 'count',
           outputPath: testDir,
           fps: 5,
           scale: 320,
@@ -92,6 +93,7 @@ describe('analyzeFrames integration', () => {
         options: {
           mode: 'file',
           count: 5,
+          pruneMode: 'count',
           outputPath: testDir,
           fps: 5,
           scale: 320,

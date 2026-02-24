@@ -61,6 +61,7 @@ function makeCtx(overrides: Partial<ProcessContext['options']> = {}): ProcessCon
       mode: 'file',
       inputPath: '/tmp/test.mp4',
       count: 5,
+      pruneMode: 'count',
       outputPath: '/out',
       fps: 5,
       scale: 720,

@@ -11,8 +11,8 @@ program
   .description('Extract key frames from video and GIF files')
   .version(VERSION)
   .argument('<input>', 'Input video or GIF file path')
-  .option('-n, --count <number>', 'Number of frames to keep', '5')
-  .option('-t, --threshold <number>', 'Normalized threshold 0~1 (keeps frames above ratio of max change, ignores --count)')
+  .option('-n, --count <number>', 'Number of frames to keep (default: 5 when no --threshold)')
+  .option('-t, --threshold <number>', 'Normalized threshold 0~1 (keeps frames above ratio of max change; combine with -n to cap result count)')
   .option('-o, --output <path>', 'Output directory path')
   .option('--fps <number>', 'Fallback FPS for frame extraction', '5')
   .option('-s, --scale <number>', 'Scale size for vision analysis', '720')
@@ -40,7 +40,10 @@ program
         inputPath: input,
         ...(opts.threshold !== undefined
           ? { threshold: parseFloat(opts.threshold) }
-          : { count: parseInt(opts.count, 10) }),
+          : {}),
+        ...(opts.count !== undefined
+          ? { count: parseInt(opts.count, 10) }
+          : {}),
         outputPath: opts.output,
         fps: parseInt(opts.fps, 10),
         scale: parseInt(opts.scale, 10),

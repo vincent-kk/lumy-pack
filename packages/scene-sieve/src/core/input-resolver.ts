@@ -21,11 +21,22 @@ export function resolveOptions(options: SieveOptions): ResolvedOptions {
     );
   }
 
+  const hasThreshold = threshold !== undefined;
+  const hasExplicitCount = options.count !== undefined;
+
+  const pruneMode: ResolvedOptions['pruneMode'] =
+    hasThreshold && hasExplicitCount
+      ? 'threshold-with-cap'
+      : hasThreshold
+        ? 'threshold'
+        : 'count';
+
   return {
     mode,
     inputPath,
     count: options.count ?? DEFAULT_COUNT,
     threshold,
+    pruneMode,
     outputPath,
     fps: options.fps ?? DEFAULT_FPS,
     scale: options.scale ?? DEFAULT_SCALE,

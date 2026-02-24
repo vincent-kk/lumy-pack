@@ -57,6 +57,7 @@ describe('finalizeOutput', () => {
       options: {
         mode: 'file',
         count: 5,
+        pruneMode: 'count',
         outputPath,
         fps: 5,
         scale: 720,

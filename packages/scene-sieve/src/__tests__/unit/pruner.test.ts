@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pruneTo, pruneByThreshold } from '../../core/pruner.js';
+import { pruneTo, pruneByThreshold, pruneByThresholdWithCap } from '../../core/pruner.js';
 import type { FrameNode, ScoreEdge } from '../../types/index.js';
 
 function makeFrames(count: number): FrameNode[] {
@@ -253,5 +253,79 @@ describe('pruneByThreshold (normalized 0~1)', () => {
     expect(result.has(4)).toBe(true);   // boundary
     expect(result.has(1)).toBe(false);  // NaN → 0
     expect(result.has(3)).toBe(false);  // negative → 0
+  });
+});
+
+describe('pruneByThresholdWithCap', () => {
+  it('survivors < cap -- returns threshold result as-is', () => {
+    const frames = makeFrames(6);
+    const edges = makeChainEdges(6, [0.1, 0.8, 0.1, 0.9, 0.2]);
+    const result = pruneByThresholdWithCap(edges, frames, 0.5, 10);
+    const thresholdOnly = pruneByThreshold(edges, frames, 0.5);
+    expect(result).toEqual(thresholdOnly);
+  });
+
+  it('survivors > cap -- reduces to cap count', () => {
+    const frames = makeFrames(10);
+    const scores = [0.9, 0.8, 0.7, 0.85, 0.95, 0.6, 0.75, 0.88, 0.92];
+    const edges = makeChainEdges(10, scores);
+    const result = pruneByThresholdWithCap(edges, frames, 0.5, 4);
+    expect(result.size).toBe(4);
+    expect(result.has(0)).toBe(true);
+    expect(result.has(9)).toBe(true);
+  });
+
+  it('survivors === cap -- returns exact cap count', () => {
+    // Need a scenario where threshold survivors = exactly 3
+    const frames = makeFrames(6);
+    const edges = makeChainEdges(6, [0.2, 0.9, 0.1, 0.8, 0.3]);
+    // max=0.9, normalized: [0.222, 1.0, 0.111, 0.889, 0.333]
+    // threshold=0.8: edges with norm >= 0.8: 1->2(1.0), 3->4(0.889)
+    // survivors: {0, 2, 4, 5} = 4 frames
+    const thresholdOnly = pruneByThreshold(edges, frames, 0.8);
+    const result = pruneByThresholdWithCap(edges, frames, 0.8, thresholdOnly.size);
+    expect(result).toEqual(thresholdOnly);
+  });
+
+  it('only boundary frames survive when all scores are zero', () => {
+    const frames = makeFrames(5);
+    const edges = makeChainEdges(5, [0, 0, 0, 0]);
+    const result = pruneByThresholdWithCap(edges, frames, 0.5, 10);
+    expect(result.size).toBe(2);
+    expect(result.has(0)).toBe(true);
+    expect(result.has(4)).toBe(true);
+  });
+
+  it('synthetic edge uses min score across gap', () => {
+    // 6 frames, edges: 0->1(0.2), 1->2(0.9), 2->3(0.1), 3->4(0.8), 4->5(0.3)
+    // max=0.9, normalized: [0.222, 1.0, 0.111, 0.889, 0.333]
+    // threshold=0.8: passing edges 1->2(1.0), 3->4(0.889)
+    // survivors: {0, 2, 4, 5}
+    // maxCount=3 -> Stage 2
+    // Synthetic: 0->2: min(0.2,0.9)=0.2, 2->4: min(0.1,0.8)=0.1, 4->5: 0.3
+    // pruneTo removes lowest edge 2->4(0.1) -> frame 4 removed
+    // Result: {0, 2, 5}
+    const frames = makeFrames(6);
+    const edges = makeChainEdges(6, [0.2, 0.9, 0.1, 0.8, 0.3]);
+    const result = pruneByThresholdWithCap(edges, frames, 0.8, 3);
+    expect(result.size).toBe(3);
+    expect(result.has(0)).toBe(true);
+    expect(result.has(2)).toBe(true);
+    expect(result.has(5)).toBe(true);
+    expect(result.has(4)).toBe(false);
+  });
+
+  it('cap=1 -- boundary protection keeps at least 2 frames', () => {
+    const frames = makeFrames(5);
+    const edges = makeChainEdges(5, [0.8, 0.9, 0.7, 0.85]);
+    const result = pruneByThresholdWithCap(edges, frames, 0.5, 1);
+    expect(result.size).toBe(2);
+    expect(result.has(0)).toBe(true);
+    expect(result.has(4)).toBe(true);
+  });
+
+  it('empty frames -- returns empty set', () => {
+    const result = pruneByThresholdWithCap([], [], 0.5, 5);
+    expect(result.size).toBe(0);
   });
 });

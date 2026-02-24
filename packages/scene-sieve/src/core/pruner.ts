@@ -149,3 +149,75 @@ export function pruneByThreshold(
 
   return surviving;
 }
+
+/**
+ * Combined threshold + count pruning -- 2-stage pipeline.
+ *
+ * Stage 1: pruneByThreshold -- keep all frames with normalized score >= threshold
+ * Stage 2: if result exceeds maxCount, rebuild subgraph with synthetic edges
+ *          (min-score over each gap) and apply pruneTo on the surviving subset
+ *
+ * Edge reconstruction: for consecutive survivors A, B with removed frames
+ * [x1, x2, ...] between them, the synthetic edge score is:
+ *   min(score(A->x1), score(x1->x2), ..., score(xN->B))
+ * This preserves the "weakest link" semantics.
+ */
+export function pruneByThresholdWithCap(
+  graph: ScoreEdge[],
+  frames: FrameNode[],
+  threshold: number,
+  maxCount: number,
+): Set<number> {
+  // Stage 1: threshold filtering
+  const thresholdSurvivors = pruneByThreshold(graph, frames, threshold);
+
+  // If already within cap, return as-is
+  if (thresholdSurvivors.size <= maxCount) {
+    return thresholdSurvivors;
+  }
+
+  // Stage 2: rebuild subgraph for surviving frames, then pruneTo
+  const survivingFrames = frames.filter((f) => thresholdSurvivors.has(f.id));
+
+  // Build index: frameId -> position in original frames array
+  const idToOrigIdx = new Map<number, number>();
+  for (let i = 0; i < frames.length; i++) {
+    idToOrigIdx.set(frames[i]!.id, i);
+  }
+
+  // Build edge lookup: "sourceId:targetId" -> score (for original consecutive edges)
+  const edgeLookup = new Map<string, number>();
+  for (const e of graph) {
+    edgeLookup.set(`${e.sourceId}:${e.targetId}`, e.score);
+  }
+
+  // Reconstruct edges between consecutive surviving frames
+  const syntheticEdges: ScoreEdge[] = [];
+
+  for (let i = 0; i < survivingFrames.length - 1; i++) {
+    const srcSurvivor = survivingFrames[i]!;
+    const tgtSurvivor = survivingFrames[i + 1]!;
+
+    const srcOrigIdx = idToOrigIdx.get(srcSurvivor.id)!;
+    const tgtOrigIdx = idToOrigIdx.get(tgtSurvivor.id)!;
+
+    // Collect all original edges in the gap: src -> ... -> tgt
+    let minScore = Infinity;
+    for (let j = srcOrigIdx; j < tgtOrigIdx; j++) {
+      const fromId = frames[j]!.id;
+      const toId = frames[j + 1]!.id;
+      const score = edgeLookup.get(`${fromId}:${toId}`) ?? 0;
+      if (score < minScore) {
+        minScore = score;
+      }
+    }
+
+    syntheticEdges.push({
+      sourceId: srcSurvivor.id,
+      targetId: tgtSurvivor.id,
+      score: minScore === Infinity ? 0 : minScore,
+    });
+  }
+
+  return pruneTo(syntheticEdges, survivingFrames, maxCount);
+}

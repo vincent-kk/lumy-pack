@@ -18,6 +18,7 @@ describe('resolveOptions', () => {
     expect(result.fps).toBe(5);
     expect(result.scale).toBe(720);
     expect(result.debug).toBe(false);
+    expect(result.pruneMode).toBe('count');
   });
 
   it('file mode: outputPath 미지정 시 deriveOutputPath 호출', async () => {
@@ -85,6 +86,29 @@ describe('resolveOptions', () => {
     expect(result.scale).toBe(480);
     expect(result.debug).toBe(true);
     expect(result.outputPath).toBe('/custom/output');
+  });
+});
+
+describe('resolveOptions - pruneMode', () => {
+  it('count만 지정: pruneMode=count', () => {
+    const result = resolveOptions({ mode: 'file', inputPath: '/video.mp4', count: 10 });
+    expect(result.pruneMode).toBe('count');
+  });
+
+  it('threshold만 지정: pruneMode=threshold', () => {
+    const result = resolveOptions({ mode: 'file', inputPath: '/video.mp4', threshold: 0.5 });
+    expect(result.pruneMode).toBe('threshold');
+  });
+
+  it('count와 threshold 모두 지정: pruneMode=threshold-with-cap', () => {
+    const result = resolveOptions({ mode: 'file', inputPath: '/video.mp4', threshold: 0.5, count: 3 });
+    expect(result.pruneMode).toBe('threshold-with-cap');
+  });
+
+  it('아무것도 지정하지 않으면: pruneMode=count, count=5', () => {
+    const result = resolveOptions({ mode: 'file', inputPath: '/video.mp4' });
+    expect(result.pruneMode).toBe('count');
+    expect(result.count).toBe(5);
   });
 });
 
