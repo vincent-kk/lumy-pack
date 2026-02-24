@@ -1,3 +1,5 @@
+import { createRequire } from 'node:module';
+
 import sharp from 'sharp';
 
 import {
@@ -24,13 +26,22 @@ type CvLib = typeof import('@techstark/opencv-js');
 
 const OPENCV_INIT_TIMEOUT_MS = 30_000;
 
+// createRequire를 사용하여 Node CJS 로더로 직접 로드.
+// dynamic import()는 Vite 변환 파이프라인을 거치는데,
+// opencv-js(10MB+ Emscripten 모듈)를 변환하다 hang이 발생한다.
+const require = createRequire(import.meta.url);
+
 let cvReady: Promise<CvLib> | null = null;
 
 async function ensureOpenCV(): Promise<CvLib> {
   if (!cvReady) {
     cvReady = (async () => {
-      const cvModule = await import('@techstark/opencv-js');
-      const cvObj = (cvModule.default ?? cvModule) as CvLib;
+      const cvObj = require('@techstark/opencv-js') as CvLib;
+
+      // @techstark/opencv-js Module에는 .then() 메서드가 있어 thenable로 인식됨.
+      // Promise.resolve()나 resolve()에 전달하면 Promise 스펙이 .then()을 반복 호출하여
+      // 무한 루프가 발생하므로 제거한다.
+      delete (cvObj as Record<string, unknown>).then;
 
       if (cvObj.Mat) return cvObj;
 
