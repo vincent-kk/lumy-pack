@@ -1,8 +1,9 @@
-import { Box, Static, Text, useApp } from 'ink';
+import { Box, Text, useApp } from 'ink';
 import React, { useEffect, useState } from 'react';
 
 import { PhaseStep } from '../components/PhaseStep.js';
 import type { PhaseState } from '../components/PhaseStep.js';
+import { cleanupStaleWorkspaces } from '../core/workspace.js';
 import { extractScenes } from '../index.js';
 import type { ProgressPhase, SieveResult } from '../types/index.js';
 
@@ -43,7 +44,6 @@ export const SieveView: React.FC<SieveViewProps> = (props) => {
   const [phases, setPhases] = useState<PhaseState[]>(createInitialPhases);
   const [result, setResult] = useState<SieveResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [completedCount, setCompletedCount] = useState(0);
 
   useEffect(() => {
     const phaseStartTimes: number[] = PHASE_DEFS.map(() => 0);
@@ -51,6 +51,9 @@ export const SieveView: React.FC<SieveViewProps> = (props) => {
 
     (async () => {
       try {
+        // Clean up stale workspaces from previous interrupted runs
+        await cleanupStaleWorkspaces().catch(() => {});
+
         // Mark INIT as running
         phaseStartTimes[0] = Date.now();
         setPhases((prev) => {
@@ -83,7 +86,6 @@ export const SieveView: React.FC<SieveViewProps> = (props) => {
 
               setPhases((prev) => {
                 const next = [...prev];
-                let newCompleted = 0;
                 for (let i = 0; i < next.length; i++) {
                   if (i < phaseIdx) {
                     if (next[i].status !== 'done') {
@@ -96,12 +98,10 @@ export const SieveView: React.FC<SieveViewProps> = (props) => {
                           : 0,
                       };
                     }
-                    newCompleted++;
                   } else if (i === phaseIdx) {
                     next[i] = { ...next[i], status: 'running', percent: 0 };
                   }
                 }
-                setCompletedCount(newCompleted);
                 return next;
               });
             }
@@ -122,8 +122,8 @@ export const SieveView: React.FC<SieveViewProps> = (props) => {
 
         // Mark all remaining phases as done
         const now = Date.now();
-        setPhases((prev) => {
-          const next = prev.map((p, i) => {
+        setPhases((prev) =>
+          prev.map((p, i) => {
             if (p.status !== 'done') {
               return {
                 ...p,
@@ -133,10 +133,8 @@ export const SieveView: React.FC<SieveViewProps> = (props) => {
               };
             }
             return p;
-          });
-          return next;
-        });
-        setCompletedCount(PHASE_DEFS.length);
+          }),
+        );
         setResult(res);
 
         setTimeout(() => exit(), 100);
@@ -163,23 +161,13 @@ export const SieveView: React.FC<SieveViewProps> = (props) => {
     })();
   }, []);
 
-  // Split phases into completed (Static) and active
-  const completedPhases = phases.slice(0, completedCount);
-  const activePhases = phases.slice(completedCount);
-
   return (
     <Box flexDirection="column">
       <Text bold>{'▸ scene-sieve'} — {props.input.split('/').pop()}</Text>
       <Text> </Text>
 
-      {/* Completed phases — frozen, no re-render */}
-      <Static items={completedPhases.map((p, i) => ({ ...p, id: String(i) }))}>
-        {(item) => <PhaseStep key={item.id} phase={item} />}
-      </Static>
-
-      {/* Active + pending phases */}
-      {activePhases.map((phase, i) => (
-        <PhaseStep key={completedCount + i} phase={phase} />
+      {phases.map((phase, i) => (
+        <PhaseStep key={i} phase={phase} />
       ))}
 
       {/* Error */}

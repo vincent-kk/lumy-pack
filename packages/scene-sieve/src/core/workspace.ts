@@ -1,9 +1,14 @@
-import { rename, rm, writeFile } from 'node:fs/promises';
+import { readdir, rm, rename, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import sharp from 'sharp';
 
-import { FRAME_OUTPUT_EXTENSION, getTempWorkspaceDir } from '../constants.js';
+import {
+  FRAME_OUTPUT_EXTENSION,
+  TEMP_BASE_DIR,
+  WORKSPACE_PREFIX,
+  getTempWorkspaceDir,
+} from '../constants.js';
 import type { FrameNode, ProcessContext } from '../types/index.js';
 import { ensureDir } from '../utils/paths.js';
 
@@ -47,6 +52,30 @@ export async function cleanupWorkspace(workspacePath: string): Promise<void> {
     await rm(workspacePath, { recursive: true, force: true });
   } catch {
     // Cleanup failure is non-fatal; OS cleans tmpdir on reboot
+  }
+}
+
+const STALE_THRESHOLD_MS = 60 * 60 * 1000; // 1 hour
+
+/**
+ * Remove stale workspace directories left by previous interrupted runs.
+ * Only deletes directories older than 1 hour to avoid removing active workspaces.
+ */
+export async function cleanupStaleWorkspaces(): Promise<void> {
+  const entries = await readdir(TEMP_BASE_DIR);
+  const now = Date.now();
+
+  for (const entry of entries) {
+    if (!entry.startsWith(WORKSPACE_PREFIX)) continue;
+    const fullPath = join(TEMP_BASE_DIR, entry);
+    try {
+      const info = await stat(fullPath);
+      if (info.isDirectory() && now - info.mtimeMs > STALE_THRESHOLD_MS) {
+        await rm(fullPath, { recursive: true, force: true });
+      }
+    } catch {
+      // Skip entries that can't be stat'd or removed
+    }
   }
 }
 
