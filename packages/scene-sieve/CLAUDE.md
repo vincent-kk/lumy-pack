@@ -9,7 +9,7 @@ Video/GIF 핵심 프레임 추출 및 가지치기 CLI 도구. 동영상에서 �
 ## Commands
 
 ```bash
-yarn build              # inject version + tsup + tsc declarations
+yarn build              # tsup + tsc declarations
 yarn dev <input>        # run CLI in dev mode via tsx
 yarn test               # vitest watch mode (unit only)
 yarn test:run           # vitest run (unit only)

@@ -38,10 +38,9 @@
     "dist"
   ],
   "scripts": {
-    "build": "node scripts/inject-version.js && tsup && yarn build:types",
-    "build:publish:npm": "yarn build && yarn publish:npm",
+    "build": "tsup && yarn build:types",
     "build:types": "tsc -p ./tsconfig.declarations.json",
-    "dev": "node scripts/inject-version.js && tsx src/cli.ts",
+    "dev": "tsx src/cli.ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint \"src/**/*.ts\"",
     "publish:npm": "yarn npm publish --access public",

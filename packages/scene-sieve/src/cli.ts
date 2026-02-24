@@ -1,15 +1,19 @@
+import { createRequire } from 'node:module';
+
 import { Command } from 'commander';
 
 import { extractScenes } from './index.js';
 import type { ProgressPhase } from './types/index.js';
-import { VERSION } from './version.js';
+
+const require = createRequire(import.meta.url);
+const { version } = require('../package.json') as { version: string };
 
 const program = new Command();
 
 program
   .name('scene-sieve')
   .description('Extract key frames from video and GIF files')
-  .version(VERSION)
+  .version(version)
   .argument('<input>', 'Input video or GIF file path')
   .option('-n, --count <number>', 'Number of frames to keep (default: 5 when no --threshold)')
   .option('-t, --threshold <number>', 'Normalized threshold 0~1 (keeps frames above ratio of max change; combine with -n to cap result count)')
