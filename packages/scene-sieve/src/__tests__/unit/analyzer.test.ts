@@ -227,4 +227,35 @@ describe('IoUTracker', () => {
     // box2는 box1과 IoU가 0이므로 새 리전으로 추가
     expect(animIndices.size).toBe(0);
   });
+
+  it('flushAndGetAnimations()가 지속된 애니메이션을 반환함', () => {
+    const box: BoundingBox = { x: 10, y: 10, width: 100, height: 100 };
+    // 5번 연속 update (ANIMATION_FRAME_THRESHOLD=5)
+    for (let i = 0; i < 5; i++) {
+      tracker.update([box], i);
+    }
+
+    const animations = tracker.flushAndGetAnimations();
+    expect(animations).toHaveLength(1);
+    expect(animations[0].startFrameId).toBe(0);
+    expect(animations[0].endFrameId).toBe(4);
+    expect(animations[0].type).toBe('loading_spinner');
+  });
+
+  it('weight가 임계값(0.01) 이하로 떨어질 때 애니메이션 수집', () => {
+    const box: BoundingBox = { x: 10, y: 10, width: 100, height: 100 };
+    // 5번 연속 update
+    for (let i = 0; i < 5; i++) {
+      tracker.update([box], i);
+    }
+
+    // 큰 gap(100)을 주어 weight를 급격히 감소시킴
+    // DECAY_LAMBDA=0.95, 0.95^100 < 0.01
+    tracker.update([], 105);
+
+    // flush 전에 이미 수집되어 있어야 함 (단, 내부 배열에 쌓임)
+    const animations = tracker.flushAndGetAnimations();
+    expect(animations).toHaveLength(1);
+    expect(animations[0].endFrameId).toBe(4);
+  });
 });

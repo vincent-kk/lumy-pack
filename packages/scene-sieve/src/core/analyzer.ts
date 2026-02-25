@@ -5,6 +5,7 @@ import sharp from 'sharp';
 import {
   ANIMATION_FRAME_THRESHOLD,
   DECAY_LAMBDA,
+  DEFAULT_FPS,
   IOU_THRESHOLD,
   MATCH_DISTANCE_THRESHOLD,
   OPENCV_BATCH_SIZE,
@@ -14,6 +15,8 @@ import {
   PIXELDIFF_SAMPLE_SPACING,
 } from '../constants.js';
 import type {
+  AnalysisResult,
+  AnimationMetadata,
   BoundingBox,
   FrameNode,
   ProcessContext,
@@ -176,12 +179,20 @@ export function computeIoU(a: BoundingBox, b: BoundingBox): number {
 interface TrackedRegion {
   box: BoundingBox;
   consecutiveCount: number;
+  firstSeen: number;
   lastSeen: number;
   weight: number;
 }
 
 export class IoUTracker {
   private regions: TrackedRegion[] = [];
+  private extractedAnimations: AnimationMetadata[] = [];
+
+  constructor(
+    private fps: number = DEFAULT_FPS,
+    private iouThreshold: number = IOU_THRESHOLD,
+    private animationThreshold: number = ANIMATION_FRAME_THRESHOLD,
+  ) {}
 
   update(boxes: BoundingBox[], pairIndex: number): Set<number> {
     const animationIndices = new Set<number>();
@@ -201,7 +212,7 @@ export class IoUTracker {
         }
       }
 
-      if (bestIoU > IOU_THRESHOLD && bestRegionIdx !== -1) {
+      if (bestIoU > this.iouThreshold && bestRegionIdx !== -1) {
         const region = this.regions[bestRegionIdx];
         const gap = pairIndex - region.lastSeen;
         region.box = box;
@@ -210,13 +221,14 @@ export class IoUTracker {
         region.weight *= Math.pow(DECAY_LAMBDA, gap);
         matched.add(bestRegionIdx);
 
-        if (region.consecutiveCount >= ANIMATION_FRAME_THRESHOLD) {
+        if (region.consecutiveCount >= this.animationThreshold) {
           animationIndices.add(bi);
         }
       } else {
         this.regions.push({
           box,
           consecutiveCount: 1,
+          firstSeen: pairIndex,
           lastSeen: pairIndex,
           weight: 1.0,
         });
@@ -230,9 +242,41 @@ export class IoUTracker {
       }
     }
 
-    this.regions = this.regions.filter((r) => r.weight > 0.01);
+    // 애니메이션 데이터 수집 (소멸되는 영역 중 조건 만족하는 것)
+    for (let i = 0; i < this.regions.length; i++) {
+      const region = this.regions[i];
+      if (region.weight <= 0.01 && !matched.has(i)) {
+        this.collectAnimation(region);
+      }
+    }
+
+    this.regions = this.regions.filter(
+      (r, i) => r.weight > 0.01 || matched.has(i),
+    );
 
     return animationIndices;
+  }
+
+  private collectAnimation(region: TrackedRegion): void {
+    if (region.consecutiveCount >= this.animationThreshold) {
+      const durationMs = (region.consecutiveCount / this.fps) * 1000;
+      this.extractedAnimations.push({
+        type: 'loading_spinner', // 기본값으로 loading_spinner 사용
+        boundingBox: region.box,
+        startFrameId: region.firstSeen,
+        endFrameId: region.lastSeen,
+        durationMs,
+      });
+    }
+  }
+
+  flushAndGetAnimations(): AnimationMetadata[] {
+    // 큐에 남아있는 모든 영역에 대해 애니메이션 수집 시도
+    for (const region of this.regions) {
+      this.collectAnimation(region);
+    }
+    this.regions = [];
+    return this.extractedAnimations;
   }
 
   getAnimationWeight(boxIndex: number, boxes: BoundingBox[]): number {
@@ -240,9 +284,9 @@ export class IoUTracker {
     const box = boxes[boxIndex];
     let maxWeight = 0;
     for (const region of this.regions) {
-      if (region.consecutiveCount >= ANIMATION_FRAME_THRESHOLD) {
+      if (region.consecutiveCount >= this.animationThreshold) {
         const iou = computeIoU(box, region.box);
-        if (iou > IOU_THRESHOLD) {
+        if (iou > this.iouThreshold) {
           maxWeight = Math.max(maxWeight, region.weight);
         }
       }
@@ -576,9 +620,11 @@ async function analyzeBatch(
  * 3. Spatio-temporal IoU Tracking
  * 4. G(t) Information Gain Scoring
  */
-export async function analyzeFrames(ctx: ProcessContext): Promise<ScoreEdge[]> {
+export async function analyzeFrames(
+  ctx: ProcessContext,
+): Promise<AnalysisResult> {
   const { frames } = ctx;
-  if (frames.length < 2) return [];
+  if (frames.length < 2) return { edges: [], animations: [] };
 
   logger.debug(
     `Analyzing ${frames.length} frames in batches of ${OPENCV_BATCH_SIZE}`,
@@ -586,7 +632,11 @@ export async function analyzeFrames(ctx: ProcessContext): Promise<ScoreEdge[]> {
 
   const cvLib = await ensureOpenCV();
   const edges: ScoreEdge[] = [];
-  const tracker = new IoUTracker();
+  const tracker = new IoUTracker(
+    ctx.options.fps,
+    ctx.options.iouThreshold,
+    ctx.options.animationThreshold,
+  );
   const scale = ctx.options.scale;
 
   for (let i = 0; i < frames.length - 1; i += OPENCV_BATCH_SIZE) {
@@ -602,6 +652,9 @@ export async function analyzeFrames(ctx: ProcessContext): Promise<ScoreEdge[]> {
     ctx.emitProgress(progress);
   }
 
-  logger.debug(`Computed ${edges.length} score edges`);
-  return edges;
+  const animations = tracker.flushAndGetAnimations();
+  logger.debug(
+    `Computed ${edges.length} score edges and ${animations.length} animations`,
+  );
+  return { edges, animations };
 }

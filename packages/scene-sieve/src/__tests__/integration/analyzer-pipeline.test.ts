@@ -6,6 +6,14 @@ import { join } from 'node:path';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import {
+  ANIMATION_FRAME_THRESHOLD,
+  DEFAULT_FPS,
+  DEFAULT_MAX_FRAMES,
+  DEFAULT_QUALITY,
+  DEFAULT_SCALE,
+  IOU_THRESHOLD,
+} from '../../constants.js';
 import { analyzeFrames } from '../../core/analyzer.js';
 import type { FrameNode, ProcessContext } from '../../types/index.js';
 
@@ -65,9 +73,12 @@ describe('analyzeFrames integration', () => {
           threshold: 0.5,
           pruneMode: 'threshold-with-cap',
           outputPath: testDir,
-          fps: 5,
-          scale: 320,
-          quality: 80,
+          fps: DEFAULT_FPS,
+          maxFrames: DEFAULT_MAX_FRAMES,
+          scale: DEFAULT_SCALE,
+          quality: DEFAULT_QUALITY,
+          iouThreshold: IOU_THRESHOLD,
+          animationThreshold: ANIMATION_FRAME_THRESHOLD,
           debug: false,
         },
         workspacePath: testDir,
@@ -77,10 +88,11 @@ describe('analyzeFrames integration', () => {
         emitProgress: () => {},
       };
 
-      const edges = await analyzeFrames(ctx);
+      const { edges, animations } = await analyzeFrames(ctx);
 
       // Should produce N-1 edges for N frames
       expect(edges).toHaveLength(frameNodes.length - 1);
+      expect(Array.isArray(animations)).toBe(true);
 
       for (let i = 0; i < edges.length; i++) {
         expect(edges[i].sourceId).toBe(i);
@@ -101,8 +113,11 @@ describe('analyzeFrames integration', () => {
           pruneMode: 'threshold-with-cap',
           outputPath: testDir,
           fps: 5,
+          maxFrames: 300,
           scale: 320,
           quality: 80,
+          iouThreshold: 0.9,
+          animationThreshold: 5,
           debug: false,
         },
         workspacePath: testDir,
@@ -112,7 +127,7 @@ describe('analyzeFrames integration', () => {
         emitProgress: () => {},
       };
 
-      const edges = await analyzeFrames(ctx);
+      const { edges } = await analyzeFrames(ctx);
 
       for (const edge of edges) {
         expect(edge.score).toBeGreaterThanOrEqual(0);

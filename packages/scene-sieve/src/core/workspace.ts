@@ -25,19 +25,59 @@ export async function finalizeOutput(
 ): Promise<string[]> {
   const stagingDir = join(ctx.workspacePath, 'output');
   const outputPath = ctx.options.outputPath;
-
   const quality = ctx.options.quality;
 
   const outputFiles: string[] = [];
+  const framesMetadata = [];
+
+  const totalFramesCount = ctx.frames.length;
+  const padding = Math.max(4, String(totalFramesCount).length);
+
   for (let i = 0; i < selectedFrames.length; i++) {
     const frame = selectedFrames[i];
-    const destName = `scene_${String(i + 1).padStart(3, '0')}.jpg`;
-    const destPath = join(stagingDir, destName);
+    const fileName = `frame_${String(frame.id + 1).padStart(padding, '0')}.jpg`;
+    const destPath = join(stagingDir, fileName);
+
     await sharp(frame.extractPath)
       .jpeg({ quality, mozjpeg: true })
       .toFile(destPath);
-    outputFiles.push(join(outputPath, destName));
+
+    outputFiles.push(join(outputPath, fileName));
+
+    framesMetadata.push({
+      step: i + 1,
+      fileName,
+      frameId: frame.id + 1,
+      timestampMs: Math.round(frame.timestamp * 1000),
+    });
   }
+
+  // .metadata.json 생성
+  const metadata = {
+    video: {
+      originalDurationMs: Math.round(
+        (ctx.frames.length > 0
+          ? ctx.frames[ctx.frames.length - 1].timestamp
+          : 0) * 1000,
+      ),
+      fps: ctx.options.fps,
+      resolution: {
+        width: ctx.options.scale,
+        height: Math.round((ctx.options.scale * 9) / 16),
+      },
+    },
+    frames: framesMetadata,
+    animations: (ctx.animations || []).map((anim) => ({
+      ...anim,
+      startFrameId: anim.startFrameId + 1,
+      endFrameId: anim.endFrameId + 1,
+      durationMs: Math.round(anim.durationMs),
+    })),
+  };
+
+  const metadataPath = join(stagingDir, '.metadata.json');
+  await writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+  outputFiles.push(join(outputPath, '.metadata.json'));
 
   await ensureDir(join(outputPath, '..'));
   await rm(outputPath, { recursive: true, force: true });

@@ -37,6 +37,8 @@ export interface SieveViewProps {
   maxFrames: number;
   scale: number;
   quality: number;
+  iouThreshold?: number;
+  animationThreshold?: number;
   debug: boolean;
 }
 
@@ -76,6 +78,8 @@ export const SieveView: React.FC<SieveViewProps> = (props) => {
             maxFrames: props.maxFrames,
             scale: props.scale,
             quality: props.quality,
+            iouThreshold: props.iouThreshold,
+            animationThreshold: props.animationThreshold,
             debug: props.debug,
           },
           (phase: ProgressPhase, percent: number) => {
@@ -186,8 +190,16 @@ export const SieveView: React.FC<SieveViewProps> = (props) => {
         <Box flexDirection="column" marginTop={1}>
           <Text color="gray">  ────────────────────</Text>
           <Text color="green" bold>
-            {'✓ Done'} — {result.originalFramesCount} frames → {result.prunedFramesCount} scenes ({(result.executionTimeMs / 1000).toFixed(1)}s)
+            {'✓ Done'} — {result.originalFramesCount} frames →{' '}
+            {result.prunedFramesCount} scenes (
+            {(result.executionTimeMs / 1000).toFixed(1)}s)
           </Text>
+          {result.animations && result.animations.length > 0 && (
+            <Text color="blue">
+              {'ℹ Found'} {result.animations.length} animations (recorded in
+              .metadata.json)
+            </Text>
+          )}
           {props.debug && result.outputFiles.length > 0 && (
             <Box flexDirection="column" marginTop={1}>
               <Text color="gray">

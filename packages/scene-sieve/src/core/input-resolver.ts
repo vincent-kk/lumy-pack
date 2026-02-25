@@ -1,12 +1,14 @@
 import { join } from 'node:path';
 
 import {
+  ANIMATION_FRAME_THRESHOLD,
   DEFAULT_COUNT,
   DEFAULT_FPS,
   DEFAULT_MAX_FRAMES,
   DEFAULT_QUALITY,
   DEFAULT_SCALE,
   DEFAULT_THRESHOLD,
+  IOU_THRESHOLD,
 } from '../constants.js';
 import type {
   FrameNode,
@@ -48,6 +50,8 @@ export function resolveOptions(options: SieveOptions): ResolvedOptions {
     maxFrames: options.maxFrames ?? DEFAULT_MAX_FRAMES,
     scale: options.scale ?? DEFAULT_SCALE,
     quality: options.quality ?? DEFAULT_QUALITY,
+    iouThreshold: options.iouThreshold ?? IOU_THRESHOLD,
+    animationThreshold: options.animationThreshold ?? ANIMATION_FRAME_THRESHOLD,
     debug: options.debug ?? false,
   };
 }

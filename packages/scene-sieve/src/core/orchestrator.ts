@@ -76,7 +76,9 @@ export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
 
     // 3. Analyze frame similarity
     ctx.status = 'ANALYZING';
-    ctx.graph = await analyzeFrames(ctx);
+    const { edges, animations } = await analyzeFrames(ctx);
+    ctx.graph = edges;
+    ctx.animations = animations;
 
     // 4. Prune: threshold + count cap
     ctx.status = 'PRUNING';
@@ -122,6 +124,15 @@ export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
       prunedFramesCount: prunedFrames.length,
       outputFiles,
       outputBuffers,
+      animations: ctx.animations,
+      video: {
+        originalDurationMs: (ctx.frames.length / ctx.options.fps) * 1000,
+        fps: ctx.options.fps,
+        resolution: {
+          width: ctx.options.scale,
+          height: Math.round((ctx.options.scale * 9) / 16),
+        },
+      },
       executionTimeMs: Date.now() - startTime,
     };
   } catch (error) {

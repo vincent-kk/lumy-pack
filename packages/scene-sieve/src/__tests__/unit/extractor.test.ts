@@ -45,6 +45,8 @@ function makeCtx(
       maxFrames: 300,
       scale: 720,
       quality: 80,
+      iouThreshold: 0.9,
+      animationThreshold: 5,
       debug: false,
       ...overrides,
     },

@@ -6,6 +6,7 @@ import { execa } from 'execa';
 import ffmpegPath from 'ffmpeg-static';
 
 import {
+  FRAME_FILENAME_PATTERN,
   SUPPORTED_GIF_EXTENSIONS,
   SUPPORTED_VIDEO_EXTENSIONS,
 } from '../constants.js';
@@ -70,7 +71,7 @@ async function extractByFps(
   fps: number,
   scale: number,
 ): Promise<FrameNode[]> {
-  const outputPattern = join(outputDir, 'frame_%06d.jpg');
+  const outputPattern = join(outputDir, FRAME_FILENAME_PATTERN);
 
   await execa(ffmpegPath!, [
     '-i',

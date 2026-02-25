@@ -23,6 +23,8 @@ export interface SieveOptionsBase {
   maxFrames?: number; // default: 300. Caps extracted frames; FPS is auto-reduced for long videos.
   scale?: number; // default: 720
   quality?: number; // JPEG output quality 1-100 (default: 80)
+  iouThreshold?: number; // default: 0.9. IoU threshold for animation tracking.
+  animationThreshold?: number; // default: 5. Minimum consecutive frames to be considered an animation.
   debug?: boolean; // default: false
   onProgress?: (phase: ProgressPhase, percent: number) => void;
 }
@@ -44,6 +46,8 @@ export interface ResolvedOptions {
   maxFrames: number;
   scale: number;
   quality: number;
+  iouThreshold: number;
+  animationThreshold: number;
   debug: boolean;
 }
 
@@ -55,7 +59,28 @@ export interface SieveResult {
   prunedFramesCount: number;
   outputFiles: string[];
   outputBuffers?: Buffer[];
+  animations?: AnimationMetadata[];
+  video?: VideoMetadata;
   executionTimeMs: number;
+}
+
+// ── Animation Metadata ──
+
+export interface AnimationMetadata {
+  type: string;
+  boundingBox: BoundingBox;
+  startFrameId: number;
+  endFrameId: number;
+  durationMs: number;
+}
+
+export interface VideoMetadata {
+  originalDurationMs: number;
+  fps: number;
+  resolution: {
+    width: number;
+    height: number;
+  };
 }
 
 // ── Internal Pipeline Types ──
@@ -103,7 +128,13 @@ export interface ProcessContext {
   workspacePath: string;
   frames: FrameNode[];
   graph: ScoreEdge[];
+  animations?: AnimationMetadata[];
   status: 'INIT' | ProgressPhase | 'SUCCESS' | 'FAILED';
   emitProgress: (percent: number) => void;
   error?: Error;
+}
+
+export interface AnalysisResult {
+  edges: ScoreEdge[];
+  animations: AnimationMetadata[];
 }

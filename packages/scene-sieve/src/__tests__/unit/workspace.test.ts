@@ -81,6 +81,8 @@ describe('finalizeOutput', () => {
         maxFrames: 300,
         scale: 720,
         quality: 80,
+        iouThreshold: 0.9,
+        animationThreshold: 5,
         debug: false,
       },
       workspacePath: ws,
@@ -93,9 +95,58 @@ describe('finalizeOutput', () => {
     const selectedFrames = [{ id: 0, timestamp: 0, extractPath: framePath }];
     const outputFiles = await finalizeOutput(ctx, selectedFrames);
 
-    expect(outputFiles).toHaveLength(1);
-    expect(outputFiles[0]).toContain('scene_001.jpg');
+    expect(outputFiles).toHaveLength(2); // 1 scene image + 1 .metadata.json
+    expect(outputFiles[0]).toContain('frame_0001.jpg');
+    expect(outputFiles[1]).toContain('.metadata.json');
     expect(await fileExists(outputFiles[0])).toBe(true);
+    expect(await fileExists(outputFiles[1])).toBe(true);
+  });
+
+  it('uses larger padding when total frames exceed 9999', async () => {
+    const ws = await makeTempWorkspace();
+    const framesDir = join(ws, 'frames');
+    const outputDir = join(ws, 'output');
+    await mkdir(framesDir, { recursive: true });
+    await mkdir(outputDir, { recursive: true });
+
+    const framePath = join(framesDir, 'frame_000001.jpg');
+    await writeFile(framePath, await createTestJpeg());
+
+    const outputPath = join(ws, 'final_output_large');
+    const ctx: ProcessContext = {
+      options: {
+        mode: 'file',
+        count: 5,
+        threshold: 0.5,
+        pruneMode: 'threshold-with-cap',
+        outputPath,
+        fps: 5,
+        maxFrames: 300,
+        scale: 720,
+        quality: 80,
+        iouThreshold: 0.9,
+        animationThreshold: 5,
+        debug: false,
+      },
+      workspacePath: ws,
+      // Simulate 12,345 total frames
+      frames: Array.from({ length: 12345 }, (_, i) => ({
+        id: i,
+        timestamp: i,
+        extractPath: '',
+      })),
+      graph: [],
+      status: 'FINALIZING',
+      emitProgress: () => {},
+    };
+
+    const selectedFrames = [
+      { id: 999, timestamp: 200, extractPath: framePath },
+    ];
+    const outputFiles = await finalizeOutput(ctx, selectedFrames);
+
+    // Should use 5 digits because 12345 has 5 digits
+    expect(outputFiles[0]).toContain('frame_01000.jpg');
   });
 });
 
