@@ -13,6 +13,8 @@ Video/GIF ──▶ Extract (FFmpeg) ──▶ Analyze (OpenCV) ──▶ Prune 
 
 ## Features
 
+- **Animation Tracking** — Detects and records loading spinners or other repetitive animations
+- **Rich Metadata** — Generates `.metadata.json` with scene timestamps and animation details
 - **Smart frame selection** — Identifies visually significant scene changes, not just evenly-spaced samples
 - **Computer vision pipeline** — AKAZE feature detection, DBSCAN clustering, IoU tracking, and information gain scoring
 - **Three input modes** — File path, video Buffer, or pre-extracted frame Buffers
@@ -35,7 +37,7 @@ yarn add @lumy-pack/scene-sieve
 ### CLI
 
 ```bash
-# Extract 5 key scenes (default)
+# Extract 20 key scenes (default)
 npx scene-sieve input.mp4
 
 # Keep exactly 8 scenes
@@ -44,8 +46,8 @@ npx scene-sieve input.mp4 -n 8
 # Use threshold-based selection
 npx scene-sieve input.mp4 -t 0.3
 
-# Specify output directory and JPEG quality
-npx scene-sieve input.mp4 -n 10 -o ./scenes -q 90
+# Specify max frames to extract and output directory
+npx scene-sieve input.mp4 -mf 500 -o ./scenes -q 90
 ```
 
 ### Module
@@ -63,7 +65,11 @@ const result = await extractScenes({
 console.log(
   `${result.prunedFramesCount} scenes extracted in ${result.executionTimeMs}ms`,
 );
-// Output: scenes/scene_001.jpg, scenes/scene_002.jpg, ...
+// Output:
+//   scenes/frame_0001.jpg
+//   scenes/frame_0002.jpg
+//   ...
+//   scenes/.metadata.json
 ```
 
 ## CLI Reference
@@ -72,16 +78,19 @@ console.log(
 scene-sieve <input> [options]
 ```
 
-| Option                     | Description                            | Default                     |
-| -------------------------- | -------------------------------------- | --------------------------- |
-| `<input>`                  | Input video or GIF file path           | (required)                  |
-| `-n, --count <number>`     | Number of frames to keep               | `5` (when no `--threshold`) |
-| `-t, --threshold <number>` | Normalized score threshold (0, 1]      | —                           |
-| `-o, --output <path>`      | Output directory                       | Same directory as input     |
-| `--fps <number>`           | Fallback FPS for frame extraction      | `5`                         |
-| `-s, --scale <number>`     | Scale size for vision analysis (px)    | `720`                       |
-| `-q, --quality <number>`   | JPEG output quality (1–100)            | `80`                        |
-| `--debug`                  | Preserve temp workspace for inspection | `false`                     |
+| Option                         | Description                                     | Default                      |
+| ------------------------------ | ----------------------------------------------- | ---------------------------- |
+| `<input>`                      | Input video or GIF file path                    | (required)                   |
+| `-n, --count <number>`         | Max number of frames to keep                    | `20`                         |
+| `-t, --threshold <number>`     | Normalized score threshold (0, 1]               | `0.5`                        |
+| `-o, --output <path>`          | Output directory                                | Same directory as input      |
+| `--fps <number>`               | Max FPS for frame extraction                    | `5`                          |
+| `-mf, --max-frames <number>`   | Max frames to extract (auto-reduces FPS)        | `300`                        |
+| `-s, --scale <number>`         | Scale size for vision analysis (px)             | `720`                        |
+| `-q, --quality <number>`       | JPEG output quality (1–100)                     | `80`                         |
+| `-it, --iou-threshold <number>`| IoU threshold for animation tracking (0–1)      | `0.9`                        |
+| `-at, --anim-threshold <number>`| Min consecutive frames for animation            | `5`                          |
+| `--debug`                      | Preserve temp workspace for inspection          | `false`                      |
 
 ### Supported Formats
 
@@ -134,7 +143,7 @@ const result = await extractScenes({
 });
 
 console.log(result.outputFiles);
-// ['./output/scene_001.jpg', './output/scene_002.jpg', ...]
+// ['./output/frame_0001.jpg', './output/frame_0002.jpg', ..., './output/.metadata.json']
 ```
 
 #### Buffer Mode
@@ -178,12 +187,15 @@ console.log(result.outputBuffers?.length); // 5
 
 ```typescript
 interface SieveOptionsBase {
-  count?: number; // Frames to keep (default: 5 when no threshold)
-  threshold?: number; // Score threshold in range (0, 1]
+  count?: number; // Max frames to keep (default: 20)
+  threshold?: number; // Score threshold in range (0, 1] (default: 0.5)
   outputPath?: string; // Output directory (file mode only)
   fps?: number; // Extraction FPS (default: 5)
+  maxFrames?: number; // Max frames to extract (default: 300)
   scale?: number; // Analysis scale in px (default: 720)
   quality?: number; // JPEG quality 1-100 (default: 80)
+  iouThreshold?: number; // IoU for animation tracking (default: 0.9)
+  animationThreshold?: number; // Min frames for animation (default: 5)
   debug?: boolean; // Preserve temp workspace (default: false)
   onProgress?: (phase: ProgressPhase, percent: number) => void;
 }
@@ -200,6 +212,8 @@ interface SieveResult {
   prunedFramesCount: number; // Frames selected as key scenes
   outputFiles: string[]; // File paths (file mode)
   outputBuffers?: Buffer[]; // JPEG buffers (buffer/frames mode)
+  animations?: AnimationMetadata[]; // Detected animations
+  video?: VideoMetadata; // Video source metadata
   executionTimeMs: number;
 }
 ```
@@ -228,6 +242,37 @@ const result = await extractScenes({
 });
 ```
 
+## Output Metadata
+
+When running in `file` mode, `scene-sieve` generates a `.metadata.json` file in the output directory.
+
+```json
+{
+  "video": {
+    "originalDurationMs": 15000,
+    "fps": 5,
+    "resolution": { "width": 720, "height": 405 }
+  },
+  "frames": [
+    {
+      "step": 1,
+      "fileName": "frame_0001.jpg",
+      "frameId": 1,
+      "timestampMs": 0
+    }
+  ],
+  "animations": [
+    {
+      "type": "loading_spinner",
+      "boundingBox": { "x": 100, "y": 200, "width": 50, "height": 50 },
+      "startFrameId": 12,
+      "endFrameId": 25,
+      "durationMs": 2600
+    }
+  ]
+}
+```
+
 ## How It Works
 
 ### Pipeline
@@ -246,8 +291,8 @@ The analyzer scores each pair of adjacent frames through 4 stages:
 
 1. **AKAZE Feature Diff** — Detects and matches keypoints between frames; identifies newly appeared and disappeared features
 2. **DBSCAN Clustering** — Groups new feature points into spatial clusters
-3. **IoU Tracking** — Tracks cluster bounding boxes across time; applies decay to repeated animation regions
-4. **G(t) Scoring** — Calculates information gain from cluster area ratio and feature density, discounting animated areas
+3. **IoU Tracking** — Tracks cluster bounding boxes across time; identifies and records repeated animation regions (e.g. loading spinners)
+4. **G(t) Scoring** — Calculates information gain from cluster area ratio and feature density, discounting animated areas to focus on unique scene content
 
 Frames with higher G(t) scores represent greater visual change and are preserved during pruning.
 

@@ -13,6 +13,8 @@ Video/GIF ──▶ Extract (FFmpeg) ──▶ Analyze (OpenCV) ──▶ Prune 
 
 ## 기능
 
+- **애니메이션 추적** — 로딩 스피너나 기타 반복되는 애니메이션을 감지하고 기록합니다
+- **풍부한 메타데이터** — 장면 타임스탬프 및 애니메이션 상세 정보를 포함한 `.metadata.json`을 생성합니다
 - **스마트 프레임 선택** — 균등하게 분산된 샘플이 아닌 시각적으로 의미 있는 장면 변화를 식별합니다
 - **컴퓨터 비전 파이프라인** — AKAZE 특징 감지, DBSCAN 클러스터링, IoU 추적 및 정보 이득 스코어링
 - **세 가지 입력 모드** — 파일 경로, 비디오 Buffer, 또는 사전 추출된 프레임 Buffers
@@ -35,7 +37,7 @@ yarn add @lumy-pack/scene-sieve
 ### CLI
 
 ```bash
-# 기본값인 5개의 주요 장면 추출
+# 기본값인 20개의 주요 장면 추출
 npx scene-sieve input.mp4
 
 # 정확히 8개의 장면 유지
@@ -44,8 +46,8 @@ npx scene-sieve input.mp4 -n 8
 # 임계값 기반 선택 사용
 npx scene-sieve input.mp4 -t 0.3
 
-# 출력 디렉토리 및 JPEG 품질 지정
-npx scene-sieve input.mp4 -n 10 -o ./scenes -q 90
+# 추출할 최대 프레임 수 및 출력 디렉토리 지정
+npx scene-sieve input.mp4 -mf 500 -o ./scenes -q 90
 ```
 
 ### 모듈
@@ -63,7 +65,11 @@ const result = await extractScenes({
 console.log(
   `${result.prunedFramesCount} scenes extracted in ${result.executionTimeMs}ms`,
 );
-// Output: scenes/scene_001.jpg, scenes/scene_002.jpg, ...
+// 출력:
+//   scenes/frame_0001.jpg
+//   scenes/frame_0002.jpg
+//   ...
+//   scenes/.metadata.json
 ```
 
 ## CLI 레퍼런스
@@ -72,16 +78,19 @@ console.log(
 scene-sieve <input> [options]
 ```
 
-| 옵션                       | 설명                               | 기본값                      |
-| -------------------------- | ---------------------------------- | --------------------------- |
-| `<input>`                  | 입력 비디오 또는 GIF 파일 경로     | (필수)                      |
-| `-n, --count <number>`     | 유지할 프레임 개수                 | `5` (임계값 미지정 시)      |
-| `-t, --threshold <number>` | 정규화된 스코어 임계값 (0, 1]     | —                           |
-| `-o, --output <path>`      | 출력 디렉토리                      | 입력과 동일한 디렉토리      |
-| `--fps <number>`           | 프레임 추출 fallback FPS           | `5`                         |
-| `-s, --scale <number>`     | 비전 분석용 스케일 크기 (px)       | `720`                       |
-| `-q, --quality <number>`   | JPEG 출력 품질 (1–100)             | `80`                        |
-| `--debug`                  | 검사용 임시 작업 공간 유지         | `false`                     |
+| 옵션                         | 설명                                           | 기본값                      |
+| ---------------------------- | ---------------------------------------------- | --------------------------- |
+| `<input>`                    | 입력 비디오 또는 GIF 파일 경로                 | (필수)                      |
+| `-n, --count <number>`       | 유지할 최대 프레임 개수                        | `20`                        |
+| `-t, --threshold <number>`   | 정규화된 스코어 임계값 (0, 1]                  | `0.5`                       |
+| `-o, --output <path>`        | 출력 디렉토리                                  | 입력과 동일한 디렉토리      |
+| `--fps <number>`             | 프레임 추출용 최대 FPS                         | `5`                         |
+| `-mf, --max-frames <number>` | 추출할 최대 프레임 수 (자동 FPS 조절)          | `300`                       |
+| `-s, --scale <number>`       | 비전 분석용 스케일 크기 (px)                   | `720`                       |
+| `-q, --quality <number>`     | JPEG 출력 품질 (1–100)                         | `80`                        |
+| `-it, --iou-threshold <number>`| 애니메이션 추적용 IoU 임계값 (0–1)           | `0.9`                       |
+| `-at, --anim-threshold <number>`| 애니메이션 판정 최소 연속 프레임 수         | `5`                         |
+| `--debug`                    | 검사용 임시 작업 공간 유지                     | `false`                     |
 
 ### 지원 형식
 
@@ -134,7 +143,7 @@ const result = await extractScenes({
 });
 
 console.log(result.outputFiles);
-// ['./output/scene_001.jpg', './output/scene_002.jpg', ...]
+// ['./output/frame_0001.jpg', './output/frame_0002.jpg', ..., './output/.metadata.json']
 ```
 
 #### Buffer 모드
@@ -178,12 +187,15 @@ console.log(result.outputBuffers?.length); // 5
 
 ```typescript
 interface SieveOptionsBase {
-  count?: number; // 유지할 프레임 개수 (기본값: 임계값 미지정 시 5)
-  threshold?: number; // 범위 (0, 1]에서의 스코어 임계값
+  count?: number; // 유지할 최대 프레임 개수 (기본값: 20)
+  threshold?: number; // 범위 (0, 1]에서의 스코어 임계값 (기본값: 0.5)
   outputPath?: string; // 출력 디렉토리 (파일 모드만 해당)
   fps?: number; // 추출 FPS (기본값: 5)
+  maxFrames?: number; // 추출할 최대 프레임 수 (기본값: 300)
   scale?: number; // 분석용 스케일 (px) (기본값: 720)
   quality?: number; // JPEG 품질 1-100 (기본값: 80)
+  iouThreshold?: number; // 애니메이션 추적용 IoU (기본값: 0.9)
+  animationThreshold?: number; // 애니메이션 판정 최소 프레임 (기본값: 5)
   debug?: boolean; // 임시 작업 공간 유지 (기본값: false)
   onProgress?: (phase: ProgressPhase, percent: number) => void;
 }
@@ -200,6 +212,8 @@ interface SieveResult {
   prunedFramesCount: number; // 주요 장면으로 선택된 프레임 수
   outputFiles: string[]; // 파일 경로 (파일 모드)
   outputBuffers?: Buffer[]; // JPEG 버퍼 (buffer/frames 모드)
+  animations?: AnimationMetadata[]; // 감지된 애니메이션 정보
+  video?: VideoMetadata; // 비디오 소스 메타데이터
   executionTimeMs: number;
 }
 ```
@@ -228,6 +242,37 @@ const result = await extractScenes({
 });
 ```
 
+## 출력 메타데이터
+
+`file` 모드로 실행할 때, `scene-sieve`는 출력 디렉토리에 `.metadata.json` 파일을 생성합니다.
+
+```json
+{
+  "video": {
+    "originalDurationMs": 15000,
+    "fps": 5,
+    "resolution": { "width": 720, "height": 405 }
+  },
+  "frames": [
+    {
+      "step": 1,
+      "fileName": "frame_0001.jpg",
+      "frameId": 1,
+      "timestampMs": 0
+    }
+  ],
+  "animations": [
+    {
+      "type": "loading_spinner",
+      "boundingBox": { "x": 100, "y": 200, "width": 50, "height": 50 },
+      "startFrameId": 12,
+      "endFrameId": 25,
+      "durationMs": 2600
+    }
+  ]
+}
+```
+
 ## 동작 원리
 
 ### 파이프라인
@@ -246,8 +291,8 @@ scene-sieve는 입력을 5단계 파이프라인을 통해 처리합니다:
 
 1. **AKAZE 특징 차이** — 프레임 간 키포인트를 감지 및 매칭합니다; 새로 나타나고 사라진 특징을 식별합니다
 2. **DBSCAN 클러스터링** — 새 특징 포인트를 공간 클러스터로 그룹화합니다
-3. **IoU 추적** — 클러스터 경계 상자를 시간에 따라 추적합니다; 반복된 애니메이션 영역에 감쇠를 적용합니다
-4. **G(t) 스코어링** — 클러스터 면적 비율 및 특징 밀도로부터 정보 이득을 계산하여 애니메이션 영역을 할인합니다
+3. **IoU 추적** — 클러스터 경계 상자를 시간에 따라 추적합니다; 반복된 애니메이션 영역(예: 로딩 스피너)을 식별하고 기록합니다
+4. **G(t) 스코어링** — 클러스터 면적 비율 및 특징 밀도로부터 정보 이득을 계산하며, 애니메이션 영역을 제외하여 고유한 장면에 집중합니다
 
 G(t) 스코어가 높은 프레임은 더 큰 시각적 변화를 나타내므로 정제 중에 보존됩니다.
 
