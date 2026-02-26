@@ -19,14 +19,6 @@ export const WORKSPACE_PREFIX = `${APP_NAME}-`;
 export const TEMP_BASE_DIR = tmpdir();
 
 // File patterns
-export const SUPPORTED_VIDEO_EXTENSIONS = [
-  '.mp4',
-  '.mov',
-  '.avi',
-  '.mkv',
-  '.webm',
-];
-export const SUPPORTED_GIF_EXTENSIONS = ['.gif'];
 export const FRAME_OUTPUT_EXTENSION = '.jpg';
 export const FRAME_FILENAME_PATTERN = 'frame_%06d.jpg';
 

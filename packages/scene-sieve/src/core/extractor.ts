@@ -5,14 +5,20 @@ import { path as ffprobePath } from '@ffprobe-installer/ffprobe';
 import { execa } from 'execa';
 import ffmpegPath from 'ffmpeg-static';
 
-import {
-  FRAME_FILENAME_PATTERN,
-  SUPPORTED_GIF_EXTENSIONS,
-  SUPPORTED_VIDEO_EXTENSIONS,
-} from '../constants.js';
+import { FRAME_FILENAME_PATTERN } from '../constants.js';
 import type { FrameNode, ProcessContext } from '../types/index.js';
 import { logger } from '../utils/logger.js';
-import { ensureDir, fileExists, isSupportedFile } from '../utils/paths.js';
+import { ensureDir, fileExists } from '../utils/paths.js';
+
+interface FFprobeMetadata {
+  format?: {
+    format_name?: string;
+    duration?: string;
+  };
+  streams?: Array<{
+    codec_type?: string;
+  }>;
+}
 
 /**
  * Extract frames from video/GIF using FFmpeg.
@@ -33,20 +39,34 @@ export async function extractFrames(ctx: ProcessContext): Promise<FrameNode[]> {
     throw new Error(`Input file not found: ${inputPath}`);
   }
 
-  const allExtensions = [
-    ...SUPPORTED_VIDEO_EXTENSIONS,
-    ...SUPPORTED_GIF_EXTENSIONS,
-  ];
-  if (!isSupportedFile(inputPath, allExtensions)) {
-    throw new Error(`Unsupported file format: ${inputPath}`);
+  // Use ffprobe to determine format and duration instead of extension check
+  const metadata = await getVideoMetadata(inputPath).catch((err) => {
+    logger.debug(`ffprobe failed: ${err.message}`);
+    return null;
+  });
+
+  if (!metadata || !metadata.format) {
+    throw new Error(`Could not read file metadata: ${inputPath}`);
   }
 
-  logger.debug(`Extracting frames from: ${inputPath}`);
+  const formatName = metadata.format.format_name ?? '';
+  const duration = parseFloat(metadata.format.duration ?? '0');
+  const hasVideoStream =
+    metadata.streams?.some((s) => s.codec_type === 'video') ?? false;
+
+  if (!hasVideoStream) {
+    throw new Error(
+      `No video stream found in file: ${inputPath} (detected format: ${formatName})`,
+    );
+  }
+
+  logger.debug(
+    `Detected format: ${formatName} (Duration: ${duration.toFixed(1)}s), path: ${inputPath}`,
+  );
   await ensureDir(framesDir);
 
   // Calculate effective FPS: cap by maxFrames / duration
   let effectiveFps = fps;
-  const duration = await getVideoDuration(inputPath).catch(() => 0);
 
   if (duration > 0) {
     const fpsCap = maxFrames / duration;
@@ -54,11 +74,17 @@ export async function extractFrames(ctx: ProcessContext): Promise<FrameNode[]> {
     // Ensure at least 0.5fps (1 frame per 2 seconds)
     effectiveFps = Math.max(0.5, effectiveFps);
     logger.debug(
-      `Duration: ${duration.toFixed(1)}s, FPS: ${fps} → effective: ${effectiveFps.toFixed(2)} (maxFrames: ${maxFrames})`,
+      `FPS: ${fps} → effective: ${effectiveFps.toFixed(2)} (maxFrames: ${maxFrames})`,
     );
   }
 
-  const frames = await extractByFps(inputPath, framesDir, effectiveFps, scale);
+  const frames = await extractByFps(
+    inputPath,
+    framesDir,
+    effectiveFps,
+    scale,
+    duration,
+  );
 
   ctx.emitProgress(100);
   logger.debug(`Extracted ${frames.length} frames`);
@@ -70,6 +96,7 @@ async function extractByFps(
   outputDir: string,
   fps: number,
   scale: number,
+  duration: number,
 ): Promise<FrameNode[]> {
   const outputPattern = join(outputDir, FRAME_FILENAME_PATTERN);
 
@@ -83,41 +110,31 @@ async function extractByFps(
     outputPattern,
   ]);
 
-  return buildFrameList(outputDir, inputPath);
+  return buildFrameList(outputDir, duration);
 }
 
-async function getVideoDuration(inputPath: string): Promise<number> {
+async function getVideoMetadata(inputPath: string): Promise<FFprobeMetadata> {
   const { stdout } = await execa(ffprobePath, [
     '-v',
     'quiet',
     '-print_format',
     'json',
     '-show_format',
+    '-show_streams',
     inputPath,
   ]);
-  const metadata = JSON.parse(stdout);
-  return parseFloat(metadata.format?.duration ?? '0');
+  return JSON.parse(stdout) as FFprobeMetadata;
 }
 
 async function buildFrameList(
   framesDir: string,
-  inputPath: string,
+  duration: number,
 ): Promise<FrameNode[]> {
   const files = await readdir(framesDir);
   const jpgFiles = files.filter((f) => f.endsWith('.jpg')).sort();
 
   if (jpgFiles.length === 0) {
     return [];
-  }
-
-  // Try to get actual duration for timestamp estimation
-  let duration = 0;
-  try {
-    duration = await getVideoDuration(inputPath);
-  } catch {
-    logger.debug(
-      'Could not determine video duration; using frame index for timestamps',
-    );
   }
 
   return jpgFiles.map((file, index) => ({

@@ -45,10 +45,3 @@ export function deriveOutputPath(inputPath: string): string {
   const name = basename(inputPath, extname(inputPath));
   return resolve(dir, `${name}_scenes`);
 }
-
-export function isSupportedFile(
-  filePath: string,
-  extensions: string[],
-): boolean {
-  return extensions.includes(extname(filePath).toLowerCase());
-}
