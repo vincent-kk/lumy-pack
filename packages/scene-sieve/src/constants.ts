@@ -11,8 +11,13 @@ export const DEFAULT_SCALE = 720;
 export const DEFAULT_QUALITY = 80;
 export const DEFAULT_MAX_FRAMES = 300;
 
-// Pruner -- Percentile-based normalization
-export const NORMALIZATION_PERCENTILE = 0.9;
+// Pruner -- Robust Hybrid Normalization
+export const NORMALIZATION_MIN_PERCENTILE = 0.1;
+export const NORMALIZATION_MAX_PERCENTILE = 0.9;
+export const NORMALIZATION_LOGISTIC_K = 3.0; // Sharpness of sigmoid curve
+export const NORMALIZATION_ALPHA = 0.4; // Weight of CDF (rank) vs Logistic-Z (intensity)
+export const NORMALIZATION_MAD_COEFFICIENT = 1.4826; // Scale MAD to match standard normal distribution
+export const NORMALIZATION_MIN_SAMPLE_SIZE = 10; // Min samples before switching to robust stats
 
 // Workspace
 export const WORKSPACE_PREFIX = `${APP_NAME}-`;

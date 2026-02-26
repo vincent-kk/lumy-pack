@@ -1,5 +1,5 @@
-import { NORMALIZATION_PERCENTILE } from '../constants.js';
 import type { FrameNode, ScoreEdge } from '../types/index.js';
+import { normalizeScores } from '../utils/math.js';
 import { MinHeap } from '../utils/min-heap.js';
 
 interface EdgeEntry {
@@ -96,46 +96,6 @@ export function pruneTo(
   }
 
   return surviving;
-}
-
-/**
- * Normalize raw G(t) scores to [0, 1] range via percentile-based normalization.
- *
- * Uses P90 (configurable via NORMALIZATION_PERCENTILE) as the reference score
- * instead of global max. This prevents a single outlier transition from
- * suppressing all other meaningful changes.
- *
- * Scores above the percentile reference are capped at 1.0.
- *
- * **Graceful degradation:** When the number of positive scores is 10 or fewer,
- * P90 equals the maximum value -- the function behaves identically to
- * max-normalization. This is expected and acceptable for small inputs.
- *
- * - Filters out non-finite and negative scores (treated as 0)
- * - If all scores are 0 or no valid scores exist, returns all zeros
- *
- * @returns normalized scores array (same length as input graph)
- */
-function normalizeScores(graph: ScoreEdge[]): number[] {
-  if (graph.length === 0) return [];
-
-  const safeScores = graph.map((e) =>
-    Number.isFinite(e.score) && e.score > 0 ? e.score : 0,
-  );
-
-  // Sort ascending to find percentile reference
-  const sorted = [...safeScores].filter((s) => s > 0).sort((a, b) => a - b);
-  if (sorted.length === 0) return safeScores;
-
-  // P90 (or configured percentile) as normalization reference
-  const pIdx = Math.min(
-    Math.floor(sorted.length * NORMALIZATION_PERCENTILE),
-    sorted.length - 1,
-  );
-  const refScore = sorted[pIdx]!;
-
-  // Normalize: scores above refScore are capped at 1.0
-  return safeScores.map((s) => Math.min(s / refScore, 1.0));
 }
 
 /**
