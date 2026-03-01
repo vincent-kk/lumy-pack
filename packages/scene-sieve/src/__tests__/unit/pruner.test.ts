@@ -394,13 +394,12 @@ describe('pruneByThreshold (robust distribution behavior)', () => {
     expect(result.has(7)).toBe(true);
     
     // Lower threshold t=0.1 should keep more
-    const resultLow = pruneByThreshold(edges, frames, 0.1);
+    pruneByThreshold(edges, frames, 0.1);
     // idx 1(0.1), 2(0.2), 3(0.5), 4(0.8), 5(0.9), 6(1.0) pass.
     // NMS run [1,2,3,4,5,6], peak is idx 6. targetId 7.
     // Still 2? Ah, NMS collapses consecutive runs.
     // Let's use non-consecutive scores to test "relative" filtering.
-    const nonConsecScores = [90, 10, 95, 10, 100]; // high baseline is 90
-    // wait, sorted: [10, 10, 90, 95, 100]. P10: 10, P90: 100.
+    // [90, 10, 95, 10, 100]: sorted [10, 10, 90, 95, 100]. P10: 10, P90: 100.
     // norm: [ (90-10)/(100-10)=0.88, 0, 0.94, 0, 1.0 ]
     // t=0.9 keeps idx 2 and 4.
   });

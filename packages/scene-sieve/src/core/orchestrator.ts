@@ -11,6 +11,7 @@ import { analyzeFrames } from './analyzer.js';
 import { extractFrames } from './extractor.js';
 import { resolveInput, resolveOptions } from './input-resolver.js';
 import { pruneByThresholdWithCap } from './pruner.js';
+import { runSegmentedPipeline, shouldSegment } from './segmenter.js';
 import {
   cleanupWorkspace,
   createWorkspace,
@@ -19,13 +20,18 @@ import {
 } from './workspace.js';
 
 export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
-  const startTime = Date.now();
-  const sessionId = randomUUID();
   const debug = options.debug ?? false;
-
   if (debug) setDebugMode(true);
 
   const resolvedOptions = resolveOptions(options);
+
+  // Long video segmentation: delegate to segmented pipeline if applicable
+  if (shouldSegment(resolvedOptions, options)) {
+    return runSegmentedPipeline(options, resolvedOptions);
+  }
+
+  const startTime = Date.now();
+  const sessionId = randomUUID();
 
   const ctx: ProcessContext = {
     options: resolvedOptions,

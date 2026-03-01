@@ -12,6 +12,8 @@ const mockFinalizeOutput = vi.fn();
 const mockReadFramesAsBuffers = vi.fn();
 const mockPruneByThresholdWithCap = vi.fn();
 const mockSetDebugMode = vi.fn();
+const mockShouldSegment = vi.fn();
+const mockRunSegmentedPipeline = vi.fn();
 
 vi.mock('../../core/analyzer.js', () => ({
   analyzeFrames: mockAnalyzeFrames,
@@ -19,6 +21,11 @@ vi.mock('../../core/analyzer.js', () => ({
 
 vi.mock('../../core/extractor.js', () => ({
   extractFrames: mockExtractFrames,
+}));
+
+vi.mock('../../core/segmenter.js', () => ({
+  shouldSegment: mockShouldSegment,
+  runSegmentedPipeline: mockRunSegmentedPipeline,
 }));
 
 vi.mock('../../core/input-resolver.js', () => ({
@@ -52,7 +59,12 @@ const defaultResolvedOptions = {
   fps: 5,
   maxFrames: 300,
   scale: 720,
+  quality: 80,
+  iouThreshold: 0.9,
+  animationThreshold: 5,
   debug: false,
+  maxSegmentDuration: 300,
+  concurrency: 2,
 };
 
 const mockFrames = [
@@ -68,6 +80,7 @@ const mockEdges = [
 
 function setupDefaultMocks(modeOverride?: 'file' | 'buffer' | 'frames') {
   const mode = modeOverride ?? 'file';
+  mockShouldSegment.mockReturnValue(false);
   mockResolveOptions.mockReturnValue({ ...defaultResolvedOptions, mode });
   mockCreateWorkspace.mockResolvedValue('/tmp/ws');
   mockResolveInput.mockResolvedValue({
@@ -195,5 +208,26 @@ describe('runPipeline', () => {
     await runPipeline(options);
 
     expect(mockPruneByThresholdWithCap).toHaveBeenCalledTimes(1);
+  });
+
+  it('shouldSegment=true 시 runSegmentedPipeline에 위임한다', async () => {
+    setupDefaultMocks('file');
+    mockShouldSegment.mockReturnValue(true);
+    const mockResult = {
+      success: true,
+      originalFramesCount: 100,
+      prunedFramesCount: 10,
+      outputFiles: ['/out/frame_0001.jpg'],
+      executionTimeMs: 500,
+    };
+    mockRunSegmentedPipeline.mockResolvedValue(mockResult);
+
+    const { runPipeline } = await import('../../core/orchestrator.js');
+    const options: SieveOptions = { mode: 'file', inputPath: '/input.mp4' };
+    const result = await runPipeline(options);
+
+    expect(mockRunSegmentedPipeline).toHaveBeenCalledTimes(1);
+    expect(mockExtractFrames).not.toHaveBeenCalled();
+    expect(result).toBe(mockResult);
   });
 });

@@ -27,6 +27,8 @@ export interface SieveOptionsBase {
   animationThreshold?: number; // default: 5. Minimum consecutive frames to be considered an animation.
   debug?: boolean; // default: false
   onProgress?: (phase: ProgressPhase, percent: number) => void;
+  maxSegmentDuration?: number; // 초 단위, default: 300 (5분)
+  concurrency?: number; // 세그먼트 병렬 처리 수, default: 2
 }
 
 // ── Public API Type ──
@@ -49,6 +51,8 @@ export interface ResolvedOptions {
   iouThreshold: number;
   animationThreshold: number;
   debug: boolean;
+  maxSegmentDuration: number;
+  concurrency: number;
 }
 
 // ── Result ──
@@ -135,6 +139,28 @@ export interface ProcessContext {
 }
 
 export interface AnalysisResult {
+  edges: ScoreEdge[];
+  animations: AnimationMetadata[];
+}
+
+// ── Segment Types (Long Video Segmentation) ──
+
+export interface SegmentPlan {
+  index: number;
+  startTime: number;          // 논리적 시작 (초)
+  endTime: number;            // 논리적 종료 (초)
+  duration: number;           // 논리적 duration (초)
+  allocatedFrames: number;    // 이 세그먼트에 할당된 프레임 수
+  effectiveFps: number;       // 이 세그먼트의 실제 fps
+  overlapBefore: number;      // 앞쪽 오버랩 프레임 수 (0 또는 1)
+  overlapAfter: number;       // 뒤쪽 오버랩 프레임 수 (0 또는 1)
+  extractStartTime: number;   // 실제 FFmpeg 추출 시작 시간 (오버랩 포함)
+  extractDuration: number;    // 실제 FFmpeg 추출 duration (오버랩 포함)
+}
+
+export interface SegmentResult {
+  segment: SegmentPlan;
+  frames: FrameNode[];
   edges: ScoreEdge[];
   animations: AnimationMetadata[];
 }

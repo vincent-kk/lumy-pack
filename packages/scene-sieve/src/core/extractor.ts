@@ -10,7 +10,7 @@ import type { FrameNode, ProcessContext } from '../types/index.js';
 import { logger } from '../utils/logger.js';
 import { ensureDir, fileExists } from '../utils/paths.js';
 
-interface FFprobeMetadata {
+export interface FFprobeMetadata {
   format?: {
     format_name?: string;
     duration?: string;
@@ -113,7 +113,7 @@ async function extractByFps(
   return buildFrameList(outputDir, duration);
 }
 
-async function getVideoMetadata(inputPath: string): Promise<FFprobeMetadata> {
+export async function getVideoMetadata(inputPath: string): Promise<FFprobeMetadata> {
   const { stdout } = await execa(ffprobePath, [
     '-v',
     'quiet',
@@ -145,4 +145,43 @@ async function buildFrameList(
         : index,
     extractPath: join(framesDir, file),
   }));
+}
+
+/**
+ * Extract frames from a specific time range of a video using FFmpeg.
+ * Uses input seeking (-ss before -i) for fast seek + -t for duration.
+ *
+ * @param inputPath - Path to the video file
+ * @param outputDir - Directory to write extracted frames
+ * @param fps - Frames per second for extraction
+ * @param scale - Height scale for vision analysis
+ * @param startTime - Start time in seconds
+ * @param duration - Duration in seconds to extract
+ * @returns Array of FrameNode with segment-local timestamps (starting from 0)
+ */
+export async function extractFramesForRange(
+  inputPath: string,
+  outputDir: string,
+  fps: number,
+  scale: number,
+  startTime: number,
+  duration: number,
+): Promise<FrameNode[]> {
+  const outputPattern = join(outputDir, FRAME_FILENAME_PATTERN);
+
+  await execa(ffmpegPath!, [
+    '-ss',
+    String(startTime),
+    '-i',
+    inputPath,
+    '-t',
+    String(duration),
+    '-vf',
+    `fps=${fps},scale=-1:${scale}`,
+    '-q:v',
+    '2',
+    outputPattern,
+  ]);
+
+  return buildFrameList(outputDir, duration);
 }

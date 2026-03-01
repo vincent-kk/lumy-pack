@@ -84,6 +84,8 @@ describe('finalizeOutput', () => {
         iouThreshold: 0.9,
         animationThreshold: 5,
         debug: false,
+        maxSegmentDuration: 300,
+        concurrency: 2,
       },
       workspacePath: ws,
       frames: [],
@@ -127,6 +129,8 @@ describe('finalizeOutput', () => {
         iouThreshold: 0.9,
         animationThreshold: 5,
         debug: false,
+        maxSegmentDuration: 300,
+        concurrency: 2,
       },
       workspacePath: ws,
       // Simulate 12,345 total frames

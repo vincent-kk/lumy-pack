@@ -86,6 +86,19 @@ export async function finalizeOutput(
   return outputFiles;
 }
 
+export async function createSegmentWorkspace(
+  parentWorkspacePath: string,
+  segmentIndex: number,
+): Promise<string> {
+  const segmentPath = join(
+    parentWorkspacePath,
+    'segments',
+    String(segmentIndex),
+  );
+  await ensureDir(join(segmentPath, 'frames'));
+  return segmentPath;
+}
+
 export async function cleanupWorkspace(workspacePath: string): Promise<void> {
   if (!workspacePath) return;
   try {

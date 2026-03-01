@@ -9,8 +9,10 @@ import {
   ANIMATION_FRAME_THRESHOLD,
   DEFAULT_FPS,
   DEFAULT_MAX_FRAMES,
+  DEFAULT_MAX_SEGMENT_DURATION,
   DEFAULT_QUALITY,
   DEFAULT_SCALE,
+  DEFAULT_SEGMENT_CONCURRENCY,
   IOU_THRESHOLD,
 } from './constants.js';
 
@@ -54,6 +56,14 @@ program
     '-at, --anim-threshold <number>',
     `Min consecutive frames for animation (default: ${ANIMATION_FRAME_THRESHOLD})`,
   )
+  .option(
+    '--max-segment-duration <number>',
+    `Max segment duration in seconds for long video splitting (default: ${DEFAULT_MAX_SEGMENT_DURATION})`,
+  )
+  .option(
+    '--concurrency <number>',
+    `Number of segments to process in parallel (default: ${DEFAULT_SEGMENT_CONCURRENCY})`,
+  )
   .option('--debug', 'Enable debug mode (preserve temp workspace)')
   .action(async (input: string, opts) => {
     const { waitUntilExit } = render(
@@ -77,6 +87,14 @@ program
         animationThreshold:
           opts.animThreshold !== undefined
             ? parseInt(opts.animThreshold, 10)
+            : undefined,
+        maxSegmentDuration:
+          opts.maxSegmentDuration !== undefined
+            ? parseInt(opts.maxSegmentDuration, 10)
+            : undefined,
+        concurrency:
+          opts.concurrency !== undefined
+            ? parseInt(opts.concurrency, 10)
             : undefined,
         debug: opts.debug ?? false,
       }),

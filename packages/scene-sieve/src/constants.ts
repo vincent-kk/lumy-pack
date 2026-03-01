@@ -51,6 +51,10 @@ export const PIXELDIFF_BINARY_THRESHOLD = 30; // 그레이스케일 diff 이진�
 export const PIXELDIFF_CONTOUR_MIN_AREA = 100; // 최소 contour 면적 (px^2), 커서 깜빡임 필터
 export const PIXELDIFF_SAMPLE_SPACING = 8; // contour 내부 그리드 샘플링 간격 (px)
 
+// Long Video Segmentation
+export const DEFAULT_MAX_SEGMENT_DURATION = 300; // 5 minutes
+export const DEFAULT_SEGMENT_CONCURRENCY = 2;
+
 export function getTempWorkspaceDir(sessionId: string): string {
   return join(TEMP_BASE_DIR, `${WORKSPACE_PREFIX}${sessionId}`);
 }

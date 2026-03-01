@@ -15,7 +15,15 @@ export { dbscan } from './dbscan.js';
 export type { Point2D } from './dbscan.js';
 export { resolveInput, resolveOptions } from './input-resolver.js';
 export {
+  shouldSegment,
+  computeSegmentPlan,
+  processSegment,
+  mergeSegmentFrames,
+  runSegmentedPipeline,
+} from './segmenter.js';
+export {
   createWorkspace,
+  createSegmentWorkspace,
   cleanupWorkspace,
   finalizeOutput,
   readFramesAsBuffers,

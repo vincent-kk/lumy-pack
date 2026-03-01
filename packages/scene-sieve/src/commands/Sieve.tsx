@@ -39,6 +39,8 @@ export interface SieveViewProps {
   quality: number;
   iouThreshold?: number;
   animationThreshold?: number;
+  maxSegmentDuration?: number;
+  concurrency?: number;
   debug: boolean;
 }
 
@@ -80,6 +82,8 @@ export const SieveView: React.FC<SieveViewProps> = (props) => {
             quality: props.quality,
             iouThreshold: props.iouThreshold,
             animationThreshold: props.animationThreshold,
+            maxSegmentDuration: props.maxSegmentDuration,
+            concurrency: props.concurrency,
             debug: props.debug,
           },
           (phase: ProgressPhase, percent: number) => {

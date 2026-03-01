@@ -5,8 +5,10 @@ import {
   DEFAULT_COUNT,
   DEFAULT_FPS,
   DEFAULT_MAX_FRAMES,
+  DEFAULT_MAX_SEGMENT_DURATION,
   DEFAULT_QUALITY,
   DEFAULT_SCALE,
+  DEFAULT_SEGMENT_CONCURRENCY,
   DEFAULT_THRESHOLD,
   IOU_THRESHOLD,
 } from '../constants.js';
@@ -53,6 +55,8 @@ export function resolveOptions(options: SieveOptions): ResolvedOptions {
     iouThreshold: options.iouThreshold ?? IOU_THRESHOLD,
     animationThreshold: options.animationThreshold ?? ANIMATION_FRAME_THRESHOLD,
     debug: options.debug ?? false,
+    maxSegmentDuration: options.maxSegmentDuration ?? DEFAULT_MAX_SEGMENT_DURATION,
+    concurrency: options.concurrency ?? DEFAULT_SEGMENT_CONCURRENCY,
   };
 }
 
