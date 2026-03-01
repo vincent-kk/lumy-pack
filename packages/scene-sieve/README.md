@@ -99,6 +99,99 @@ scene-sieve <input> [options]
 | Video     | `.mp4`, `.mov`, `.avi`, `.mkv`, `.webm` |
 | Animation | `.gif`                                  |
 
+### Parameter Tuning Guide
+
+Not sure where to start? Here's how each parameter affects the output, based on real benchmarks with a ~19s screen recording (MOV) and a GIF animation.
+
+#### `--count` — How many frames to keep
+
+| Setting | Extracted | Selected | Notes |
+|---------|-----------|----------|-------|
+| `-n 3` | 90 | 3 | First and last frames are always preserved (boundary protection) |
+| `-n 10` | 90 | 10 | Good for short summaries |
+| `-n 20` (default) | 90 | 20 | Balanced for most videos |
+| `-n 50` | 90 | 22 | Only 22 frames passed the score threshold — count above actual scenes has no effect |
+
+#### `--threshold` — Minimum score to keep a frame
+
+Higher values = stricter filtering = fewer frames.
+
+| Setting | Selected | Notes |
+|---------|----------|-------|
+| `-t 0.1` | 20 | Very permissive — most scene changes pass |
+| `-t 0.3` | 20 | Still permissive for screen recordings |
+| `-t 0.5` (default) | 20 | Capped by the default count of 20 |
+| `-t 0.7` | 19 | Starts filtering subtle changes |
+| `-t 0.9` | 12 | Only major scene transitions survive |
+
+> **Tip**: Use `-t` alone for "give me everything important". Combine with `-n` to set an upper bound (e.g., `-t 0.3 -n 10`).
+
+#### `--fps` and `--max-frames` — Extraction density
+
+These control how many frames are pulled from the video before analysis. More frames = more precision but longer processing.
+
+| Setting | Extracted | Selected | Time |
+|---------|-----------|----------|------|
+| `--fps 1` | 18 | 6 | ~5s |
+| `--fps 5` (default) | 90 | 20 | ~25s |
+| `--fps 10` | 180 | 20 | ~47s |
+| `-mf 50` | 47 | 13 | ~13s |
+
+> **Tip**: For quick previews, `--fps 1` is 5x faster. For frame-accurate analysis, `--fps 10` captures finer transitions.
+
+#### `--scale` — Analysis resolution
+
+Controls the resolution used for vision analysis (not output resolution). Lower = faster but less sensitive.
+
+| Setting | Selected | Time | Output Size |
+|---------|----------|------|-------------|
+| `-s 360` | 7 | ~6s | 72 KB |
+| `-s 720` (default) | 20 | ~25s | 634 KB |
+| `-s 1080` | 20 | ~54s | 1,172 KB |
+
+> **Tip**: `360` is good for quick scans. `720` provides the best speed/quality balance. `1080` is only needed when detecting very subtle UI changes.
+
+#### `--iou-threshold` and `--anim-threshold` — Animation sensitivity
+
+These control how aggressively repeating animations (spinners, blinking cursors) are detected and suppressed.
+
+| Setting | Animations Detected | Notes |
+|---------|-------------------|-------|
+| `-it 0.5 -at 3` | 7 (MOV), 4 (GIF) | Sensitive — catches most repeating motion |
+| `-it 0.9 -at 5` (default) | 0 | Conservative — only obvious loops |
+| `-it 0.95 -at 10` | 0 | Very conservative |
+
+> **Tip**: If your video has loading spinners or repeated UI animations, try `-it 0.5 -at 3` to suppress them.
+
+#### `--quality` — Output JPEG quality
+
+Only affects file size, **not** scene detection. The same frames are selected regardless of quality.
+
+| Setting | File Size (5 frames) |
+|---------|---------------------|
+| `-q 30` | 62 KB |
+| `-q 80` (default) | 151 KB |
+| `-q 100` | 407 KB |
+
+### Recommended Presets
+
+```bash
+# Quick preview — fast, rough selection
+scene-sieve input.mp4 --fps 1 -s 360 -n 10
+
+# Balanced (default) — good for most use cases
+scene-sieve input.mp4
+
+# High precision — catches subtle transitions
+scene-sieve input.mp4 --fps 10 -s 1080 -t 0.3
+
+# UI recording — suppress animations, keep key states
+scene-sieve recording.mov -it 0.5 -at 3 -t 0.3 -n 15
+
+# Minimal summary — just the major scenes
+scene-sieve input.mp4 -t 0.9 -n 5
+```
+
 ### Examples
 
 ```bash
