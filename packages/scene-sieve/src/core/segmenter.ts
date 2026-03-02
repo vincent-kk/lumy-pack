@@ -133,6 +133,140 @@ export function computeSegmentPlan(
   return segments;
 }
 
+// ── mergeSegmentFrames private helpers ──
+
+type FrameEntry = {
+  frame: FrameNode;
+  segmentIndex: number;
+  localId: number;
+};
+
+/**
+ * Collect all frames from every segment, adjusting timestamps by extractStartTime.
+ */
+function collectAllFrames(segmentResults: SegmentResult[]): FrameEntry[] {
+  const allFrames: FrameEntry[] = [];
+  for (const result of segmentResults) {
+    for (const frame of result.frames) {
+      allFrames.push({
+        frame: {
+          ...frame,
+          // Use extractStartTime for timestamp correction (Section 18 note 1)
+          timestamp: frame.timestamp + result.segment.extractStartTime,
+        },
+        segmentIndex: result.segment.index,
+        localId: frame.id,
+      });
+    }
+  }
+  return allFrames;
+}
+
+/**
+ * Sort frames by timestamp then remove overlap duplicates.
+ * Threshold: 1/(effectiveFps * 2) — adaptive to fps (Section 18 note 5).
+ * Keeps the first occurrence (earlier segment).
+ */
+function deduplicateFrames(
+  frames: FrameEntry[],
+  effectiveFps: number,
+): FrameEntry[] {
+  frames.sort((a, b) => a.frame.timestamp - b.frame.timestamp);
+
+  const dupThreshold = 1 / (effectiveFps * 2);
+  const unique: FrameEntry[] = [];
+
+  for (const entry of frames) {
+    if (unique.length > 0) {
+      const last = unique[unique.length - 1];
+      if (Math.abs(entry.frame.timestamp - last.frame.timestamp) < dupThreshold) {
+        continue; // Skip duplicate — keep first (earlier segment)
+      }
+    }
+    unique.push(entry);
+  }
+
+  return unique;
+}
+
+/**
+ * Assign sequential global IDs to deduplicated frames and build a lookup map.
+ * Returns the remapped FrameNode array and the "segmentIndex:localId" -> globalId map.
+ */
+function remapFrameIds(
+  uniqueFrames: FrameEntry[],
+): { frames: FrameNode[]; globalIdMap: Map<string, number> } {
+  const globalIdMap = new Map<string, number>(); // "segmentIndex:localId" -> globalId
+  const frames: FrameNode[] = uniqueFrames.map((entry, globalId) => {
+    globalIdMap.set(`${entry.segmentIndex}:${entry.localId}`, globalId);
+    return {
+      id: globalId,
+      timestamp: entry.frame.timestamp,
+      extractPath: entry.frame.extractPath,
+    };
+  });
+  return { frames, globalIdMap };
+}
+
+/**
+ * Remap edge source/target IDs using the global ID map.
+ * Duplicate edges (same source-target pair) retain the higher score.
+ */
+function remapEdges(
+  segmentResults: SegmentResult[],
+  globalIdMap: Map<string, number>,
+): ScoreEdge[] {
+  const edges: ScoreEdge[] = [];
+  const edgeMap = new Map<string, number>(); // "sourceId-targetId" -> index
+
+  for (const result of segmentResults) {
+    for (const edge of result.edges) {
+      const newSourceId = globalIdMap.get(`${result.segment.index}:${edge.sourceId}`);
+      const newTargetId = globalIdMap.get(`${result.segment.index}:${edge.targetId}`);
+
+      if (newSourceId === undefined || newTargetId === undefined) continue;
+
+      const edgeKey = `${newSourceId}-${newTargetId}`;
+      const existingIdx = edgeMap.get(edgeKey);
+
+      if (existingIdx !== undefined) {
+        if (edges[existingIdx].score < edge.score) {
+          edges[existingIdx] = { sourceId: newSourceId, targetId: newTargetId, score: edge.score };
+        }
+      } else {
+        edgeMap.set(edgeKey, edges.length);
+        edges.push({ sourceId: newSourceId, targetId: newTargetId, score: edge.score });
+      }
+    }
+  }
+
+  return edges;
+}
+
+/**
+ * Remap animation startFrameId/endFrameId using the global ID map.
+ * Animations whose frame IDs were deduplicated (not in map) are dropped.
+ */
+function remapAnimations(
+  segmentResults: SegmentResult[],
+  globalIdMap: Map<string, number>,
+): AnimationMetadata[] {
+  const animations: AnimationMetadata[] = [];
+
+  for (const result of segmentResults) {
+    for (const anim of result.animations) {
+      const newStartId = globalIdMap.get(`${result.segment.index}:${anim.startFrameId}`);
+      const newEndId = globalIdMap.get(`${result.segment.index}:${anim.endFrameId}`);
+
+      if (newStartId === undefined || newEndId === undefined) continue;
+
+      animations.push({ ...anim, startFrameId: newStartId, endFrameId: newEndId });
+    }
+  }
+
+  return animations;
+}
+
 /**
  * Merge multiple segment results into a single unified frame/edge/animation set.
  * - Timestamps adjusted using extractStartTime (Section 18 note 1)
@@ -149,116 +283,13 @@ export function mergeSegmentFrames(segmentResults: SegmentResult[]): {
     return { frames: [], edges: [], animations: [] };
   }
 
-  // 1. Collect all frames with global timestamps
-  const allFrames: Array<{
-    frame: FrameNode;
-    segmentIndex: number;
-    localId: number;
-  }> = [];
-
-  for (const result of segmentResults) {
-    for (const frame of result.frames) {
-      allFrames.push({
-        frame: {
-          ...frame,
-          // Use extractStartTime for timestamp correction (Section 18 note 1)
-          timestamp: frame.timestamp + result.segment.extractStartTime,
-        },
-        segmentIndex: result.segment.index,
-        localId: frame.id,
-      });
-    }
-  }
-
-  // 2. Sort by global timestamp
-  allFrames.sort((a, b) => a.frame.timestamp - b.frame.timestamp);
-
-  // 3. Remove duplicates (overlap frames)
-  // Threshold: 1/(effectiveFps * 2) — adaptive to fps (Section 18 note 5)
   const effectiveFps = segmentResults[0].segment.effectiveFps;
-  const dupThreshold = 1 / (effectiveFps * 2);
 
-  const uniqueFrames: typeof allFrames = [];
-  for (const entry of allFrames) {
-    if (uniqueFrames.length > 0) {
-      const last = uniqueFrames[uniqueFrames.length - 1];
-      if (
-        Math.abs(entry.frame.timestamp - last.frame.timestamp) < dupThreshold
-      ) {
-        continue; // Skip duplicate — keep first (earlier segment)
-      }
-    }
-    uniqueFrames.push(entry);
-  }
-
-  // 4. Assign global IDs and build lookup map
-  const globalIdMap = new Map<string, number>(); // "segmentIndex:localId" -> globalId
-  const frames: FrameNode[] = uniqueFrames.map((entry, globalId) => {
-    globalIdMap.set(`${entry.segmentIndex}:${entry.localId}`, globalId);
-    return {
-      id: globalId,
-      timestamp: entry.frame.timestamp,
-      extractPath: entry.frame.extractPath,
-    };
-  });
-
-  // 5. Merge edges with ID remapping (duplicate edges keep higher score)
-  const edges: ScoreEdge[] = [];
-  const edgeMap = new Map<string, number>(); // "sourceId-targetId" -> index
-
-  for (const result of segmentResults) {
-    for (const edge of result.edges) {
-      const newSourceId = globalIdMap.get(
-        `${result.segment.index}:${edge.sourceId}`,
-      );
-      const newTargetId = globalIdMap.get(
-        `${result.segment.index}:${edge.targetId}`,
-      );
-
-      if (newSourceId === undefined || newTargetId === undefined) continue;
-
-      const edgeKey = `${newSourceId}-${newTargetId}`;
-      const existingIdx = edgeMap.get(edgeKey);
-
-      if (existingIdx !== undefined) {
-        if (edges[existingIdx].score < edge.score) {
-          edges[existingIdx] = {
-            sourceId: newSourceId,
-            targetId: newTargetId,
-            score: edge.score,
-          };
-        }
-      } else {
-        edgeMap.set(edgeKey, edges.length);
-        edges.push({
-          sourceId: newSourceId,
-          targetId: newTargetId,
-          score: edge.score,
-        });
-      }
-    }
-  }
-
-  // 6. Merge animations with ID remapping
-  const animations: AnimationMetadata[] = [];
-  for (const result of segmentResults) {
-    for (const anim of result.animations) {
-      const newStartId = globalIdMap.get(
-        `${result.segment.index}:${anim.startFrameId}`,
-      );
-      const newEndId = globalIdMap.get(
-        `${result.segment.index}:${anim.endFrameId}`,
-      );
-
-      if (newStartId === undefined || newEndId === undefined) continue;
-
-      animations.push({
-        ...anim,
-        startFrameId: newStartId,
-        endFrameId: newEndId,
-      });
-    }
-  }
+  const allFrames = collectAllFrames(segmentResults);
+  const uniqueFrames = deduplicateFrames(allFrames, effectiveFps);
+  const { frames, globalIdMap } = remapFrameIds(uniqueFrames);
+  const edges = remapEdges(segmentResults, globalIdMap);
+  const animations = remapAnimations(segmentResults, globalIdMap);
 
   return { frames, edges, animations };
 }
