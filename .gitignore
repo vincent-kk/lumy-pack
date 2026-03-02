@@ -13,7 +13,13 @@ Thumbs.db
 *.log
 npm-debug.log*
 .omc/
+
 .samples/
+!packages/scene-sieve/.samples/
+packages/scene-sieve/.samples/*
+!packages/scene-sieve/.samples/generate-showcase.ts
+!packages/scene-sieve/.samples/run-tests.mjs
+
 
 # Yarn
 .yarn/*
