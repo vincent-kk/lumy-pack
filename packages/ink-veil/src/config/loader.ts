@@ -15,6 +15,8 @@ export interface InkVeilConfig {
     model: string;
     threshold: number;
     enabled: boolean;
+    /** Absolute path to a pre-installed model directory. Overrides default path resolution. */
+    modelPath?: string;
   };
   detection: {
     priorityOrder: ('MANUAL' | 'REGEX' | 'NER')[];
@@ -39,6 +41,7 @@ export type ConfigOverrides = Partial<{
   tokenMode: InkVeilConfig['tokenMode'];
   signature: boolean;
   nerModel: string;
+  nerModelPath: string;
   nerThreshold: number;
   noNer: boolean;
   dictionaryPath: string;
@@ -151,6 +154,9 @@ export function loadConfig(overrides: ConfigOverrides = {}): InkVeilConfig {
     const t = parseFloat(process.env['INK_VEIL_NER_THRESHOLD']);
     if (!isNaN(t) && t >= 0 && t <= 1) base.ner.threshold = t;
   }
+  if (process.env['INK_VEIL_NER_MODEL_PATH']) {
+    base.ner.modelPath = process.env['INK_VEIL_NER_MODEL_PATH'];
+  }
   if (process.env['INK_VEIL_NO_NER'] === '1') {
     base.ner.enabled = false;
   }
@@ -168,6 +174,7 @@ export function loadConfig(overrides: ConfigOverrides = {}): InkVeilConfig {
   if (overrides.tokenMode !== undefined) base.tokenMode = overrides.tokenMode;
   if (overrides.signature !== undefined) base.signature = overrides.signature;
   if (overrides.nerModel !== undefined) base.ner.model = overrides.nerModel;
+  if (overrides.nerModelPath !== undefined) base.ner.modelPath = overrides.nerModelPath;
   if (overrides.nerThreshold !== undefined) base.ner.threshold = overrides.nerThreshold;
   if (overrides.noNer === true) base.ner.enabled = false;
   if (overrides.dictionaryPath !== undefined) base.dictionary.defaultPath = overrides.dictionaryPath;

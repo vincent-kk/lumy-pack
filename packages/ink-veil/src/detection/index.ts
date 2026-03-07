@@ -1,5 +1,5 @@
 import type { DetectionSpan, DetectionConfig } from './types.js';
-import { ensureModel } from './kiwi/downloader.js';
+import { ensureModel, ensureModelAt } from './kiwi/downloader.js';
 import { normalizeNFC } from './normalize.js';
 import { stripTrailingParticle, KOREAN_PARTICLES } from './particles.js';
 import { mergeSpans } from './merger.js';
@@ -42,6 +42,8 @@ export interface DetectionPipelineOptions {
   noNer?: boolean;
   /** Kiwi model name (default: 'kiwi-base'). Resolved to ~/.ink-veil/models/{model}/base/ */
   nerModel?: string;
+  /** Absolute path to a pre-installed model directory. Overrides nerModel name resolution. */
+  nerModelPath?: string;
   /** NER confidence threshold — spans below this are discarded (default: 0.2). */
   nerThreshold?: number;
 }
@@ -57,6 +59,7 @@ export class DetectionPipeline {
   private readonly config: DetectionConfig;
   private readonly noNer: boolean;
   private readonly nerModel: string;
+  private readonly nerModelPath: string | undefined;
   private readonly nerThreshold: number;
   private kiwiEngine: KiwiEngine | null = null;
   private kiwiInitPromise: Promise<void> | null = null;
@@ -66,6 +69,7 @@ export class DetectionPipeline {
     this.config = options.config ?? { priorityOrder: ['MANUAL', 'REGEX', 'NER'] };
     this.noNer = options.noNer ?? false;
     this.nerModel = options.nerModel ?? 'kiwi-base';
+    this.nerModelPath = options.nerModelPath;
     this.nerThreshold = options.nerThreshold ?? 0.2;
 
     const hasManual = options.manual && options.manual.length > 0;
@@ -95,7 +99,10 @@ export class DetectionPipeline {
 
     this.kiwiInitPromise = (async () => {
       try {
-        const modelDir = await ensureModel(this.nerModel);
+        // nerModelPath가 지정된 경우 해당 경로에 다운로드/사용, 아니면 기본 경로에 자동 다운로드
+        const modelDir = this.nerModelPath
+          ? await ensureModelAt(this.nerModel, this.nerModelPath)
+          : await ensureModel(this.nerModel);
         if (!modelDir) {
           process.stderr.write('ink-veil: Kiwi model not available. Using regex-only detection.\n');
           return;

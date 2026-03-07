@@ -45,6 +45,10 @@ export const CONFIG_SCHEMA = ({
           default: true,
           nullable: false,
         },
+        modelPath: {
+          type: 'string',
+          nullable: true,
+        },
       },
     },
     detection: {
