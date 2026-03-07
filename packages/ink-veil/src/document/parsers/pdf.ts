@@ -79,7 +79,6 @@ export class PdfParser implements FormatParser {
           pageCount: doc.numPages,
           cidWarning: true,
           limitation: 'Binary PDF output differs from input. Korean CID fonts may not extract correctly.',
-          originalBuffer: buffer,
         },
         originalBuffer: buffer,
       };

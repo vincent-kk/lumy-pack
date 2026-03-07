@@ -7,7 +7,29 @@ import { isEncryptedDictionary } from '../dictionary/encryption.js';
 import { unveilText } from '../transform/unveil.js';
 import { ErrorCode } from '../errors/types.js';
 import { loadConfig } from '../config/loader.js';
+import { pLimit } from '../utils/p-limit.js';
 import type { ConfigOverrides } from '../config/loader.js';
+
+interface FileResult {
+  ok: true;
+  value: {
+    input: string;
+    output: string;
+    tokenIntegrity: number;
+    matchedTokens: number;
+    modifiedTokens: number;
+    unmatchedTokens: number;
+    totalRestored: number;
+  };
+}
+
+interface FileError {
+  ok: false;
+  input: string;
+  error: string;
+}
+
+type FileOutcome = FileResult | FileError;
 
 export function buildUnveilCommand(): Command {
   const cmd = new Command('unveil').description('Restore original PII from veiled documents');
@@ -67,73 +89,115 @@ export function buildUnveilCommand(): Command {
         process.exit(ErrorCode.DICTIONARY_ERROR);
       }
 
-      const results: unknown[] = [];
+      const outcomes: FileOutcome[] = [];
       const startTotal = Date.now();
 
-      const processText = async (text: string, inputName: string, outputPath?: string) => {
-        const result = unveilText(text, dict);
-        const { text: restored, matchedTokens, modifiedTokens, unmatchedTokens, tokenIntegrity } = result;
-
-        if (strict && tokenIntegrity < 1.0) {
-          process.stderr.write(`ink-veil: Token integrity ${tokenIntegrity.toFixed(2)} < 1.0 (--strict mode)\n`);
-          process.exit(ErrorCode.TOKEN_INTEGRITY_BELOW_THRESHOLD);
+      const processFile = async (file: string): Promise<FileOutcome> => {
+        const abs = resolve(file);
+        if (!existsSync(abs)) {
+          return { ok: false, input: abs, error: `File not found: ${abs}` };
         }
 
-        if (outputPath) {
+        try {
+          const text = await readFile(abs, 'utf-8');
+          const outFile = join(outputDir, basename(abs));
+          const result = unveilText(text, dict);
+          const { text: restored, matchedTokens, modifiedTokens, unmatchedTokens, tokenIntegrity } = result;
+
+          if (strict && tokenIntegrity < 1.0) {
+            return { ok: false, input: abs, error: `Token integrity ${tokenIntegrity.toFixed(2)} < 1.0 (--strict mode)` };
+          }
+
           await mkdir(outputDir, { recursive: true });
-          await writeFile(outputPath, restored, 'utf-8');
-        } else {
-          process.stdout.write(restored + '\n');
-        }
+          await writeFile(outFile, restored, 'utf-8');
 
-        return {
-          input: inputName,
-          output: outputPath ?? '(stdout)',
-          tokenIntegrity,
-          matchedTokens: matchedTokens.length,
-          modifiedTokens: modifiedTokens.length,
-          unmatchedTokens: unmatchedTokens.length,
-          totalRestored: matchedTokens.length + modifiedTokens.length,
-        };
+          return {
+            ok: true,
+            value: {
+              input: abs,
+              output: outFile,
+              tokenIntegrity,
+              matchedTokens: matchedTokens.length,
+              modifiedTokens: modifiedTokens.length,
+              unmatchedTokens: unmatchedTokens.length,
+              totalRestored: matchedTokens.length + modifiedTokens.length,
+            },
+          };
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          process.stderr.write(`ink-veil: Error processing ${abs}: ${msg}\n`);
+          return { ok: false, input: abs, error: msg };
+        }
       };
 
       if (stdinMode) {
         const chunks: Buffer[] = [];
         for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
         const text = Buffer.concat(chunks).toString('utf-8');
-        const result = await processText(text, '(stdin)');
-        results.push(result);
+
+        try {
+          const result = unveilText(text, dict);
+          const { text: restored, matchedTokens, modifiedTokens, unmatchedTokens, tokenIntegrity } = result;
+
+          if (strict && tokenIntegrity < 1.0) {
+            outcomes.push({ ok: false, input: '(stdin)', error: `Token integrity ${tokenIntegrity.toFixed(2)} < 1.0 (--strict mode)` });
+          } else {
+            process.stdout.write(restored + '\n');
+            outcomes.push({
+              ok: true,
+              value: {
+                input: '(stdin)',
+                output: '(stdout)',
+                tokenIntegrity,
+                matchedTokens: matchedTokens.length,
+                modifiedTokens: modifiedTokens.length,
+                unmatchedTokens: unmatchedTokens.length,
+                totalRestored: matchedTokens.length + modifiedTokens.length,
+              },
+            });
+          }
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          outcomes.push({ ok: false, input: '(stdin)', error: msg });
+        }
       } else {
         if (files.length === 0) {
           process.stderr.write('ink-veil unveil: No input files specified. Use --stdin or provide file paths.\n');
           process.exit(ErrorCode.INVALID_ARGUMENTS);
         }
 
-        for (const file of files) {
-          const abs = resolve(file);
-          if (!existsSync(abs)) {
-            process.stderr.write(`ink-veil: File not found: ${abs}\n`);
-            process.exit(ErrorCode.FILE_NOT_FOUND);
-          }
-
-          const text = await readFile(abs, 'utf-8');
-          const outFile = join(outputDir, basename(abs));
-          const result = await processText(text, abs, outFile);
-          results.push(result);
-        }
+        // Concurrent file processing with concurrency limit
+        const limit = pLimit(4);
+        const fileOutcomes = await Promise.all(
+          files.map((file) => limit(() => processFile(file))),
+        );
+        outcomes.push(...fileOutcomes);
       }
+
+      const succeeded = outcomes.filter((o) => o.ok).length;
+      const failed = outcomes.filter((o) => !o.ok).length;
 
       if (jsonMode) {
         const output = {
-          success: true,
+          success: failed === 0,
           command: 'unveil',
-          results,
+          results: outcomes.map((o) =>
+            o.ok ? o.value : { input: o.input, error: o.error },
+          ),
+          summary: { succeeded, failed, total: outcomes.length },
           timing: { totalMs: Date.now() - startTotal },
         };
         process.stdout.write(JSON.stringify(output, null, 2) + '\n');
       }
 
-      process.exit(ErrorCode.SUCCESS);
+      // Report failures to stderr
+      for (const o of outcomes) {
+        if (!o.ok) {
+          process.stderr.write(`ink-veil: FAILED ${o.input}: ${o.error}\n`);
+        }
+      }
+
+      process.exit(failed > 0 ? ErrorCode.GENERAL_ERROR : ErrorCode.SUCCESS);
     });
 
   return cmd;

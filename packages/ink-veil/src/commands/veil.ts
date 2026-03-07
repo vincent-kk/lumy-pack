@@ -9,7 +9,29 @@ import { getParser } from '../document/parser.js';
 import { veilTextFromSpans } from '../transform/veil-from-spans.js';
 import { ErrorCode } from '../errors/types.js';
 import { loadConfig } from '../config/loader.js';
+import { pLimit } from '../utils/p-limit.js';
 import type { ConfigOverrides } from '../config/loader.js';
+
+interface FileResult {
+  ok: true;
+  value: {
+    input: string;
+    output: string;
+    entitiesFound: number;
+    newEntities: number;
+    reusedEntities: number;
+    categories: Record<string, number>;
+    detectMs: number;
+  };
+}
+
+interface FileError {
+  ok: false;
+  input: string;
+  error: string;
+}
+
+type FileOutcome = FileResult | FileError;
 
 export function buildVeilCommand(): Command {
   const cmd = new Command('veil').description('Detect and replace PII in documents');
@@ -76,44 +98,66 @@ export function buildVeilCommand(): Command {
         noNer,
       });
 
-      const results: unknown[] = [];
+      const outcomes: FileOutcome[] = [];
       const startTotal = Date.now();
 
-      const processText = async (text: string, inputName: string, outputPath?: string) => {
+      const processText = async (text: string, inputName: string, outputPath?: string): Promise<FileResult['value']> => {
         const startFile = Date.now();
-        const snapshot = dict.snapshot();
+        const sizeBefore = dict.size;
+
+        const spans = await pipeline.detectChunked(text);
+        const { text: veiled, substitutions } = veilTextFromSpans(text, spans, dict, inputName);
+        const detectMs = Date.now() - startFile;
+
+        if (outputPath) {
+          await mkdir(outputDir, { recursive: true });
+          await writeFile(outputPath, veiled, 'utf-8');
+          log(`Veiled ${inputName} → ${outputPath} (${substitutions} entities)`);
+        } else {
+          process.stdout.write(veiled + '\n');
+        }
+
+        const catCounts: Record<string, number> = {};
+        for (const span of spans) {
+          catCounts[span.category] = (catCounts[span.category] ?? 0) + 1;
+        }
+
+        return {
+          input: inputName,
+          output: outputPath ?? '(stdout)',
+          entitiesFound: spans.length,
+          newEntities: dict.size - sizeBefore,
+          reusedEntities: spans.length - (dict.size - sizeBefore),
+          categories: catCounts,
+          detectMs,
+        };
+      };
+
+      const processFile = async (file: string): Promise<FileOutcome> => {
+        const abs = resolve(file);
+        if (!existsSync(abs)) {
+          return { ok: false, input: abs, error: `File not found: ${abs}` };
+        }
+
+        const ext = basename(abs).split('.').pop() ?? 'txt';
+        const parserResult = await getParser(ext);
+        if (!parserResult.ok) {
+          return { ok: false, input: abs, error: `Unsupported format: .${ext}` };
+        }
 
         try {
-          const spans = await pipeline.detect(text);
-          const { text: veiled, substitutions } = veilTextFromSpans(text, spans, dict, inputName);
-          const detectMs = Date.now() - startFile;
+          const buf = await readFile(abs);
+          const parsed = await parserResult.value.parse(buf, String(opts['encoding'] ?? 'utf-8'));
+          parsed.originalBuffer = undefined; // Release buffer for GC (veil does not reconstruct)
+          const text = parsed.segments.filter((s) => !s.skippable).map((s) => s.text).join('\n');
 
-          if (outputPath) {
-            await mkdir(outputDir, { recursive: true });
-            await writeFile(outputPath, veiled, 'utf-8');
-            log(`Veiled ${inputName} → ${outputPath} (${substitutions} entities)`);
-          } else {
-            process.stdout.write(veiled + '\n');
-          }
-
-          const catCounts: Record<string, number> = {};
-          for (const span of spans) {
-            catCounts[span.category] = (catCounts[span.category] ?? 0) + 1;
-          }
-
-          return {
-            input: inputName,
-            output: outputPath ?? '(stdout)',
-            entitiesFound: spans.length,
-            newEntities: dict.size - snapshot.length,
-            reusedEntities: spans.length - (dict.size - snapshot.length),
-            categories: catCounts,
-            detectMs,
-          };
+          const outFile = join(outputDir, basename(abs));
+          const value = await processText(text, abs, outFile);
+          return { ok: true, value };
         } catch (e) {
-          dict.restore(snapshot);
-          process.stderr.write(`ink-veil: Error processing ${inputName}: ${e instanceof Error ? e.message : String(e)}\n`);
-          process.exit(ErrorCode.GENERAL_ERROR);
+          const msg = e instanceof Error ? e.message : String(e);
+          process.stderr.write(`ink-veil: Error processing ${abs}: ${msg}\n`);
+          return { ok: false, input: abs, error: msg };
         }
       };
 
@@ -121,36 +165,26 @@ export function buildVeilCommand(): Command {
         const chunks: Buffer[] = [];
         for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
         const text = Buffer.concat(chunks).toString('utf-8');
-        const result = await processText(text, '(stdin)');
-        results.push(result);
+        try {
+          const value = await processText(text, '(stdin)');
+          outcomes.push({ ok: true, value });
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          process.stderr.write(`ink-veil: Error processing stdin: ${msg}\n`);
+          outcomes.push({ ok: false, input: '(stdin)', error: msg });
+        }
       } else {
         if (files.length === 0) {
           process.stderr.write('ink-veil veil: No input files specified. Use --stdin or provide file paths.\n');
           process.exit(ErrorCode.INVALID_ARGUMENTS);
         }
 
-        for (const file of files) {
-          const abs = resolve(file);
-          if (!existsSync(abs)) {
-            process.stderr.write(`ink-veil: File not found: ${abs}\n`);
-            process.exit(ErrorCode.FILE_NOT_FOUND);
-          }
-
-          const ext = basename(abs).split('.').pop() ?? 'txt';
-          const parserResult = await getParser(ext);
-          if (!parserResult.ok) {
-            process.stderr.write(`ink-veil: Unsupported format: .${ext}\n`);
-            process.exit(ErrorCode.UNSUPPORTED_FORMAT);
-          }
-
-          const buf = await readFile(abs);
-          const parsed = await parserResult.value.parse(buf, String(opts['encoding'] ?? 'utf-8'));
-          const text = parsed.segments.filter((s) => !s.skippable).map((s) => s.text).join('\n');
-
-          const outFile = join(outputDir, basename(abs));
-          const result = await processText(text, abs, outFile);
-          results.push(result);
-        }
+        // Concurrent file processing with concurrency limit
+        const limit = pLimit(4);
+        const fileOutcomes = await Promise.all(
+          files.map((file) => limit(() => processFile(file))),
+        );
+        outcomes.push(...fileOutcomes);
       }
 
       // Save dictionary
@@ -165,11 +199,17 @@ export function buildVeilCommand(): Command {
         process.exit(ErrorCode.DICTIONARY_ERROR);
       }
 
+      const succeeded = outcomes.filter((o) => o.ok).length;
+      const failed = outcomes.filter((o) => !o.ok).length;
+
       if (jsonMode) {
         const output = {
-          success: true,
+          success: failed === 0,
           command: 'veil',
-          results,
+          results: outcomes.map((o) =>
+            o.ok ? o.value : { input: o.input, error: o.error },
+          ),
+          summary: { succeeded, failed, total: outcomes.length },
           dictionary: {
             path: dictPath,
             totalEntries: dict.size,
@@ -180,7 +220,14 @@ export function buildVeilCommand(): Command {
         process.stdout.write(JSON.stringify(output, null, 2) + '\n');
       }
 
-      process.exit(ErrorCode.SUCCESS);
+      // Report failures to stderr
+      for (const o of outcomes) {
+        if (!o.ok) {
+          process.stderr.write(`ink-veil: FAILED ${o.input}: ${o.error}\n`);
+        }
+      }
+
+      process.exit(failed > 0 ? ErrorCode.GENERAL_ERROR : ErrorCode.SUCCESS);
     });
 
   return cmd;

@@ -4,6 +4,7 @@ import { normalizeNFC } from './normalize.js';
 import { stripTrailingParticle, KOREAN_PARTICLES } from './particles.js';
 import { mergeSpans } from './merger.js';
 import { RegexEngine } from './regex/engine.js';
+import { chunkText, type ChunkOptions } from './chunker.js';
 import type { KiwiEngine } from './kiwi/engine.js';
 
 export type { DetectionSpan, DetectionConfig, DetectionEngine } from './types.js';
@@ -11,6 +12,7 @@ export { normalizeNFC } from './normalize.js';
 export { stripTrailingParticle, KOREAN_PARTICLES } from './particles.js';
 export { mergeSpans } from './merger.js';
 export { RegexEngine } from './regex/engine.js';
+export { chunkText, type ChunkOptions } from './chunker.js';
 
 export interface ManualRule {
   pattern: string | RegExp;
@@ -169,6 +171,69 @@ export class DetectionPipeline {
     }
 
     return merged;
+  }
+
+  /**
+   * Chunked detection for large texts.
+   * Normalizes full text with NFC before chunking, then runs detect() per chunk.
+   * Deduplicates overlap spans by (start, end, text) triple.
+   * Falls back to detect() for texts <= chunkSize.
+   */
+  async detectChunked(rawText: string, options?: ChunkOptions, dictionary?: DictionaryLike): Promise<DetectionSpan[]> {
+    const chunkSize = options?.chunkSize ?? 65536;
+
+    // Small text: delegate directly
+    if (rawText.length <= chunkSize) {
+      return this.detect(rawText, dictionary);
+    }
+
+    // NFC normalize full text BEFORE chunking (NFC is idempotent)
+    const normalized = normalizeNFC(rawText);
+    const chunks = chunkText(normalized, options);
+
+    const allSpans: DetectionSpan[] = [];
+
+    for (const chunk of chunks) {
+      const chunkSpans = await this.detect(chunk.text, dictionary);
+
+      // Offset-correct spans to original text coordinates
+      for (const span of chunkSpans) {
+        allSpans.push({
+          ...span,
+          start: span.start + chunk.globalOffset,
+          end: span.end + chunk.globalOffset,
+        });
+      }
+    }
+
+    // Deduplicate overlap spans by (start, end, text) triple
+    const seen = new Map<string, DetectionSpan>();
+    for (const span of allSpans) {
+      const key = `${span.start}:${span.end}:${span.text}`;
+      const existing = seen.get(key);
+      if (!existing || (span.priority ?? 99) < (existing.priority ?? 99)) {
+        seen.set(key, span);
+      }
+    }
+
+    // Sort by start ASC
+    const deduped = Array.from(seen.values()).sort((a, b) => a.start - b.start);
+
+    // Remove overlapping spans (keep higher priority)
+    const result: DetectionSpan[] = [];
+    for (const span of deduped) {
+      const last = result[result.length - 1];
+      if (last && span.start < last.end) {
+        // Overlap: keep higher priority (lower number)
+        if ((span.priority ?? 99) < (last.priority ?? 99)) {
+          result[result.length - 1] = span;
+        }
+        continue;
+      }
+      result.push(span);
+    }
+
+    return result;
   }
 
   /** Kiwi 엔진 리소스를 정리합니다. */

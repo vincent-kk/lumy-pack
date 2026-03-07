@@ -20,7 +20,7 @@ export interface Span {
 /**
  * Substitute detected spans in text with their dictionary tokens.
  * Spans must be non-overlapping and sorted by start offset.
- * Reverse-offset substitution: process right-to-left to preserve offsets.
+ * Forward array-builder: O(N+L) instead of O(N*L) string copies.
  */
 export function veilTextFromSpans(
   text: string,
@@ -35,12 +35,11 @@ export function veilTextFromSpans(
   // Sort by start ASC (caller should guarantee non-overlapping)
   const sorted = [...spans].sort((a, b) => a.start - b.start);
 
-  // Process right-to-left to maintain correct offsets
-  let result = text;
-  let substitutions = 0;
+  // Forward array-builder: collect text segments and tokens, join once
+  const segments: string[] = [];
+  let prevEnd = 0;
 
-  for (let i = sorted.length - 1; i >= 0; i--) {
-    const span = sorted[i];
+  for (const span of sorted) {
     const entry: DictionaryEntry = dictionary.addEntity(
       span.text,
       span.category,
@@ -48,9 +47,12 @@ export function veilTextFromSpans(
       span.confidence,
       sourceDocument,
     );
-    result = result.slice(0, span.start) + entry.token + result.slice(span.end);
-    substitutions++;
+    segments.push(text.slice(prevEnd, span.start));
+    segments.push(entry.token);
+    prevEnd = span.end;
   }
 
-  return { text: result, substitutions };
+  segments.push(text.slice(prevEnd));
+
+  return { text: segments.join(''), substitutions: sorted.length };
 }

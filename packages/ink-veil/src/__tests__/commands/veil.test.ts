@@ -54,13 +54,14 @@ describe('veil command', () => {
     expect(exitCode).toBe(2);
   });
 
-  it('exits with code 3 when input file does not exist', async () => {
+  it('exits with non-zero code when input file does not exist', async () => {
     const { exitCode } = await runVeilCommand([
       'veil',
       join(tmpDir, 'nonexistent.txt'),
       '-d', join(tmpDir, 'dict.json'),
     ]);
-    expect(exitCode).toBe(3);
+    // Concurrent processing collects per-file errors and exits with GENERAL_ERROR (1)
+    expect(exitCode).toBe(1);
   });
 
   it('exits with code 0 and creates output for valid text file', async () => {
