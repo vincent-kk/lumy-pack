@@ -1,7 +1,5 @@
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
-import { homedir } from 'node:os';
 import type { DetectionSpan, DetectionConfig } from './types.js';
+import { ensureModel } from './kiwi/downloader.js';
 import { normalizeNFC } from './normalize.js';
 import { stripTrailingParticle, KOREAN_PARTICLES } from './particles.js';
 import { mergeSpans } from './merger.js';
@@ -97,9 +95,9 @@ export class DetectionPipeline {
 
     this.kiwiInitPromise = (async () => {
       try {
-        const modelDir = join(homedir(), '.ink-veil', 'models', this.nerModel, 'base');
-        if (!existsSync(modelDir)) {
-          process.stderr.write('ink-veil: Kiwi model not found. Using regex-only detection.\n');
+        const modelDir = await ensureModel(this.nerModel);
+        if (!modelDir) {
+          process.stderr.write('ink-veil: Kiwi model not available. Using regex-only detection.\n');
           return;
         }
 
