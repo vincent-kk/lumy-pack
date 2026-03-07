@@ -176,7 +176,7 @@ describe('InkVeil.create() factory', () => {
   it('detect() returns spans', async () => {
     const iv = await InkVeil.create();
     // RRN 패턴 감지
-    const spans = iv.detect('주민번호: 901231-1234567');
+    const spans = await iv.detect('주민번호: 901231-1234567');
     expect(Array.isArray(spans)).toBe(true);
   });
 

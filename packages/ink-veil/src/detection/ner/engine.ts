@@ -43,7 +43,7 @@ export class NEREngine {
   async init(): Promise<void> {
     if (this.ready) return;
 
-    const workerPath = join(dirname(fileURLToPath(import.meta.url)), 'worker.js');
+    const workerPath = join(dirname(fileURLToPath(import.meta.url)), 'worker.mjs');
 
     return new Promise((resolve, reject) => {
       const worker = new Worker(workerPath, {

@@ -70,6 +70,7 @@ export const VERSION = '0.0.1';
 import { Dictionary } from './dictionary/dictionary.js';
 import { saveDictionary, loadDictionary } from './dictionary/io.js';
 import { DetectionPipeline } from './detection/index.js';
+import type { DetectionSpan } from './detection/index.js';
 import { veilTextFromSpans } from './transform/veil-from-spans.js';
 import { veilTextFromDictionary } from './transform/veil-from-dictionary.js';
 import { unveilText } from './transform/unveil.js';
@@ -119,14 +120,19 @@ export class InkVeil {
   }
 
   /** Detect PII spans in text. */
-  detect(text: string): ReturnType<DetectionPipeline['detect']> {
+  async detect(text: string): Promise<DetectionSpan[]> {
     return this.pipeline.detect(text);
   }
 
   /** Veil text using detection pipeline. */
-  veilText(text: string, sourceDocument = 'unknown') {
-    const spans = this.pipeline.detect(text);
+  async veilText(text: string, sourceDocument = 'unknown') {
+    const spans = await this.pipeline.detect(text);
     return veilTextFromSpans(text, spans, this.dictionary, sourceDocument);
+  }
+
+  /** Dispose NER engine resources. */
+  async dispose(): Promise<void> {
+    await this.pipeline.dispose();
   }
 
   /** Veil text by scanning against all dictionary entries (no detection). */

@@ -12,6 +12,7 @@ export function buildDetectCommand(): Command {
     .argument('[files...]', 'Input files to scan')
     .option('-c, --categories <list>', 'Comma-separated entity categories to detect')
     .option('--stdin', 'Read text from stdin')
+    .option('--no-ner', 'Disable NER, use regex-only mode')
     .option('--json', 'Output structured JSON to stdout')
     .option('-v, --verbose', 'Detailed logging to stderr')
     .action(async (files: string[], opts: Record<string, unknown>) => {
@@ -21,15 +22,17 @@ export function buildDetectCommand(): Command {
         ? String(opts['categories']).split(',').map((s) => s.trim())
         : undefined;
 
+      const noNer = opts['ner'] === false;
       const pipeline = new DetectionPipeline({
         config: categories ? { priorityOrder: ['MANUAL', 'REGEX', 'NER'], categories } : undefined,
+        noNer,
       });
 
       const results: unknown[] = [];
       const startTotal = Date.now();
 
-      const processText = (text: string, inputName: string) => {
-        const spans = pipeline.detect(text);
+      const processText = async (text: string, inputName: string) => {
+        const spans = await pipeline.detect(text);
 
         const summary: Record<string, number> = {};
         for (const span of spans) {

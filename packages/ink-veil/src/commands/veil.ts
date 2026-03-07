@@ -51,8 +51,10 @@ export function buildVeilCommand(): Command {
         dict = Dictionary.create(tokenMode);
       }
 
+      const noNer = opts['ner'] === false;
       const pipeline = new DetectionPipeline({
         config: categories ? { priorityOrder: ['MANUAL', 'REGEX', 'NER'], categories } : undefined,
+        noNer,
       });
 
       const results: unknown[] = [];
@@ -63,7 +65,7 @@ export function buildVeilCommand(): Command {
         const snapshot = dict.snapshot();
 
         try {
-          const spans = pipeline.detect(text);
+          const spans = await pipeline.detect(text);
           const { text: veiled, substitutions } = veilTextFromSpans(text, spans, dict, inputName);
           const detectMs = Date.now() - startFile;
 

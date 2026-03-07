@@ -16,23 +16,22 @@
  *   node .samples/run-tests.mjs --bin ./node_modules/.bin/ink-veil
  */
 
-import { execSync, spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
-import { join, dirname, basename, extname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { spawnSync } from "node:child_process";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { join, dirname, basename, extname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, '..');
-const FIXTURES_DIR = join(__dirname, 'fixtures');
-const RESULTS_DIR = join(__dirname, 'test-results');
-const DICT_PATH = join(RESULTS_DIR, 'e2e-dict.json');
+const ROOT = join(__dirname, "..");
+const FIXTURES_DIR = join(__dirname, "fixtures");
+const RESULTS_DIR = join(__dirname, "test-results");
+const DICT_PATH = join(RESULTS_DIR, "e2e-dict.json");
 
 // CLI bin 경로 결정
 const args = process.argv.slice(2);
-const binIdx = args.indexOf('--bin');
-const INK_VEIL_BIN = binIdx !== -1
-  ? args[binIdx + 1]
-  : join(ROOT, 'dist', 'cli.mjs');
+const binIdx = args.indexOf("--bin");
+const INK_VEIL_BIN =
+  binIdx !== -1 ? args[binIdx + 1] : join(ROOT, "dist", "cli.mjs");
 
 /** LLM mutation 시뮬레이션 함수들 */
 const mutations = {
@@ -43,12 +42,12 @@ const mutations = {
 
   /** Mutation 2: <iv-per id="001"> -> <iv-per  id="001"> (extra whitespace) */
   whitespaceInsertion(text) {
-    return text.replace(/<iv-(\w+) id=/g, '<iv-$1  id=');
+    return text.replace(/<iv-(\w+) id=/g, "<iv-$1  id=");
   },
 
   /** Mutation 3: <iv-per id="001">PER_001</iv-per> -> PER_001 (XML structure removal) */
   xmlStructureRemoval(text) {
-    return text.replace(/<iv-\w+ id=["']\d+["']>([A-Z]+_\d+)<\/iv-\w+>/g, '$1');
+    return text.replace(/<iv-\w+ id=["']\d+["']>([A-Z]+_\d+)<\/iv-\w+>/g, "$1");
   },
 
   /** Mutation 4: 일부 토큰 삭제 (token omission) */
@@ -57,13 +56,16 @@ const mutations = {
     return text.replace(/<iv-\w+[^>]*>[A-Z]+_\d+<\/iv-\w+>/g, (match) => {
       count++;
       // 짝수 번째 토큰만 삭제
-      return count % 2 === 0 ? '' : match;
+      return count % 2 === 0 ? "" : match;
     });
   },
 
   /** Mutation 5: 존재하지 않는 PER_099 삽입 (token hallucination) */
   tokenHallucination(text) {
-    return text + '\n\n[참고: <iv-per id="099">PER_099</iv-per>와도 관련이 있습니다.]';
+    return (
+      text +
+      '\n\n[참고: <iv-per id="099">PER_099</iv-per>와도 관련이 있습니다.]'
+    );
   },
 
   /** No mutation (clean round-trip baseline) */
@@ -73,47 +75,59 @@ const mutations = {
 };
 
 function runCli(args, input) {
-  const result = spawnSync(
-    'node',
-    [INK_VEIL_BIN, ...args],
-    {
-      input: input ? Buffer.from(input, 'utf-8') : undefined,
-      encoding: 'utf-8',
-      cwd: ROOT,
-      timeout: 30_000,
-    }
-  );
+  const result = spawnSync("node", [INK_VEIL_BIN, ...args], {
+    input: input ? Buffer.from(input, "utf-8") : undefined,
+    encoding: "utf-8",
+    cwd: ROOT,
+    timeout: 30_000,
+  });
   return {
-    stdout: result.stdout || '',
-    stderr: result.stderr || '',
+    stdout: result.stdout || "",
+    stderr: result.stderr || "",
     exitCode: result.status ?? -1,
   };
 }
 
 function veilFile(fixturePath, outputPath) {
   return runCli([
-    'veil', fixturePath,
-    '-o', dirname(outputPath),
-    '-d', DICT_PATH,
-    '--no-ner',
-    '--json',
+    "veil",
+    fixturePath,
+    "-o",
+    dirname(outputPath),
+    "-d",
+    DICT_PATH,
+    "--no-ner",
+    "--json",
   ]);
 }
 
-function unveilText(veiledText, mutationName) {
+function unveilFile(filePath, outputDir) {
+  mkdirSync(outputDir, { recursive: true });
   return runCli([
-    'unveil', '--stdin',
-    '-d', DICT_PATH,
-    '--json',
-  ], veiledText);
+    "unveil",
+    filePath,
+    "-o",
+    outputDir,
+    "-d",
+    DICT_PATH,
+    "--json",
+  ]);
 }
 
 function formatResult(fixture, mutation, veilResult, unveilResult) {
   let veilData = null;
   let unveilData = null;
 
-  try { veilData = JSON.parse(veilResult.stdout); } catch { /* ignore */ }
-  try { unveilData = JSON.parse(unveilResult.stdout); } catch { /* ignore */ }
+  try {
+    veilData = JSON.parse(veilResult.stdout);
+  } catch {
+    /* ignore */
+  }
+  try {
+    unveilData = JSON.parse(unveilResult.stdout);
+  } catch {
+    /* ignore */
+  }
 
   return {
     fixture: basename(fixture),
@@ -128,37 +142,34 @@ function formatResult(fixture, mutation, veilResult, unveilResult) {
       exitCode: unveilResult.exitCode,
       success: unveilData?.success ?? false,
       tokenIntegrity: unveilData?.results?.[0]?.tokenIntegrity ?? null,
-      matchedTokens: unveilData?.results?.[0]?.matchedTokens ?? [],
-      modifiedTokens: unveilData?.results?.[0]?.modifiedTokens ?? [],
-      unmatchedTokens: unveilData?.results?.[0]?.unmatchedTokens ?? [],
-      stages: unveilData?.results?.[0]?.stages ?? null,
+      substitutions: unveilData?.results?.[0]?.substitutions ?? 0,
       stderr: unveilResult.stderr.slice(0, 200),
     },
   };
 }
 
 async function main() {
-  console.log('ink-veil E2E CLI test runner');
-  console.log('============================');
+  console.log("ink-veil E2E CLI test runner");
+  console.log("============================");
   console.log(`bin: ${INK_VEIL_BIN}`);
   console.log(`dict: ${DICT_PATH}`);
-  console.log('');
+  console.log("");
 
   mkdirSync(RESULTS_DIR, { recursive: true });
 
   // 딕셔너리 초기화
   if (existsSync(DICT_PATH)) {
-    console.log('기존 딕셔너리 삭제 후 재생성...');
+    console.log("기존 딕셔너리 삭제 후 재생성...");
   }
 
   const fixtures = [
-    join(FIXTURES_DIR, 'korean-pii.txt'),
-    join(FIXTURES_DIR, 'mixed-data.csv'),
-    join(FIXTURES_DIR, 'config-data.json'),
-    join(FIXTURES_DIR, 'structured.xml'),
-    join(FIXTURES_DIR, 'settings.yaml'),
-    join(FIXTURES_DIR, 'README.md'),
-    join(FIXTURES_DIR, 'data.tsv'),
+    join(FIXTURES_DIR, "korean-pii.txt"),
+    join(FIXTURES_DIR, "mixed-data.csv"),
+    join(FIXTURES_DIR, "config-data.json"),
+    join(FIXTURES_DIR, "structured.xml"),
+    join(FIXTURES_DIR, "settings.yaml"),
+    join(FIXTURES_DIR, "README.md"),
+    join(FIXTURES_DIR, "data.tsv"),
   ];
 
   const mutationNames = Object.keys(mutations);
@@ -175,16 +186,21 @@ async function main() {
     console.log(`\n[${basename(fixture)}]`);
 
     // 1. Veil 수행
-    const veiledOutputDir = join(RESULTS_DIR, 'veiled');
+    const veiledOutputDir = join(RESULTS_DIR, "veiled");
     mkdirSync(veiledOutputDir, { recursive: true });
-    const ext = extname(fixture);
-    const veiledPath = join(veiledOutputDir, basename(fixture, ext) + '.veiled' + ext);
+    const veiledPath = join(veiledOutputDir, basename(fixture));
 
     const veilResult = veilFile(fixture, veiledPath);
 
     if (veilResult.exitCode !== 0) {
-      console.log(`  VEIL FAIL (exit ${veilResult.exitCode}): ${veilResult.stderr.slice(0, 100)}`);
-      allResults.push({ fixture: basename(fixture), mutation: 'veil_step', veilFailed: true });
+      console.log(
+        `  VEIL FAIL (exit ${veilResult.exitCode}): ${veilResult.stderr.slice(0, 100)}`,
+      );
+      allResults.push({
+        fixture: basename(fixture),
+        mutation: "veil_step",
+        veilFailed: true,
+      });
       totalFail++;
       continue;
     }
@@ -192,14 +208,14 @@ async function main() {
     // veiled 텍스트 읽기
     let veiledText;
     try {
-      veiledText = readFileSync(veiledPath, 'utf-8');
+      veiledText = readFileSync(veiledPath, "utf-8");
     } catch {
       // veil이 stdout으로 출력했을 수도 있음
       try {
         const veilJson = JSON.parse(veilResult.stdout);
-        veiledText = veilJson?.results?.[0]?.veiledText || '';
+        veiledText = veilJson?.results?.[0]?.veiledText || "";
       } catch {
-        veiledText = '';
+        veiledText = "";
       }
     }
 
@@ -212,20 +228,35 @@ async function main() {
     // 2. 각 mutation 시뮬레이션 후 unveil
     for (const mutName of mutationNames) {
       const mutFn = mutations[mutName];
-      const mutatedText = veiledText ? mutFn(veiledText) : '';
+      const mutatedText = veiledText ? mutFn(veiledText) : "";
 
-      const unveilResult = unveilText(mutatedText, mutName);
+      // mutation 텍스트를 파일로 저장 후 file-based unveil
+      const mutDir = join(RESULTS_DIR, "mutated");
+      mkdirSync(mutDir, { recursive: true });
+      const mutFile = join(mutDir, `${basename(fixture, extname(fixture))}-${mutName}${extname(fixture)}`);
+      writeFileSync(mutFile, mutatedText, "utf-8");
+
+      const restoreDir = join(RESULTS_DIR, "restored", mutName);
+      const unveilResult = unveilFile(mutFile, restoreDir);
       const result = formatResult(fixture, mutName, veilResult, unveilResult);
       allResults.push(result);
 
       const integrity = result.unveil.tokenIntegrity;
-      const intStr = integrity !== null ? `integrity=${integrity.toFixed(2)}` : 'integrity=N/A';
-      const status = unveilResult.exitCode === 0 || unveilResult.exitCode === 8 ? 'OK' : 'FAIL';
+      const intStr =
+        integrity !== null
+          ? `integrity=${integrity.toFixed(2)}`
+          : "integrity=N/A";
+      const status =
+        unveilResult.exitCode === 0 || unveilResult.exitCode === 8
+          ? "OK"
+          : "FAIL";
 
-      if (status === 'OK') totalPass++;
+      if (status === "OK") totalPass++;
       else totalFail++;
 
-      console.log(`  [${mutName.padEnd(20)}] ${status} ${intStr} matched=${result.unveil.matchedTokens.length} modified=${result.unveil.modifiedTokens.length} unmatched=${result.unveil.unmatchedTokens.length}`);
+      console.log(
+        `  [${mutName.padEnd(20)}] ${status} ${intStr} substitutions=${result.unveil.substitutions}`,
+      );
     }
   }
 
@@ -241,10 +272,10 @@ async function main() {
     results: allResults,
   };
 
-  const reportPath = join(RESULTS_DIR, 'report.json');
-  writeFileSync(reportPath, JSON.stringify(report, null, 2), 'utf-8');
+  const reportPath = join(RESULTS_DIR, "report.json");
+  writeFileSync(reportPath, JSON.stringify(report, null, 2), "utf-8");
 
-  console.log('\n============================');
+  console.log("\n============================");
   console.log(`결과: ${totalPass} pass / ${totalFail} fail`);
   console.log(`리포트: ${reportPath}`);
 
@@ -252,6 +283,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('E2E runner 오류:', err);
+  console.error("E2E runner 오류:", err);
   process.exit(1);
 });
