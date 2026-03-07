@@ -64,6 +64,14 @@ export async function getParser(format: string): Promise<Result<FormatParser>> {
       const { LatexParser } = await import('./parsers/latex.js');
       return ok(new LatexParser());
     }
+    case 'toml': {
+      const { TomlParser } = await import('./parsers/toml.js');
+      return ok(new TomlParser());
+    }
+    case 'ini': {
+      const { IniParser } = await import('./parsers/ini.js');
+      return ok(new IniParser());
+    }
     default:
       return err(new UnsupportedFormatError(format));
   }

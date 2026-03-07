@@ -3,11 +3,13 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { resolve, basename, join } from 'node:path';
 import { Dictionary } from '../dictionary/dictionary.js';
-import { loadDictionary, saveDictionary } from '../dictionary/io.js';
+import { loadDictionary, saveDictionary, saveDictionaryEncrypted } from '../dictionary/io.js';
 import { DetectionPipeline } from '../detection/index.js';
 import { getParser } from '../document/parser.js';
 import { veilTextFromSpans } from '../transform/veil-from-spans.js';
 import { ErrorCode } from '../errors/types.js';
+import { loadConfig } from '../config/loader.js';
+import type { ConfigOverrides } from '../config/loader.js';
 
 export function buildVeilCommand(): Command {
   const cmd = new Command('veil').description('Detect and replace PII in documents');
@@ -22,17 +24,29 @@ export function buildVeilCommand(): Command {
     .option('--stdin', 'Read text from stdin')
     .option('--json', 'Output structured JSON to stdout')
     .option('--encoding <enc>', 'Text encoding for input files', 'utf-8')
+    .option('--encrypt', 'Save dictionary in encrypted format (requires --password)')
+    .option('--password <pw>', 'Password for dictionary encryption (or INK_VEIL_PASSWORD env)')
     .option('-v, --verbose', 'Detailed logging to stderr')
     .action(async (files: string[], opts: Record<string, unknown>) => {
+      const overrides: ConfigOverrides = {};
+      if (opts['tokenMode'] !== undefined) overrides.tokenMode = String(opts['tokenMode']) as 'tag' | 'bracket' | 'plain';
+      if (opts['dictionary'] !== undefined) overrides.dictionaryPath = String(opts['dictionary']);
+      if (opts['output'] !== undefined) overrides.outputDirectory = String(opts['output']);
+      if (opts['encoding'] !== undefined) overrides.encoding = String(opts['encoding']);
+      if (opts['ner'] === false) overrides.noNer = true;
+      const config = loadConfig(overrides);
+
       const jsonMode = Boolean(opts['json']);
       const stdinMode = Boolean(opts['stdin']);
       const verbose = Boolean(opts['verbose']);
-      const dictPath = resolve(String(opts['dictionary'] ?? './dictionary.json'));
-      const outputDir = resolve(String(opts['output'] ?? './veiled/'));
-      const tokenMode = String(opts['tokenMode'] ?? 'tag') as 'tag' | 'bracket' | 'plain';
+      const dictPath = resolve(String(opts['dictionary'] ?? config.dictionary.defaultPath));
+      const outputDir = resolve(String(opts['output'] ?? config.output.directory));
+      const tokenMode = config.tokenMode;
       const categories = opts['categories']
         ? String(opts['categories']).split(',').map((s) => s.trim())
-        : undefined;
+        : config.detection.categories.length > 0 ? config.detection.categories : undefined;
+      const doEncrypt = Boolean(opts['encrypt']);
+      const password = String(opts['password'] ?? process.env['INK_VEIL_PASSWORD'] ?? '');
 
       const log = (msg: string) => {
         if (verbose) process.stderr.write(msg + '\n');
@@ -51,9 +65,14 @@ export function buildVeilCommand(): Command {
         dict = Dictionary.create(tokenMode);
       }
 
-      const noNer = opts['ner'] === false;
+      if (doEncrypt && !password) {
+        process.stderr.write('ink-veil: --encrypt requires --password or INK_VEIL_PASSWORD env\n');
+        process.exit(ErrorCode.INVALID_ARGUMENTS);
+      }
+
+      const noNer = !config.ner.enabled;
       const pipeline = new DetectionPipeline({
-        config: categories ? { priorityOrder: ['MANUAL', 'REGEX', 'NER'], categories } : undefined,
+        config: categories ? { priorityOrder: config.detection.priorityOrder, categories } : undefined,
         noNer,
       });
 
@@ -136,7 +155,11 @@ export function buildVeilCommand(): Command {
 
       // Save dictionary
       try {
-        await saveDictionary(dict, dictPath);
+        if (doEncrypt) {
+          await saveDictionaryEncrypted(dict, dictPath, password);
+        } else {
+          await saveDictionary(dict, dictPath);
+        }
       } catch (e) {
         process.stderr.write(`ink-veil: Failed to save dictionary: ${e instanceof Error ? e.message : String(e)}\n`);
         process.exit(ErrorCode.DICTIONARY_ERROR);

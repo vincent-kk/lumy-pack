@@ -38,10 +38,26 @@ export function buildModelCommand(): Command {
 
   model
     .command('list')
-    .description('List installed models')
+    .description('List installed models with disk usage')
     .action(async () => {
       if (isModelInstalled('kiwi-base')) {
-        process.stdout.write(`kiwi-base (installed)\n`);
+        const modelDir = resolveModelDir('kiwi-base');
+        let sizeStr = '';
+        try {
+          const { readdirSync, statSync } = await import('node:fs');
+          let totalBytes = 0;
+          const walkDir = (dir: string) => {
+            for (const entry of readdirSync(dir, { withFileTypes: true })) {
+              const fullPath = `${dir}/${entry.name}`;
+              if (entry.isDirectory()) walkDir(fullPath);
+              else totalBytes += statSync(fullPath).size;
+            }
+          };
+          walkDir(modelDir);
+          const mb = (totalBytes / (1024 * 1024)).toFixed(1);
+          sizeStr = ` (${mb} MB)`;
+        } catch { /* ignore size calculation errors */ }
+        process.stdout.write(`kiwi-base (installed)${sizeStr}  ${modelDir}\n`);
       } else {
         process.stdout.write('No models installed. Run: ink-veil model download\n');
       }

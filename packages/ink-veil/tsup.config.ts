@@ -29,21 +29,6 @@ export default defineConfig([
     clean: false,
     dts: false,
     shims: true,
-    external: ['onnxruntime-node', '@xenova/transformers'],
-  },
-  {
-    entry: { worker: 'src/detection/ner/worker.ts' },
-    format: ['esm'],
-    outExtension() {
-      return { js: '.mjs' };
-    },
-    splitting: false,
-    sourcemap: false,
-    target: 'node20',
-    platform: 'node',
-    clean: false,
-    dts: false,
-    external: ['onnxruntime-node', '@xenova/transformers'],
   },
   {
     entry: { cli: 'src/cli.ts' },
