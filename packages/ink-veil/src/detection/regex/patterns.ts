@@ -1,4 +1,4 @@
-import type { DetectionSpan } from '../types.js';
+import type { DetectionSpan } from "../types.js";
 
 export interface RegexPattern {
   category: string;
@@ -14,150 +14,174 @@ export interface RegexPattern {
 export const PATTERNS: RegexPattern[] = [
   {
     // 주민등록번호: YYMMDD-XXXXXXX (7번째 자리 1-4)
-    category: 'RRN',
+    category: "RRN",
     pattern: /\b(\d{6})-([1-4]\d{6})\b/g,
     confidence: 1.0,
     priority: 1,
   },
   {
     // 외국인등록번호: YYMMDD-XXXXXXX (7번째 자리 5-8)
-    category: 'ARN',
+    category: "ARN",
     pattern: /\b(\d{6})-([5-8]\d{6})\b/g,
     confidence: 0.85,
     priority: 1,
   },
   {
     // 법인등록번호: YYMMDD-XXXXXXX (7번째 자리 9 또는 XXXXXXX 전체)
-    category: 'CRN',
+    category: "CRN",
     pattern: /\b(\d{6})-([9]\d{6})\b/g,
     confidence: 0.7,
     priority: 2,
   },
   {
     // 사업자등록번호: XXX-XX-XXXXX
-    category: 'BRN',
+    category: "BRN",
     pattern: /\b\d{3}-\d{2}-\d{5}\b/g,
     confidence: 0.95,
     priority: 1,
   },
   {
     // 운전면허번호: XX-XX-XXXXXX-XX (지역코드-연도-일련번호-검증)
-    category: 'DL',
+    category: "DL",
     pattern: /\b([가-힣]{2}|\d{2})-(\d{2})-(\d{6})-(\d{2})\b/g,
     confidence: 0.85,
     priority: 2,
   },
   {
     // 여권번호: M/H/P + 영문자숫자 조합 (8자리)
-    category: 'PASSPORT',
+    category: "PASSPORT",
     pattern: /\b[MHP][A-Z0-9]{8}\b/g,
     confidence: 0.8,
     priority: 2,
   },
   {
     // 휴대폰번호: 010/011/016/017/018/019-XXXX-XXXX
-    category: 'PHONE',
+    category: "PHONE",
     pattern: /\b(01[016789])-(\d{3,4})-(\d{4})\b/g,
     confidence: 1.0,
     priority: 1,
   },
   {
     // 유선전화: 지역번호(02,031,...)-XXXX-XXXX
-    category: 'TEL',
+    category: "TEL",
     pattern: /\b(0[2-9]\d?)-(\d{3,4})-(\d{4})\b/g,
     confidence: 0.8,
     priority: 2,
   },
   {
     // 이메일 주소
-    category: 'EMAIL',
-    pattern: /\b[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\b/g,
+    category: "EMAIL",
+    pattern: /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g,
     confidence: 0.99,
     priority: 1,
   },
   {
     // 신용카드번호: Visa/MC (16자리), Amex (15자리)
     // 하이픈 혹은 공백 구분자 허용
-    category: 'CARD',
-    pattern: /\b(?:4\d{3}|5[1-5]\d{2}|3[47]\d{2})[\s\-]?\d{4}[\s\-]?\d{4}[\s\-]?\d{3,4}\b/g,
+    category: "CARD",
+    pattern:
+      /\b(?:4\d{3}|5[1-5]\d{2}|3[47]\d{2})[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{3,4}\b/g,
     confidence: 0.9,
     priority: 1,
   },
   {
     // 계좌번호: 하이픈으로 구분된 숫자 (최소 10자리)
-    category: 'ACCOUNT',
+    category: "ACCOUNT",
     pattern: /\b\d{4}-\d{2,6}-\d{2,6}(?:-\d{1,3})?\b/g,
     confidence: 0.6,
     priority: 3,
   },
   {
     // IPv4 주소 (0-255 범위 검증)
-    category: 'IP',
-    pattern: /\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b/g,
+    category: "IP",
+    pattern:
+      /\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b/g,
     confidence: 0.85,
     priority: 2,
   },
   {
     // 일련번호: 영문+숫자 혼합 8-20자리
-    category: 'SERIAL',
+    category: "SERIAL",
     pattern: /\b[A-Z]{2,4}-?[A-Z0-9]{4,16}\b/g,
     confidence: 0.5,
     priority: 4,
   },
   {
     // 우편번호: 5자리 (구 6자리 제외)
-    category: 'ZIPCODE',
+    category: "ZIPCODE",
     pattern: /\b\d{5}\b(?!\d)/g,
     confidence: 0.6,
     priority: 4,
   },
   {
+    // 도로명주소: [시/도] 시/군/구 [구/군] XX로/길 번호[-번호]
+    category: "ADDR",
+    pattern:
+      /(?:(?:서울특별시|부산광역시|대구광역시|인천광역시|광주광역시|대전광역시|울산광역시|세종특별자치시|경기도|강원특별자치도|강원도|충청[남북]도|전(?:라[남북]|북특별자치)도|경상[남북]도|제주특별자치도)\s+)?[가-힣]{1,10}(?:시|군|구)\s+(?:[가-힣]{1,10}(?:구|군)\s+)?[가-힣]{2,}(?:로|길)\s+\d+(?:-\d+)?/g,
+    confidence: 0.9,
+    priority: 1,
+  },
+  {
+    // 지번주소: [시/도] 시/군/구 [구/군] XX동/읍/면/리 번지[-번지]
+    category: "ADDR",
+    pattern:
+      /(?:(?:서울특별시|부산광역시|대구광역시|인천광역시|광주광역시|대전광역시|울산광역시|세종특별자치시|경기도|강원특별자치도|강원도|충청[남북]도|전(?:라[남북]|북특별자치)도|경상[남북]도|제주특별자치도)\s+)?[가-힣]{1,10}(?:시|군|구)\s+(?:[가-힣]{1,10}(?:구|군)\s+)?[가-힣]{1,10}(?:동|읍|면|리)\s+\d+(?:-\d+)?/g,
+    confidence: 0.85,
+    priority: 1,
+  },
+  {
     // 차량번호: 한글 포함 차량 번호판
-    category: 'VEHICLE',
+    category: "VEHICLE",
     pattern: /\b\d{2,3}[가-힣]\d{4}\b/g,
     confidence: 0.85,
     priority: 2,
   },
   {
     // 건강보험증번호: XXXXXXXXXX (10자리 숫자)
-    category: 'HEALTH_INS',
+    category: "HEALTH_INS",
     pattern: /\b(?<!\d)\d{10}(?!\d)\b/g,
     confidence: 0.55,
     priority: 4,
   },
   {
     // 날짜 (한국어): 2024년 3월 15일
-    category: 'DATE',
+    category: "DATE",
     pattern: /\d{4}년\s?\d{1,2}월\s?\d{1,2}일/g,
     confidence: 0.9,
     priority: 2,
   },
   {
     // 날짜 (ISO): 2024-03-15
-    category: 'DATE',
+    category: "DATE",
     pattern: /\b\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])\b/g,
     confidence: 0.95,
     priority: 2,
   },
   {
     // 날짜 (점 구분): 2024.03.15
-    category: 'DATE',
+    category: "DATE",
     pattern: /\b\d{4}\.(?:0[1-9]|1[0-2])\.(?:0[1-9]|[12]\d|3[01])\b/g,
     confidence: 0.9,
     priority: 2,
   },
   {
     // 날짜 (슬래시): 03/15/2024
-    category: 'DATE',
+    category: "DATE",
     pattern: /\b(?:0[1-9]|1[0-2])\/(?:0[1-9]|[12]\d|3[01])\/\d{4}\b/g,
     confidence: 0.85,
     priority: 2,
   },
 ];
 
-export function applyPattern(text: string, regexPattern: RegexPattern): DetectionSpan[] {
+export function applyPattern(
+  text: string,
+  regexPattern: RegexPattern,
+): DetectionSpan[] {
   const spans: DetectionSpan[] = [];
-  const pattern = new RegExp(regexPattern.pattern.source, regexPattern.pattern.flags);
+  const pattern = new RegExp(
+    regexPattern.pattern.source,
+    regexPattern.pattern.flags,
+  );
 
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(text)) !== null) {
@@ -166,7 +190,7 @@ export function applyPattern(text: string, regexPattern: RegexPattern): Detectio
       end: match.index + match[0].length,
       text: match[0],
       category: regexPattern.category,
-      method: 'REGEX',
+      method: "REGEX",
       confidence: regexPattern.confidence,
       priority: regexPattern.priority,
     });
