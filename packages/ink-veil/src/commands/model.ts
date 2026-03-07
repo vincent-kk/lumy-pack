@@ -18,8 +18,8 @@ export function buildModelCommand(): Command {
 
       const manager = new ModelManager();
       try {
-        const path = await manager.ensureModel(modelId);
-        process.stdout.write(`Model installed: ${path}\n`);
+        const result = await manager.ensureModel(modelId);
+        process.stdout.write(`Model installed: ${result.modelDir}\n`);
         process.exit(ErrorCode.SUCCESS);
       } catch (err) {
         process.stderr.write(`ink-veil: model download failed — ${err instanceof Error ? err.message : String(err)}\n`);
@@ -37,9 +37,9 @@ export function buildModelCommand(): Command {
       for (const s of statuses) {
         const info = MODEL_REGISTRY[s.modelId]!;
         if (!s.installed) {
-          process.stdout.write(`${s.modelId}: not installed (${Math.round(info.sizeBytes / 1_048_576)}MB)\n`);
+          process.stdout.write(`${s.modelId}: not installed (${Math.round(info.totalSizeBytes / 1_048_576)}MB)\n`);
         } else if (s.checksumOk) {
-          process.stdout.write(`${s.modelId}: installed (${Math.round(info.sizeBytes / 1_048_576)}MB, checksum OK)\n`);
+          process.stdout.write(`${s.modelId}: installed (${Math.round(info.totalSizeBytes / 1_048_576)}MB, checksum OK)\n`);
         } else {
           process.stdout.write(`${s.modelId}: installed but checksum MISMATCH — run model download to repair\n`);
         }
@@ -62,7 +62,7 @@ export function buildModelCommand(): Command {
       for (const s of installed) {
         const info = MODEL_REGISTRY[s.modelId]!;
         const status = s.checksumOk ? 'checksum OK' : 'checksum MISMATCH';
-        process.stdout.write(`${s.modelId} (${Math.round(info.sizeBytes / 1_048_576)}MB, ${status})\n`);
+        process.stdout.write(`${s.modelId} (${Math.round(info.totalSizeBytes / 1_048_576)}MB, ${status})\n`);
       }
       process.exit(ErrorCode.SUCCESS);
     });

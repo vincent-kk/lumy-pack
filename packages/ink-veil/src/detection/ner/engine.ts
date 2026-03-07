@@ -5,7 +5,10 @@ import type { DetectionSpan } from '../types.js';
 import { NERModelError } from '../../errors/types.js';
 
 export interface NEREngineOptions {
-  modelPath: string;
+  /** Full path to the model directory (e.g. ~/.ink-veil/models/gliner_multi-v2.1) */
+  modelDir: string;
+  /** Model ID (directory basename, e.g. "gliner_multi-v2.1") */
+  modelId: string;
   /** Default labels for detection. */
   labels?: string[];
   /** Minimum confidence threshold (default: 0.5). */
@@ -47,7 +50,7 @@ export class NEREngine {
 
     return new Promise((resolve, reject) => {
       const worker = new Worker(workerPath, {
-        workerData: { modelPath: this.options.modelPath },
+        workerData: { modelDir: this.options.modelDir, modelId: this.options.modelId },
       });
 
       worker.on('message', (msg: { type: string; id?: string; spans?: unknown[]; message?: string }) => {

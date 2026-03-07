@@ -73,11 +73,11 @@ export class DetectionPipeline {
     this.nerInitPromise = (async () => {
       try {
         const manager = new ModelManager();
-        const modelPath = await manager.ensureWithFallback();
-        if (!modelPath) return; // fallback to regex-only
+        const result = await manager.ensureWithFallback();
+        if (!result) return; // fallback to regex-only
 
         const { NEREngine: NEREngineClass } = await import('./ner/engine.js');
-        this.nerEngine = new NEREngineClass({ modelPath });
+        this.nerEngine = new NEREngineClass({ modelDir: result.modelDir, modelId: result.modelId });
         await this.nerEngine.init();
       } catch (e) {
         process.stderr.write(`ink-veil: NER init failed: ${e instanceof Error ? e.message : String(e)}. Using regex-only.\n`);

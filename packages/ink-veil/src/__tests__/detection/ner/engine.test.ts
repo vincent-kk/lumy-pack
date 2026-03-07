@@ -81,7 +81,7 @@ describe('NEREngine', () => {
 
   beforeEach(() => {
     behaviorRef.current = 'normal';
-    engine = new NEREngine({ modelPath: '/fake/model.onnx', labels: ['PER', 'ORG', 'LOC'] });
+    engine = new NEREngine({ modelDir: '/fake/models/test-model', modelId: 'test-model', labels: ['PER', 'ORG', 'LOC'] });
   });
 
   afterEach(async () => {
@@ -101,13 +101,13 @@ describe('NEREngine', () => {
 
     it('throws NERModelError when worker emits init error', async () => {
       behaviorRef.current = 'init-error';
-      const errEngine = new NEREngine({ modelPath: '/fake/model.onnx' });
+      const errEngine = new NEREngine({ modelDir: '/fake/models/test-model', modelId: 'test-model' });
       await expect(errEngine.init()).rejects.toThrow(NERModelError);
     });
 
     it('throws NERModelError when worker exits early', async () => {
       behaviorRef.current = 'exit-early';
-      const errEngine = new NEREngine({ modelPath: '/fake/model.onnx' });
+      const errEngine = new NEREngine({ modelDir: '/fake/models/test-model', modelId: 'test-model' });
       await expect(errEngine.init()).rejects.toThrow(NERModelError);
     });
   });

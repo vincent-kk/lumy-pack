@@ -35,16 +35,26 @@ interface ShutdownMessage {
 
 type InboundMessage = DetectMessage | ShutdownMessage;
 
-// workerData carries { modelPath: string }
-const modelPath: string = (workerData as { modelPath: string }).modelPath;
+// workerData carries { modelDir: string, modelId: string }
+const { modelDir, modelId } = workerData as { modelDir: string; modelId: string };
 
 let pipeline: unknown = null;
 
 async function loadModel(): Promise<void> {
   // Dynamic import of @xenova/transformers to avoid loading in main thread.
-  const { pipeline: createPipeline } = await import('@xenova/transformers');
-  pipeline = await (createPipeline as Function)('token-classification', modelPath, {
-    quantized: true,
+  const transformers = await import('@xenova/transformers');
+  const { pipeline: createPipeline, env } = transformers;
+
+  // Set local model path to models base directory so @xenova/transformers
+  // resolves files as {localModelPath}/{modelId}/{filename}
+  const { dirname } = await import('node:path');
+  env.localModelPath = dirname(modelDir);
+  env.allowRemoteModels = false;
+
+  pipeline = await (createPipeline as Function)('token-classification', modelId, {
+    quantized: false,
+    model_file_name: 'model_int8',
+    local_files_only: true,
   });
 }
 
