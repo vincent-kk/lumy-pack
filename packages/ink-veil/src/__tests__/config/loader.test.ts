@@ -54,7 +54,7 @@ describe('defaults', () => {
 
     expect(config.tokenMode).toBe('tag');
     expect(config.signature).toBe(true);
-    expect(config.ner.model).toBe('gliner_multi-v2.1');
+    expect(config.ner.model).toBe('kiwi-base');
     expect(config.ner.threshold).toBe(0.2);
     expect(config.ner.enabled).toBe(true);
     expect(config.detection.priorityOrder).toEqual(['MANUAL', 'REGEX', 'NER']);
@@ -127,7 +127,7 @@ describe('priority order', () => {
     expect(config.tokenMode).toBe('bracket');     // file > defaults
     expect(config.ner.threshold).toBe(0.7);       // file > defaults
     // 명시하지 않은 값은 기본값 유지
-    expect(config.ner.model).toBe('gliner_multi-v2.1');
+    expect(config.ner.model).toBe('kiwi-base');
     expect(config.ner.enabled).toBe(true);
   });
 
@@ -215,9 +215,9 @@ describe('environment variables', () => {
   });
 
   it('INK_VEIL_NER_MODEL', () => {
-    process.env['INK_VEIL_NER_MODEL'] = 'gliner_multi-v2.1';
+    process.env['INK_VEIL_NER_MODEL'] = 'kiwi-base';
     const config = loadConfig({ configPath: join(TMP, 'nonexistent.json') });
-    expect(config.ner.model).toBe('gliner_multi-v2.1');
+    expect(config.ner.model).toBe('kiwi-base');
   });
 
   it('INK_VEIL_NER_THRESHOLD — 유효한 숫자', () => {

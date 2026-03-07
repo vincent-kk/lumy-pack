@@ -1,7 +1,7 @@
 /**
  * Invisible signature insertion and detection for LLM-preservation.
  * Uses zero-width Unicode characters to embed a marker.
- * MUST NOT import from detection/, document/, node:fs, node:crypto, onnxruntime-node.
+ * MUST NOT import from detection/, document/, node:fs, node:crypto
  */
 
 // Zero-width non-joiner (U+200C) = 0 bit, Zero-width joiner (U+200D) = 1 bit

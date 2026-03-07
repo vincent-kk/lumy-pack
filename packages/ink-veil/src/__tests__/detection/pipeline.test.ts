@@ -54,4 +54,85 @@ describe('DetectionPipeline', () => {
     const pipeline = new DetectionPipeline({ noNer: true });
     expect(await pipeline.detect('')).toHaveLength(0);
   });
+
+  describe('userWords (particle-aware matching)', () => {
+    it('조사가 붙은 단어를 매칭하되 span은 원형만 포함', async () => {
+      const pipeline = new DetectionPipeline({
+        userWords: [{ text: '삼성전자', category: 'ORG' }],
+        noNer: true,
+      });
+      const spans = await pipeline.detect('삼성전자의 매출이 증가했다.');
+      const matched = spans.filter((s) => s.category === 'ORG');
+
+      expect(matched).toHaveLength(1);
+      expect(matched[0].text).toBe('삼성전자');
+      expect(matched[0].end - matched[0].start).toBe(4);
+      expect(matched[0].method).toBe('MANUAL');
+      expect(matched[0].confidence).toBe(1.0);
+      expect(matched[0].priority).toBe(1);
+    });
+
+    it('여러 조사에 대해 모두 매칭', async () => {
+      const pipeline = new DetectionPipeline({
+        userWords: [{ text: '삼성전자' }],
+        noNer: true,
+      });
+
+      for (const suffix of ['의', '가', '에서', '를', '은', '와', '로']) {
+        const spans = await pipeline.detect(`삼성전자${suffix} 근무`);
+        const matched = spans.filter((s) => s.text === '삼성전자');
+        expect(matched.length).toBeGreaterThanOrEqual(1);
+        expect(matched[0].text).toBe('삼성전자');
+      }
+    });
+
+    it('조사가 아닌 글자가 이어지면 매칭하지 않음', async () => {
+      const pipeline = new DetectionPipeline({
+        userWords: [{ text: '삼성전자' }],
+        noNer: true,
+      });
+      const spans = await pipeline.detect('삼성전자회의에 참석');
+      const matched = spans.filter((s) => s.text === '삼성전자');
+      expect(matched).toHaveLength(0);
+    });
+
+    it('단어 뒤가 공백이면 매칭', async () => {
+      const pipeline = new DetectionPipeline({
+        userWords: [{ text: '홍길동' }],
+        noNer: true,
+      });
+      const spans = await pipeline.detect('홍길동 입니다');
+      expect(spans.filter((s) => s.text === '홍길동')).toHaveLength(1);
+    });
+
+    it('단어가 텍스트 끝이면 매칭', async () => {
+      const pipeline = new DetectionPipeline({
+        userWords: [{ text: '홍길동' }],
+        noNer: true,
+      });
+      const spans = await pipeline.detect('이름은 홍길동');
+      expect(spans.filter((s) => s.text === '홍길동')).toHaveLength(1);
+    });
+
+    it('기본 category는 CUSTOM', async () => {
+      const pipeline = new DetectionPipeline({
+        userWords: [{ text: '홍길동' }],
+        noNer: true,
+      });
+      const spans = await pipeline.detect('홍길동의 이메일');
+      const matched = spans.filter((s) => s.text === '홍길동');
+      expect(matched[0].category).toBe('CUSTOM');
+    });
+
+    it('기존 ManualRule과 함께 동작', async () => {
+      const pipeline = new DetectionPipeline({
+        manual: [{ pattern: 'Project-X', category: 'PROJECT' }],
+        userWords: [{ text: '삼성전자', category: 'ORG' }],
+        noNer: true,
+      });
+      const spans = await pipeline.detect('삼성전자의 Project-X 보고서');
+      expect(spans.some((s) => s.category === 'ORG' && s.text === '삼성전자')).toBe(true);
+      expect(spans.some((s) => s.category === 'PROJECT' && s.text === 'Project-X')).toBe(true);
+    });
+  });
 });

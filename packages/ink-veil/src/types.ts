@@ -16,31 +16,10 @@ export type TokenMode = 'tag' | 'bracket' | 'plain';
  */
 export type FidelityTier = '1a' | '1b' | '2' | '3' | '4';
 
-/**
- * Detection engine identifier.
- * - 'MANUAL': User-defined string/regex rules (highest priority)
- * - 'REGEX':  Korean PII pattern matching (15+ patterns)
- * - 'NER':    GLiNER ONNX zero-shot NER (span-based)
- */
-export type DetectionMethod = 'MANUAL' | 'REGEX' | 'NER';
-
-/** A single detected entity span within source text. */
-export interface DetectionSpan {
-  /** Start character offset (inclusive, 0-based). */
-  start: number;
-  /** End character offset (exclusive). */
-  end: number;
-  /** Matched text. */
-  text: string;
-  /** Entity category (e.g. "PER", "ORG", "RRN"). */
-  category: string;
-  /** Engine that produced this span. */
-  method: DetectionMethod;
-  /** Confidence score (0.0–1.0). Regex/manual always 1.0. */
-  score: number;
-  /** Token string assigned after merging (e.g. `<iv-per id="001">PER_001</iv-per>`). */
-  token?: string;
-}
+// Canonical detection types — re-exported from detection layer
+import type { DetectionMethod as _DetectionMethod } from './detection/types.js';
+export type { DetectionMethod, DetectionSpan } from './detection/types.js';
+type DetectionMethod = _DetectionMethod;
 
 /** A single entry in the veil dictionary. */
 export interface DictionaryEntry {
@@ -103,7 +82,7 @@ export interface VeilOptions {
   engines?: Array<'MANUAL' | 'REGEX' | 'NER'>;
   /** Token output mode (default: 'tag'). */
   mode?: TokenMode;
-  /** NER model name (default: 'gliner_multi-v2.1'). */
+  /** NER model name (default: 'kiwi-base'). */
   nerModel?: string;
   /** Additional entity labels for NER zero-shot detection. */
   nerLabels?: string[];

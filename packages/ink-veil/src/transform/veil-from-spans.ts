@@ -1,6 +1,6 @@
 /**
  * Veil text using pre-computed detection spans.
- * MUST NOT import from detection/, document/, node:fs, node:crypto, onnxruntime-node.
+ * MUST NOT import from detection/, document/, node:fs, node:crypto
  */
 import type { Dictionary } from '../dictionary/dictionary.js';
 import type { DictionaryEntry } from '../dictionary/entry.js';

@@ -34,7 +34,7 @@ import {
   TokenGenerator,
 } from '../../index.js';
 
-// Transform subpath imports (must not pull in onnxruntime)
+// Transform subpath imports (must not pull in heavy deps)
 import {
   Dictionary as DictionaryFromTransform,
   veilTextFromDictionary as veilFromTransform,

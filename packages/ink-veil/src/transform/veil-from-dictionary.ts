@@ -1,7 +1,7 @@
 /**
  * Veil text by scanning against existing dictionary entries.
  * Longest-match-first ordering to prevent prefix collision.
- * MUST NOT import from detection/, document/, node:fs, node:crypto, onnxruntime-node.
+ * MUST NOT import from detection/, document/, node:fs, node:crypto
  */
 import type { Dictionary } from '../dictionary/dictionary.js';
 import type { VeilResult } from './types.js';

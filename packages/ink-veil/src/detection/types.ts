@@ -8,6 +8,8 @@ export interface DetectionSpan {
   method: DetectionMethod;
   confidence: number;
   priority?: number;
+  /** Token string assigned after merging (e.g. `<iv-per id="001">PER_001</iv-per>`). */
+  token?: string;
 }
 
 export interface DetectionConfig {

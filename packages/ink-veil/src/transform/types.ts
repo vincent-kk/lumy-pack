@@ -1,6 +1,6 @@
 /**
  * Transform module types.
- * MUST NOT import from detection/, document/, node:fs, node:crypto, onnxruntime-node.
+ * MUST NOT import from detection/, document/, node:fs, node:crypto
  */
 
 /** Result of a veil operation on a text string. */

@@ -128,7 +128,7 @@ describe('NERModelError', () => {
   });
 
   it('context passes through', () => {
-    const ctx = { model: 'gliner_multi-v2.1', checksum: 'mismatch' };
+    const ctx = { model: 'kiwi-base', checksum: 'mismatch' };
     const e = new NERModelError('checksum failed', ctx);
     expect(e.context).toEqual(ctx);
   });

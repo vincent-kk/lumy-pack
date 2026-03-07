@@ -4,7 +4,7 @@
  *   Stage 1: Strict XML tag match  <iv-cat id="NNN">CAT_NNN</iv-cat>
  *   Stage 2: Loose XML (quote style change, extra whitespace)
  *   Stage 3: Dynamic plain token scan  CAT_NNN or {{CAT_NNN}}
- * MUST NOT import from detection/, document/, node:fs, node:crypto, onnxruntime-node.
+ * MUST NOT import from detection/, document/, node:fs, node:crypto
  */
 import type { Dictionary } from '../dictionary/dictionary.js';
 import type { UnveilResult } from './types.js';

@@ -33,9 +33,7 @@
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "bin": {
-    "scene-sieve": "dist/cli.mjs"
-  },
+  "bin": "dist/cli.mjs",
   "files": [
     "dist",
     "!dist/tsconfig.tsbuildinfo"

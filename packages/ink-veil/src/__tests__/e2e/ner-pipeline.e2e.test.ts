@@ -1,7 +1,7 @@
 /**
  * NER-enabled E2E pipeline tests
  *
- * GLiNER ONNX 모델이 설치된 환경에서만 실행.
+ * Kiwi 모델이 설치된 환경에서만 실행.
  * 결과 파일은 .samples/ner-test-results/ 에 보존 (수동 품질 확인용).
  */
 
@@ -22,7 +22,7 @@ const MANIFEST_PATH = join(
   homedir(),
   '.ink-veil',
   'models',
-  'gliner_multi-v2.1',
+  'kiwi-base',
   '.manifest.json',
 );
 

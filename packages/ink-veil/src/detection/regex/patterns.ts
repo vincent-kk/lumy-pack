@@ -125,6 +125,34 @@ export const PATTERNS: RegexPattern[] = [
     confidence: 0.55,
     priority: 4,
   },
+  {
+    // 날짜 (한국어): 2024년 3월 15일
+    category: 'DATE',
+    pattern: /\d{4}년\s?\d{1,2}월\s?\d{1,2}일/g,
+    confidence: 0.9,
+    priority: 2,
+  },
+  {
+    // 날짜 (ISO): 2024-03-15
+    category: 'DATE',
+    pattern: /\b\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])\b/g,
+    confidence: 0.95,
+    priority: 2,
+  },
+  {
+    // 날짜 (점 구분): 2024.03.15
+    category: 'DATE',
+    pattern: /\b\d{4}\.(?:0[1-9]|1[0-2])\.(?:0[1-9]|[12]\d|3[01])\b/g,
+    confidence: 0.9,
+    priority: 2,
+  },
+  {
+    // 날짜 (슬래시): 03/15/2024
+    category: 'DATE',
+    pattern: /\b(?:0[1-9]|1[0-2])\/(?:0[1-9]|[12]\d|3[01])\/\d{4}\b/g,
+    confidence: 0.85,
+    priority: 2,
+  },
 ];
 
 export function applyPattern(text: string, regexPattern: RegexPattern): DetectionSpan[] {

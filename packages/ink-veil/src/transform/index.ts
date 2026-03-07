@@ -1,6 +1,6 @@
 /**
  * @lumy-pack/ink-veil/transform — subpath export entry.
- * Lightweight: no detection/, no document/, no node:fs, no onnxruntime-node.
+ * Lightweight: no detection/, no document/, no node:fs
  */
 export { Dictionary } from '../dictionary/dictionary.js';
 export type { DictionaryEntry } from '../dictionary/entry.js';

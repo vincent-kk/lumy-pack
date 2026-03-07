@@ -1,10 +1,12 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
 import type { DetectionSpan, DetectionConfig } from './types.js';
 import { normalizeNFC } from './normalize.js';
-import { stripTrailingParticle } from './particles.js';
+import { stripTrailingParticle, KOREAN_PARTICLES } from './particles.js';
 import { mergeSpans } from './merger.js';
 import { RegexEngine } from './regex/engine.js';
-import type { NEREngine } from './ner/engine.js';
-import { ModelManager } from './ner/model-manager.js';
+import type { KiwiEngine } from './kiwi/engine.js';
 
 export type { DetectionSpan, DetectionConfig, DetectionEngine } from './types.js';
 export { normalizeNFC } from './normalize.js';
@@ -19,6 +21,14 @@ export interface ManualRule {
   priority?: number;
 }
 
+/** User-defined target word for particle-aware matching. */
+export interface UserWord {
+  /** Target word (e.g. "삼성전자", "홍길동") */
+  text: string;
+  /** Entity category (default: 'CUSTOM') */
+  category?: string;
+}
+
 export interface DetectionEngineManual {
   detect(text: string): DetectionSpan[];
 }
@@ -29,6 +39,7 @@ export interface DictionaryLike {
 
 export interface DetectionPipelineOptions {
   manual?: ManualRule[];
+  userWords?: UserWord[];
   config?: DetectionConfig;
   noNer?: boolean;
 }
@@ -43,49 +54,58 @@ export class DetectionPipeline {
   private readonly manualEngine: DetectionEngineManual | null;
   private readonly config: DetectionConfig;
   private readonly noNer: boolean;
-  private nerEngine: NEREngine | null = null;
-  private nerInitPromise: Promise<void> | null = null;
+  private kiwiEngine: KiwiEngine | null = null;
+  private kiwiInitPromise: Promise<void> | null = null;
 
   constructor(options: DetectionPipelineOptions = {}) {
     this.regexEngine = new RegexEngine();
     this.config = options.config ?? { priorityOrder: ['MANUAL', 'REGEX', 'NER'] };
     this.noNer = options.noNer ?? false;
 
-    if (options.manual && options.manual.length > 0) {
-      this.manualEngine = createInlineManualEngine(options.manual);
+    const hasManual = options.manual && options.manual.length > 0;
+    const hasUserWords = options.userWords && options.userWords.length > 0;
+
+    if (hasManual || hasUserWords) {
+      this.manualEngine = createInlineManualEngine(
+        options.manual ?? [],
+        options.userWords ?? [],
+      );
     } else {
       this.manualEngine = null;
     }
   }
 
   /**
-   * NER 엔진을 초기화합니다. 모델 다운로드가 필요하면 자동으로 수행합니다.
+   * Kiwi 엔진을 초기화합니다.
    * noNer가 true이면 아무 작업도 하지 않습니다.
    */
-  async initNer(): Promise<void> {
-    if (this.noNer || this.nerEngine) return;
+  async initKiwi(): Promise<void> {
+    if (this.noNer || this.kiwiEngine) return;
 
-    if (this.nerInitPromise) {
-      await this.nerInitPromise;
+    if (this.kiwiInitPromise) {
+      await this.kiwiInitPromise;
       return;
     }
 
-    this.nerInitPromise = (async () => {
+    this.kiwiInitPromise = (async () => {
       try {
-        const manager = new ModelManager();
-        const result = await manager.ensureWithFallback();
-        if (!result) return; // fallback to regex-only
+        const modelDir = join(homedir(), '.ink-veil', 'models', 'kiwi-base', 'base');
+        if (!existsSync(modelDir)) {
+          process.stderr.write('ink-veil: Kiwi model not found. Using regex-only detection.\n');
+          return;
+        }
 
-        const { NEREngine: NEREngineClass } = await import('./ner/engine.js');
-        this.nerEngine = new NEREngineClass({ modelDir: result.modelDir, modelId: result.modelId });
-        await this.nerEngine.init();
+        const { KiwiEngine: KiwiEngineClass } = await import('./kiwi/engine.js');
+        this.kiwiEngine = new KiwiEngineClass();
+        await this.kiwiEngine.init(modelDir);
       } catch (e) {
-        process.stderr.write(`ink-veil: NER init failed: ${e instanceof Error ? e.message : String(e)}. Using regex-only.\n`);
-        this.nerEngine = null;
+        process.stderr.write(`ink-veil: Kiwi init failed: ${e instanceof Error ? e.message : String(e)}. Using regex-only.\n`);
+        this.kiwiEngine = null;
+        this.kiwiInitPromise = null;
       }
     })();
 
-    await this.nerInitPromise;
+    await this.kiwiInitPromise;
   }
 
   /**
@@ -100,15 +120,15 @@ export class DetectionPipeline {
     const manualSpans = this.manualEngine ? this.manualEngine.detect(text) : [];
     const regexSpans = this.regexEngine.detect(text, this.config);
 
-    // NER 엔진 실행 (초기화되지 않았으면 자동 초기화)
+    // Kiwi 엔진 실행 (초기화되지 않았으면 자동 초기화)
     let nerSpans: DetectionSpan[] = [];
     if (!this.noNer) {
-      await this.initNer();
-      if (this.nerEngine) {
+      await this.initKiwi();
+      if (this.kiwiEngine) {
         try {
-          nerSpans = await this.nerEngine.detect(text);
+          nerSpans = this.kiwiEngine.detect(text);
         } catch (e) {
-          process.stderr.write(`ink-veil: NER detection error: ${e instanceof Error ? e.message : String(e)}\n`);
+          process.stderr.write(`ink-veil: Kiwi detection error: ${e instanceof Error ? e.message : String(e)}\n`);
         }
       }
     }
@@ -135,19 +155,21 @@ export class DetectionPipeline {
     return merged;
   }
 
-  /** NER 워커 스레드를 정리합니다. */
+  /** Kiwi 엔진 리소스를 정리합니다. */
   async dispose(): Promise<void> {
-    if (this.nerEngine) {
-      await this.nerEngine.dispose();
-      this.nerEngine = null;
+    if (this.kiwiEngine) {
+      await this.kiwiEngine.dispose();
+      this.kiwiEngine = null;
     }
   }
 }
 
-function createInlineManualEngine(rules: ManualRule[]): DetectionEngineManual {
+function createInlineManualEngine(rules: ManualRule[], userWords: UserWord[]): DetectionEngineManual {
   return {
     detect(text: string): DetectionSpan[] {
       const spans: DetectionSpan[] = [];
+
+      // 1. ManualRule matching (existing behavior)
       for (const rule of rules) {
         const confidence = rule.confidence ?? 1.0;
         const priority = rule.priority ?? 1;
@@ -185,6 +207,32 @@ function createInlineManualEngine(rules: ManualRule[]): DetectionEngineManual {
           }
         }
       }
+
+      // 2. UserWord particle-aware matching
+      for (const word of userWords) {
+        let idx = text.indexOf(word.text);
+        while (idx !== -1) {
+          const afterEnd = idx + word.text.length;
+          const rest = text.slice(afterEnd);
+          const isWordBoundary = rest.length === 0
+            || /^[\s,.\n;:!?)\]>}]/.test(rest)
+            || KOREAN_PARTICLES.some(p => rest.startsWith(p));
+
+          if (isWordBoundary) {
+            spans.push({
+              start: idx,
+              end: afterEnd,
+              text: word.text,
+              category: word.category ?? 'CUSTOM',
+              method: 'MANUAL',
+              confidence: 1.0,
+              priority: 1,
+            });
+          }
+          idx = text.indexOf(word.text, idx + 1);
+        }
+      }
+
       return spans;
     },
   };

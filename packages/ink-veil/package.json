@@ -39,9 +39,7 @@
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "bin": {
-    "ink-veil": "dist/cli.mjs"
-  },
+  "bin": "dist/cli.mjs",
   "files": [
     "dist",
     "!dist/tsconfig.tsbuildinfo"
@@ -60,7 +58,6 @@
   },
   "dependencies": {
     "@ltd/j-toml": "^1.38.0",
-    "@xenova/transformers": "^2.17.0",
     "ajv": "^8.17.0",
     "chardet": "^2.0.0",
     "commander": "^12.1.0",
@@ -70,7 +67,7 @@
     "js-yaml": "^4.1.0",
     "jsdom": "^25.0.0",
     "jszip": "^3.10.1",
-    "onnxruntime-node": "^1.20.0",
+    "kiwi-nlp": "^0.22.1",
     "papaparse": "^5.4.1",
     "xlsx": "^0.18.5"
   },

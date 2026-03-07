@@ -1,25 +1,39 @@
+import { existsSync } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { execSync } from 'node:child_process';
 import { Command } from 'commander';
-import { ModelManager, MODEL_REGISTRY } from '../detection/ner/model-manager.js';
 import { ErrorCode } from '../errors/types.js';
 
+const KIWI_MODEL_DIR = join(homedir(), '.ink-veil', 'models', 'kiwi-base', 'base');
+const KIWI_MODEL_URL = 'https://github.com/bab2min/Kiwi/releases/download/v0.22.2/kiwi_model_v0.22.2_base.tgz';
+
+function isModelInstalled(): boolean {
+  return existsSync(join(KIWI_MODEL_DIR, 'sj.morph'));
+}
+
 export function buildModelCommand(): Command {
-  const model = new Command('model').description('Manage NER models');
+  const model = new Command('model').description('Manage Kiwi NER models');
 
   model
     .command('download')
-    .description('Pre-download NER model to ~/.ink-veil/models/')
-    .option('--model <id>', 'Model ID to download', 'gliner_multi-v2.1')
-    .action(async (opts: { model: string }) => {
-      const modelId = opts.model;
-      if (!MODEL_REGISTRY[modelId]) {
-        process.stderr.write(`ink-veil: Unknown model "${modelId}". Available: ${Object.keys(MODEL_REGISTRY).join(', ')}\n`);
-        process.exit(ErrorCode.INVALID_ARGUMENTS);
+    .description('Download Kiwi morphological model to ~/.ink-veil/models/')
+    .action(async () => {
+      if (isModelInstalled()) {
+        process.stdout.write(`Model already installed: ${KIWI_MODEL_DIR}\n`);
+        process.exit(ErrorCode.SUCCESS);
       }
 
-      const manager = new ModelManager();
       try {
-        const result = await manager.ensureModel(modelId);
-        process.stdout.write(`Model installed: ${result.modelDir}\n`);
+        const parentDir = join(homedir(), '.ink-veil', 'models', 'kiwi-base');
+        await mkdir(parentDir, { recursive: true });
+        process.stderr.write('ink-veil: Downloading Kiwi model (~16MB)...\n');
+        execSync(
+          `curl -sL "${KIWI_MODEL_URL}" | tar -xzf - --strip-components=2 -C "${parentDir}"`,
+          { stdio: ['pipe', 'pipe', 'inherit'] },
+        );
+        process.stdout.write(`Model installed: ${KIWI_MODEL_DIR}\n`);
         process.exit(ErrorCode.SUCCESS);
       } catch (err) {
         process.stderr.write(`ink-veil: model download failed — ${err instanceof Error ? err.message : String(err)}\n`);
@@ -29,63 +43,42 @@ export function buildModelCommand(): Command {
 
   model
     .command('status')
-    .description('Show installation status of all NER models')
+    .description('Show Kiwi model installation status')
     .action(async () => {
-      const manager = new ModelManager();
-      const statuses = await manager.status();
-
-      for (const s of statuses) {
-        const info = MODEL_REGISTRY[s.modelId]!;
-        if (!s.installed) {
-          process.stdout.write(`${s.modelId}: not installed (${Math.round(info.totalSizeBytes / 1_048_576)}MB)\n`);
-        } else if (s.checksumOk) {
-          process.stdout.write(`${s.modelId}: installed (${Math.round(info.totalSizeBytes / 1_048_576)}MB, checksum OK)\n`);
-        } else {
-          process.stdout.write(`${s.modelId}: installed but checksum MISMATCH — run model download to repair\n`);
-        }
+      if (isModelInstalled()) {
+        process.stdout.write(`kiwi-base: installed (${KIWI_MODEL_DIR})\n`);
+      } else {
+        process.stdout.write('kiwi-base: not installed. Run: ink-veil model download\n');
       }
       process.exit(ErrorCode.SUCCESS);
     });
 
   model
     .command('list')
-    .description('List installed NER models with disk size')
+    .description('List installed models')
     .action(async () => {
-      const manager = new ModelManager();
-      const installed = await manager.list();
-
-      if (installed.length === 0) {
+      if (isModelInstalled()) {
+        process.stdout.write(`kiwi-base (installed)\n`);
+      } else {
         process.stdout.write('No models installed. Run: ink-veil model download\n');
-        process.exit(ErrorCode.SUCCESS);
-      }
-
-      for (const s of installed) {
-        const info = MODEL_REGISTRY[s.modelId]!;
-        const status = s.checksumOk ? 'checksum OK' : 'checksum MISMATCH';
-        process.stdout.write(`${s.modelId} (${Math.round(info.totalSizeBytes / 1_048_576)}MB, ${status})\n`);
       }
       process.exit(ErrorCode.SUCCESS);
     });
 
   model
     .command('remove')
-    .description('Remove a cached NER model from ~/.ink-veil/models/')
-    .argument('<model>', 'Model ID to remove')
-    .action(async (modelId: string) => {
-      if (!MODEL_REGISTRY[modelId]) {
-        process.stderr.write(`ink-veil: Unknown model "${modelId}". Available: ${Object.keys(MODEL_REGISTRY).join(', ')}\n`);
-        process.exit(ErrorCode.INVALID_ARGUMENTS);
-      }
-
-      const manager = new ModelManager();
-      try {
-        await manager.removeModel(modelId);
-        process.stdout.write(`Model removed: ${modelId}\n`);
+    .description('Remove cached Kiwi model from ~/.ink-veil/models/')
+    .argument('[model]', 'Model ID to remove', 'kiwi-base')
+    .action(async () => {
+      const parentDir = join(homedir(), '.ink-veil', 'models', 'kiwi-base');
+      if (!existsSync(parentDir)) {
+        process.stdout.write('No model to remove.\n');
         process.exit(ErrorCode.SUCCESS);
-      } catch (err) {
-        process.stderr.write(`ink-veil: model remove failed — ${err instanceof Error ? err.message : String(err)}\n`);
-        process.exit(ErrorCode.NER_MODEL_FAILED);
       }
+      const { rm } = await import('node:fs/promises');
+      await rm(parentDir, { recursive: true, force: true });
+      process.stdout.write('Model removed: kiwi-base\n');
+      process.exit(ErrorCode.SUCCESS);
     });
 
   return model;

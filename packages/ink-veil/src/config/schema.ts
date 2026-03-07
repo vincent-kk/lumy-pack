@@ -30,7 +30,7 @@ export const CONFIG_SCHEMA = ({
       properties: {
         model: {
           type: 'string',
-          default: 'gliner_multi-v2.1',
+          default: 'kiwi-base',
           nullable: false,
         },
         threshold: {

@@ -55,7 +55,7 @@ export const DEFAULT_CONFIG: InkVeilConfig = {
   tokenMode: 'tag',
   signature: true,
   ner: {
-    model: 'gliner_multi-v2.1',
+    model: 'kiwi-base',
     threshold: 0.2,
     enabled: true,
   },
