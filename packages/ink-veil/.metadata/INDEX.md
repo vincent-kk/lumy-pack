@@ -12,6 +12,9 @@ Bidirectional fidelity-tiered document de-identification/re-identification engin
 | 4 | [Token Design & LLM Resilience](./token-design.md) | LLM-resistant token formats, three-stage fuzzy matching, invisible signatures, and preservation benchmarks |
 | 5 | [Fidelity Tiers & Parsers](./fidelity-tiers.md) | Round-trip guarantees per file format, tier classification, and parser implementation constraints |
 | 6 | [CLI & Programmatic Interface](./cli-interface.md) | POSIX CLI design, LLM-agent-friendly structured output, subpath exports, and MCP tool integration |
+| 7 | [Error System](./error-system.md) | Error code enum, Result pattern, error class hierarchy, batch error handling |
+| 8 | [Model Deployment](./model-deployment.md) | GLiNER lazy download strategy, SHA-256 checksum verification, fallback chain, air-gapped deployment |
+| 9 | [Configuration Schema](./config-schema.md) | User config file format, JSON Schema, priority order, Phase 2 deferred design |
 
 ## Architecture Overview
 

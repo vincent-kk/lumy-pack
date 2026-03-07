@@ -169,6 +169,11 @@ Output: deduplicated, non-overlapping detection spans
        add to dictionary
 
 5. Return accepted spans with assigned tokens
+
+Scaling note:
+  - Current implementation uses sorted array with O(n²) worst case
+  - Acceptable for typical documents (< 1,000 spans)
+  - For > 10,000 spans: consider interval tree for O(n log n) overlap check
 ```
 
 ### 2.3 Overlap Resolution Examples
@@ -232,7 +237,15 @@ Korean attaches particles directly to nouns, making entity boundary detection ha
 "서울에서부터" → entity: "서울", particle: "에서부터"
 ```
 
-GLiNER's span-based approach handles this better than token-level NER, but edge cases remain. The detection pipeline should strip common Korean particles (은/는/이/가/을/를/에/에서/의/로/와/과) from span boundaries during post-processing.
+GLiNER's span-based approach handles this better than token-level NER, but edge cases remain. The detection pipeline should strip common Korean particles from span boundaries during post-processing.
+
+#### Particle List (17 patterns, longest-match-first order)
+
+```
+에서부터, 에서, 까지, 부터, 으로, 에게, 한테, 와, 과, 은, 는, 이, 가, 을, 를, 의, 도, 만, 로
+```
+
+Implementation: custom regex suffix stripper. No external morphological analyzer (e.g., mecab, konlpy) required. The particle list is ordered by length descending to prevent partial matches (e.g., "에서부터" must match before "에서").
 
 ### 4.2 Unicode Normalization
 

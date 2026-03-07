@@ -69,12 +69,19 @@ class TokenGenerator {
 }
 ```
 
-Token IDs are sequential within each category, zero-padded to 3 digits:
+Token IDs are sequential within each category, zero-padded with dynamic width:
 ```
-PER_001, PER_002, ..., PER_999
+PER_001, PER_002, ..., PER_999, PER_1000, PER_1001, ...
 ORG_001, ORG_002, ...
 LOC_001, LOC_002, ...
+
+Width rule:
+  count <= 999  → 3 digits (PER_001)
+  count > 999   → 4+ digits (PER_1000)
+  Stage 3 regex \d{3,} matches both widths
 ```
+
+**Counter initialization**: When loading an existing Dictionary via `Dictionary.fromJSON()`, the `TokenGenerator` must initialize its counters from the max existing ID per category. For example, if the dictionary contains `PER_042`, the PER counter starts at 43.
 
 ## 4. Three-Stage Fuzzy Unveil
 
@@ -103,13 +110,20 @@ Tolerates:
 - Quote style changes (`"` → `'`)
 - Additional attributes added by LLM
 
-### Stage 3: Plain Token Scan
+### Stage 3: Plain Token Scan (Dynamic)
 
-```regex
-/\b(PER|ORG|LOC|DATE|RRN|ARN|DL|PASSPORT|BRN|PHONE|TEL|EMAIL|CARD|ACCOUNT|IP|SERIAL|USER)_(\d{3,})\b/g
+```typescript
+// Stage 3 regex is dynamically generated from dictionary categories at unveil time.
+// This ensures user-defined categories (PROJECT, INVOICE, etc.) are matched.
+
+function buildStage3Regex(dictionary: Dictionary): RegExp {
+  const categories = dictionary.getCategories(); // e.g., ['PER', 'ORG', 'LOC', 'PROJECT', ...]
+  const pattern = `\\b(${categories.join('|')})_(\\d{3,})\\b`;
+  return new RegExp(pattern, 'g');
+}
 ```
 
-Last resort — finds bare token IDs even if all XML structure was stripped.
+Last resort — finds bare token IDs even if all XML structure was stripped. The regex is built from dictionary categories rather than hardcoded, supporting user-defined entity types.
 
 ### Stage Flow
 
@@ -184,9 +198,26 @@ Signature effectiveness is **unverified**:
 
 The signature is a best-effort defense layer — a "please be careful" note to the LLM, not a guarantee.
 
-## 6. Extension Veil (Lightweight)
+## 6. Veil Dual Mode
 
-For the Chrome Extension, veil/unveil operates without NER detection — pure dictionary lookup:
+`transform/` exposes two distinct veil functions to serve different consumers:
+
+### 6.1 `veilTextFromSpans(text, spans, dictionary)` — Full Pipeline Mode
+
+Used by the full `InkVeil` API after the detection pipeline produces `DetectionSpan[]`:
+
+```
+Full Pipeline Veil:
+  1. Receive pre-computed DetectionSpan[] from detection pipeline
+  2. Sort spans by start position DESCENDING (reverse offset order)
+  3. Replace each span with its token from dictionary
+  → Used by: InkVeil.veil(), CLI veil command
+  → Requires: detection/ module (NER + Regex + Manual)
+```
+
+### 6.2 `veilTextFromDictionary(text, dictionary)` — Extension Mode (Lightweight)
+
+For the Chrome Extension, veil operates without NER detection — pure dictionary lookup:
 
 ```
 Extension Veil:
@@ -194,11 +225,13 @@ Extension Veil:
   2. For each entry: find all occurrences of entry.original in text
   3. Replace with entry.token
   → No NER, no regex detection, no new entity discovery
-
-Extension Unveil:
-  Same 3-stage fuzzy matching as full unveil
-  (reuses transform/unveil.ts — shared code)
+  → Used by: Chrome Extension (ink-veil-ext)
+  → Import: @lumy-pack/ink-veil/transform
 ```
+
+### 6.3 Shared Unveil
+
+Both modes share the same `unveilText()` function with 3-stage fuzzy matching. The unveil path is identical regardless of how the document was veiled.
 
 Longest-match-first ordering prevents partial replacement conflicts:
 ```

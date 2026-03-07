@@ -35,6 +35,7 @@ Commands:
   detect    Detect PII without transformation (dry-run)
   verify    Verify round-trip fidelity
   dict      Dictionary management (create, inspect, merge, export)
+  model     NER model management (download, status, list, remove)
   version   Print version information
 ```
 
@@ -75,6 +76,7 @@ npx @lumy-pack/ink-veil veil input.txt -d dict.json --json
 | `--encrypt <password>` | | | Encrypt dictionary with password |
 | `--stdin` | | `false` | Read text from stdin |
 | `--json` | | `false` | Output structured JSON to stdout |
+| `--encoding <enc>` | | `utf-8` | Text encoding for input files and stdin |
 | `--verbose` | `-v` | `false` | Detailed logging to stderr |
 
 **JSON Output Structure:**
