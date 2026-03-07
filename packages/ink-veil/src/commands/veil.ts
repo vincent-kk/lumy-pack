@@ -29,6 +29,7 @@ interface FileError {
   ok: false;
   input: string;
   error: string;
+  exitCode?: number;
 }
 
 type FileOutcome = FileResult | FileError;
@@ -136,13 +137,13 @@ export function buildVeilCommand(): Command {
       const processFile = async (file: string): Promise<FileOutcome> => {
         const abs = resolve(file);
         if (!existsSync(abs)) {
-          return { ok: false, input: abs, error: `File not found: ${abs}` };
+          return { ok: false, input: abs, error: `File not found: ${abs}`, exitCode: ErrorCode.FILE_NOT_FOUND };
         }
 
         const ext = basename(abs).split('.').pop() ?? 'txt';
         const parserResult = await getParser(ext);
         if (!parserResult.ok) {
-          return { ok: false, input: abs, error: `Unsupported format: .${ext}` };
+          return { ok: false, input: abs, error: `Unsupported format: .${ext}`, exitCode: ErrorCode.UNSUPPORTED_FORMAT };
         }
 
         try {
@@ -227,7 +228,13 @@ export function buildVeilCommand(): Command {
         }
       }
 
-      process.exit(failed > 0 ? ErrorCode.GENERAL_ERROR : ErrorCode.SUCCESS);
+      // Determine exit code: use specific code for single-file failures, GENERAL_ERROR for multi-file
+      let exitCode = ErrorCode.SUCCESS;
+      if (failed > 0) {
+        const errors = outcomes.filter((o): o is FileError => !o.ok);
+        exitCode = (errors.length === 1 && errors[0].exitCode) ? errors[0].exitCode : ErrorCode.GENERAL_ERROR;
+      }
+      process.exit(exitCode);
     });
 
   return cmd;

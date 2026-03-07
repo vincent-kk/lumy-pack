@@ -27,6 +27,7 @@ interface FileError {
   ok: false;
   input: string;
   error: string;
+  exitCode?: number;
 }
 
 type FileOutcome = FileResult | FileError;
@@ -95,7 +96,7 @@ export function buildUnveilCommand(): Command {
       const processFile = async (file: string): Promise<FileOutcome> => {
         const abs = resolve(file);
         if (!existsSync(abs)) {
-          return { ok: false, input: abs, error: `File not found: ${abs}` };
+          return { ok: false, input: abs, error: `File not found: ${abs}`, exitCode: ErrorCode.FILE_NOT_FOUND };
         }
 
         try {
@@ -105,7 +106,7 @@ export function buildUnveilCommand(): Command {
           const { text: restored, matchedTokens, modifiedTokens, unmatchedTokens, tokenIntegrity } = result;
 
           if (strict && tokenIntegrity < 1.0) {
-            return { ok: false, input: abs, error: `Token integrity ${tokenIntegrity.toFixed(2)} < 1.0 (--strict mode)` };
+            return { ok: false, input: abs, error: `Token integrity ${tokenIntegrity.toFixed(2)} < 1.0 (--strict mode)`, exitCode: ErrorCode.TOKEN_INTEGRITY_BELOW_THRESHOLD };
           }
 
           await mkdir(outputDir, { recursive: true });
@@ -140,7 +141,7 @@ export function buildUnveilCommand(): Command {
           const { text: restored, matchedTokens, modifiedTokens, unmatchedTokens, tokenIntegrity } = result;
 
           if (strict && tokenIntegrity < 1.0) {
-            outcomes.push({ ok: false, input: '(stdin)', error: `Token integrity ${tokenIntegrity.toFixed(2)} < 1.0 (--strict mode)` });
+            outcomes.push({ ok: false, input: '(stdin)', error: `Token integrity ${tokenIntegrity.toFixed(2)} < 1.0 (--strict mode)`, exitCode: ErrorCode.TOKEN_INTEGRITY_BELOW_THRESHOLD });
           } else {
             process.stdout.write(restored + '\n');
             outcomes.push({
@@ -197,7 +198,13 @@ export function buildUnveilCommand(): Command {
         }
       }
 
-      process.exit(failed > 0 ? ErrorCode.GENERAL_ERROR : ErrorCode.SUCCESS);
+      // Determine exit code: use specific code for single-file failures, GENERAL_ERROR for multi-file
+      let exitCode = ErrorCode.SUCCESS;
+      if (failed > 0) {
+        const errors = outcomes.filter((o): o is FileError => !o.ok);
+        exitCode = (errors.length === 1 && errors[0].exitCode) ? errors[0].exitCode : ErrorCode.GENERAL_ERROR;
+      }
+      process.exit(exitCode);
     });
 
   return cmd;
