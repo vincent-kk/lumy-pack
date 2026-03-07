@@ -96,7 +96,6 @@ function veilFile(fixturePath, outputPath) {
     dirname(outputPath),
     "-d",
     DICT_PATH,
-    "--no-ner",
     "--json",
   ]);
 }
