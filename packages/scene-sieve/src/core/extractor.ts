@@ -113,7 +113,9 @@ async function extractByFps(
   return buildFrameList(outputDir, duration);
 }
 
-export async function getVideoMetadata(inputPath: string): Promise<FFprobeMetadata> {
+export async function getVideoMetadata(
+  inputPath: string,
+): Promise<FFprobeMetadata> {
   const { stdout } = await execa(ffprobePath, [
     '-v',
     'quiet',

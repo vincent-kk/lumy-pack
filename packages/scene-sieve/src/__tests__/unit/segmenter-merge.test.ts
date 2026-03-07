@@ -162,7 +162,14 @@ describe('mergeSegmentFrames', () => {
     ],
   ] as const)(
     '%s',
-    (_label, plan0Overrides, plan1Overrides, singleFrame0, singleFrame1, expectedLength) => {
+    (
+      _label,
+      plan0Overrides,
+      plan1Overrides,
+      singleFrame0,
+      singleFrame1,
+      expectedLength,
+    ) => {
       const plan0 = makeSegmentPlan(plan0Overrides);
       const plan1 = makeSegmentPlan(plan1Overrides);
 
@@ -191,8 +198,16 @@ describe('mergeSegmentFrames', () => {
   );
 
   it('ID remapping: after dedup, IDs are sequential 0..N-1', () => {
-    const plan0 = makeSegmentPlan({ index: 0, extractStartTime: 0, effectiveFps: 1 });
-    const plan1 = makeSegmentPlan({ index: 1, extractStartTime: 10, effectiveFps: 1 });
+    const plan0 = makeSegmentPlan({
+      index: 0,
+      extractStartTime: 0,
+      effectiveFps: 1,
+    });
+    const plan1 = makeSegmentPlan({
+      index: 1,
+      extractStartTime: 10,
+      effectiveFps: 1,
+    });
 
     const frames0 = makeFrames(3, 0, 0);
     const frames1 = makeFrames(3, 1, 0);
@@ -208,7 +223,11 @@ describe('mergeSegmentFrames', () => {
   });
 
   it('edge remapping: sourceId/targetId updated to global IDs', () => {
-    const plan0 = makeSegmentPlan({ index: 0, extractStartTime: 0, effectiveFps: 1 });
+    const plan0 = makeSegmentPlan({
+      index: 0,
+      extractStartTime: 0,
+      effectiveFps: 1,
+    });
 
     const frames: FrameNode[] = [
       { id: 0, timestamp: 0, extractPath: '/tmp/f0.jpg' },
@@ -216,7 +235,9 @@ describe('mergeSegmentFrames', () => {
     ];
     const edges: ScoreEdge[] = [{ sourceId: 0, targetId: 1, score: 0.8 }];
 
-    const merged = mergeSegmentFrames([makeSegmentResult(plan0, frames, edges)]);
+    const merged = mergeSegmentFrames([
+      makeSegmentResult(plan0, frames, edges),
+    ]);
 
     expect(merged.edges).toHaveLength(1);
     expect(merged.edges[0].sourceId).toBe(0);
@@ -225,7 +246,11 @@ describe('mergeSegmentFrames', () => {
   });
 
   it('duplicate edge handling: overlapping segment edges with same source/target keep higher score', () => {
-    const plan = makeSegmentPlan({ index: 0, extractStartTime: 0, effectiveFps: 1 });
+    const plan = makeSegmentPlan({
+      index: 0,
+      extractStartTime: 0,
+      effectiveFps: 1,
+    });
     const frames: FrameNode[] = [
       { id: 0, timestamp: 0, extractPath: '/tmp/f0.jpg' },
       { id: 1, timestamp: 1, extractPath: '/tmp/f1.jpg' },
@@ -254,8 +279,16 @@ describe('mergeSegmentFrames', () => {
 
   it('edge with unmapped node (filtered duplicate) is dropped', () => {
     // If a local frame was a duplicate and got deduped, its edge should be dropped
-    const plan0 = makeSegmentPlan({ index: 0, extractStartTime: 0, effectiveFps: 2 });
-    const plan1 = makeSegmentPlan({ index: 1, extractStartTime: 0.1, effectiveFps: 2 });
+    const plan0 = makeSegmentPlan({
+      index: 0,
+      extractStartTime: 0,
+      effectiveFps: 2,
+    });
+    const plan1 = makeSegmentPlan({
+      index: 1,
+      extractStartTime: 0.1,
+      effectiveFps: 2,
+    });
 
     // dupThreshold = 1/(2*2) = 0.25
     const frames0: FrameNode[] = [
@@ -277,15 +310,16 @@ describe('mergeSegmentFrames', () => {
     ]);
 
     // local 0 of seg1 was deduped → no globalId → edge dropped
-    const droppedEdge = merged.edges.find(
-      (e) =>
-        e.score === 0.7,
-    );
+    const droppedEdge = merged.edges.find((e) => e.score === 0.7);
     expect(droppedEdge).toBeUndefined();
   });
 
   it('animation remapping: startFrameId/endFrameId updated to global IDs', () => {
-    const plan = makeSegmentPlan({ index: 0, extractStartTime: 0, effectiveFps: 1 });
+    const plan = makeSegmentPlan({
+      index: 0,
+      extractStartTime: 0,
+      effectiveFps: 1,
+    });
     const frames = makeFrames(4, 0, 0);
     const animations: AnimationMetadata[] = [
       {
@@ -297,7 +331,9 @@ describe('mergeSegmentFrames', () => {
       },
     ];
 
-    const merged = mergeSegmentFrames([makeSegmentResult(plan, frames, [], animations)]);
+    const merged = mergeSegmentFrames([
+      makeSegmentResult(plan, frames, [], animations),
+    ]);
 
     expect(merged.animations).toHaveLength(1);
     // Local 1 → global 1, local 3 → global 3 (no dedup in single segment)
@@ -306,11 +342,21 @@ describe('mergeSegmentFrames', () => {
   });
 
   it('animation with unmapped frame (deduped) is dropped', () => {
-    const plan0 = makeSegmentPlan({ index: 0, extractStartTime: 0, effectiveFps: 1 });
-    const plan1 = makeSegmentPlan({ index: 1, extractStartTime: 0.1, effectiveFps: 1 });
+    const plan0 = makeSegmentPlan({
+      index: 0,
+      extractStartTime: 0,
+      effectiveFps: 1,
+    });
+    const plan1 = makeSegmentPlan({
+      index: 1,
+      extractStartTime: 0.1,
+      effectiveFps: 1,
+    });
 
     // dupThreshold = 0.5
-    const frames0: FrameNode[] = [{ id: 0, timestamp: 0, extractPath: '/tmp/a.jpg' }];
+    const frames0: FrameNode[] = [
+      { id: 0, timestamp: 0, extractPath: '/tmp/a.jpg' },
+    ];
     // seg1 frame at global 0.1 → dup
     const frames1: FrameNode[] = [
       { id: 0, timestamp: 0, extractPath: '/tmp/b.jpg' }, // global 0.1, dup

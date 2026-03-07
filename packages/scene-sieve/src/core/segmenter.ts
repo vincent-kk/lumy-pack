@@ -126,8 +126,7 @@ export function computeSegmentPlan(
     0,
   );
   if (totalAllocated > maxFrames) {
-    segments[segments.length - 1].allocatedFrames -=
-      totalAllocated - maxFrames;
+    segments[segments.length - 1].allocatedFrames -= totalAllocated - maxFrames;
   }
 
   return segments;
@@ -179,7 +178,9 @@ function deduplicateFrames(
   for (const entry of frames) {
     if (unique.length > 0) {
       const last = unique[unique.length - 1];
-      if (Math.abs(entry.frame.timestamp - last.frame.timestamp) < dupThreshold) {
+      if (
+        Math.abs(entry.frame.timestamp - last.frame.timestamp) < dupThreshold
+      ) {
         continue; // Skip duplicate — keep first (earlier segment)
       }
     }
@@ -193,9 +194,10 @@ function deduplicateFrames(
  * Assign sequential global IDs to deduplicated frames and build a lookup map.
  * Returns the remapped FrameNode array and the "segmentIndex:localId" -> globalId map.
  */
-function remapFrameIds(
-  uniqueFrames: FrameEntry[],
-): { frames: FrameNode[]; globalIdMap: Map<string, number> } {
+function remapFrameIds(uniqueFrames: FrameEntry[]): {
+  frames: FrameNode[];
+  globalIdMap: Map<string, number>;
+} {
   const globalIdMap = new Map<string, number>(); // "segmentIndex:localId" -> globalId
   const frames: FrameNode[] = uniqueFrames.map((entry, globalId) => {
     globalIdMap.set(`${entry.segmentIndex}:${entry.localId}`, globalId);
@@ -221,8 +223,12 @@ function remapEdges(
 
   for (const result of segmentResults) {
     for (const edge of result.edges) {
-      const newSourceId = globalIdMap.get(`${result.segment.index}:${edge.sourceId}`);
-      const newTargetId = globalIdMap.get(`${result.segment.index}:${edge.targetId}`);
+      const newSourceId = globalIdMap.get(
+        `${result.segment.index}:${edge.sourceId}`,
+      );
+      const newTargetId = globalIdMap.get(
+        `${result.segment.index}:${edge.targetId}`,
+      );
 
       if (newSourceId === undefined || newTargetId === undefined) continue;
 
@@ -231,11 +237,19 @@ function remapEdges(
 
       if (existingIdx !== undefined) {
         if (edges[existingIdx].score < edge.score) {
-          edges[existingIdx] = { sourceId: newSourceId, targetId: newTargetId, score: edge.score };
+          edges[existingIdx] = {
+            sourceId: newSourceId,
+            targetId: newTargetId,
+            score: edge.score,
+          };
         }
       } else {
         edgeMap.set(edgeKey, edges.length);
-        edges.push({ sourceId: newSourceId, targetId: newTargetId, score: edge.score });
+        edges.push({
+          sourceId: newSourceId,
+          targetId: newTargetId,
+          score: edge.score,
+        });
       }
     }
   }
@@ -255,12 +269,20 @@ function remapAnimations(
 
   for (const result of segmentResults) {
     for (const anim of result.animations) {
-      const newStartId = globalIdMap.get(`${result.segment.index}:${anim.startFrameId}`);
-      const newEndId = globalIdMap.get(`${result.segment.index}:${anim.endFrameId}`);
+      const newStartId = globalIdMap.get(
+        `${result.segment.index}:${anim.startFrameId}`,
+      );
+      const newEndId = globalIdMap.get(
+        `${result.segment.index}:${anim.endFrameId}`,
+      );
 
       if (newStartId === undefined || newEndId === undefined) continue;
 
-      animations.push({ ...anim, startFrameId: newStartId, endFrameId: newEndId });
+      animations.push({
+        ...anim,
+        startFrameId: newStartId,
+        endFrameId: newEndId,
+      });
     }
   }
 

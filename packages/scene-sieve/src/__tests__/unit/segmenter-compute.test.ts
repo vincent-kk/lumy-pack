@@ -145,10 +145,7 @@ describe('computeSegmentPlan', () => {
 
   it('single-segment: allocatedFrames = ceil(effectiveFps * duration), capped by maxFrames', () => {
     const plans = computeSegmentPlan(60, 300, 300, 5);
-    const expected = Math.min(
-      Math.ceil(plans[0].effectiveFps * 60),
-      300,
-    );
+    const expected = Math.min(Math.ceil(plans[0].effectiveFps * 60), 300);
     expect(plans[0].allocatedFrames).toBe(expected);
   });
 });
