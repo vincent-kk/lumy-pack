@@ -215,9 +215,9 @@ describe('environment variables', () => {
   });
 
   it('INK_VEIL_NER_MODEL', () => {
-    process.env['INK_VEIL_NER_MODEL'] = 'gliner_ko';
+    process.env['INK_VEIL_NER_MODEL'] = 'gliner_multi-v2.1';
     const config = loadConfig({ configPath: join(TMP, 'nonexistent.json') });
-    expect(config.ner.model).toBe('gliner_ko');
+    expect(config.ner.model).toBe('gliner_multi-v2.1');
   });
 
   it('INK_VEIL_NER_THRESHOLD — 유효한 숫자', () => {

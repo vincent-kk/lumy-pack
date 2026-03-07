@@ -144,7 +144,7 @@ describe('ModelManager.ensureModel() — mock download', () => {
   });
 
   it('throws NERModelError on SHA-256 mismatch after download', async () => {
-    const modelId = 'gliner_ko';
+    const modelId = 'gliner_multi-v2.1';
     const fakeContent = Buffer.from('bad-content');
 
     // Patch sha256 to something that won't match fakeContent
@@ -219,7 +219,7 @@ describe('ModelManager.list()', () => {
 
 describe('ModelManager.removeModel()', () => {
   it('removes installed model directory', async () => {
-    const modelId = 'gliner_ko';
+    const modelId = 'gliner_multi-v2.1';
     const modelDir = join(tmpDir, 'models', modelId);
     await mkdir(modelDir, { recursive: true });
     await writeFile(join(modelDir, 'model.onnx'), Buffer.from('fake'));
@@ -239,7 +239,7 @@ describe('ModelManager.removeModel()', () => {
 
   it('does not throw if model was not installed (force remove)', async () => {
     const manager = new ModelManager(tmpDir);
-    // gliner_ko not installed — rm with force:true should not throw
-    await expect(manager.removeModel('gliner_ko')).resolves.toBeUndefined();
+    // model not installed — rm with force:true should not throw
+    await expect(manager.removeModel('gliner_multi-v2.1')).resolves.toBeUndefined();
   });
 });

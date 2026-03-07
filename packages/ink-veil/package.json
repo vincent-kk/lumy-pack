@@ -54,7 +54,10 @@
     "lint": "eslint \"src/**/*.ts\"",
     "test": "vitest",
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "model:convert": "bash scripts/model/docker-convert.sh",
+    "model:convert:dry": "bash scripts/model/docker-convert.sh --skip-upload",
+    "update-model-hashes": "bash scripts/model/update-hashes.sh"
   },
   "dependencies": {
     "@faker-js/faker": "^9.0.0",

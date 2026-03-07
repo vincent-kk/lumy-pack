@@ -17,25 +17,18 @@ export interface ModelInfo {
 // Hardcoded registry — no remote fetch. SHA-256 pinned at release time.
 export const MODEL_REGISTRY: Record<string, ModelInfo> = {
   'gliner_multi-v2.1': {
-    name: 'urchade/gliner_multi-v2.1',
+    name: 'vincent-kk/gliner_multi-v2.1-onnx',
     version: '2.1.0',
-    url: 'https://huggingface.co/urchade/gliner_multi-v2.1/resolve/main/onnx/model_int8.onnx',
-    sha256: 'PLACEHOLDER_SHA256_GLINER_MULTI',
-    sizeBytes: 157_286_400,
-    license: 'Apache-2.0',
-  },
-  gliner_ko: {
-    name: 'taeminlee/gliner_ko',
-    version: '1.0.0',
-    url: 'https://huggingface.co/taeminlee/gliner_ko/resolve/main/onnx/model_int8.onnx',
-    sha256: 'PLACEHOLDER_SHA256_GLINER_KO',
-    sizeBytes: 157_286_400,
+    url: 'https://huggingface.co/vincent-kk/gliner_multi-v2.1-onnx/resolve/main/onnx/model_int8.onnx',
+    // Updated: 2026-03-07 | Source: vincent-kk/gliner_multi-v2.1-onnx@main
+    sha256: '995058c82c5f570601dd8a0ba74ee60a392f764268bc5f628455e44dd3b476ec',
+    sizeBytes: 349120924,
     license: 'Apache-2.0',
   },
 };
 
 /** Fallback chain order. */
-const FALLBACK_CHAIN: string[] = ['gliner_multi-v2.1', 'gliner_ko'];
+const FALLBACK_CHAIN: string[] = ['gliner_multi-v2.1'];
 
 export interface ModelStatus {
   modelId: string;
