@@ -42,6 +42,10 @@ export interface DetectionPipelineOptions {
   userWords?: UserWord[];
   config?: DetectionConfig;
   noNer?: boolean;
+  /** Kiwi model name (default: 'kiwi-base'). Resolved to ~/.ink-veil/models/{model}/base/ */
+  nerModel?: string;
+  /** NER confidence threshold — spans below this are discarded (default: 0.2). */
+  nerThreshold?: number;
 }
 
 /**
@@ -54,6 +58,8 @@ export class DetectionPipeline {
   private readonly manualEngine: DetectionEngineManual | null;
   private readonly config: DetectionConfig;
   private readonly noNer: boolean;
+  private readonly nerModel: string;
+  private readonly nerThreshold: number;
   private kiwiEngine: KiwiEngine | null = null;
   private kiwiInitPromise: Promise<void> | null = null;
 
@@ -61,6 +67,8 @@ export class DetectionPipeline {
     this.regexEngine = new RegexEngine();
     this.config = options.config ?? { priorityOrder: ['MANUAL', 'REGEX', 'NER'] };
     this.noNer = options.noNer ?? false;
+    this.nerModel = options.nerModel ?? 'kiwi-base';
+    this.nerThreshold = options.nerThreshold ?? 0.2;
 
     const hasManual = options.manual && options.manual.length > 0;
     const hasUserWords = options.userWords && options.userWords.length > 0;
@@ -89,7 +97,7 @@ export class DetectionPipeline {
 
     this.kiwiInitPromise = (async () => {
       try {
-        const modelDir = join(homedir(), '.ink-veil', 'models', 'kiwi-base', 'base');
+        const modelDir = join(homedir(), '.ink-veil', 'models', this.nerModel, 'base');
         if (!existsSync(modelDir)) {
           process.stderr.write('ink-veil: Kiwi model not found. Using regex-only detection.\n');
           return;
@@ -133,8 +141,11 @@ export class DetectionPipeline {
       }
     }
 
-    // 3. 조사 제거 (NER 스팬에서 후처리)
-    const processedNerSpans = nerSpans.map((span) => {
+    // 3. nerThreshold 필터링
+    const filteredNerSpans = nerSpans.filter((span) => span.confidence >= this.nerThreshold);
+
+    // 4. 조사 제거 (NER 스팬에서 후처리)
+    const processedNerSpans = filteredNerSpans.map((span) => {
       const { entity, particle } = stripTrailingParticle(span.text);
       if (particle) {
         return { ...span, text: entity, end: span.end - particle.length };
@@ -142,10 +153,10 @@ export class DetectionPipeline {
       return span;
     });
 
-    // 4. 병합
+    // 5. 병합
     const merged = mergeSpans(manualSpans, regexSpans, processedNerSpans);
 
-    // 5. dictionary.addEntity() 호출
+    // 6. dictionary.addEntity() 호출
     if (dictionary) {
       for (const span of merged) {
         dictionary.addEntity(span.text, span.category);

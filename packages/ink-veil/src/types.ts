@@ -18,7 +18,7 @@ export type FidelityTier = '1a' | '1b' | '2' | '3' | '4';
 
 // Canonical detection types — re-exported from detection layer
 import type { DetectionMethod as _DetectionMethod } from './detection/types.js';
-export type { DetectionMethod, DetectionSpan } from './detection/types.js';
+export type { DetectionMethod, DetectionSpan, DetectionConfig } from './detection/types.js';
 type DetectionMethod = _DetectionMethod;
 
 /** A single entry in the veil dictionary. */
@@ -146,10 +146,3 @@ export interface BatchResult<T> {
   failed: number;
 }
 
-/** Detection configuration for the merger. */
-export interface DetectionConfig {
-  /** Engine priority order (default: ['manual', 'regex', 'ner']). */
-  priorityOrder?: DetectionMethod[];
-  /** Per-category engine priority overrides. */
-  categoryPriority?: Record<string, DetectionMethod[]>;
-}
