@@ -36,7 +36,7 @@ export const MODEL_REGISTRY: Record<string, ModelInfo> = {
     version: '2.1.0',
     baseUrl: 'https://huggingface.co/vincent-kk/gliner_multi-v2.1-onnx/resolve/main',
     files: [
-      { repoPath: 'onnx/model_int8.onnx', localPath: 'onnx/model_int8.onnx', sha256: '995058c82c5f570601dd8a0ba74ee60a392f764268bc5f628455e44dd3b476ec', sizeBytes: 349120924 },
+      { repoPath: 'onnx/model.onnx', localPath: 'onnx/model.onnx', sha256: '57af7f3d8d72a3ca4e5619c247344b4b5ee362a5ebcf307c0634d67b65e721c0', sizeBytes: 1157129714 },
       { repoPath: 'config.json', localPath: 'config.json', sha256: '8aece71b73ca0fbd6dd121ad755deb736e7757d053ced523c2e4959ff446d3f5', sizeBytes: 28 },
       { repoPath: 'gliner_config.json', localPath: 'gliner_config.json', sha256: '1ef59c57fe6816a155697a5670ca8d0faf0babe13f199a2c2b5b65113399ed72', sizeBytes: 731 },
       { repoPath: 'tokenizer.json', localPath: 'tokenizer.json', sha256: '914bd3c8fb7b525af9e23b60d0ec7b1248ddb2b99014efd9c02ebeb022f8cab7', sizeBytes: 16331948 },
@@ -45,7 +45,7 @@ export const MODEL_REGISTRY: Record<string, ModelInfo> = {
       { repoPath: 'added_tokens.json', localPath: 'added_tokens.json', sha256: '030e747c4ca7992a3ac794c6fda9919352c88ae722e85178217cd083b450078d', sizeBytes: 86 },
       { repoPath: 'spm.model', localPath: 'spm.model', sha256: '13c8d666d62a7bc4ac8f040aab68e942c861f93303156cc28f5c7e885d86d6e3', sizeBytes: 4305025 },
     ],
-    totalSizeBytes: 369760834,
+    totalSizeBytes: 1177769624,
     license: 'Apache-2.0',
   },
 };

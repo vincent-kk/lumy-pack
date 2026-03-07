@@ -41,7 +41,7 @@ vi.mock('node:worker_threads', async (importOriginal) => {
       if (msg.type === 'detect' && msg.id) {
         const id = msg.id;
         setImmediate(() => {
-          const spans = this._mockInference(msg.text ?? '', msg.labels ?? [], msg.threshold ?? 0.5);
+          const spans = this._mockInference(msg.text ?? '', msg.labels ?? [], msg.threshold ?? 0.2);
           this.emit('message', { type: 'result', id, spans });
         });
       }

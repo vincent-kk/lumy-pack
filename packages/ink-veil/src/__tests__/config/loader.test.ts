@@ -55,7 +55,7 @@ describe('defaults', () => {
     expect(config.tokenMode).toBe('tag');
     expect(config.signature).toBe(true);
     expect(config.ner.model).toBe('gliner_multi-v2.1');
-    expect(config.ner.threshold).toBe(0.5);
+    expect(config.ner.threshold).toBe(0.2);
     expect(config.ner.enabled).toBe(true);
     expect(config.detection.priorityOrder).toEqual(['MANUAL', 'REGEX', 'NER']);
     expect(config.detection.categories).toEqual([]);
@@ -198,7 +198,7 @@ describe('invalid config fallback', () => {
     const config = loadConfig({ configPath });
 
     expect(config.tokenMode).toBe('tag');
-    expect(config.ner.threshold).toBe(0.5);
+    expect(config.ner.threshold).toBe(0.2);
     expect(config.manualRules).toEqual([]);
   });
 });
@@ -229,7 +229,7 @@ describe('environment variables', () => {
   it('INK_VEIL_NER_THRESHOLD — 잘못된 숫자는 무시', () => {
     process.env['INK_VEIL_NER_THRESHOLD'] = 'abc';
     const config = loadConfig({ configPath: join(TMP, 'nonexistent.json') });
-    expect(config.ner.threshold).toBe(0.5);   // default preserved
+    expect(config.ner.threshold).toBe(0.2);   // default preserved
   });
 
   it('INK_VEIL_DICT_PATH', () => {

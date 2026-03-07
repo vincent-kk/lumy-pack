@@ -107,7 +107,7 @@ export interface VeilOptions {
   nerModel?: string;
   /** Additional entity labels for NER zero-shot detection. */
   nerLabels?: string[];
-  /** NER confidence threshold (default: 0.5). */
+  /** NER confidence threshold (default: 0.2). */
   nerThreshold?: number;
   /** User-defined manual rules applied before other engines. */
   manualRules?: ManualRule[];

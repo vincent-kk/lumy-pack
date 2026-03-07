@@ -65,7 +65,7 @@ export function buildDetectCommand(): Command {
         const chunks: Buffer[] = [];
         for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
         const text = Buffer.concat(chunks).toString('utf-8');
-        results.push(processText(text, '(stdin)'));
+        results.push(await processText(text, '(stdin)'));
       } else {
         if (files.length === 0) {
           process.stderr.write('ink-veil detect: No input files specified. Use --stdin or provide file paths.\n');
@@ -79,7 +79,7 @@ export function buildDetectCommand(): Command {
             process.exit(ErrorCode.FILE_NOT_FOUND);
           }
           const text = await readFile(abs, 'utf-8');
-          results.push(processText(text, abs));
+          results.push(await processText(text, abs));
         }
       }
 

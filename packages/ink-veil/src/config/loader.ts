@@ -56,7 +56,7 @@ export const DEFAULT_CONFIG: InkVeilConfig = {
   signature: true,
   ner: {
     model: 'gliner_multi-v2.1',
-    threshold: 0.5,
+    threshold: 0.2,
     enabled: true,
   },
   detection: {

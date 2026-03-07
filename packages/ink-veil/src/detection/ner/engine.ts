@@ -11,7 +11,7 @@ export interface NEREngineOptions {
   modelId: string;
   /** Default labels for detection. */
   labels?: string[];
-  /** Minimum confidence threshold (default: 0.5). */
+  /** Minimum confidence threshold (default: 0.2). */
   threshold?: number;
 }
 
@@ -37,7 +37,7 @@ export class NEREngine {
   constructor(options: NEREngineOptions) {
     this.options = {
       labels: ['PER', 'ORG', 'LOC', 'DATE', 'PRODUCT'],
-      threshold: 0.5,
+      threshold: 0.2,
       ...options,
     };
   }
