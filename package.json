@@ -23,6 +23,7 @@
     "lint:fix": "eslint . --fix",
     "publish:all": "yarn workspaces foreach -A --no-private run publish:npm",
     "run:all": "yarn workspaces foreach -A run",
+    "inkVeil": "yarn workspace @lumy-pack/ink-veil",
     "sceneSieve": "yarn workspace @lumy-pack/scene-sieve",
     "sort:packages": "npx sort-package-json '**/package.json'",
     "syncpoint": "yarn workspace @lumy-pack/syncpoint",
