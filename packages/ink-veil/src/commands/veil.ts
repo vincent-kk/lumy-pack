@@ -149,12 +149,66 @@ export function buildVeilCommand(): Command {
         try {
           const buf = await readFile(abs);
           const parsed = await parserResult.value.parse(buf, String(opts['encoding'] ?? 'utf-8'));
-          parsed.originalBuffer = undefined; // Release buffer for GC (veil does not reconstruct)
-          const text = parsed.segments.filter((s) => !s.skippable).map((s) => s.text).join('\n');
+
+          const nonSkippable = parsed.segments.filter((s) => !s.skippable);
+          const text = nonSkippable.map((s) => s.text).join('\n');
+
+          const startFile = Date.now();
+          const sizeBefore = dict.size;
+          const spans = await pipeline.detectChunked(text);
+
+          // Map spans back to segment boundaries and veil per-segment
+          const segBounds: { start: number; end: number }[] = [];
+          let off = 0;
+          for (const seg of nonSkippable) {
+            segBounds.push({ start: off, end: off + seg.text.length });
+            off += seg.text.length + 1; // +1 for '\n' join separator
+          }
+
+          let totalSubstitutions = 0;
+          for (let i = 0; i < nonSkippable.length; i++) {
+            const { start: segStart, end: segEnd } = segBounds[i];
+            const segSpans = spans
+              .filter((s) => s.start >= segStart && s.end <= segEnd)
+              .map((s) => ({ ...s, start: s.start - segStart, end: s.end - segStart }));
+
+            if (segSpans.length > 0) {
+              const { text: veiled, substitutions } = veilTextFromSpans(
+                nonSkippable[i].text, segSpans, dict, abs,
+              );
+              nonSkippable[i].text = veiled;
+              totalSubstitutions += substitutions;
+            }
+          }
 
           const outFile = join(outputDir, basename(abs));
-          const value = await processText(text, abs, outFile);
-          return { ok: true, value };
+          await mkdir(outputDir, { recursive: true });
+          const outputBuffer = await parserResult.value.reconstruct(parsed);
+          await writeFile(outFile, outputBuffer);
+
+          // Release buffer for GC after reconstruct
+          parsed.originalBuffer = undefined;
+
+          const detectMs = Date.now() - startFile;
+          log(`Veiled ${abs} → ${outFile} (${totalSubstitutions} entities)`);
+
+          const catCounts: Record<string, number> = {};
+          for (const span of spans) {
+            catCounts[span.category] = (catCounts[span.category] ?? 0) + 1;
+          }
+
+          return {
+            ok: true,
+            value: {
+              input: abs,
+              output: outFile,
+              entitiesFound: spans.length,
+              newEntities: dict.size - sizeBefore,
+              reusedEntities: spans.length - (dict.size - sizeBefore),
+              categories: catCounts,
+              detectMs,
+            },
+          };
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
           process.stderr.write(`ink-veil: Error processing ${abs}: ${msg}\n`);

@@ -5,6 +5,7 @@ import { resolve, basename, join } from 'node:path';
 import { loadDictionary, loadDictionaryEncrypted } from '../dictionary/io.js';
 import { isEncryptedDictionary } from '../dictionary/encryption.js';
 import { unveilText } from '../transform/unveil.js';
+import { getParser } from '../document/parser.js';
 import { ErrorCode } from '../errors/types.js';
 import { loadConfig } from '../config/loader.js';
 import { pLimit } from '../utils/p-limit.js';
@@ -100,17 +101,56 @@ export function buildUnveilCommand(): Command {
         }
 
         try {
-          const text = await readFile(abs, 'utf-8');
-          const outFile = join(outputDir, basename(abs));
-          const result = unveilText(text, dict);
-          const { text: restored, matchedTokens, modifiedTokens, unmatchedTokens, tokenIntegrity } = result;
+          const ext = basename(abs).split('.').pop() ?? 'txt';
+          const parserResult = await getParser(ext);
+
+          let restoredOutput: string | Buffer = '';
+          const allMatchedTokens: string[] = [];
+          const allModifiedTokens: string[] = [];
+          const allUnmatchedTokens: string[] = [];
+
+          let parsedOk = false;
+          if (parserResult.ok) {
+            try {
+              const buf = await readFile(abs);
+              const parsed = await parserResult.value.parse(buf, 'utf-8');
+
+              for (const seg of parsed.segments) {
+                if (!seg.skippable) {
+                  const result = unveilText(seg.text, dict);
+                  seg.text = result.text;
+                  allMatchedTokens.push(...result.matchedTokens);
+                  allModifiedTokens.push(...result.modifiedTokens);
+                  allUnmatchedTokens.push(...result.unmatchedTokens);
+                }
+              }
+
+              restoredOutput = await parserResult.value.reconstruct(parsed);
+              parsedOk = true;
+            } catch {
+              // Parser failed (e.g. mutated file is no longer valid format), fall through to plain text
+            }
+          }
+
+          if (!parsedOk) {
+            const text = await readFile(abs, 'utf-8');
+            const result = unveilText(text, dict);
+            restoredOutput = result.text;
+            allMatchedTokens.push(...result.matchedTokens);
+            allModifiedTokens.push(...result.modifiedTokens);
+            allUnmatchedTokens.push(...result.unmatchedTokens);
+          }
+
+          const totalTokens = allMatchedTokens.length + allModifiedTokens.length + allUnmatchedTokens.length;
+          const tokenIntegrity = totalTokens === 0 ? 1 : (allMatchedTokens.length + allModifiedTokens.length) / totalTokens;
 
           if (strict && tokenIntegrity < 1.0) {
             return { ok: false, input: abs, error: `Token integrity ${tokenIntegrity.toFixed(2)} < 1.0 (--strict mode)`, exitCode: ErrorCode.TOKEN_INTEGRITY_BELOW_THRESHOLD };
           }
 
+          const outFile = join(outputDir, basename(abs));
           await mkdir(outputDir, { recursive: true });
-          await writeFile(outFile, restored, 'utf-8');
+          await writeFile(outFile, restoredOutput);
 
           return {
             ok: true,
@@ -118,10 +158,10 @@ export function buildUnveilCommand(): Command {
               input: abs,
               output: outFile,
               tokenIntegrity,
-              matchedTokens: matchedTokens.length,
-              modifiedTokens: modifiedTokens.length,
-              unmatchedTokens: unmatchedTokens.length,
-              totalRestored: matchedTokens.length + modifiedTokens.length,
+              matchedTokens: allMatchedTokens.length,
+              modifiedTokens: allModifiedTokens.length,
+              unmatchedTokens: allUnmatchedTokens.length,
+              totalRestored: allMatchedTokens.length + allModifiedTokens.length,
             },
           };
         } catch (e) {
