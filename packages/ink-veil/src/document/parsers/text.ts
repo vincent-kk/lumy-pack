@@ -1,5 +1,5 @@
-import * as chardet from 'chardet';
-import * as iconv from 'iconv-lite';
+import chardet from 'chardet';
+import iconv from 'iconv-lite';
 import type { FidelityTier } from '../../types.js';
 import type { FormatParser, ParsedDocument, TextSegment } from '../types.js';
 

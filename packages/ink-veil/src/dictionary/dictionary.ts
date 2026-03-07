@@ -19,7 +19,6 @@ function buildToken(category: string, id: string, mode: TokenMode): string {
     case 'bracket':
       return `{{${id}}}`;
     case 'plain':
-    case 'faker':
     default:
       return id;
   }

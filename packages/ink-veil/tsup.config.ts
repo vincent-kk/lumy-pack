@@ -14,6 +14,7 @@ export default defineConfig([
     clean: true,
     dts: false,
     shims: true,
+    external: ['iconv-lite'],
   },
   {
     entry: { 'transform/index': 'src/transform/index.ts' },
@@ -31,20 +32,6 @@ export default defineConfig([
     external: ['onnxruntime-node', '@xenova/transformers'],
   },
   {
-    entry: { 'mcp/index': 'src/mcp/index.ts' },
-    format: ['esm', 'cjs'],
-    outExtension({ format }) {
-      return { js: format === 'esm' ? '.mjs' : '.cjs' };
-    },
-    splitting: false,
-    sourcemap: false,
-    target: 'node20',
-    platform: 'node',
-    clean: false,
-    dts: false,
-    shims: true,
-  },
-  {
     entry: { cli: 'src/cli.ts' },
     format: ['esm'],
     outExtension() {
@@ -56,6 +43,6 @@ export default defineConfig([
     platform: 'node',
     clean: false,
     dts: false,
-    banner: { js: '#!/usr/bin/env node' },
+    external: ['iconv-lite'],
   },
 ]);

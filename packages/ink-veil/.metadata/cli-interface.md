@@ -341,65 +341,7 @@ dict.reverseLookup('PER_001');       // reverse lookup
 dict.stats();                        // { total, byCategory }
 ```
 
-## 6. MCP Tool Integration
-
-ink-veil can be exposed as an MCP (Model Context Protocol) tool server, allowing AI agents to call it directly without shell execution:
-
-```json
-{
-  "tools": [
-    {
-      "name": "ink_veil_veil",
-      "description": "De-identify PII in text. Returns veiled text and updated dictionary.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "text": { "type": "string", "description": "Text to de-identify" },
-          "dictionary_path": { "type": "string" },
-          "token_mode": { "enum": ["xml", "bracket", "plain"], "default": "xml" },
-          "categories": { "type": "array", "items": { "type": "string" } }
-        },
-        "required": ["text", "dictionary_path"]
-      }
-    },
-    {
-      "name": "ink_veil_unveil",
-      "description": "Restore original PII from veiled text using dictionary.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "text": { "type": "string", "description": "Veiled text to restore" },
-          "dictionary_path": { "type": "string" }
-        },
-        "required": ["text", "dictionary_path"]
-      }
-    },
-    {
-      "name": "ink_veil_detect",
-      "description": "Detect PII entities in text without transformation.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "text": { "type": "string" },
-          "categories": { "type": "array", "items": { "type": "string" } }
-        },
-        "required": ["text"]
-      }
-    }
-  ]
-}
-```
-
-This allows workflows like:
-```
-User: "이 계약서를 검토해줘" (with PII)
-  → Agent calls ink_veil_veil (de-identify)
-  → Agent sends veiled text to LLM for review
-  → Agent calls ink_veil_unveil (restore)
-  → User receives reviewed document with original PII
-```
-
-## 7. Pipe Composition Examples
+## 6. Pipe Composition Examples
 
 ```bash
 # Detect → Veil → Send to LLM → Unveil (full pipeline)

@@ -289,10 +289,10 @@ Bidirectional fidelity-tiered document de-identification/re-identification engin
 
 ---
 
-## Phase 3: Advanced Formats & MCP
+## Phase 3: Advanced Formats
 
-> 목표: Tier 3 파서, MCP 서버 통합.
-> 참조: [fidelity-tiers.md](.metadata/fidelity-tiers.md), [cli-interface.md](.metadata/cli-interface.md)
+> 목표: Tier 3 파서.
+> 참조: [fidelity-tiers.md](.metadata/fidelity-tiers.md)
 
 ### 3.1 Tier 3 파서 (PDF/PPTX/EPUB)
 
@@ -303,15 +303,7 @@ Bidirectional fidelity-tiered document de-identification/re-identification engin
 - [ ] `src/__tests__/document/parsers/` — text extraction 비교
 - [ ] **AC**: PDF text 추출 → veil → text 비교 통과 (binary 불일치 허용)
 
-### 3.2 MCP 서버 통합 → [cli-interface.md](.metadata/cli-interface.md) §6
-
-- [ ] `src/mcp/server.ts` — MCP tool server (`@modelcontextprotocol/sdk`)
-- [ ] 3 tools: `ink_veil_veil`, `ink_veil_unveil`, `ink_veil_detect`
-- [ ] Subpath export `@lumy-pack/ink-veil/mcp` (`package.json` exports에 추가)
-- [ ] `src/__tests__/mcp/` — tool input/output contract
-- [ ] **AC**: MCP stdio 프로토콜로 veil/unveil/detect tool 호출 가능
-
-### 3.3 GLiNER 모델 관리 CLI 확장
+### 3.2 GLiNER 모델 관리 CLI 확장
 
 - [ ] `src/commands/model.ts` 확장 — `model list` (설치된 모델 목록), `model remove` (모델 삭제)
 - [ ] 디스크 사용량 표시
@@ -321,20 +313,14 @@ Bidirectional fidelity-tiered document de-identification/re-identification engin
 
 ## Phase 4: Experimental
 
-> 목표: Tier 4 실험적 포맷, Faker replacement 모드.
-> 참조: [fidelity-tiers.md](.metadata/fidelity-tiers.md), [theoretical-foundations.md](.metadata/theoretical-foundations.md)
+> 목표: Tier 4 실험적 포맷.
+> 참조: [fidelity-tiers.md](.metadata/fidelity-tiers.md)
 
-### 4.1 Tier 4 파서 (HWP/RTF/ODT/ODS/LaTeX)
+### 4.1 Tier 4 파서 (HWP/LaTeX)
 
 - [ ] 각 포맷별 best-effort 파서 구현
 - [ ] Tier 4: 검증 없음 (best-effort text comparison, CLI에 `"tier": "4", "guarantee": "none"` 명시)
 - [ ] **AC**: 텍스트 추출 및 치환 동작. Round-trip 보장 없음을 JSON 출력과 stderr에 명시.
-
-### 4.2 Faker Replacement 모드
-
-- [ ] `src/transform/faker.ts` — 가짜 실명 치환 (`@faker-js/faker` 한국어 locale)
-- [ ] 토큰 충돌 방지: dictionary에서 사용 중인 faker 이름 제외
-- [ ] **AC**: `"홍길동"` → `"김철수"` (가짜 한국 이름) 치환. dictionary에서 역방향 복원 가능.
 
 ---
 
@@ -346,16 +332,15 @@ Bidirectional fidelity-tiered document de-identification/re-identification engin
 | 2 | GLiNER 모델 배포 | Lazy download + SHA-256 checksum + fallback chain | [model-deployment.md](.metadata/model-deployment.md) | 1.4 |
 | 3 | Config 스키마 | Phase 1: CLI flags only. Phase 2: `~/.ink-veil/config.json` | [config-schema.md](.metadata/config-schema.md) | 2.5 |
 | 4 | Dictionary 암호화 API | PBKDF2 + AES-256-GCM, binary format | [dictionary-architecture.md](.metadata/dictionary-architecture.md) §7 | 2.1 |
-| 5 | MCP 서버 통합 | Same package, `@lumy-pack/ink-veil/mcp` subpath | [cli-interface.md](.metadata/cli-interface.md) §6 | 3.2 |
-| 6 | Korean particle stripping | Custom regex, 17개 조사 패턴, 외부 형태소 분석기 불필요 | [detection-pipeline.md](.metadata/detection-pipeline.md) §4 | 1.5 |
-| 7 | Token counter overflow | 동적 width (3자리 기본 → 999 초과 시 4자리+) | [token-design.md](.metadata/token-design.md) §3 | 1.1 |
-| 8 | Batch error handling | Per-file `Result<T,E>`, snapshot/restore for rollback | [error-system.md](.metadata/error-system.md) | 1.1 |
-| 9 | Stdin encoding | `--encoding <enc>` 플래그 (default: `utf-8`) | [cli-interface.md](.metadata/cli-interface.md) §3 | 1.10 |
-| 10 | DocumentManifest lifecycle | `dictionary.compact()` for pruning (Phase 2+) | [dictionary-architecture.md](.metadata/dictionary-architecture.md) | 2.2 |
-| 11 | Category extensibility | Stage 3 regex를 dictionary 카테고리에서 동적 생성 | [token-design.md](.metadata/token-design.md) §4 | 1.6 |
-| 12 | tsup subpath export | Dual entry point + explicit external + bundle-size CI | PLAN.md §0.1 | 0.1 |
-| 13 | Dictionary I/O 분리 | `Dictionary` pure in-memory, `io.ts`로 save/load 분리 | PLAN.md §1.1 | 1.1 |
-| 14 | veilText 이중 모드 | `veilTextFromSpans` + `veilTextFromDictionary` 분리 | [token-design.md](.metadata/token-design.md) §6 | 1.6 |
+| 5 | Korean particle stripping | Custom regex, 17개 조사 패턴, 외부 형태소 분석기 불필요 | [detection-pipeline.md](.metadata/detection-pipeline.md) §4 | 1.5 |
+| 6 | Token counter overflow | 동적 width (3자리 기본 → 999 초과 시 4자리+) | [token-design.md](.metadata/token-design.md) §3 | 1.1 |
+| 7 | Batch error handling | Per-file `Result<T,E>`, snapshot/restore for rollback | [error-system.md](.metadata/error-system.md) | 1.1 |
+| 8 | Stdin encoding | `--encoding <enc>` 플래그 (default: `utf-8`) | [cli-interface.md](.metadata/cli-interface.md) §3 | 1.10 |
+| 9 | DocumentManifest lifecycle | `dictionary.compact()` for pruning (Phase 2+) | [dictionary-architecture.md](.metadata/dictionary-architecture.md) | 2.2 |
+| 10 | Category extensibility | Stage 3 regex를 dictionary 카테고리에서 동적 생성 | [token-design.md](.metadata/token-design.md) §4 | 1.6 |
+| 11 | tsup subpath export | Dual entry point + explicit external + bundle-size CI | PLAN.md §0.1 | 0.1 |
+| 12 | Dictionary I/O 분리 | `Dictionary` pure in-memory, `io.ts`로 save/load 분리 | PLAN.md §1.1 | 1.1 |
+| 13 | veilText 이중 모드 | `veilTextFromSpans` + `veilTextFromDictionary` 분리 | [token-design.md](.metadata/token-design.md) §6 | 1.6 |
 
 ---
 

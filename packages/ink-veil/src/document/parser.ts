@@ -59,15 +59,6 @@ export async function getParser(format: string): Promise<Result<FormatParser>> {
       const { HwpParser } = await import('./parsers/hwp.js');
       return ok(new HwpParser());
     }
-    case 'rtf': {
-      const { RtfParser } = await import('./parsers/rtf.js');
-      return ok(new RtfParser());
-    }
-    case 'odt':
-    case 'ods': {
-      const { OdtParser } = await import('./parsers/odt.js');
-      return ok(new OdtParser(fmt));
-    }
     case 'tex':
     case 'latex': {
       const { LatexParser } = await import('./parsers/latex.js');

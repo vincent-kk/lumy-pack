@@ -37,7 +37,7 @@ ink-veil performs **pseudonymization**: real entities are replaced with determin
 | Suppression | `홍길동` → `[REDACTED]` | Poor (loses entity relationships) | One-way |
 | Generalization | `홍길동` → `한국인 남성` | Poor (loses identity) | One-way |
 | Token replacement | `홍길동` → `PER_001` | Good (preserves relationships) | ✅ Bidirectional |
-| Faker replacement | `홍길동` → `김철수` | Best (natural text) | Risky (collision) |
+
 | XML token | `홍길동` → `<iv-per id="001">PER_001</iv-per>` | Best (structural) | ✅ Bidirectional |
 
 ink-veil uses **structured XML tokens** as the default, with plain and bracket modes available.

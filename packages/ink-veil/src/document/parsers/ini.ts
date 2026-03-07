@@ -1,4 +1,4 @@
-import * as ini from 'ini';
+import ini from 'ini';
 import type { FidelityTier } from '../../types.js';
 import type { FormatParser, ParsedDocument, TextSegment } from '../types.js';
 

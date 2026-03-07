@@ -3,9 +3,8 @@
  * - 'tag':   XML tag format — `<iv-per id="001">PER_001</iv-per>` (default, best LLM preservation)
  * - 'bracket': Double-brace format — `{{PER_001}}`
  * - 'plain':   Plain token — `PER_001`
- * - 'faker':  Fake realistic replacement (future)
  */
-export type TokenMode = 'tag' | 'bracket' | 'plain' | 'faker';
+export type TokenMode = 'tag' | 'bracket' | 'plain';
 
 /**
  * Fidelity tier — round-trip guarantee strength per document format.
@@ -13,7 +12,7 @@ export type TokenMode = 'tag' | 'bracket' | 'plain' | 'faker';
  * - '1b': Semantic-identical (JSON, XML, YAML, TOML, INI)
  * - '2':  Structure-preserved (DOCX, XLSX, HTML)
  * - '3':  Text-layer extraction (PDF, PPTX, EPUB)
- * - '4':  Experimental / best-effort (HWP, RTF, ODT)
+ * - '4':  Experimental / best-effort (HWP, LaTeX)
  */
 export type FidelityTier = '1a' | '1b' | '2' | '3' | '4';
 

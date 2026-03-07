@@ -21,7 +21,7 @@ Failure modes:
 | Bracket | `{{PER_001}}` | Medium — template syntax recognized | Easy | Mode option |
 | XML self-closing | `<iv-per id="001"/>` | High | High | No |
 | **XML with content** | `<iv-per id="001">PER_001</iv-per>` | **Highest** | High | **Default** |
-| Faker name | `김철수` | Highest (natural) | Low (collision) | Future |
+
 
 ### Why XML with Content Wins
 

@@ -32,11 +32,6 @@
       "types": "./dist/transform/index.d.ts",
       "import": "./dist/transform/index.mjs",
       "require": "./dist/transform/index.cjs"
-    },
-    "./mcp": {
-      "types": "./dist/mcp/index.d.ts",
-      "import": "./dist/mcp/index.mjs",
-      "require": "./dist/mcp/index.cjs"
     }
   },
   "main": "dist/index.cjs",
@@ -60,13 +55,10 @@
     "update-model-hashes": "bash scripts/model/update-hashes.sh"
   },
   "dependencies": {
-    "@faker-js/faker": "^9.0.0",
     "@ltd/j-toml": "^1.38.0",
-    "@modelcontextprotocol/sdk": "^1.27.1",
     "@xenova/transformers": "^2.17.0",
     "ajv": "^8.17.0",
     "chardet": "^2.0.0",
-    "cli-progress": "^3.12.0",
     "commander": "^12.1.0",
     "fast-xml-parser": "^4.5.0",
     "iconv-lite": "^0.6.3",
@@ -75,13 +67,10 @@
     "jsdom": "^25.0.0",
     "jszip": "^3.10.1",
     "onnxruntime-node": "^1.20.0",
-    "ora": "^8.1.1",
     "papaparse": "^5.4.1",
-    "sharp": "^0.33.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@types/cli-progress": "^3.11.6",
     "@types/ini": "^4.1.1",
     "@types/js-yaml": "^4.0.9",
     "@types/jsdom": "^21.1.7",

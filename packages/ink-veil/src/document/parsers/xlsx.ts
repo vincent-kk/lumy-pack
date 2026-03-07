@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import XLSX from 'xlsx';
 import type { FidelityTier } from '../../types.js';
 import type { FormatParser, ParsedDocument, TextSegment } from '../types.js';
 
