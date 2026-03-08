@@ -1,11 +1,27 @@
+import { existsSync } from 'node:fs';
+
+import { respond, respondError } from '@lumy-pack/shared';
+import type { Command } from 'commander';
 import { Box, Text, useApp } from 'ink';
+import { render } from 'ink';
 import React, { useEffect, useState } from 'react';
 
 import { PhaseStep } from '../components/PhaseStep.js';
 import type { PhaseState } from '../components/PhaseStep.js';
+import {
+  DEFAULT_FPS,
+  DEFAULT_MAX_FRAMES,
+  DEFAULT_QUALITY,
+  DEFAULT_SCALE,
+} from '../constants.js';
+import { runPipeline } from '../core/orchestrator.js';
 import { runPipelineInWorker } from '../core/run-in-worker.js';
 import { cleanupStaleWorkspaces } from '../core/workspace.js';
+import { classifyError, SieveErrorCode } from '../errors.js';
 import type { ProgressPhase, SieveResult } from '../types/index.js';
+import { SIEVE_COMMAND } from '../utils/command-registry.js';
+import { parsePipelineOptions } from '../utils/parse-options.js';
+import type { RawCliOptions } from '../utils/parse-options.js';
 
 const PHASE_DEFS: { key: string; label: string; hasProgress: boolean }[] = [
   { key: 'INIT', label: 'Initializing workspace', hasProgress: false },
@@ -42,6 +58,101 @@ export interface SieveViewProps {
   maxSegmentDuration?: number;
   concurrency?: number;
   debug: boolean;
+}
+
+export function registerSieveCommand(program: Command, version: string): void {
+  const cmd = SIEVE_COMMAND;
+
+  program
+    .argument('<input>', cmd.arguments![0].description)
+    .option('-n, --count <number>', cmd.options!.find((o) => o.flag.includes('--count'))!.description)
+    .option(
+      '-t, --threshold <number>',
+      cmd.options!.find((o) => o.flag.includes('--threshold'))!.description,
+    )
+    .option('-o, --output <path>', cmd.options!.find((o) => o.flag.includes('--output'))!.description)
+    .option('--fps <number>', cmd.options!.find((o) => o.flag.includes('--fps'))!.description, String(DEFAULT_FPS))
+    .option(
+      '-mf, --max-frames <number>',
+      cmd.options!.find((o) => o.flag.includes('--max-frames'))!.description,
+      String(DEFAULT_MAX_FRAMES),
+    )
+    .option(
+      '-s, --scale <number>',
+      cmd.options!.find((o) => o.flag.includes('--scale'))!.description,
+      String(DEFAULT_SCALE),
+    )
+    .option(
+      '-q, --quality <number>',
+      cmd.options!.find((o) => o.flag.includes('--quality'))!.description,
+      String(DEFAULT_QUALITY),
+    )
+    .option(
+      '-it, --iou-threshold <number>',
+      cmd.options!.find((o) => o.flag.includes('--iou-threshold'))!.description,
+    )
+    .option(
+      '-at, --anim-threshold <number>',
+      cmd.options!.find((o) => o.flag.includes('--anim-threshold'))!.description,
+    )
+    .option(
+      '--max-segment-duration <number>',
+      cmd.options!.find((o) => o.flag.includes('--max-segment-duration'))!.description,
+    )
+    .option(
+      '--concurrency <number>',
+      cmd.options!.find((o) => o.flag.includes('--concurrency'))!.description,
+    )
+    .option('--debug', cmd.options!.find((o) => o.flag.includes('--debug'))!.description)
+    .option('--json', cmd.options!.find((o) => o.flag.includes('--json'))!.description)
+    .option('--describe', cmd.options!.find((o) => o.flag.includes('--describe'))!.description)
+    .action(async (input: string, opts: RawCliOptions & { json?: boolean }) => {
+      const parsed = parsePipelineOptions(opts);
+
+      if (opts.json) {
+        const startTime = Date.now();
+
+        if (!existsSync(input)) {
+          respondError('extract', SieveErrorCode.FILE_NOT_FOUND, `File not found: ${input}`, startTime, version);
+          return;
+        }
+
+        try {
+          const result = await runPipeline({
+            mode: 'file',
+            inputPath: input,
+            ...parsed,
+            onProgress: (phase, percent) => {
+              process.stderr.write(JSON.stringify({ phase, percent }) + '\n');
+            },
+          });
+
+          const data = {
+            success: result.success,
+            originalFrames: result.originalFramesCount,
+            selectedFrames: result.prunedFramesCount,
+            outputFiles: result.outputFiles,
+            animations: result.animations ?? [],
+            video: result.video ?? null,
+          };
+          respond('extract', data, startTime, version);
+        } catch (error) {
+          const err = error instanceof Error ? error : new Error(String(error));
+          respondError('extract', classifyError(err), err.message, startTime, version);
+        }
+        return;
+      }
+
+      const { outputPath, ...viewOpts } = parsed;
+      const { waitUntilExit } = render(
+        React.createElement(SieveView, {
+          input,
+          ...viewOpts,
+          output: outputPath,
+        }),
+      );
+      await waitUntilExit();
+    });
 }
 
 export const SieveView: React.FC<SieveViewProps> = (props) => {

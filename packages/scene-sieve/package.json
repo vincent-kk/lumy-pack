@@ -55,6 +55,7 @@
   },
   "dependencies": {
     "@ffprobe-installer/ffprobe": "^1.4.1",
+    "@lumy-pack/shared": "workspace:*",
     "@techstark/opencv-js": "4.12.0-release.1",
     "commander": "^12.1.0",
     "execa": "^9.5.0",

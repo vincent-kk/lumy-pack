@@ -1,3 +1,4 @@
+import { respond, respondError } from '@lumy-pack/shared';
 import { Command } from 'commander';
 import { Box, Text, useApp } from 'ink';
 import { render } from 'ink';
@@ -12,6 +13,7 @@ import {
   getRestorePlan,
   restoreBackup,
 } from '../core/restore.js';
+import { SyncpointErrorCode, classifyError } from '../errors.js';
 import { formatBytes, formatDate } from '../utils/format.js';
 import { contractTilde } from '../utils/paths.js';
 import { getHostname } from '../utils/system.js';
@@ -21,6 +23,7 @@ import type {
   RestorePlan,
   RestoreResult,
 } from '../utils/types.js';
+import { VERSION } from '../version.js';
 
 type Phase =
   | 'loading'
@@ -309,6 +312,55 @@ export function registerRestoreCommand(program: Command): void {
     .description('Restore config files from a backup')
     .option('--dry-run', 'Show planned changes without actual restore', false)
     .action(async (filename: string | undefined, opts: { dryRun: boolean }) => {
+      const globalOpts = program.opts();
+      const startTime = Date.now();
+
+      if (globalOpts.json) {
+        // In JSON mode, filename is required unless --yes is provided with a single backup
+        if (!filename) {
+          respondError(
+            'restore',
+            SyncpointErrorCode.MISSING_ARGUMENT,
+            'filename argument is required in --json mode',
+            startTime,
+            VERSION,
+          );
+          return;
+        }
+        try {
+          const config = await loadConfig();
+          const list = await getBackupList(config);
+          const match = list.find(
+            (b) => b.filename === filename || b.filename.startsWith(filename),
+          );
+          if (!match) {
+            respondError(
+              'restore',
+              SyncpointErrorCode.RESTORE_FAILED,
+              `Backup not found: ${filename}`,
+              startTime,
+              VERSION,
+            );
+            return;
+          }
+          const result = await restoreBackup(match.path, { dryRun: opts.dryRun });
+          respond(
+            'restore',
+            {
+              restoredFiles: result.restoredFiles,
+              skippedFiles: result.skippedFiles,
+              safetyBackupPath: result.safetyBackupPath ?? null,
+            },
+            startTime,
+            VERSION,
+          );
+        } catch (error) {
+          const code = classifyError(error);
+          respondError('restore', code, (error as Error).message, startTime, VERSION);
+        }
+        return;
+      }
+
       const { waitUntilExit } = render(
         <RestoreView filename={filename} options={{ dryRun: opts.dryRun }} />,
       );
