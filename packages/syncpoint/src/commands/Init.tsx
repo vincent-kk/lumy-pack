@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 
+import { respond, respondError } from '@lumy-pack/shared';
 import { Command } from 'commander';
 import { Box, Text, useApp } from 'ink';
 import { render } from 'ink';
@@ -16,8 +17,10 @@ import {
   getSubDir,
 } from '../constants.js';
 import { initDefaultConfig } from '../core/config.js';
+import { classifyError } from '../errors.js';
 import { readAsset } from '../utils/assets.js';
 import { ensureDir, fileExists } from '../utils/paths.js';
+import { VERSION } from '../version.js';
 
 interface StepInfo {
   name: string;
@@ -140,6 +143,20 @@ export function registerInitCommand(program: Command): void {
       `Initialize ~/.${APP_NAME}/ directory structure and default config`,
     )
     .action(async () => {
+      const globalOpts = program.opts();
+      const startTime = Date.now();
+
+      if (globalOpts.json) {
+        try {
+          const result = await initDefaultConfig();
+          respond('init', { created: result.created, skipped: result.skipped }, startTime, VERSION);
+        } catch (error) {
+          const code = classifyError(error);
+          respondError('init', code, (error as Error).message, startTime, VERSION);
+        }
+        return;
+      }
+
       const { waitUntilExit } = render(<InitView />);
       await waitUntilExit();
     });

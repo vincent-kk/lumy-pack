@@ -1,3 +1,4 @@
+import { respond, respondError } from '@lumy-pack/shared';
 import { Command } from 'commander';
 import { Box, Static, Text, useApp } from 'ink';
 import { render } from 'ink';
@@ -6,6 +7,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ProgressBar } from '../components/ProgressBar.js';
 import { createBackup, scanTargets } from '../core/backup.js';
 import { loadConfig } from '../core/config.js';
+import { classifyError } from '../errors.js';
 import { COMMANDS } from '../utils/command-registry.js';
 import { formatBytes } from '../utils/format.js';
 import { contractTilde } from '../utils/paths.js';
@@ -15,6 +17,7 @@ import type {
   FileEntry,
   SyncpointConfig,
 } from '../utils/types.js';
+import { VERSION } from '../version.js';
 
 type Phase = 'scanning' | 'compressing' | 'done' | 'error';
 
@@ -204,6 +207,35 @@ export function registerBackupCommand(program: Command): void {
 
   cmd.action(
     async (opts: { dryRun: boolean; tag?: string; verbose?: boolean }) => {
+      const globalOpts = program.opts();
+      const startTime = Date.now();
+
+      if (globalOpts.json) {
+        try {
+          const config = await loadConfig();
+          const result = await createBackup(config, {
+            dryRun: opts.dryRun,
+            tag: opts.tag,
+            verbose: opts.verbose,
+          });
+          respond(
+            'backup',
+            {
+              archivePath: result.archivePath,
+              fileCount: result.metadata.summary.fileCount,
+              totalSize: result.metadata.summary.totalSize,
+              tag: opts.tag ?? null,
+            },
+            startTime,
+            VERSION,
+          );
+        } catch (error) {
+          const code = classifyError(error);
+          respondError('backup', code, (error as Error).message, startTime, VERSION);
+        }
+        return;
+      }
+
       const { waitUntilExit } = render(
         <BackupView
           options={{

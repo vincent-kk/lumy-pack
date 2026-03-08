@@ -1,6 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { respond, respondError } from '@lumy-pack/shared';
 import { Command } from 'commander';
 import { Box, Text, useApp } from 'ink';
 import { render } from 'ink';
@@ -20,8 +21,10 @@ import {
   createRetryPrompt,
   formatValidationErrors,
 } from '../utils/error-formatter.js';
+import { SyncpointErrorCode } from '../errors.js';
 import { ensureDir, fileExists } from '../utils/paths.js';
 import type { TemplateConfig } from '../utils/types.js';
+import { VERSION } from '../version.js';
 import { extractYAML, parseYAML } from '../utils/yaml-parser.js';
 
 type Phase =
@@ -252,6 +255,33 @@ export function registerCreateTemplateCommand(program: Command): void {
     .description('Interactive wizard to create a provisioning template')
     .option('-p, --print', 'Print prompt instead of invoking Claude Code')
     .action(async (name: string | undefined, opts: { print?: boolean }) => {
+      const globalOpts = program.opts();
+      const startTime = Date.now();
+
+      if (globalOpts.json) {
+        // In JSON mode, only --print is supported
+        if (!opts.print) {
+          respondError(
+            'create-template',
+            SyncpointErrorCode.MISSING_ARGUMENT,
+            '--print is required in --json mode (interactive mode requires a terminal)',
+            startTime,
+            VERSION,
+          );
+          return;
+        }
+        try {
+          const { generateTemplateWizardPrompt } = await import('../prompts/wizard-template.js');
+          const { readAsset } = await import('../utils/assets.js');
+          const exampleTemplate = readAsset('template.example.yml');
+          const prompt = generateTemplateWizardPrompt({ exampleTemplate });
+          respond('create-template', { prompt }, startTime, VERSION);
+        } catch (err) {
+          respondError('create-template', SyncpointErrorCode.UNKNOWN, (err as Error).message, startTime, VERSION);
+        }
+        return;
+      }
+
       const { waitUntilExit } = render(
         <CreateTemplateView
           printMode={opts.print || false}

@@ -1,3 +1,4 @@
+import { respond, respondError } from '@lumy-pack/shared';
 import { Command } from 'commander';
 import { Box, Text, useApp } from 'ink';
 import { render } from 'ink';
@@ -7,6 +8,7 @@ import { StepRunner } from '../components/StepRunner.js';
 import { listTemplates, loadTemplate } from '../core/provision.js';
 import { runProvision } from '../core/provision.js';
 import { getBackupList, restoreBackup } from '../core/restore.js';
+import { SyncpointErrorCode, classifyError } from '../errors.js';
 import { fileExists, resolveTargetPath } from '../utils/paths.js';
 import { ensureSudo } from '../utils/sudo.js';
 import type {
@@ -14,6 +16,7 @@ import type {
   StepResult,
   TemplateConfig,
 } from '../utils/types.js';
+import { VERSION } from '../version.js';
 
 type Phase = 'running' | 'done' | 'error';
 
@@ -206,6 +209,9 @@ export function registerProvisionCommand(program: Command): void {
         templateName: string | undefined,
         opts: { dryRun: boolean; skipRestore: boolean; file?: string },
       ) => {
+        const globalOpts = program.opts();
+        const startTime = Date.now();
+
         // Pre-Ink phase: resolve template and handle sudo
         let templatePath: string;
 
@@ -215,6 +221,10 @@ export function registerProvisionCommand(program: Command): void {
 
           // 파일 존재 확인
           if (!(await fileExists(templatePath))) {
+            if (globalOpts.json) {
+              respondError('provision', SyncpointErrorCode.TEMPLATE_NOT_FOUND, `Template file not found: ${opts.file}`, startTime, VERSION);
+              return;
+            }
             console.error(`Template file not found: ${opts.file}`);
             process.exit(1);
           }
@@ -224,6 +234,10 @@ export function registerProvisionCommand(program: Command): void {
             !templatePath.endsWith('.yml') &&
             !templatePath.endsWith('.yaml')
           ) {
+            if (globalOpts.json) {
+              respondError('provision', SyncpointErrorCode.INVALID_ARGUMENT, `Template file must have .yml or .yaml extension: ${opts.file}`, startTime, VERSION);
+              return;
+            }
             console.error(
               `Template file must have .yml or .yaml extension: ${opts.file}`,
             );
@@ -240,6 +254,10 @@ export function registerProvisionCommand(program: Command): void {
           );
 
           if (!match) {
+            if (globalOpts.json) {
+              respondError('provision', SyncpointErrorCode.TEMPLATE_NOT_FOUND, `Template not found: ${templateName}`, startTime, VERSION);
+              return;
+            }
             console.error(`Template not found: ${templateName}`);
             process.exit(1);
           }
@@ -247,6 +265,10 @@ export function registerProvisionCommand(program: Command): void {
           templatePath = match.path;
         } else {
           // 둘 다 없으면 에러
+          if (globalOpts.json) {
+            respondError('provision', SyncpointErrorCode.MISSING_ARGUMENT, 'Either <template> name or --file option must be provided', startTime, VERSION);
+            return;
+          }
           console.error(
             'Error: Either <template> name or --file option must be provided',
           );
@@ -260,6 +282,31 @@ export function registerProvisionCommand(program: Command): void {
         // Handle sudo requirement (skip in dry-run)
         if (tmpl.sudo && !opts.dryRun) {
           ensureSudo(tmpl.name);
+        }
+
+        if (globalOpts.json) {
+          try {
+            const collectedSteps: StepResult[] = [];
+            const generator = runProvision(templatePath, {
+              dryRun: opts.dryRun,
+              skipRestore: opts.skipRestore,
+            });
+            for await (const result of generator) {
+              if (result.status !== 'running') {
+                collectedSteps.push(result);
+              }
+            }
+            respond(
+              'provision',
+              { steps: collectedSteps, totalDuration: Date.now() - startTime },
+              startTime,
+              VERSION,
+            );
+          } catch (error) {
+            const code = classifyError(error);
+            respondError('provision', code, (error as Error).message, startTime, VERSION);
+          }
+          return;
         }
 
         // Ink phase: render the TUI
