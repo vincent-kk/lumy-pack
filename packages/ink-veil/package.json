@@ -48,13 +48,18 @@
     "build": "tsup && yarn build:types",
     "build:types": "tsc -p ./tsconfig.declarations.json",
     "dev": "tsx src/cli.ts",
+    "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint \"src/**/*.ts\"",
+    "model:convert": "bash scripts/model/docker-convert.sh",
+    "model:convert:dry": "bash scripts/model/docker-convert.sh --skip-upload",
+    "publish:npm": "yarn npm publish --access public",
     "test": "vitest",
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "test:run": "vitest run",
-    "model:convert": "bash scripts/model/docker-convert.sh",
-    "model:convert:dry": "bash scripts/model/docker-convert.sh --skip-upload",
-    "update-model-hashes": "bash scripts/model/update-hashes.sh"
+    "update-model-hashes": "bash scripts/model/update-hashes.sh",
+    "version:major": "yarn version major",
+    "version:minor": "yarn version minor",
+    "version:patch": "yarn version patch"
   },
   "dependencies": {
     "@ltd/j-toml": "^1.38.0",
