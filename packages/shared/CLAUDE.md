@@ -34,6 +34,11 @@ src/
 - Keep response shape stable (breaking change affects all CLI packages)
 - Use `respond`/`respondError` for all `--json` mode output
 
+### Ask first
+
+- Changes to the shared response envelope schema (`CliResponse` type)
+- Adding new re-exports that increase the public API surface
+
 ### Never do
 
 - Add package-specific logic (this is a shared utility layer)

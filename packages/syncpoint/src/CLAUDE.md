@@ -1,9 +1,6 @@
 # syncpoint/src
 
-## Purpose
-
-설정파일 백업/복원 및 머신 프로비저닝 CLI 도구의 소스 루트.
-Commander.js 진입점, Ink React 명령 컴포넌트, 순수 비즈니스 로직, 스키마, 유틸리티로 구성된다.
+설정파일 백업/복원 및 머신 프로비저닝 CLI 소스 루트.
 
 ## Structure
 
@@ -24,13 +21,11 @@ src/
 
 ## Conventions
 
-- ESM 모듈 (`"type": "module"`), 임포트 시 `.js` 확장자 필수
-- 레이어 의존성: `cli.ts → commands → core → utils/schemas`
-- 역방향 임포트 금지 (core는 commands를 import하지 않는다)
-- 명령 메타데이터는 `utils/command-registry.ts`의 `COMMANDS` 맵이 단일 출처
-- `provision.ts`의 `runProvision()`은 `AsyncGenerator<StepResult>` 반환
-- `--json` 모드 시 `@lumy-pack/shared`의 `respond`/`respondError`로 구조화된 JSON 출력
-- `errors.ts`의 `classifyError()`로 에러를 `SyncpointErrorCode`로 분류
+- ESM (`"type": "module"`), 임포트 시 `.js` 확장자 필수
+- 레이어: `cli.ts → commands → core → utils/schemas` (역방향 금지)
+- 명령 메타데이터: `utils/command-registry.ts`의 `COMMANDS` 맵이 단일 출처
+- `--json` 모드: `@lumy-pack/shared`의 `respond`/`respondError` 사용
+- 에러 분류: `errors.ts`의 `classifyError()` → `SyncpointErrorCode`
 
 ## Boundaries
 
@@ -53,8 +48,3 @@ src/
 - `cli.ts`에 비즈니스 로직 직접 작성
 - `SENSITIVE_PATTERNS`에 매칭되는 파일을 아카이브에 포함
 - `curl | sh` 패턴의 provision 스텝 허용 (provision.ts에서 차단됨)
-
-## Dependencies
-
-- **외부**: Commander.js, Ink 5, React 18, AJV 8, fast-glob, micromatch, tar
-- **런타임**: Node.js >=20, `~/.syncpoint/` 데이터 디렉토리
