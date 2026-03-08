@@ -3,14 +3,9 @@ import { writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
-// config 모듈을 동적으로 임포트하여 환경변수 격리
-import { loadConfig, saveConfig, DEFAULT_CONFIG } from '../../config/loader.js';
+import { loadConfig } from '../../config/loader.js';
 
-// ---------------------------------------------------------------------------
-// Test fixtures
-// ---------------------------------------------------------------------------
-
-const TMP = join(tmpdir(), `ink-veil-config-test-${process.pid}`);
+const TMP = join(tmpdir(), `ink-veil-config-priority-test-${process.pid}`);
 
 function writeTmpConfig(content: unknown, filename = 'config.json'): string {
   mkdirSync(TMP, { recursive: true });
@@ -21,7 +16,6 @@ function writeTmpConfig(content: unknown, filename = 'config.json'): string {
 
 beforeEach(() => {
   mkdirSync(TMP, { recursive: true });
-  // 환경변수 초기화
   delete process.env['INK_VEIL_CONFIG'];
   delete process.env['INK_VEIL_TOKEN_MODE'];
   delete process.env['INK_VEIL_NER_MODEL'];
@@ -44,56 +38,18 @@ afterEach(() => {
   delete process.env['INK_VEIL_ENCODING'];
 });
 
-// ---------------------------------------------------------------------------
-// 1. 기본값 테스트
-// ---------------------------------------------------------------------------
-
-describe('defaults', () => {
-  it('config 파일 없이도 기본값으로 동작', () => {
-    const config = loadConfig({ configPath: join(TMP, 'nonexistent.json') });
-
-    expect(config.tokenMode).toBe('tag');
-    expect(config.signature).toBe(true);
-    expect(config.ner.model).toBe('kiwi-base');
-    expect(config.ner.threshold).toBe(0.2);
-    expect(config.ner.enabled).toBe(true);
-    expect(config.detection.priorityOrder).toEqual(['MANUAL', 'REGEX', 'NER']);
-    expect(config.detection.categories).toEqual([]);
-    expect(config.dictionary.defaultPath).toBe('./dictionary.json');
-    expect(config.output.directory).toBe('./veiled/');
-    expect(config.output.encoding).toBe('utf-8');
-    expect(config.manualRules).toEqual([]);
-  });
-
-  it('DEFAULT_CONFIG가 모든 필수 필드를 포함', () => {
-    expect(DEFAULT_CONFIG).toMatchObject({
-      tokenMode: 'tag',
-      signature: true,
-      ner: { model: expect.any(String), threshold: expect.any(Number), enabled: true },
-      detection: { priorityOrder: expect.any(Array), categories: expect.any(Array) },
-      dictionary: { defaultPath: expect.any(String) },
-      output: { directory: expect.any(String), encoding: expect.any(String) },
-      manualRules: expect.any(Array),
-    });
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 2. 우선순위 테스트: CLI > env > config file > defaults
-// ---------------------------------------------------------------------------
-
 describe('priority order', () => {
   it('CLI 오버라이드가 config 파일보다 우선', () => {
     const configPath = writeTmpConfig({ tokenMode: 'bracket', ner: { threshold: 0.3 } });
 
     const config = loadConfig({
       configPath,
-      tokenMode: 'plain',      // CLI override
-      nerThreshold: 0.9,        // CLI override
+      tokenMode: 'plain',
+      nerThreshold: 0.9,
     });
 
-    expect(config.tokenMode).toBe('plain');       // CLI wins
-    expect(config.ner.threshold).toBe(0.9);       // CLI wins
+    expect(config.tokenMode).toBe('plain');
+    expect(config.ner.threshold).toBe(0.9);
   });
 
   it('env var가 config 파일보다 우선', () => {
@@ -102,7 +58,7 @@ describe('priority order', () => {
 
     const config = loadConfig({ configPath });
 
-    expect(config.tokenMode).toBe('plain');       // env wins over file
+    expect(config.tokenMode).toBe('plain');
   });
 
   it('CLI 오버라이드가 env var보다 우선', () => {
@@ -110,7 +66,7 @@ describe('priority order', () => {
 
     const config = loadConfig({
       configPath: join(TMP, 'nonexistent.json'),
-      tokenMode: 'plain',                          // CLI wins
+      tokenMode: 'plain',
     });
 
     expect(config.tokenMode).toBe('plain');
@@ -124,9 +80,8 @@ describe('priority order', () => {
 
     const config = loadConfig({ configPath });
 
-    expect(config.tokenMode).toBe('bracket');     // file > defaults
-    expect(config.ner.threshold).toBe(0.7);       // file > defaults
-    // 명시하지 않은 값은 기본값 유지
+    expect(config.tokenMode).toBe('bracket');
+    expect(config.ner.threshold).toBe(0.7);
     expect(config.ner.model).toBe('kiwi-base');
     expect(config.ner.enabled).toBe(true);
   });
@@ -148,10 +103,6 @@ describe('priority order', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// 3. 잘못된 config 파일 — fallback 테스트
-// ---------------------------------------------------------------------------
-
 describe('invalid config fallback', () => {
   it('잘못된 JSON: 파싱 오류 → 기본값으로 폴백, stderr 경고', () => {
     const configPath = join(TMP, 'bad.json');
@@ -161,7 +112,7 @@ describe('invalid config fallback', () => {
 
     const config = loadConfig({ configPath });
 
-    expect(config.tokenMode).toBe('tag');          // fallback to defaults
+    expect(config.tokenMode).toBe('tag');
     expect(stderrSpy).toHaveBeenCalled();
     expect(stderrSpy.mock.calls.join('')).toContain('failed to read config file');
 
@@ -170,15 +121,14 @@ describe('invalid config fallback', () => {
 
   it('스키마 위반 (tokenMode에 잘못된 값): 경고 후 유효한 필드는 적용', () => {
     const configPath = writeTmpConfig({
-      tokenMode: 'invalid-mode',   // 스키마 위반
-      ner: { threshold: 0.8 },     // 유효한 값
+      tokenMode: 'invalid-mode',
+      ner: { threshold: 0.8 },
     });
 
     const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
 
     loadConfig({ configPath });
 
-    // 스키마 오류 경고 출력
     expect(stderrSpy).toHaveBeenCalled();
     expect(stderrSpy.mock.calls.join('')).toContain('config file invalid');
 
@@ -186,9 +136,8 @@ describe('invalid config fallback', () => {
   });
 
   it('잘못된 config가 있어도 프로세스가 종료되지 않음 (no fatal error)', () => {
-    const configPath = writeTmpConfig({ tokenMode: 99999 });  // 타입 위반
+    const configPath = writeTmpConfig({ tokenMode: 99999 });
 
-    // 예외가 발생하지 않아야 함
     expect(() => loadConfig({ configPath })).not.toThrow();
   });
 
@@ -202,10 +151,6 @@ describe('invalid config fallback', () => {
     expect(config.manualRules).toEqual([]);
   });
 });
-
-// ---------------------------------------------------------------------------
-// 4. 환경변수 테스트
-// ---------------------------------------------------------------------------
 
 describe('environment variables', () => {
   it('INK_VEIL_TOKEN_MODE', () => {
@@ -229,7 +174,7 @@ describe('environment variables', () => {
   it('INK_VEIL_NER_THRESHOLD — 잘못된 숫자는 무시', () => {
     process.env['INK_VEIL_NER_THRESHOLD'] = 'abc';
     const config = loadConfig({ configPath: join(TMP, 'nonexistent.json') });
-    expect(config.ner.threshold).toBe(0.2);   // default preserved
+    expect(config.ner.threshold).toBe(0.2);
   });
 
   it('INK_VEIL_DICT_PATH', () => {
@@ -248,55 +193,5 @@ describe('environment variables', () => {
     process.env['INK_VEIL_ENCODING'] = 'euc-kr';
     const config = loadConfig({ configPath: join(TMP, 'nonexistent.json') });
     expect(config.output.encoding).toBe('euc-kr');
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 5. saveConfig 테스트
-// ---------------------------------------------------------------------------
-
-describe('saveConfig', () => {
-  it('config를 파일에 저장하고 다시 로드하면 동일한 값', () => {
-    const configPath = join(TMP, 'saved-config.json');
-    const modified = {
-      ...DEFAULT_CONFIG,
-      tokenMode: 'bracket' as const,
-      ner: { ...DEFAULT_CONFIG.ner, threshold: 0.8 },
-    };
-
-    saveConfig(modified, configPath);
-    expect(existsSync(configPath)).toBe(true);
-
-    const loaded = loadConfig({ configPath });
-    expect(loaded.tokenMode).toBe('bracket');
-    expect(loaded.ner.threshold).toBe(0.8);
-  });
-
-  it('부모 디렉토리가 없어도 자동 생성', () => {
-    const configPath = join(TMP, 'nested', 'deep', 'config.json');
-
-    expect(() => saveConfig(DEFAULT_CONFIG, configPath)).not.toThrow();
-    expect(existsSync(configPath)).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 6. manualRules 테스트
-// ---------------------------------------------------------------------------
-
-describe('manualRules', () => {
-  it('config 파일의 manualRules 로드', () => {
-    const configPath = writeTmpConfig({
-      manualRules: [
-        { pattern: 'Project-Alpha', category: 'PROJECT' },
-        { pattern: 'INV-\\d{8}', category: 'INVOICE', isRegex: true },
-      ],
-    });
-
-    const config = loadConfig({ configPath });
-
-    expect(config.manualRules).toHaveLength(2);
-    expect(config.manualRules[0]).toMatchObject({ pattern: 'Project-Alpha', category: 'PROJECT', isRegex: false });
-    expect(config.manualRules[1]).toMatchObject({ pattern: 'INV-\\d{8}', category: 'INVOICE', isRegex: true });
   });
 });

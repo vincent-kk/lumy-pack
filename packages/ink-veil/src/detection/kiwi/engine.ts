@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { createRequire } from 'node:module';
 import type { DetectionSpan } from '../types.js';
+import { mergeConsecutiveNNP } from './nnp-merger.js';
 
 // ── kiwi-nlp types (avoid import to keep lazy-loadable) ──
 interface KiwiTokenInfo {
@@ -110,15 +111,6 @@ function classifyNNP(text: string): string {
   return syllables <= 4 ? 'PER' : 'ORG';
 }
 
-// ── Merged NNP span ──
-
-interface MergedNNP {
-  start: number;
-  end: number;
-  text: string;
-  lineNumber: number;
-}
-
 /**
  * KiwiEngine — Korean NER via Kiwi morphological analyzer.
  *
@@ -180,7 +172,7 @@ export class KiwiEngine {
     if (nnpTokens.length === 0) return [];
 
     // 3. Merge consecutive NNP tokens on the same line
-    const merged = this.mergeConsecutiveNNP(nnpTokens, text);
+    const merged = mergeConsecutiveNNP(nnpTokens, text);
 
     // 4. Classify and build DetectionSpan[]
     return merged
@@ -198,54 +190,5 @@ export class KiwiEngine {
   /** Release resources. */
   async dispose(): Promise<void> {
     this.kiwi = null;
-  }
-
-  /**
-   * Merge consecutive NNP tokens that are on the same line
-   * and adjacent (only whitespace between them) in the original text.
-   */
-  private mergeConsecutiveNNP(nnpTokens: KiwiTokenInfo[], text: string): MergedNNP[] {
-    const result: MergedNNP[] = [];
-    let current: MergedNNP | null = null;
-
-    for (const token of nnpTokens) {
-      const tokenStart = token.position;
-      const tokenEnd = token.position + token.length;
-
-      if (!current) {
-        current = {
-          start: tokenStart,
-          end: tokenEnd,
-          text: token.str,
-          lineNumber: token.lineNumber,
-        };
-        continue;
-      }
-
-      // Check if this token should merge with current:
-      // Same line + gap is only whitespace (no newline)
-      const gap = text.slice(current.end, tokenStart);
-      const isAdjacent =
-        token.lineNumber === current.lineNumber &&
-        (gap === '' || /^[ \t]+$/.test(gap));
-
-      if (isAdjacent) {
-        // Merge: extend span to include gap + new token
-        current.end = tokenEnd;
-        current.text = text.slice(current.start, current.end);
-      } else {
-        // Push current, start new
-        result.push(current);
-        current = {
-          start: tokenStart,
-          end: tokenEnd,
-          text: token.str,
-          lineNumber: token.lineNumber,
-        };
-      }
-    }
-
-    if (current) result.push(current);
-    return result;
   }
 }

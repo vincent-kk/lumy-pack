@@ -1,4 +1,5 @@
 export { Dictionary } from './dictionary.js';
+export { createDictionary, fromJSON } from './dictionary-factory.js';
 export { compositeKey } from './entry.js';
 export type { DictionaryEntry } from './entry.js';
 export { TokenGenerator } from './token-generator.js';
