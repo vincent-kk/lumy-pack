@@ -1,0 +1,22 @@
+{
+  "name": "@lumy-pack/shared",
+  "version": "0.0.1",
+  "description": "Shared CLI utilities for lumy-pack packages",
+  "license": "MIT",
+  "author": {
+    "name": "Vincent K. Kelvin",
+    "email": "lunox273@gmail.com"
+  },
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src"
+  ]
+}
