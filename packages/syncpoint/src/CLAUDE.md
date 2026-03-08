@@ -45,6 +45,5 @@ src/
 ### Never do
 
 - `core/` 모듈에서 Ink/React import 추가
-- `cli.ts`에 비즈니스 로직 직접 작성
-- `SENSITIVE_PATTERNS`에 매칭되는 파일을 아카이브에 포함
+- `cli.ts`에 비즈니스 로직 작성 / `SENSITIVE_PATTERNS` 매칭 파일 아카이브 포함
 - `curl | sh` 패턴의 provision 스텝 허용 (provision.ts에서 차단됨)
