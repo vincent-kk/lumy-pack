@@ -1,6 +1,7 @@
 import { readdirSync, statSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { respond, respondError } from '@lumy-pack/shared';
 import { Command } from 'commander';
 import { Box, Text, useApp, useInput } from 'ink';
 import { render } from 'ink';
@@ -12,6 +13,7 @@ import { Table } from '../components/Table.js';
 import { APP_NAME, LOGS_DIR, getSubDir } from '../constants.js';
 import { loadConfig } from '../core/config.js';
 import { getBackupList } from '../core/restore.js';
+import { classifyError } from '../errors.js';
 import {
   formatBytes,
   formatDate,
@@ -19,6 +21,7 @@ import {
 } from '../utils/format.js';
 import { isInsideDir, resolveTargetPath } from '../utils/paths.js';
 import type { BackupInfo, StatusInfo } from '../utils/types.js';
+import { VERSION } from '../version.js';
 
 type Phase =
   | 'loading'
@@ -525,6 +528,42 @@ export function registerStatusCommand(program: Command): void {
     .description(`Show ~/.${APP_NAME}/ status summary`)
     .option('--cleanup', 'Interactive cleanup mode', false)
     .action(async (opts: { cleanup: boolean }) => {
+      const globalOpts = program.opts();
+      const startTime = Date.now();
+
+      if (globalOpts.json) {
+        try {
+          const config = await loadConfig();
+          const backupDirectory = config.backup.destination
+            ? resolveTargetPath(config.backup.destination)
+            : getSubDir('backups');
+
+          const backupStats = getDirStats(backupDirectory);
+          const templateStats = getDirStats(getSubDir('templates'));
+          const scriptStats = getDirStats(getSubDir('scripts'));
+          const logStats = getDirStats(getSubDir('logs'));
+          const backupList = await getBackupList(config);
+
+          const lastBackup = backupList.length > 0 ? backupList[0].createdAt : null;
+          const oldestBackup = backupList.length > 0 ? backupList[backupList.length - 1].createdAt : null;
+
+          const statusInfo: StatusInfo = {
+            backups: backupStats,
+            templates: templateStats,
+            scripts: scriptStats,
+            logs: logStats,
+            lastBackup: lastBackup ?? undefined,
+            oldestBackup: oldestBackup ?? undefined,
+          };
+
+          respond('status', statusInfo, startTime, VERSION);
+        } catch (error) {
+          const code = classifyError(error);
+          respondError('status', code, (error as Error).message, startTime, VERSION);
+        }
+        return;
+      }
+
       const { waitUntilExit } = render(<StatusView cleanup={opts.cleanup} />);
       await waitUntilExit();
     });

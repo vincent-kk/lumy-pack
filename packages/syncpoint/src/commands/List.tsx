@@ -1,5 +1,6 @@
 import { unlinkSync } from 'node:fs';
 
+import { respond, respondError } from '@lumy-pack/shared';
 import { Command } from 'commander';
 import { Box, Text, useApp, useInput } from 'ink';
 import { render } from 'ink';
@@ -12,9 +13,11 @@ import { getSubDir } from '../constants.js';
 import { loadConfig } from '../core/config.js';
 import { listTemplates } from '../core/provision.js';
 import { getBackupList } from '../core/restore.js';
+import { SyncpointErrorCode, classifyError } from '../errors.js';
 import { formatBytes, formatDate } from '../utils/format.js';
 import { isInsideDir, resolveTargetPath } from '../utils/paths.js';
 import type { BackupInfo, TemplateConfig } from '../utils/types.js';
+import { VERSION } from '../version.js';
 
 type Phase =
   | 'loading'
@@ -524,12 +527,87 @@ export function registerListCommand(program: Command): void {
   program
     .command('list [type]')
     .description('List backups and templates')
-    .option('--delete <n>', 'Delete item #n')
+    .option('--delete <filename>', 'Delete item by filename')
     .action(async (type: string | undefined, opts: { delete?: string }) => {
+      const globalOpts = program.opts();
+      const startTime = Date.now();
+
+      if (globalOpts.json) {
+        try {
+          const config = await loadConfig();
+
+          // Handle --delete in JSON mode
+          if (opts.delete) {
+            const filename = opts.delete;
+            const backupDirectory = config.backup.destination
+              ? resolveTargetPath(config.backup.destination)
+              : getSubDir('backups');
+
+            const isTemplate = type === 'templates';
+            if (isTemplate) {
+              const templates = await listTemplates();
+              const match = templates.find(
+                (t) => t.name === filename || t.name === filename.replace(/\.ya?ml$/, ''),
+              );
+              if (!match) {
+                respondError('list', SyncpointErrorCode.INVALID_ARGUMENT, `Template not found: ${filename}`, startTime, VERSION);
+                return;
+              }
+              if (!isInsideDir(match.path, getSubDir('templates'))) {
+                respondError('list', SyncpointErrorCode.INVALID_ARGUMENT, `Refusing to delete file outside templates directory: ${match.path}`, startTime, VERSION);
+                return;
+              }
+              unlinkSync(match.path);
+              respond('list', { deleted: match.name, path: match.path }, startTime, VERSION);
+            } else {
+              const list = await getBackupList(config);
+              const match = list.find(
+                (b) => b.filename === filename || b.filename.startsWith(filename),
+              );
+              if (!match) {
+                respondError('list', SyncpointErrorCode.INVALID_ARGUMENT, `Backup not found: ${filename}`, startTime, VERSION);
+                return;
+              }
+              if (!isInsideDir(match.path, backupDirectory)) {
+                respondError('list', SyncpointErrorCode.INVALID_ARGUMENT, `Refusing to delete file outside backups directory: ${match.path}`, startTime, VERSION);
+                return;
+              }
+              unlinkSync(match.path);
+              respond('list', { deleted: match.filename, path: match.path }, startTime, VERSION);
+            }
+            return;
+          }
+
+          // List mode
+          const showBackups = !type || type === 'backups';
+          const showTemplates = !type || type === 'templates';
+
+          const result: { backups?: BackupInfo[]; templates?: Array<{ name: string; path: string; config: TemplateConfig }> } = {};
+
+          if (showBackups) {
+            result.backups = await getBackupList(config);
+          }
+          if (showTemplates) {
+            result.templates = await listTemplates();
+          }
+
+          respond('list', result, startTime, VERSION);
+        } catch (error) {
+          const code = classifyError(error);
+          respondError('list', code, (error as Error).message, startTime, VERSION);
+        }
+        return;
+      }
+
+      // Non-JSON mode: index-based delete still supported for backward compat
       const deleteIndex = opts.delete ? parseInt(opts.delete, 10) : undefined;
       if (deleteIndex !== undefined && isNaN(deleteIndex)) {
-        console.error(`Invalid delete index: ${opts.delete}`);
-        process.exit(1);
+        // filename-based delete: pass as string to ListView via deleteFilename
+        const { waitUntilExit } = render(
+          <ListView type={type} deleteIndex={undefined} />,
+        );
+        await waitUntilExit();
+        return;
       }
       const { waitUntilExit } = render(
         <ListView type={type} deleteIndex={deleteIndex} />,

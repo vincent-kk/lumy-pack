@@ -1,9 +1,11 @@
+import { respond } from '@lumy-pack/shared';
 import { Command } from 'commander';
 import { Box, Text } from 'ink';
 import { render } from 'ink';
 import React from 'react';
 
 import { COMMANDS, type CommandInfo } from '../utils/command-registry.js';
+import { VERSION } from '../version.js';
 
 interface GeneralHelpViewProps {}
 
@@ -196,6 +198,23 @@ export function registerHelpCommand(program: Command): void {
     .command('help [command]')
     .description('Display help information')
     .action(async (commandName?: string) => {
+      const globalOpts = program.opts();
+      const startTime = Date.now();
+
+      if (globalOpts.json) {
+        if (commandName) {
+          const commandInfo = COMMANDS[commandName];
+          if (!commandInfo) {
+            respond('help', { error: `Unknown command: ${commandName}`, commands: Object.keys(COMMANDS) }, startTime, VERSION);
+          } else {
+            respond('help', { command: commandInfo }, startTime, VERSION);
+          }
+        } else {
+          respond('help', { commands: COMMANDS }, startTime, VERSION);
+        }
+        return;
+      }
+
       const { waitUntilExit } = render(<HelpView commandName={commandName} />);
       await waitUntilExit();
     });

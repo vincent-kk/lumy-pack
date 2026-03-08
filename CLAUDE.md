@@ -6,6 +6,8 @@ Personal Environment Manager 모노레포. 설정파일 백업/복원 및 머신
 
 - **Monorepo**: Yarn 4.12 workspaces (`packages/*`)
 - **Package**: `@lumy-pack/syncpoint` — CLI tool (v0.0.8, npm public)
+- **Package**: `@lumy-pack/scene-sieve` — Video/GIF frame extraction CLI
+- **Package**: `@lumy-pack/shared` — Shared CLI utilities (private, source-only)
 
 ```
 packages/syncpoint/

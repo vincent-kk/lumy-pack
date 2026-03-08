@@ -1,10 +1,13 @@
+import { respond, respondError } from '@lumy-pack/shared';
 import { Command } from 'commander';
 import { Box, Text, useApp } from 'ink';
 import { render } from 'ink';
 import React, { useEffect, useState } from 'react';
 
 import { migrateConfig } from '../core/migrate.js';
+import { classifyError } from '../errors.js';
 import type { MigrateResult } from '../utils/types.js';
+import { VERSION } from '../version.js';
 
 interface MigrateViewProps {
   dryRun: boolean;
@@ -124,6 +127,20 @@ export function registerMigrateCommand(program: Command): void {
     .description('Migrate config.yml to match the current schema')
     .option('--dry-run', 'Preview changes without writing')
     .action(async (opts: { dryRun?: boolean }) => {
+      const globalOpts = program.opts();
+      const startTime = Date.now();
+
+      if (globalOpts.json) {
+        try {
+          const result = await migrateConfig({ dryRun: opts.dryRun ?? false });
+          respond('migrate', result, startTime, VERSION);
+        } catch (error) {
+          const code = classifyError(error);
+          respondError('migrate', code, (error as Error).message, startTime, VERSION);
+        }
+        return;
+      }
+
       const { waitUntilExit } = render(
         <MigrateView dryRun={opts.dryRun ?? false} />,
       );

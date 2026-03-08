@@ -7,6 +7,7 @@ import {
 } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { respond, respondError } from '@lumy-pack/shared';
 import { Command } from 'commander';
 import { Box, Text, useApp } from 'ink';
 import { render } from 'ink';
@@ -28,9 +29,11 @@ import {
   createRetryPrompt,
   formatValidationErrors,
 } from '../utils/error-formatter.js';
+import { SyncpointErrorCode } from '../errors.js';
 import { scanHomeDirectory } from '../utils/file-scanner.js';
 import { fileExists } from '../utils/paths.js';
 import type { SyncpointConfig } from '../utils/types.js';
+import { VERSION } from '../version.js';
 import { extractYAML, parseYAML } from '../utils/yaml-parser.js';
 
 type Phase =
@@ -354,6 +357,30 @@ export function registerWizardCommand(program: Command): void {
   });
 
   cmd.action(async (opts: { print?: boolean }) => {
+    const globalOpts = program.opts();
+    const startTime = Date.now();
+
+    if (globalOpts.json) {
+      // In JSON mode, only --print is supported
+      if (!opts.print) {
+        respondError(
+          'wizard',
+          SyncpointErrorCode.MISSING_ARGUMENT,
+          '--print is required in --json mode (interactive mode requires a terminal)',
+          startTime,
+          VERSION,
+        );
+        return;
+      }
+      try {
+        const scanResult = await runScanPhase();
+        respond('wizard', { prompt: scanResult.prompt }, startTime, VERSION);
+      } catch (err) {
+        respondError('wizard', SyncpointErrorCode.UNKNOWN, (err as Error).message, startTime, VERSION);
+      }
+      return;
+    }
+
     if (opts.print) {
       // Print mode: use existing Ink UI
       const { waitUntilExit } = render(<WizardView printMode={true} />);

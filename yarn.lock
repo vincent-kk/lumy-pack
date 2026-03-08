@@ -1129,6 +1129,7 @@ __metadata:
   resolution: "@lumy-pack/scene-sieve@workspace:packages/scene-sieve"
   dependencies:
     "@ffprobe-installer/ffprobe": "npm:^1.4.1"
+    "@lumy-pack/shared": "workspace:*"
     "@techstark/opencv-js": "npm:4.12.0-release.1"
     "@types/node": "npm:^20.11.0"
     "@types/react": "npm:^18.0.0"
@@ -1146,10 +1147,17 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@lumy-pack/shared@workspace:*, @lumy-pack/shared@workspace:packages/shared":
+  version: 0.0.0-use.local
+  resolution: "@lumy-pack/shared@workspace:packages/shared"
+  languageName: unknown
+  linkType: soft
+
 "@lumy-pack/syncpoint@workspace:packages/syncpoint":
   version: 0.0.0-use.local
   resolution: "@lumy-pack/syncpoint@workspace:packages/syncpoint"
   dependencies:
+    "@lumy-pack/shared": "workspace:*"
     "@types/micromatch": "npm:^4.0.9"
     "@types/node": "npm:^20.11.0"
     "@types/react": "npm:^18.0.0"

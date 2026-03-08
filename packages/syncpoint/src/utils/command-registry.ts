@@ -6,6 +6,7 @@
 export interface CommandOption {
   flag: string;
   description: string;
+  type?: 'boolean' | 'string' | 'number';
   default?: string;
 }
 
@@ -40,6 +41,7 @@ export const COMMANDS: Record<string, CommandInfo> = {
       {
         flag: '-p, --print',
         description: 'Print prompt instead of invoking Claude Code',
+        type: 'boolean' as const,
       },
     ],
     examples: [
@@ -56,14 +58,17 @@ export const COMMANDS: Record<string, CommandInfo> = {
       {
         flag: '--dry-run',
         description: 'Preview files to be backed up without creating archive',
+        type: 'boolean' as const,
       },
       {
         flag: '--tag <name>',
         description: 'Add custom tag to backup filename',
+        type: 'string' as const,
       },
       {
         flag: '-v, --verbose',
         description: 'Show detailed output including missing files',
+        type: 'boolean' as const,
       },
     ],
     examples: [
@@ -88,6 +93,7 @@ export const COMMANDS: Record<string, CommandInfo> = {
       {
         flag: '--dry-run',
         description: 'Show restore plan without actually restoring',
+        type: 'boolean' as const,
       },
     ],
     examples: [
@@ -111,14 +117,17 @@ export const COMMANDS: Record<string, CommandInfo> = {
       {
         flag: '-f, --file <path>',
         description: 'Path to template file (alternative to template name)',
+        type: 'string' as const,
       },
       {
         flag: '--dry-run',
         description: 'Show execution plan without running commands',
+        type: 'boolean' as const,
       },
       {
         flag: '--skip-restore',
         description: 'Skip automatic config restore after provisioning',
+        type: 'boolean' as const,
       },
     ],
     examples: [
@@ -145,6 +154,7 @@ export const COMMANDS: Record<string, CommandInfo> = {
       {
         flag: '-p, --print',
         description: 'Print prompt instead of invoking Claude Code',
+        type: 'boolean' as const,
       },
     ],
     examples: [
@@ -164,7 +174,7 @@ export const COMMANDS: Record<string, CommandInfo> = {
         required: false,
       },
     ],
-    options: [{ flag: '--delete <n>', description: 'Delete item number n' }],
+    options: [{ flag: '--delete <filename>', description: 'Delete item by filename', type: 'string' as const }],
     examples: [
       'npx @lumy-pack/syncpoint list',
       'npx @lumy-pack/syncpoint list backups',
@@ -176,7 +186,7 @@ export const COMMANDS: Record<string, CommandInfo> = {
     description: 'Show ~/.syncpoint/ status summary and manage cleanup',
     usage: 'npx @lumy-pack/syncpoint status [options]',
     options: [
-      { flag: '--cleanup', description: 'Enter interactive cleanup mode' },
+      { flag: '--cleanup', description: 'Enter interactive cleanup mode', type: 'boolean' as const },
     ],
     examples: [
       'npx @lumy-pack/syncpoint status',
@@ -191,6 +201,7 @@ export const COMMANDS: Record<string, CommandInfo> = {
       {
         flag: '--dry-run',
         description: 'Preview changes without writing',
+        type: 'boolean' as const,
       },
     ],
     examples: [

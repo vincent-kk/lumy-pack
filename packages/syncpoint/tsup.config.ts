@@ -15,6 +15,7 @@ export default defineConfig([
     dts: false,
     shims: true,
     loader: { '.tsx': 'tsx' },
+    noExternal: ['@lumy-pack/shared'],
   },
   {
     entry: { cli: 'src/cli.ts' },
@@ -30,5 +31,6 @@ export default defineConfig([
     dts: false,
     banner: { js: '#!/usr/bin/env node' },
     loader: { '.tsx': 'tsx' },
+    noExternal: ['@lumy-pack/shared'],
   },
 ]);
