@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { SieveErrorCode } from '../../errors.js';
+import { SieveErrorCode, classifyError } from '../../errors.js';
 
 describe('SieveErrorCode', () => {
   it('has correct string values', () => {
@@ -24,20 +24,6 @@ describe('SieveErrorCode', () => {
 });
 
 describe('error classification logic', () => {
-  function classifyError(err: Error): string {
-    const msg = err.message.toLowerCase();
-    const nodeErr = err as NodeJS.ErrnoException;
-    if (nodeErr.code === 'ENOENT' || msg.includes('not found')) {
-      return SieveErrorCode.FILE_NOT_FOUND;
-    } else if (msg.includes('no video stream') || msg.includes('invalid format')) {
-      return SieveErrorCode.INVALID_FORMAT;
-    } else if (msg.includes('worker')) {
-      return SieveErrorCode.WORKER_ERROR;
-    } else {
-      return SieveErrorCode.PIPELINE_ERROR;
-    }
-  }
-
   it('classifies ENOENT as FILE_NOT_FOUND', () => {
     const err = Object.assign(new Error('no such file'), { code: 'ENOENT' });
     expect(classifyError(err)).toBe(SieveErrorCode.FILE_NOT_FOUND);
