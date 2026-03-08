@@ -1,0 +1,82 @@
+{
+  "name": "@lumy-pack/ink-veil",
+  "version": "0.0.1",
+  "description": "Korean PII detection and veiling CLI tool",
+  "keywords": [
+    "cli",
+    "pii",
+    "korean",
+    "privacy",
+    "anonymization",
+    "nlp"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vincent-kk/lumy-pack.git",
+    "directory": "packages/ink-veil"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Vincent K. Kelvin",
+    "email": "lunox273@gmail.com"
+  },
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "source": "./src/index.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./transform": {
+      "types": "./dist/transform/index.d.ts",
+      "source": "./src/transform/index.ts",
+      "import": "./dist/transform/index.mjs",
+      "require": "./dist/transform/index.cjs"
+    }
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "bin": "dist/cli.mjs",
+  "files": [
+    "dist",
+    "!dist/tsconfig.tsbuildinfo"
+  ],
+  "scripts": {
+    "build": "tsup && yarn build:types",
+    "build:types": "tsc -p ./tsconfig.declarations.json",
+    "dev": "tsx src/cli.ts",
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "vitest",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "test:run": "vitest run",
+    "model:convert": "bash scripts/model/docker-convert.sh",
+    "model:convert:dry": "bash scripts/model/docker-convert.sh --skip-upload",
+    "update-model-hashes": "bash scripts/model/update-hashes.sh"
+  },
+  "dependencies": {
+    "@ltd/j-toml": "^1.38.0",
+    "ajv": "^8.17.0",
+    "chardet": "^2.0.0",
+    "commander": "^12.1.0",
+    "fast-xml-parser": "^4.5.0",
+    "iconv-lite": "^0.6.3",
+    "ini": "^6.0.0",
+    "js-yaml": "^4.1.0",
+    "jsdom": "^25.0.0",
+    "jszip": "^3.10.1",
+    "kiwi-nlp": "^0.22.1",
+    "papaparse": "^5.4.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/ini": "^4.1.1",
+    "@types/js-yaml": "^4.0.9",
+    "@types/jsdom": "^21.1.7",
+    "@types/node": "^20.11.0",
+    "@types/papaparse": "^5.3.14",
+    "@vitest/coverage-v8": "^3.2.4"
+  }
+}

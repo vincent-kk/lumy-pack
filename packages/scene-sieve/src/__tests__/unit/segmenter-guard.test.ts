@@ -45,11 +45,23 @@ describe('shouldSegment', () => {
 
   it.each([
     ['file mode + .gif input: returns false', '/path/to/animation.gif', false],
-    ['file mode + .GIF input (uppercase): returns false (case insensitive)', '/path/to/animation.GIF', false],
-    ['file mode + mixed case extension (.Gif): returns false', '/path/to/animation.Gif', false],
+    [
+      'file mode + .GIF input (uppercase): returns false (case insensitive)',
+      '/path/to/animation.GIF',
+      false,
+    ],
+    [
+      'file mode + mixed case extension (.Gif): returns false',
+      '/path/to/animation.Gif',
+      false,
+    ],
     ['file mode + .mp4 input: returns true', '/path/to/video.mp4', true],
     ['file mode + .mov input: returns true', '/path/to/video.mov', true],
-    ['file mode + .gif in path directory (not extension): returns true', '/path/gif.stuff/video.mp4', true],
+    [
+      'file mode + .gif in path directory (not extension): returns true',
+      '/path/gif.stuff/video.mp4',
+      true,
+    ],
   ])('%s', (_label, inputPath, expected) => {
     const resolved = makeResolvedOptions({ mode: 'file' });
     const options = makeFileOptions(inputPath);

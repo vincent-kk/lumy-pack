@@ -17,8 +17,8 @@ npm-debug.log*
 .samples/
 !packages/scene-sieve/.samples/
 packages/scene-sieve/.samples/*
-!packages/scene-sieve/.samples/generate-showcase.ts
-!packages/scene-sieve/.samples/run-tests.mjs
+!packages/**/.samples/generate-showcase.ts
+!packages/**/.samples/run-tests.mjs
 
 
 # Yarn

@@ -1,0 +1,26 @@
+# 애플리케이션 설정 (가상 데이터)
+application:
+  name: 테스트 서비스
+  version: 1.0.0
+
+admin:
+  name: 홍길동
+  email: admin@example.com
+  phone: "010-1234-5678"
+  rrn: "901231-1234567"
+
+contacts:
+  - name: 김영희
+    email: kim@company.co.kr
+    phone: "010-9876-5432"
+  - name: 이철수
+    email: lee@test.org
+    phone: "010-1111-2222"
+
+network:
+  server_ip: "192.168.1.100"
+  brn: "123-45-67890"
+
+payment:
+  card: "4111-1111-1111-1111"
+  account: "110-123-456789"

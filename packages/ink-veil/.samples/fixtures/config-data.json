@@ -1,0 +1,37 @@
+{
+  "application": {
+    "name": "테스트 앱",
+    "version": "1.0.0"
+  },
+  "admin": {
+    "name": "홍길동",
+    "email": "admin@example.com",
+    "phone": "010-1234-5678",
+    "rrn": "901231-1234567"
+  },
+  "support": {
+    "contact": "김영희",
+    "email": "support@company.co.kr",
+    "phone": "02-1234-5678"
+  },
+  "database": {
+    "host": "192.168.1.100",
+    "port": 5432
+  },
+  "users": [
+    {
+      "id": 1,
+      "name": "이철수",
+      "email": "lee@test.org",
+      "phone": "010-1111-2222",
+      "card": "4111-1111-1111-1111"
+    },
+    {
+      "id": 2,
+      "name": "박지수",
+      "email": "park@mail.net",
+      "phone": "010-3333-4444",
+      "rrn": "920820-2567890"
+    }
+  ]
+}

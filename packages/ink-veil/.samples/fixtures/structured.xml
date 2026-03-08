@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<customers>
+  <customer id="C001">
+    <name>홍길동</name>
+    <phone>010-1234-5678</phone>
+    <email>hong.gildong@example.com</email>
+    <rrn>901231-1234567</rrn>
+    <address>서울특별시 강남구 테헤란로 123</address>
+    <card>4111-1111-1111-1111</card>
+  </customer>
+  <customer id="C002">
+    <name>김영희</name>
+    <phone>010-9876-5432</phone>
+    <email>kim.younghee@company.co.kr</email>
+    <rrn>850515-2345678</rrn>
+    <address>부산광역시 해운대구 해운대해변로 456</address>
+  </customer>
+  <customer id="C003">
+    <name>이철수</name>
+    <phone>010-1111-2222</phone>
+    <email>lee@test.org</email>
+    <passport>M12345678</passport>
+    <dl>11-00-123456-01</dl>
+  </customer>
+  <metadata>
+    <server>192.168.1.100</server>
+    <brn>123-45-67890</brn>
+  </metadata>
+</customers>
