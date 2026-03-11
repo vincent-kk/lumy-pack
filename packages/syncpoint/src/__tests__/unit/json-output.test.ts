@@ -24,7 +24,9 @@ describe('SyncpointErrorCode', () => {
 
 describe('classifyError', () => {
   it('classifies config not found errors', () => {
-    const err = new Error('Config file not found: ~/.syncpoint/config.yml\nRun "syncpoint init" first.');
+    const err = new Error(
+      'Config file not found: ~/.syncpoint/config.yml\nRun "syncpoint init" first.',
+    );
     expect(classifyError(err)).toBe(SyncpointErrorCode.CONFIG_NOT_FOUND);
   });
 
@@ -87,11 +89,22 @@ describe('COMMANDS registry type field completeness', () => {
 
   it('all commands exist in registry', () => {
     const expectedCommands = [
-      'init', 'wizard', 'backup', 'restore', 'provision',
-      'create-template', 'list', 'status', 'migrate', 'help',
+      'init',
+      'wizard',
+      'backup',
+      'restore',
+      'provision',
+      'create-template',
+      'list',
+      'status',
+      'migrate',
+      'help',
     ];
     for (const cmd of expectedCommands) {
-      expect(COMMANDS[cmd], `Command "${cmd}" missing from registry`).toBeDefined();
+      expect(
+        COMMANDS[cmd],
+        `Command "${cmd}" missing from registry`,
+      ).toBeDefined();
     }
   });
 });

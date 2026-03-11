@@ -174,7 +174,13 @@ export const COMMANDS: Record<string, CommandInfo> = {
         required: false,
       },
     ],
-    options: [{ flag: '--delete <filename>', description: 'Delete item by filename', type: 'string' as const }],
+    options: [
+      {
+        flag: '--delete <filename>',
+        description: 'Delete item by filename',
+        type: 'string' as const,
+      },
+    ],
     examples: [
       'npx @lumy-pack/syncpoint list',
       'npx @lumy-pack/syncpoint list backups',
@@ -186,7 +192,11 @@ export const COMMANDS: Record<string, CommandInfo> = {
     description: 'Show ~/.syncpoint/ status summary and manage cleanup',
     usage: 'npx @lumy-pack/syncpoint status [options]',
     options: [
-      { flag: '--cleanup', description: 'Enter interactive cleanup mode', type: 'boolean' as const },
+      {
+        flag: '--cleanup',
+        description: 'Enter interactive cleanup mode',
+        type: 'boolean' as const,
+      },
     ],
     examples: [
       'npx @lumy-pack/syncpoint status',
@@ -207,6 +217,39 @@ export const COMMANDS: Record<string, CommandInfo> = {
     examples: [
       'npx @lumy-pack/syncpoint migrate',
       'npx @lumy-pack/syncpoint migrate --dry-run',
+    ],
+  },
+  link: {
+    name: 'link',
+    description: 'Move ~/.syncpoint to backup destination and create a symlink',
+    usage: 'npx @lumy-pack/syncpoint link [options]',
+    options: [
+      {
+        flag: '-r, --ref <path>',
+        description: 'Adopt <path>/.syncpoint as ~/.syncpoint via symlink',
+        type: 'string' as const,
+      },
+    ],
+    examples: [
+      'npx @lumy-pack/syncpoint link',
+      'npx @lumy-pack/syncpoint link --ref ~/Dropbox',
+    ],
+  },
+  unlink: {
+    name: 'unlink',
+    description:
+      'Remove the symlink and restore ~/.syncpoint from the destination copy',
+    usage: 'npx @lumy-pack/syncpoint unlink [options]',
+    options: [
+      {
+        flag: '--clean',
+        description: 'Also remove the destination copy after restoring',
+        type: 'boolean' as const,
+      },
+    ],
+    examples: [
+      'npx @lumy-pack/syncpoint unlink',
+      'npx @lumy-pack/syncpoint unlink --clean',
     ],
   },
   help: {

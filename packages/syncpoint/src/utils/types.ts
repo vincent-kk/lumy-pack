@@ -167,3 +167,21 @@ export interface InitOptions {
 export interface CliOptions {
   verbose?: boolean;
 }
+
+export interface LinkOptions {}
+
+export interface UnlinkOptions {
+  clean?: boolean;
+}
+
+export interface LinkResult {
+  appDir: string;
+  targetDir: string;
+  wasAlreadyLinked: boolean;
+}
+
+export interface UnlinkResult {
+  appDir: string;
+  targetDir: string;
+  cleaned: boolean;
+}
