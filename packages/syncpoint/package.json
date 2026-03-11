@@ -56,7 +56,6 @@
     "version:patch": "yarn version patch"
   },
   "dependencies": {
-    "@lumy-pack/shared": "workspace:*",
     "ajv": "^8.0.0",
     "ajv-formats": "^3.0.0",
     "commander": "^12.1.0",
@@ -71,6 +70,7 @@
     "yaml": "^2.0.0"
   },
   "devDependencies": {
+    "@lumy-pack/shared": "workspace:*",
     "@types/micromatch": "^4.0.9",
     "@types/node": "^20.11.0",
     "@types/react": "^18.0.0",
