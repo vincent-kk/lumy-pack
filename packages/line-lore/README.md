@@ -25,31 +25,31 @@ yarn add @lumy-pack/line-lore
 
 ```bash
 # Trace a single line to its PR
-line-lore trace src/auth.ts -L 42
+npx @lumy-pack/line-lore trace src/auth.ts -L 42
 
 # Trace a line range
-line-lore trace src/config.ts -L 10,50
+npx @lumy-pack/line-lore trace src/config.ts -L 10,50
 
 # Deep trace with squash PR exploration
-line-lore trace src/auth.ts -L 42 --deep
+npx @lumy-pack/line-lore trace src/auth.ts -L 42 --deep
 
 # Traverse PR-to-issues graph
-line-lore graph --pr 42 --depth 2
+npx @lumy-pack/line-lore graph --pr 42 --depth 2
 
 # Check system health
-line-lore health
+npx @lumy-pack/line-lore health
 
 # Clear caches
-line-lore cache clear
+npx @lumy-pack/line-lore cache clear
 
 # Output as JSON
-line-lore trace src/auth.ts -L 42 --output json
+npx @lumy-pack/line-lore trace src/auth.ts -L 42 --output json
 
 # Output for LLM consumption
-line-lore trace src/auth.ts -L 42 --output llm
+npx @lumy-pack/line-lore trace src/auth.ts -L 42 --output llm
 
 # Suppress formatting, return data only
-line-lore trace src/auth.ts -L 42 --quiet
+npx @lumy-pack/line-lore trace src/auth.ts -L 42 --quiet
 ```
 
 ### Programmatic API
@@ -70,7 +70,7 @@ console.log(result.warnings);         // degradation messages
 
 ## How It Works
 
-line-lore executes a 4-stage deterministic pipeline:
+@lumy-pack/line-lore executes a 4-stage deterministic pipeline:
 
 1. **Line → Commit (Blame)**: Git blame with `-C -C -M` flags to detect renames and copies
 2. **Cosmetic Detection**: AST structural comparison to skip formatting-only changes
@@ -138,23 +138,23 @@ Traverse PR-to-issues graph (requires Level 2 access).
 
 | Command | Purpose |
 |---------|---------|
-| `trace <file>` | Trace a line to its PR |
+| `npx @lumy-pack/line-lore trace <file>` | Trace a line to its PR |
 | `-L, --line <num>` | Starting line (required) |
 | `--end-line <num>` | Ending line for range |
 | `--deep` | Deep trace (squash merges) |
 | `--output <format>` | Output as json, llm, or human |
 | `--quiet` | Suppress formatting |
-| `health` | Check system health |
-| `graph --pr <num>` | Traverse PR graph |
+| `npx @lumy-pack/line-lore health` | Check system health |
+| `npx @lumy-pack/line-lore graph --pr <num>` | Traverse PR graph |
 | `--depth <num>` | Graph traversal depth |
-| `cache clear` | Clear caches |
+| `npx @lumy-pack/line-lore cache clear` | Clear caches |
 
 ## Error Handling
 
 Errors are typed via `LineLoreError` with specific error codes:
 
 ```typescript
-import { LineLoreError, LineLoreErrorCode } from '@lumy-pack/line-lore';
+import { trace, LineLoreError } from '@lumy-pack/line-lore';
 
 try {
   await trace({ file: 'src/auth.ts', line: 42 });

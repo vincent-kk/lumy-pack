@@ -25,31 +25,31 @@ yarn add @lumy-pack/line-lore
 
 ```bash
 # 단일 라인을 PR로 역추적
-line-lore trace src/auth.ts -L 42
+npx @lumy-pack/line-lore trace src/auth.ts -L 42
 
 # 라인 범위 역추적
-line-lore trace src/config.ts -L 10,50
+npx @lumy-pack/line-lore trace src/config.ts -L 10,50
 
 # squash merge 탐색을 포함한 깊은 역추적
-line-lore trace src/auth.ts -L 42 --deep
+npx @lumy-pack/line-lore trace src/auth.ts -L 42 --deep
 
 # PR-to-issues 그래프 순회
-line-lore graph --pr 42 --depth 2
+npx @lumy-pack/line-lore graph --pr 42 --depth 2
 
 # 시스템 상태 확인
-line-lore health
+npx @lumy-pack/line-lore health
 
 # 캐시 삭제
-line-lore cache clear
+npx @lumy-pack/line-lore cache clear
 
 # JSON으로 출력
-line-lore trace src/auth.ts -L 42 --output json
+npx @lumy-pack/line-lore trace src/auth.ts -L 42 --output json
 
 # LLM 소비 형식으로 출력
-line-lore trace src/auth.ts -L 42 --output llm
+npx @lumy-pack/line-lore trace src/auth.ts -L 42 --output llm
 
 # 포맷 억제, 데이터만 반환
-line-lore trace src/auth.ts -L 42 --quiet
+npx @lumy-pack/line-lore trace src/auth.ts -L 42 --quiet
 ```
 
 ### 프로그래밍 API
@@ -70,7 +70,7 @@ console.log(result.warnings);         // 기능 축소 메시지
 
 ## 작동 원리
 
-line-lore는 결정론적 4단계 파이프라인을 실행합니다:
+@lumy-pack/line-lore는 결정론적 4단계 파이프라인을 실행합니다:
 
 1. **라인 → 커밋 (Blame)**: `-C -C -M` 플래그로 파일 이름 변경과 복사본 감지
 2. **외관상 변경 감지**: AST 구조 비교로 포맷 전용 변경 건너뛰기
@@ -138,23 +138,23 @@ PR-to-issues 그래프 순회 (Level 2 접근 필요).
 
 | 명령어 | 용도 |
 |--------|------|
-| `trace <file>` | 라인을 PR로 역추적 |
+| `npx @lumy-pack/line-lore trace <file>` | 라인을 PR로 역추적 |
 | `-L, --line <num>` | 시작 라인 (필수) |
 | `--end-line <num>` | 범위의 종료 라인 |
 | `--deep` | 깊은 역추적 (squash merge) |
 | `--output <format>` | json, llm 또는 human으로 출력 |
 | `--quiet` | 포맷 억제 |
-| `health` | 시스템 상태 확인 |
-| `graph --pr <num>` | PR 그래프 순회 |
+| `npx @lumy-pack/line-lore health` | 시스템 상태 확인 |
+| `npx @lumy-pack/line-lore graph --pr <num>` | PR 그래프 순회 |
 | `--depth <num>` | 그래프 순회 깊이 |
-| `cache clear` | 캐시 삭제 |
+| `npx @lumy-pack/line-lore cache clear` | 캐시 삭제 |
 
 ## 에러 처리
 
 에러는 특정 에러 코드와 함께 `LineLoreError`를 통해 타입 지정됩니다:
 
 ```typescript
-import { LineLoreError, LineLoreErrorCode } from '@lumy-pack/line-lore';
+import { trace, LineLoreError } from '@lumy-pack/line-lore';
 
 try {
   await trace({ file: 'src/auth.ts', line: 42 });
