@@ -1,2 +1,3 @@
-// Commands module barrel export
-// TODO: Export command registration functions when implemented
+export { registerCacheCommand } from './cache.js';
+export { registerHealthCommand } from './health.js';
+export { registerTraceCommand } from './trace.js';

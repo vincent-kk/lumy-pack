@@ -84,12 +84,12 @@
 
 > 참조: [04-extensions.md](./04-extensions.md)
 
-- [ ] `commands/trace.tsx` — trace 명령어 (대화형 + 비대화형)
-- [ ] `commands/health.tsx` — health 명령어
-- [ ] `commands/cache.tsx` — cache 명령어
-- [ ] `components/TraceProgress.tsx` — 실시간 진행 표시
-- [ ] `components/TraceResult.tsx` — 결과 렌더러
-- [ ] `cli.ts` — 명령어 등록 + TTY 감지
+- [x] `commands/trace.tsx` — trace 명령어 (대화형 + 비대화형)
+- [x] `commands/health.tsx` — health 명령어
+- [x] `commands/cache.tsx` — cache 명령어
+- [x] `components/TraceProgress.tsx` — 실시간 진행 표시
+- [x] `components/TraceResult.tsx` — 결과 렌더러
+- [x] `cli.ts` — 명령어 등록 + TTY 감지
 
 **완료 기준**: `line-lore trace <file> -L <line>` CLI 동작
 

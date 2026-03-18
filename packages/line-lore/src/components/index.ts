@@ -1,2 +1,2 @@
-// Components module barrel export
-// TODO: Export Ink components when implemented
+export { TraceProgress } from './TraceProgress.js';
+export { TraceResultView } from './TraceResult.js';
