@@ -1,0 +1,18 @@
+# Core 파이프라인 명세
+
+## Requirements
+
+- blame → 코스메틱 감지 → 조상 추적 → PR 조회 단계를 오케스트레이션
+- git 헬스 및 플랫폼 가용성으로 운영 수준 결정
+- 스쿼시 머지 감지를 위한 AST diff 기반 딥 트레이싱 지원
+- 결과를 노드, 경고, 수준이 포함된 `TraceFullResult`로 집계
+
+## API Contracts
+
+- `trace(options: TraceOptions): Promise<TraceFullResult>` — 전체 파이프라인 실행
+- `health(): Promise<HealthReport>` — Git 버전, 플랫폼 인증, AST 가용성
+- `clearCache(): Promise<void>` — 모든 FileCache 인스턴스 초기화
+
+## Last Updated
+
+2026-03-19

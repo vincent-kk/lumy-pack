@@ -1,0 +1,71 @@
+{
+  "name": "@lumy-pack/line-lore",
+  "version": "0.0.1",
+  "description": "CLI tool for tracing code lines to their originating Pull Requests via git blame",
+  "keywords": [
+    "cli",
+    "git",
+    "blame",
+    "pr",
+    "pull-request",
+    "trace",
+    "line-lore"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vincent-kk/lumy-pack.git",
+    "directory": "packages/line-lore"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Vincent K. Kelvin",
+    "email": "lunox273@gmail.com"
+  },
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "source": "./src/index.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "bin": "dist/cli.mjs",
+  "files": [
+    "dist",
+    "!dist/tsconfig.tsbuildinfo",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "node scripts/inject-version.js && tsup && yarn build:types",
+    "build:types": "tsc -p ./tsconfig.declarations.json",
+    "dev": "node scripts/inject-version.js && tsx src/cli.ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint \"src/**/*.ts\"",
+    "publish:npm": "yarn npm publish --access public",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "version:major": "yarn version major",
+    "version:minor": "yarn version minor",
+    "version:patch": "yarn version patch"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "execa": "^9.5.0",
+    "ink": "^5.0.0",
+    "ink-spinner": "^5.0.0",
+    "picocolors": "^1.1.1",
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "@lumy-pack/shared": "workspace:*",
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.0.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "ink-testing-library": "^4.0.0"
+  }
+}

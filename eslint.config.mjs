@@ -35,7 +35,8 @@ export function createESLintConfig(
         "import/resolver": {
           typescript: {
             alwaysTryTypes: true,
-            project: tsconfigPath,
+            project: [tsconfigPath, "./packages/*/tsconfig.json"],
+            noWarnOnMultipleProjects: true,
           },
           node: {
             extensions: [".js", ".ts", ".mjs"],
