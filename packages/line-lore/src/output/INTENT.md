@@ -11,7 +11,6 @@
 | `index.ts` | 배럴 익스포트 |
 | `formats.ts` | picocolors를 사용한 사람 읽기용 포맷팅 |
 | `normalizer.ts` | `NormalizedResponse` 생성 헬퍼 |
-| `help-schema.ts` | LLM 에이전트 소비용 JSON 스키마 |
 
 ## Conventions
 

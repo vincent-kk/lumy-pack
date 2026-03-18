@@ -111,23 +111,19 @@ function createMockAdapter(
 ): PlatformAdapter {
   return {
     platform: 'github',
-    checkAuth: vi
-      .fn()
-      .mockResolvedValue({
-        authenticated,
-        username: authenticated ? 'test-user' : undefined,
-      }),
+    checkAuth: vi.fn().mockResolvedValue({
+      authenticated,
+      username: authenticated ? 'test-user' : undefined,
+    }),
     getPRForCommit: vi.fn().mockResolvedValue(prInfo),
     getPRCommits: vi.fn().mockResolvedValue([]),
     getLinkedIssues: vi.fn().mockResolvedValue([]),
     getLinkedPRs: vi.fn().mockResolvedValue([]),
-    getRateLimit: vi
-      .fn()
-      .mockResolvedValue({
-        limit: 5000,
-        remaining: 4999,
-        resetAt: new Date().toISOString(),
-      }),
+    getRateLimit: vi.fn().mockResolvedValue({
+      limit: 5000,
+      remaining: 4999,
+      resetAt: new Date().toISOString(),
+    }),
   };
 }
 

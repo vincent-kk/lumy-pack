@@ -7,12 +7,12 @@ import {
   formatLlm,
   formatQuiet,
 } from '@/output/formats.js';
-import { getHelpSchema } from '@/output/help-schema.js';
 import {
   createErrorResponse,
   createPartialResponse,
   createSuccessResponse,
 } from '@/output/normalizer.js';
+import { ALL_COMMANDS, TRACE_COMMAND } from '@/utils/command-registry.js';
 
 /** Minimal TraceFullResult with one original_commit and one pull_request node. */
 function makeFullResult(
@@ -258,43 +258,31 @@ describe('E12: Output format normalization', () => {
     });
   });
 
-  describe('getHelpSchema', () => {
-    it('contains commands, parameters, and responseFormat keys', () => {
-      const schema = getHelpSchema() as {
-        commands: unknown;
-        responseFormat: unknown;
-        name: string;
-      };
-
-      expect(schema.name).toBe('line-lore');
-      expect(schema.commands).toBeDefined();
-      expect(schema.responseFormat).toBeDefined();
+  describe('command-registry', () => {
+    it('ALL_COMMANDS contains all 4 commands', () => {
+      expect(ALL_COMMANDS).toHaveLength(4);
+      const names = ALL_COMMANDS.map((c) => c.name);
+      expect(names).toContain('trace');
+      expect(names).toContain('health');
+      expect(names).toContain('cache');
+      expect(names).toContain('graph');
     });
 
-    it('trace command lists required file and -L parameters', () => {
-      const schema = getHelpSchema() as {
-        commands: {
-          trace: {
-            parameters: Record<string, { required?: boolean }>;
-          };
-        };
-      };
-
-      expect(schema.commands.trace).toBeDefined();
-      expect(schema.commands.trace.parameters['file']).toBeDefined();
-      expect(schema.commands.trace.parameters['file'].required).toBe(true);
-      expect(schema.commands.trace.parameters['-L']).toBeDefined();
-      expect(schema.commands.trace.parameters['-L'].required).toBe(true);
+    it('trace command has required file argument and options', () => {
+      expect(TRACE_COMMAND.arguments).toBeDefined();
+      expect(TRACE_COMMAND.arguments![0].name).toBe('file');
+      expect(TRACE_COMMAND.arguments![0].required).toBe(true);
+      expect(TRACE_COMMAND.options).toBeDefined();
+      expect(TRACE_COMMAND.options!.length).toBeGreaterThan(0);
     });
 
-    it('responseFormat describes operatingLevel values', () => {
-      const schema = getHelpSchema() as {
-        responseFormat: { operatingLevel: string };
-      };
-
-      expect(schema.responseFormat.operatingLevel).toContain('0');
-      expect(schema.responseFormat.operatingLevel).toContain('1');
-      expect(schema.responseFormat.operatingLevel).toContain('2');
+    it('graph and cache commands have subcommands', () => {
+      const graph = ALL_COMMANDS.find((c) => c.name === 'graph')!;
+      const cache = ALL_COMMANDS.find((c) => c.name === 'cache')!;
+      expect(graph.subcommands).toBeDefined();
+      expect(graph.subcommands!.length).toBe(2);
+      expect(cache.subcommands).toBeDefined();
+      expect(cache.subcommands!.length).toBe(2);
     });
   });
 });

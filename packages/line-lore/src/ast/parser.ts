@@ -89,9 +89,7 @@ export async function findSymbols(
         source: string,
       ) => {
         root: () => {
-          findAll: (pattern: {
-            rule: unknown;
-          }) => Array<{
+          findAll: (pattern: { rule: unknown }) => Array<{
             text: () => string;
             range: () => { start: { line: number }; end: { line: number } };
             kind: () => string;
