@@ -59,13 +59,13 @@
 
 > 참조: [03-platform.md](./03-platform.md)
 
-- [ ] `platform/github/github-adapter.ts` — GitHub.com 어댑터
-- [ ] `platform/github/github-enterprise-adapter.ts` — GHES 어댑터
-- [ ] `platform/gitlab/gitlab-adapter.ts` — GitLab.com 어댑터
-- [ ] `platform/gitlab/gitlab-self-hosted-adapter.ts` — Self-Hosted 어댑터
-- [ ] `platform/scheduler/request-scheduler.ts` — rate-limit + ETag + 배치
-- [ ] `platform/platform.ts` — 감지 + 팩토리
-- [ ] `core/pr-lookup/pr-lookup.ts` — 3-Level 폴백 체인
+- [x] `platform/github/github-adapter.ts` — GitHub.com 어댑터
+- [x] `platform/github/github-enterprise-adapter.ts` — GHES 어댑터
+- [x] `platform/gitlab/gitlab-adapter.ts` — GitLab.com 어댑터
+- [x] `platform/gitlab/gitlab-self-hosted-adapter.ts` — Self-Hosted 어댑터
+- [x] `platform/scheduler/request-scheduler.ts` — rate-limit + ETag + 배치
+- [x] `platform/platform.ts` — 감지 + 팩토리
+- [x] `core/pr-lookup/pr-lookup.ts` — 3-Level 폴백 체인
 
 **완료 기준**: 커밋 → PR 매핑 (4개 플랫폼, Graceful Degradation)
 

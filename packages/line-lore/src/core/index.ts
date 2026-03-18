@@ -28,3 +28,5 @@ export {
   resetPatchIdCache,
 } from './patch-id/index.js';
 export type { PatchIdResult } from './patch-id/index.js';
+
+export { lookupPR, resetPRCache } from './pr-lookup/index.js';
