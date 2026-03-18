@@ -1,10 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
+import type { ContentHash } from '@/types/index.js';
 
 import {
   compareSymbolMaps,
   findMatchAcrossFiles,
 } from '../structure-comparator.js';
-import type { ContentHash } from '@/types/index.js';
 
 function hash(exact: string, structural?: string): ContentHash {
   return { exact, structural: structural ?? exact };

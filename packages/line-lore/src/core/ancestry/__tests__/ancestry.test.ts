@@ -1,16 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LineLoreError, LineLoreErrorCode } from '@/errors.js';
+import { gitExec } from '@/git/executor.js';
+
+import { extractPRFromMergeMessage, findMergeCommit } from '../ancestry.js';
 
 vi.mock('@/git/executor.js', () => ({
   gitExec: vi.fn(),
 }));
-
-import {
-  findMergeCommit,
-  extractPRFromMergeMessage,
-} from '../ancestry.js';
-import { gitExec } from '@/git/executor.js';
 
 const mockGitExec = gitExec as ReturnType<typeof vi.fn>;
 
@@ -66,9 +63,7 @@ describe('extractPRFromMergeMessage', () => {
   });
 
   it('extracts PR from squash merge convention', () => {
-    expect(
-      extractPRFromMergeMessage('feat: add validation (#55)'),
-    ).toBe(55);
+    expect(extractPRFromMergeMessage('feat: add validation (#55)')).toBe(55);
   });
 
   it('extracts MR from GitLab merge commit message', () => {

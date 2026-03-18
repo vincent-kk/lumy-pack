@@ -1,4 +1,8 @@
-import { extractSymbolsFromText, isAstAvailable, findSymbols } from '../../../ast/index.js';
+import {
+  extractSymbolsFromText,
+  findSymbols,
+  isAstAvailable,
+} from '../../../ast/index.js';
 import type { SymbolInfo } from '../../../types/index.js';
 
 export async function extractSymbols(
@@ -20,7 +24,10 @@ export function findContainingSymbol(
 
   for (const symbol of symbols) {
     if (line >= symbol.startLine && line <= symbol.endLine) {
-      if (!best || (symbol.endLine - symbol.startLine) < (best.endLine - best.startLine)) {
+      if (
+        !best ||
+        symbol.endLine - symbol.startLine < best.endLine - best.startLine
+      ) {
         best = symbol;
       }
     }

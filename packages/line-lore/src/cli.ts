@@ -2,7 +2,12 @@ import { createRequire } from 'node:module';
 
 import { Command } from 'commander';
 
-import { registerCacheCommand, registerGraphCommand, registerHealthCommand, registerTraceCommand } from './commands/index.js';
+import {
+  registerCacheCommand,
+  registerGraphCommand,
+  registerHealthCommand,
+  registerTraceCommand,
+} from './commands/index.js';
 import { getHelpSchema } from './output/help-schema.js';
 
 const require = createRequire(import.meta.url);
@@ -12,7 +17,9 @@ const program = new Command();
 
 program
   .name('line-lore')
-  .description('Trace code lines to their originating Pull Requests via git blame')
+  .description(
+    'Trace code lines to their originating Pull Requests via git blame',
+  )
   .version(version);
 
 registerTraceCommand(program);

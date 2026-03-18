@@ -1,4 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { gitExec } from '@/git/executor.js';
+import type { PRInfo, PlatformAdapter } from '@/types/index.js';
+
+import { lookupPR, resetPRCache } from '../pr-lookup.js';
 
 const mockStore = new Map<string, unknown>();
 
@@ -8,18 +13,19 @@ vi.mock('@/git/executor.js', () => ({
 
 vi.mock('@/cache/file-cache.js', () => ({
   FileCache: class {
-    get(key: string) { return Promise.resolve(mockStore.get(key) ?? null); }
-    set(key: string, value: unknown) { mockStore.set(key, value); return Promise.resolve(); }
+    get(key: string) {
+      return Promise.resolve(mockStore.get(key) ?? null);
+    }
+    set(key: string, value: unknown) {
+      mockStore.set(key, value);
+      return Promise.resolve();
+    }
   },
 }));
 
 vi.mock('execa', () => ({
   execa: vi.fn().mockRejectedValue(new Error('no patch-id in test')),
 }));
-
-import { lookupPR, resetPRCache } from '../pr-lookup.js';
-import { gitExec } from '@/git/executor.js';
-import type { PlatformAdapter, PRInfo } from '@/types/index.js';
 
 const mockGitExec = gitExec as ReturnType<typeof vi.fn>;
 

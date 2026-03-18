@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { findContainingSymbol } from '../symbol-extractor.js';
 import { extractSymbolsFromText } from '@/ast/parser.js';
 import type { SymbolInfo } from '@/types/index.js';
+
+import { findContainingSymbol } from '../symbol-extractor.js';
 
 const TS_SOURCE = `export function greet(name: string): string {
   return \`Hello, \${name}!\`;
@@ -48,7 +49,13 @@ describe('extractSymbolsFromText', () => {
 
 describe('findContainingSymbol', () => {
   const symbols: SymbolInfo[] = [
-    { name: 'outer', kind: 'function', startLine: 1, endLine: 10, bodyText: '' },
+    {
+      name: 'outer',
+      kind: 'function',
+      startLine: 1,
+      endLine: 10,
+      bodyText: '',
+    },
     { name: 'inner', kind: 'function', startLine: 3, endLine: 7, bodyText: '' },
   ];
 

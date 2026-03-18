@@ -1,5 +1,6 @@
-import { GitHubAdapter } from './github-adapter.js';
 import type { RequestScheduler } from '../scheduler/index.js';
+
+import { GitHubAdapter } from './github-adapter.js';
 
 export class GitHubEnterpriseAdapter extends GitHubAdapter {
   override readonly platform = 'github-enterprise' as const;

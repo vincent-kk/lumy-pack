@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 
 /**
  * Builds temporary git repositories for E2E tests.
@@ -118,9 +118,7 @@ export class RepoBuilder {
 
   /** Get git log output. */
   log(format = '%H %s'): string[] {
-    return this.git('log', `--format=${format}`)
-      .split('\n')
-      .filter(Boolean);
+    return this.git('log', `--format=${format}`).split('\n').filter(Boolean);
   }
 
   /** Return the current HEAD SHA (full 40-char). */

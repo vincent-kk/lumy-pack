@@ -1,7 +1,14 @@
 import { FileCache } from '../../cache/file-cache.js';
-import { extractPRFromMergeMessage, findMergeCommit } from '../ancestry/index.js';
+import type {
+  GitExecOptions,
+  PRInfo,
+  PlatformAdapter,
+} from '../../types/index.js';
+import {
+  extractPRFromMergeMessage,
+  findMergeCommit,
+} from '../ancestry/index.js';
 import { findPatchIdMatch } from '../patch-id/index.js';
-import type { GitExecOptions, PlatformAdapter, PRInfo } from '../../types/index.js';
 
 let prCache: FileCache<PRInfo> | null = null;
 

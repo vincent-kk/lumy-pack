@@ -1,6 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { RepoBuilder } from '../helpers/repo-builder.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { isAstAvailable } from '@/ast/index.js';
+import { trace } from '@/core/core.js';
+import { detectPlatformAdapter } from '@/platform/index.js';
+
 import { createMockPlatformAdapter } from '../helpers/mock-platform.js';
+import { RepoBuilder } from '../helpers/repo-builder.js';
 
 vi.mock('@/platform/index.js', () => ({
   detectPlatformAdapter: vi.fn(),
@@ -14,15 +19,17 @@ vi.mock('@/ast/index.js', async (importOriginal) => {
 vi.mock('@/cache/file-cache.js', () => ({
   FileCache: class {
     private store = new Map<string, unknown>();
-    async get(key: string) { return this.store.get(key) ?? null; }
-    async set(key: string, value: unknown) { this.store.set(key, value); }
-    async clear() { this.store.clear(); }
+    async get(key: string) {
+      return this.store.get(key) ?? null;
+    }
+    async set(key: string, value: unknown) {
+      this.store.set(key, value);
+    }
+    async clear() {
+      this.store.clear();
+    }
   },
 }));
-
-import { trace } from '@/core/core.js';
-import { detectPlatformAdapter } from '@/platform/index.js';
-import { isAstAvailable } from '@/ast/index.js';
 
 const mockDetectPlatform = detectPlatformAdapter as ReturnType<typeof vi.fn>;
 const mockIsAstAvailable = isAstAvailable as ReturnType<typeof vi.fn>;
@@ -88,7 +95,10 @@ describe('E6: Method extraction detection', { timeout: 30000 }, () => {
 
   it('blame points to a known commit for the extracted function body', async () => {
     // A: original service with inline validation
-    const originalSha = repo.commit({ 'src/service.ts': SERVICE_ORIGINAL }, 'feat: add processOrder');
+    const originalSha = repo.commit(
+      { 'src/service.ts': SERVICE_ORIGINAL },
+      'feat: add processOrder',
+    );
     // B: extract validation
     const extractSha = repo.commit(
       { 'src/service.ts': SERVICE_EXTRACTED },
@@ -105,7 +115,10 @@ describe('E6: Method extraction detection', { timeout: 30000 }, () => {
   });
 
   it('extraction commit is classified as original_commit (not cosmetic)', async () => {
-    repo.commit({ 'src/service.ts': SERVICE_ORIGINAL }, 'feat: add processOrder');
+    repo.commit(
+      { 'src/service.ts': SERVICE_ORIGINAL },
+      'feat: add processOrder',
+    );
     repo.commit(
       { 'src/service.ts': SERVICE_EXTRACTED },
       'refactor: extract validateOrder from processOrder',
@@ -114,12 +127,17 @@ describe('E6: Method extraction detection', { timeout: 30000 }, () => {
     const result = await trace({ file: 'src/service.ts', line: 3 });
 
     expect(result.nodes[0].type).toBe('original_commit');
-    const cosmeticNodes = result.nodes.filter((n) => n.type === 'cosmetic_commit');
+    const cosmeticNodes = result.nodes.filter(
+      (n) => n.type === 'cosmetic_commit',
+    );
     expect(cosmeticNodes).toHaveLength(0);
   });
 
   it('featureFlags.astDiff is true when isAstAvailable is mocked true', async () => {
-    repo.commit({ 'src/service.ts': SERVICE_ORIGINAL }, 'feat: add processOrder');
+    repo.commit(
+      { 'src/service.ts': SERVICE_ORIGINAL },
+      'feat: add processOrder',
+    );
     repo.commit(
       { 'src/service.ts': SERVICE_EXTRACTED },
       'refactor: extract validateOrder from processOrder',
@@ -131,7 +149,10 @@ describe('E6: Method extraction detection', { timeout: 30000 }, () => {
   });
 
   it('tracing processOrder (line 14 after extraction) returns the extraction commit', async () => {
-    repo.commit({ 'src/service.ts': SERVICE_ORIGINAL }, 'feat: add processOrder');
+    repo.commit(
+      { 'src/service.ts': SERVICE_ORIGINAL },
+      'feat: add processOrder',
+    );
     const extractSha = repo.commit(
       { 'src/service.ts': SERVICE_EXTRACTED },
       'refactor: extract validateOrder from processOrder',
@@ -145,7 +166,10 @@ describe('E6: Method extraction detection', { timeout: 30000 }, () => {
   });
 
   it('trace result has trackingMethod blame-CMw for the first node', async () => {
-    repo.commit({ 'src/service.ts': SERVICE_ORIGINAL }, 'feat: add processOrder');
+    repo.commit(
+      { 'src/service.ts': SERVICE_ORIGINAL },
+      'feat: add processOrder',
+    );
     repo.commit(
       { 'src/service.ts': SERVICE_EXTRACTED },
       'refactor: extract validateOrder from processOrder',

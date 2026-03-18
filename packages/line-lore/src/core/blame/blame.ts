@@ -1,11 +1,10 @@
+import { gitExec } from '../../git/executor.js';
 import type {
   BlameResult,
   BlameStageResult,
   GitExecOptions,
   LineRange,
 } from '../../types/index.js';
-
-import { gitExec } from '../../git/executor.js';
 
 import { getCosmeticDiff, isCosmeticDiff } from './detection/index.js';
 import { parsePorcelainOutput } from './parsing/index.js';
@@ -15,9 +14,10 @@ export async function executeBlame(
   lineRange: LineRange,
   options?: GitExecOptions,
 ): Promise<BlameResult[]> {
-  const lineSpec = lineRange.start === lineRange.end
-    ? `${lineRange.start},${lineRange.end}`
-    : `${lineRange.start},${lineRange.end}`;
+  const lineSpec =
+    lineRange.start === lineRange.end
+      ? `${lineRange.start},${lineRange.end}`
+      : `${lineRange.start},${lineRange.end}`;
 
   const result = await gitExec(
     ['blame', '-w', '-C', '-C', '-M', '--porcelain', '-L', lineSpec, file],

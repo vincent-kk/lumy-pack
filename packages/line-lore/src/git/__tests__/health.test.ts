@@ -1,13 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LineLoreError, LineLoreErrorCode } from '@/errors.js';
+
+import { gitExec } from '../executor.js';
+import { checkGitHealth } from '../health.js';
 
 vi.mock('../executor.js', () => ({
   gitExec: vi.fn(),
 }));
-
-import { checkGitHealth } from '../health.js';
-import { gitExec } from '../executor.js';
 
 const mockGitExec = gitExec as ReturnType<typeof vi.fn>;
 
@@ -18,7 +18,11 @@ describe('checkGitHealth', () => {
 
   it('reports commit-graph active when verify succeeds', async () => {
     mockGitExec
-      .mockResolvedValueOnce({ stdout: 'git version 2.40.0', stderr: '', exitCode: 0 })
+      .mockResolvedValueOnce({
+        stdout: 'git version 2.40.0',
+        stderr: '',
+        exitCode: 0,
+      })
       .mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 });
 
     const report = await checkGitHealth();
@@ -29,8 +33,14 @@ describe('checkGitHealth', () => {
 
   it('reports commit-graph false with hint when verify fails', async () => {
     mockGitExec
-      .mockResolvedValueOnce({ stdout: 'git version 2.40.0', stderr: '', exitCode: 0 })
-      .mockRejectedValueOnce(new LineLoreError(LineLoreErrorCode.GIT_COMMAND_FAILED, 'failed'));
+      .mockResolvedValueOnce({
+        stdout: 'git version 2.40.0',
+        stderr: '',
+        exitCode: 0,
+      })
+      .mockRejectedValueOnce(
+        new LineLoreError(LineLoreErrorCode.GIT_COMMAND_FAILED, 'failed'),
+      );
 
     const report = await checkGitHealth();
 
@@ -42,7 +52,11 @@ describe('checkGitHealth', () => {
 
   it('reports bloom filter available for git >= 2.27', async () => {
     mockGitExec
-      .mockResolvedValueOnce({ stdout: 'git version 2.40.0', stderr: '', exitCode: 0 })
+      .mockResolvedValueOnce({
+        stdout: 'git version 2.40.0',
+        stderr: '',
+        exitCode: 0,
+      })
       .mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 });
 
     const report = await checkGitHealth();
@@ -52,7 +66,11 @@ describe('checkGitHealth', () => {
 
   it('reports bloom filter unavailable for old git', async () => {
     mockGitExec
-      .mockResolvedValueOnce({ stdout: 'git version 2.20.0', stderr: '', exitCode: 0 })
+      .mockResolvedValueOnce({
+        stdout: 'git version 2.20.0',
+        stderr: '',
+        exitCode: 0,
+      })
       .mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 });
 
     const report = await checkGitHealth();

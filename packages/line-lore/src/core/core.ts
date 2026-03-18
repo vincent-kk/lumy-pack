@@ -44,7 +44,9 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
       operatingLevel = 2;
     } else {
       operatingLevel = 1;
-      warnings.push('Platform CLI not authenticated. Running in Level 1 (local only).');
+      warnings.push(
+        'Platform CLI not authenticated. Running in Level 1 (local only).',
+      );
     }
   } catch {
     operatingLevel = 0;
@@ -61,9 +63,7 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
 
   // Stage 1: Line → Commit (Blame)
   const lineRange = parseLineRange(
-    options.endLine
-      ? `${options.line},${options.endLine}`
-      : `${options.line}`,
+    options.endLine ? `${options.line},${options.endLine}` : `${options.line}`,
   );
 
   const blameResults = await executeBlame(options.file, lineRange, execOptions);

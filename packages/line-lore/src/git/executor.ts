@@ -35,7 +35,9 @@ export async function gitExec(
     if (error instanceof LineLoreError) throw error;
 
     const isTimeout =
-      error instanceof Error && 'isTerminated' in error && (error as Record<string, unknown>).timedOut === true;
+      error instanceof Error &&
+      'isTerminated' in error &&
+      (error as Record<string, unknown>).timedOut === true;
 
     if (isTimeout) {
       throw new LineLoreError(

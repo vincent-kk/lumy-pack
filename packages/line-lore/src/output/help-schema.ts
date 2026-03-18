@@ -1,20 +1,42 @@
 export function getHelpSchema(): object {
   return {
     name: 'line-lore',
-    description: 'Trace code lines to their originating Pull Requests via deterministic 4-stage pipeline',
+    description:
+      'Trace code lines to their originating Pull Requests via deterministic 4-stage pipeline',
     commands: {
       trace: {
         description: 'Trace a file line to its originating PR',
         parameters: {
-          file: { type: 'string', required: true, description: 'Path to the file to trace' },
-          '-L': { type: 'string', required: true, description: 'Line number or range (e.g., "42" or "10,50")' },
-          '--deep': { type: 'boolean', description: 'Enable deep trace for squash PRs' },
-          '--graph-depth': { type: 'number', description: 'Issue graph traversal depth (0=PR only)' },
-          '--no-ast': { type: 'boolean', description: 'Disable AST diff analysis' },
+          file: {
+            type: 'string',
+            required: true,
+            description: 'Path to the file to trace',
+          },
+          '-L': {
+            type: 'string',
+            required: true,
+            description: 'Line number or range (e.g., "42" or "10,50")',
+          },
+          '--deep': {
+            type: 'boolean',
+            description: 'Enable deep trace for squash PRs',
+          },
+          '--graph-depth': {
+            type: 'number',
+            description: 'Issue graph traversal depth (0=PR only)',
+          },
+          '--no-ast': {
+            type: 'boolean',
+            description: 'Disable AST diff analysis',
+          },
           '--no-cache': { type: 'boolean', description: 'Disable cache' },
           '--json': { type: 'boolean', description: 'Output in JSON format' },
           '--quiet': { type: 'boolean', description: 'Output PR number only' },
-          '--output': { type: 'string', enum: ['human', 'json', 'llm'], description: 'Output format' },
+          '--output': {
+            type: 'string',
+            enum: ['human', 'json', 'llm'],
+            description: 'Output format',
+          },
         },
         examples: [
           'line-lore trace src/auth.ts -L 42',

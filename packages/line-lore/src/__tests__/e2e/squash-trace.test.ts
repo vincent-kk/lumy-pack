@@ -1,8 +1,16 @@
 import { execFileSync } from 'node:child_process';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { clearCache, trace } from '@/core/core.js';
+import { detectPlatformAdapter } from '@/platform/index.js';
+
+import {
+  createMockPlatformAdapter,
+  createPRInfo,
+  createUnauthenticatedAdapter,
+} from '../helpers/mock-platform.js';
 import { RepoBuilder } from '../helpers/repo-builder.js';
-import { createMockPlatformAdapter, createPRInfo, createUnauthenticatedAdapter } from '../helpers/mock-platform.js';
 
 vi.mock('@/platform/index.js', () => ({
   detectPlatformAdapter: vi.fn(),
@@ -16,14 +24,17 @@ vi.mock('@/ast/index.js', async (importOriginal) => {
 vi.mock('@/cache/file-cache.js', () => ({
   FileCache: class {
     private store = new Map<string, unknown>();
-    async get(key: string) { return this.store.get(key) ?? null; }
-    async set(key: string, value: unknown) { this.store.set(key, value); }
-    async clear() { this.store.clear(); }
+    async get(key: string) {
+      return this.store.get(key) ?? null;
+    }
+    async set(key: string, value: unknown) {
+      this.store.set(key, value);
+    }
+    async clear() {
+      this.store.clear();
+    }
   },
 }));
-
-import { trace, clearCache } from '@/core/core.js';
-import { detectPlatformAdapter } from '@/platform/index.js';
 
 const mockDetectPlatform = detectPlatformAdapter as ReturnType<typeof vi.fn>;
 
@@ -67,7 +78,10 @@ describe('E2: Squash Merge trace', { timeout: 30000 }, () => {
     // Feature branch: C1, C2, C3
     repo.branch('feature/auth');
     repo.commit(
-      { 'src/auth.ts': 'export function login(): void {}\nexport function logout(): void {}\n' },
+      {
+        'src/auth.ts':
+          'export function login(): void {}\nexport function logout(): void {}\n',
+      },
       'feat: add logout',
     );
     repo.commit(
@@ -88,14 +102,25 @@ describe('E2: Squash Merge trace', { timeout: 30000 }, () => {
     // S: squash merge onto main
     repo.checkout('main');
     enableFFMerge(repo.path);
-    const squashCommit = repo.squashMerge('feature/auth', 'feat: add validation (#55)');
+    const squashCommit = repo.squashMerge(
+      'feature/auth',
+      'feat: add validation (#55)',
+    );
 
     const prMap = new Map();
-    prMap.set(squashCommit, createPRInfo({ number: 55, mergeCommit: squashCommit }));
+    prMap.set(
+      squashCommit,
+      createPRInfo({ number: 55, mergeCommit: squashCommit }),
+    );
     const adapter = createMockPlatformAdapter({ prMap });
     mockDetectPlatform.mockResolvedValue({
       adapter,
-      remote: { platform: 'github', host: 'github.com', owner: 'test', repo: 'repo' },
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
     });
 
     const result = await trace({ file: 'src/auth.ts', line: 4 });
@@ -116,20 +141,34 @@ describe('E2: Squash Merge trace', { timeout: 30000 }, () => {
 
     repo.branch('feature/auth');
     repo.commit(
-      { 'src/auth.ts': 'export function login(): void {}\nexport function logout(): void {}\n' },
+      {
+        'src/auth.ts':
+          'export function login(): void {}\nexport function logout(): void {}\n',
+      },
       'feat: add logout',
     );
 
     repo.checkout('main');
     enableFFMerge(repo.path);
-    const squashCommit = repo.squashMerge('feature/auth', 'feat: add validation (#55)');
+    const squashCommit = repo.squashMerge(
+      'feature/auth',
+      'feat: add validation (#55)',
+    );
 
     const prMap = new Map();
-    prMap.set(squashCommit, createPRInfo({ number: 55, mergeCommit: squashCommit }));
+    prMap.set(
+      squashCommit,
+      createPRInfo({ number: 55, mergeCommit: squashCommit }),
+    );
     const adapter = createMockPlatformAdapter({ prMap });
     mockDetectPlatform.mockResolvedValue({
       adapter,
-      remote: { platform: 'github', host: 'github.com', owner: 'test', repo: 'repo' },
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
     });
 
     const result = await trace({ file: 'src/auth.ts', line: 2 });
@@ -147,7 +186,10 @@ describe('E2: Squash Merge trace', { timeout: 30000 }, () => {
 
     repo.branch('feature/auth');
     repo.commit(
-      { 'src/auth.ts': 'export function a(): void {}\nexport function b(): void {}\n' },
+      {
+        'src/auth.ts':
+          'export function a(): void {}\nexport function b(): void {}\n',
+      },
       'feat: add b',
     );
 
@@ -166,7 +208,12 @@ describe('E2: Squash Merge trace', { timeout: 30000 }, () => {
     const adapter = createMockPlatformAdapter({ prMap });
     mockDetectPlatform.mockResolvedValue({
       adapter,
-      remote: { platform: 'github', host: 'github.com', owner: 'test', repo: 'repo' },
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
     });
 
     const result = await trace({ file: 'src/auth.ts', line: 2 });
@@ -192,7 +239,10 @@ describe('E2: Squash Merge trace', { timeout: 30000 }, () => {
 
     repo.branch('feature/auth');
     repo.commit(
-      { 'src/auth.ts': 'export function a(): void {}\nexport function b(): void {}\n' },
+      {
+        'src/auth.ts':
+          'export function a(): void {}\nexport function b(): void {}\n',
+      },
       'feat: add b',
     );
 
@@ -204,7 +254,12 @@ describe('E2: Squash Merge trace', { timeout: 30000 }, () => {
     const adapter = createUnauthenticatedAdapter();
     mockDetectPlatform.mockResolvedValue({
       adapter,
-      remote: { platform: 'github', host: 'github.com', owner: 'test', repo: 'repo' },
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
     });
 
     const result = await trace({ file: 'src/auth.ts', line: 2 });
@@ -218,16 +273,10 @@ describe('E2: Squash Merge trace', { timeout: 30000 }, () => {
   });
 
   it('result nodes: only original_commit present when adapter returns null', async () => {
-    repo.commit(
-      { 'src/auth.ts': 'line1\n' },
-      'chore: init',
-    );
+    repo.commit({ 'src/auth.ts': 'line1\n' }, 'chore: init');
 
     repo.branch('feature/x');
-    repo.commit(
-      { 'src/auth.ts': 'line1\nline2\n' },
-      'feat: line2',
-    );
+    repo.commit({ 'src/auth.ts': 'line1\nline2\n' }, 'feat: line2');
 
     repo.checkout('main');
     enableFFMerge(repo.path);
@@ -237,7 +286,12 @@ describe('E2: Squash Merge trace', { timeout: 30000 }, () => {
     const adapter = createMockPlatformAdapter({ prMap: new Map() });
     mockDetectPlatform.mockResolvedValue({
       adapter,
-      remote: { platform: 'github', host: 'github.com', owner: 'test', repo: 'repo' },
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
     });
 
     const result = await trace({ file: 'src/auth.ts', line: 2 });

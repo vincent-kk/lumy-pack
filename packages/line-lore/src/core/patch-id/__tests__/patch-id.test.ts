@@ -1,4 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { gitExec } from '@/git/executor.js';
+
+import {
+  computePatchId,
+  findPatchIdMatch,
+  resetPatchIdCache,
+} from '../patch-id.js';
 
 const mockStore = new Map<string, unknown>();
 
@@ -21,13 +29,6 @@ vi.mock('@/cache/file-cache.js', () => ({
     }
   },
 }));
-
-import {
-  computePatchId,
-  findPatchIdMatch,
-  resetPatchIdCache,
-} from '../patch-id.js';
-import { gitExec } from '@/git/executor.js';
 
 const mockGitExec = gitExec as ReturnType<typeof vi.fn>;
 

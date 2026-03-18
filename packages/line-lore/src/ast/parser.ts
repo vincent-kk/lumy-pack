@@ -61,10 +61,12 @@ export async function parseFile(
       | undefined;
     if (!sgLang) return null;
 
-    const langEnum = sgLang[lang] ?? sgLang[lang.charAt(0).toUpperCase() + lang.slice(1)];
+    const langEnum =
+      sgLang[lang] ?? sgLang[lang.charAt(0).toUpperCase() + lang.slice(1)];
     if (langEnum == null) return null;
 
-    const parse = (astGrep as Record<string, (...args: unknown[]) => unknown>).parse;
+    const parse = (astGrep as Record<string, (...args: unknown[]) => unknown>)
+      .parse;
     if (typeof parse !== 'function') return null;
 
     return parse(lang, source) ?? null;
@@ -82,17 +84,34 @@ export async function findSymbols(
 
   try {
     const { parse, Lang } = astGrep as Record<string, unknown> & {
-      parse: (lang: unknown, source: string) => { root: () => { findAll: (pattern: { rule: unknown }) => Array<{ text: () => string; range: () => { start: { line: number }; end: { line: number } }; kind: () => string }> } };
+      parse: (
+        lang: unknown,
+        source: string,
+      ) => {
+        root: () => {
+          findAll: (pattern: {
+            rule: unknown;
+          }) => Array<{
+            text: () => string;
+            range: () => { start: { line: number }; end: { line: number } };
+            kind: () => string;
+          }>;
+        };
+      };
       Lang: Record<string, unknown>;
     };
 
-    const langEnum = Lang[lang] ?? Lang[lang.charAt(0).toUpperCase() + lang.slice(1)];
+    const langEnum =
+      Lang[lang] ?? Lang[lang.charAt(0).toUpperCase() + lang.slice(1)];
     if (langEnum == null) return [];
 
     const root = parse(langEnum, source).root();
     const symbols: SymbolInfo[] = [];
 
-    const kindPatterns: Array<{ rule: { kind: string }; symbolKind: SymbolKind }> = [
+    const kindPatterns: Array<{
+      rule: { kind: string };
+      symbolKind: SymbolKind;
+    }> = [
       { rule: { kind: 'function_declaration' }, symbolKind: 'function' },
       { rule: { kind: 'arrow_function' }, symbolKind: 'arrow_function' },
       { rule: { kind: 'method_definition' }, symbolKind: 'method' },
@@ -158,7 +177,10 @@ function extractJsSymbols(lines: string[], symbols: SymbolInfo[]): void {
       continue;
     }
 
-    const arrowMatch = /^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\(/.exec(line);
+    const arrowMatch =
+      /^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\(/.exec(
+        line,
+      );
     if (arrowMatch && (line.includes('=>') || lines[i + 1]?.includes('=>'))) {
       const endLine = findBlockEnd(lines, i);
       symbols.push({
@@ -185,7 +207,12 @@ function extractJsSymbols(lines: string[], symbols: SymbolInfo[]): void {
     }
 
     const methodMatch = /^\s+(?:async\s+)?(\w+)\s*\(/.exec(line);
-    if (methodMatch && !line.includes('if') && !line.includes('for') && !line.includes('while')) {
+    if (
+      methodMatch &&
+      !line.includes('if') &&
+      !line.includes('for') &&
+      !line.includes('while')
+    ) {
       const endLine = findBlockEnd(lines, i);
       if (endLine > i) {
         symbols.push({

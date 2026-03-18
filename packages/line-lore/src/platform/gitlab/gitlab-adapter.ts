@@ -2,11 +2,10 @@ import { gitExec } from '../../git/executor.js';
 import type {
   AuthStatus,
   IssueInfo,
-  PlatformAdapter,
   PRInfo,
+  PlatformAdapter,
   RateLimitInfo,
 } from '../../types/index.js';
-
 import { RequestScheduler } from '../scheduler/index.js';
 
 export class GitLabAdapter implements PlatformAdapter {
@@ -43,11 +42,15 @@ export class GitLabAdapter implements PlatformAdapter {
     if (this.scheduler.isRateLimited()) return null;
 
     try {
-      const result = await gitExec([
-        'glab', 'api',
-        `projects/:id/repository/commits/${sha}/merge_requests`,
-        '--hostname', this.hostname,
-      ].slice(1));
+      const result = await gitExec(
+        [
+          'glab',
+          'api',
+          `projects/:id/repository/commits/${sha}/merge_requests`,
+          '--hostname',
+          this.hostname,
+        ].slice(1),
+      );
 
       const mrs = JSON.parse(result.stdout);
       if (!Array.isArray(mrs) || mrs.length === 0) return null;
@@ -56,7 +59,8 @@ export class GitLabAdapter implements PlatformAdapter {
       return {
         number: mr.iid as number,
         title: (mr.title as string) ?? '',
-        author: ((mr.author as Record<string, unknown>)?.username as string) ?? '',
+        author:
+          ((mr.author as Record<string, unknown>)?.username as string) ?? '',
         url: (mr.web_url as string) ?? '',
         mergeCommit: (mr.merge_commit_sha as string) ?? sha,
         baseBranch: (mr.target_branch as string) ?? 'main',
@@ -69,11 +73,15 @@ export class GitLabAdapter implements PlatformAdapter {
 
   async getPRCommits(prNumber: number): Promise<string[]> {
     try {
-      const result = await gitExec([
-        'glab', 'api',
-        `projects/:id/merge_requests/${prNumber}/commits`,
-        '--hostname', this.hostname,
-      ].slice(1));
+      const result = await gitExec(
+        [
+          'glab',
+          'api',
+          `projects/:id/merge_requests/${prNumber}/commits`,
+          '--hostname',
+          this.hostname,
+        ].slice(1),
+      );
 
       const commits = JSON.parse(result.stdout);
       if (!Array.isArray(commits)) return [];
@@ -85,11 +93,15 @@ export class GitLabAdapter implements PlatformAdapter {
 
   async getLinkedIssues(prNumber: number): Promise<IssueInfo[]> {
     try {
-      const result = await gitExec([
-        'glab', 'api',
-        `projects/:id/merge_requests/${prNumber}/closes_issues`,
-        '--hostname', this.hostname,
-      ].slice(1));
+      const result = await gitExec(
+        [
+          'glab',
+          'api',
+          `projects/:id/merge_requests/${prNumber}/closes_issues`,
+          '--hostname',
+          this.hostname,
+        ].slice(1),
+      );
 
       const issues = JSON.parse(result.stdout);
       if (!Array.isArray(issues)) return [];
@@ -98,7 +110,10 @@ export class GitLabAdapter implements PlatformAdapter {
         number: issue.iid as number,
         title: (issue.title as string) ?? '',
         url: (issue.web_url as string) ?? '',
-        state: ((issue.state as string) ?? 'opened') === 'closed' ? 'closed' as const : 'open' as const,
+        state:
+          ((issue.state as string) ?? 'opened') === 'closed'
+            ? ('closed' as const)
+            : ('open' as const),
         labels: (issue.labels as string[]) ?? [],
       }));
     } catch {
@@ -108,11 +123,15 @@ export class GitLabAdapter implements PlatformAdapter {
 
   async getLinkedPRs(issueNumber: number): Promise<PRInfo[]> {
     try {
-      const result = await gitExec([
-        'glab', 'api',
-        `projects/:id/issues/${issueNumber}/related_merge_requests`,
-        '--hostname', this.hostname,
-      ].slice(1));
+      const result = await gitExec(
+        [
+          'glab',
+          'api',
+          `projects/:id/issues/${issueNumber}/related_merge_requests`,
+          '--hostname',
+          this.hostname,
+        ].slice(1),
+      );
 
       const mrs = JSON.parse(result.stdout);
       if (!Array.isArray(mrs)) return [];
@@ -120,7 +139,8 @@ export class GitLabAdapter implements PlatformAdapter {
       return mrs.map((mr: Record<string, unknown>) => ({
         number: mr.iid as number,
         title: (mr.title as string) ?? '',
-        author: ((mr.author as Record<string, unknown>)?.username as string) ?? '',
+        author:
+          ((mr.author as Record<string, unknown>)?.username as string) ?? '',
         url: (mr.web_url as string) ?? '',
         mergeCommit: (mr.merge_commit_sha as string) ?? '',
         baseBranch: (mr.target_branch as string) ?? 'main',

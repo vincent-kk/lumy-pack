@@ -1,6 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { RepoBuilder } from '../helpers/repo-builder.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { isAstAvailable } from '@/ast/index.js';
+import { trace } from '@/core/core.js';
+import { detectPlatformAdapter } from '@/platform/index.js';
+
 import { createMockPlatformAdapter } from '../helpers/mock-platform.js';
+import { RepoBuilder } from '../helpers/repo-builder.js';
 
 vi.mock('@/platform/index.js', () => ({
   detectPlatformAdapter: vi.fn(),
@@ -14,15 +19,17 @@ vi.mock('@/ast/index.js', async (importOriginal) => {
 vi.mock('@/cache/file-cache.js', () => ({
   FileCache: class {
     private store = new Map<string, unknown>();
-    async get(key: string) { return this.store.get(key) ?? null; }
-    async set(key: string, value: unknown) { this.store.set(key, value); }
-    async clear() { this.store.clear(); }
+    async get(key: string) {
+      return this.store.get(key) ?? null;
+    }
+    async set(key: string, value: unknown) {
+      this.store.set(key, value);
+    }
+    async clear() {
+      this.store.clear();
+    }
   },
 }));
-
-import { trace } from '@/core/core.js';
-import { detectPlatformAdapter } from '@/platform/index.js';
-import { isAstAvailable } from '@/ast/index.js';
 
 const mockDetectPlatform = detectPlatformAdapter as ReturnType<typeof vi.fn>;
 const mockIsAstAvailable = isAstAvailable as ReturnType<typeof vi.fn>;
@@ -102,7 +109,10 @@ describe('E4: Cosmetic commit pass-through', { timeout: 30000 }, () => {
 
   it('logic change commit is classified as original_commit', async () => {
     repo.commit({ 'src/app.ts': APP_ORIGINAL }, 'feat: add request handler');
-    const logicSha = repo.commit({ 'src/app.ts': APP_LOGIC_CHANGE }, 'fix: use processRequest');
+    const logicSha = repo.commit(
+      { 'src/app.ts': APP_LOGIC_CHANGE },
+      'fix: use processRequest',
+    );
 
     // line 5: the changed line with processRequest
     const result = await trace({ file: 'src/app.ts', line: 5 });
@@ -113,12 +123,17 @@ describe('E4: Cosmetic commit pass-through', { timeout: 30000 }, () => {
 
   it('with noAst=true: featureFlags.astDiff is false and no ast-signature nodes', async () => {
     repo.commit({ 'src/app.ts': APP_ORIGINAL }, 'feat: add request handler');
-    repo.commit({ 'src/app.ts': APP_REFORMATTED }, 'style: reformat process call');
+    repo.commit(
+      { 'src/app.ts': APP_REFORMATTED },
+      'style: reformat process call',
+    );
 
     const result = await trace({ file: 'src/app.ts', line: 4, noAst: true });
 
     expect(result.featureFlags.astDiff).toBe(false);
-    const astNodes = result.nodes.filter((n) => n.trackingMethod === 'ast-signature');
+    const astNodes = result.nodes.filter(
+      (n) => n.trackingMethod === 'ast-signature',
+    );
     expect(astNodes).toHaveLength(0);
   });
 
@@ -131,8 +146,14 @@ describe('E4: Cosmetic commit pass-through', { timeout: 30000 }, () => {
   });
 
   it('blame attributes the correct commit SHA to the changed line', async () => {
-    const sha1 = repo.commit({ 'src/app.ts': APP_ORIGINAL }, 'feat: add request handler');
-    const sha2 = repo.commit({ 'src/app.ts': APP_REFORMATTED }, 'style: reformat process call');
+    const sha1 = repo.commit(
+      { 'src/app.ts': APP_ORIGINAL },
+      'feat: add request handler',
+    );
+    const sha2 = repo.commit(
+      { 'src/app.ts': APP_REFORMATTED },
+      'style: reformat process call',
+    );
 
     // line 4 (timestamp) was NOT changed by reformatting → blame points to sha1
     const result = await trace({ file: 'src/app.ts', line: 4 });

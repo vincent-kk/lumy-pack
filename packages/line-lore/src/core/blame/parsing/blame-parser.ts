@@ -12,9 +12,10 @@ export function parsePorcelainOutput(output: string): BlameResult[] {
       continue;
     }
 
-    const headerMatch = /^([0-9a-f]{40}|[\^][0-9a-f]{39})\s+(\d+)\s+(\d+)(?:\s+(\d+))?$/.exec(
-      headerLine,
-    );
+    const headerMatch =
+      /^([0-9a-f]{40}|[\^][0-9a-f]{39})\s+(\d+)\s+(\d+)(?:\s+(\d+))?$/.exec(
+        headerLine,
+      );
     if (!headerMatch) {
       i++;
       continue;

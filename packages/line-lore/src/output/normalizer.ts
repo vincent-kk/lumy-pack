@@ -15,7 +15,8 @@ export function createSuccessResponse<T>(
     operatingLevel,
     data,
     warnings: options?.warnings,
-    hints: options?.cacheHit != null ? { cacheHit: options.cacheHit } : undefined,
+    hints:
+      options?.cacheHit != null ? { cacheHit: options.cacheHit } : undefined,
   };
 }
 

@@ -21,7 +21,16 @@ export async function traverseIssueGraph(
   const edges: GraphResult['edges'] = [];
   const visited = new Set<string>();
 
-  await traverse(adapter, startType, startNumber, 0, maxDepth, nodes, edges, visited);
+  await traverse(
+    adapter,
+    startType,
+    startNumber,
+    0,
+    maxDepth,
+    nodes,
+    edges,
+    visited,
+  );
 
   return { nodes, edges };
 }
@@ -57,7 +66,16 @@ async function traverse(
           to: `issue:${issue.number}`,
           relation: 'closes',
         });
-        await traverse(adapter, 'issue', issue.number, depth + 1, maxDepth, nodes, edges, visited);
+        await traverse(
+          adapter,
+          'issue',
+          issue.number,
+          depth + 1,
+          maxDepth,
+          nodes,
+          edges,
+          visited,
+        );
       }
     }
   } else {
@@ -76,7 +94,16 @@ async function traverse(
           to: `pr:${pr.number}`,
           relation: 'referenced-by',
         });
-        await traverse(adapter, 'pr', pr.number, depth + 1, maxDepth, nodes, edges, visited);
+        await traverse(
+          adapter,
+          'pr',
+          pr.number,
+          depth + 1,
+          maxDepth,
+          nodes,
+          edges,
+          visited,
+        );
       }
     }
   }

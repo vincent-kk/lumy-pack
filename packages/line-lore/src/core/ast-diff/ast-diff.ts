@@ -60,10 +60,9 @@ export async function traceByAst(
       const parentSymbols = await extractSymbols(parentContent, lang);
 
       const currentMap = new Map(
-        [currentSymbol].filter(Boolean).map((s) => [
-          s!.name,
-          computeContentHash(s!.bodyText),
-        ]),
+        [currentSymbol]
+          .filter(Boolean)
+          .map((s) => [s!.name, computeContentHash(s!.bodyText)]),
       );
 
       const parentMap = new Map(
@@ -137,10 +136,7 @@ async function getParentCommit(
   options?: GitExecOptions,
 ): Promise<string | null> {
   try {
-    const result = await gitExec(
-      ['log', '-1', '--format=%P', sha],
-      options,
-    );
+    const result = await gitExec(['log', '-1', '--format=%P', sha], options);
     const parents = result.stdout.trim().split(/\s+/);
     return parents[0] || null;
   } catch {

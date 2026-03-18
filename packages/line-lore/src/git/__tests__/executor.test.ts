@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LineLoreError, LineLoreErrorCode } from '@/errors.js';
+
+import { gitExec } from '../executor.js';
 
 vi.mock('execa', () => ({
   execa: vi.fn(),
 }));
-
-import { gitExec } from '../executor.js';
 
 async function getExecaMock() {
   const { execa } = await import('execa');

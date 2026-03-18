@@ -1,5 +1,5 @@
-import type { CosmeticReason, GitExecOptions } from '../../../types/index.js';
 import { gitExec } from '../../../git/executor.js';
+import type { CosmeticReason, GitExecOptions } from '../../../types/index.js';
 
 export interface CosmeticCheckResult {
   isCosmetic: boolean;
@@ -107,7 +107,7 @@ function isImportLine(line: string): boolean {
     trimmed.startsWith('import ') ||
     trimmed.startsWith('from ') ||
     trimmed.startsWith('require(') ||
-    trimmed.startsWith('const ') && trimmed.includes('require(')
+    (trimmed.startsWith('const ') && trimmed.includes('require('))
   );
 }
 

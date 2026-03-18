@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { LineLoreError, LineLoreErrorCode } from '@/errors.js';
+
 import { parseLineRange } from '../line-range.js';
 
 describe('parseLineRange', () => {

@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
-  createSuccessResponse,
   createErrorResponse,
   createPartialResponse,
+  createSuccessResponse,
 } from '../normalizer.js';
 
 describe('createSuccessResponse', () => {
@@ -43,12 +43,9 @@ describe('createErrorResponse', () => {
 
 describe('createPartialResponse', () => {
   it('creates a partial response', () => {
-    const response = createPartialResponse(
-      'trace',
-      { nodes: [] },
-      1,
-      ['API unavailable'],
-    );
+    const response = createPartialResponse('trace', { nodes: [] }, 1, [
+      'API unavailable',
+    ]);
     expect(response.status).toBe('partial');
     expect(response.partialData).toEqual({ nodes: [] });
     expect(response.warnings).toEqual(['API unavailable']);

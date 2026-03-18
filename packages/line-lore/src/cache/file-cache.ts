@@ -72,9 +72,7 @@ export class FileCache<T> {
 
     const keys = Object.keys(data);
     if (keys.length > this.maxEntries) {
-      const sorted = keys.sort(
-        (a, b) => data[a].createdAt - data[b].createdAt,
-      );
+      const sorted = keys.sort((a, b) => data[a].createdAt - data[b].createdAt);
       const toRemove = sorted.slice(0, keys.length - this.maxEntries);
       for (const k of toRemove) {
         delete data[k];
@@ -91,7 +89,9 @@ export class FileCache<T> {
     } catch (error) {
       if (
         error instanceof SyntaxError ||
-        (error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ERR_INVALID_JSON')
+        (error instanceof Error &&
+          'code' in error &&
+          (error as NodeJS.ErrnoException).code === 'ERR_INVALID_JSON')
       ) {
         console.warn(
           `[line-lore] Cache file corrupted, resetting: ${this.filePath}`,
@@ -103,9 +103,7 @@ export class FileCache<T> {
     }
   }
 
-  private async writeStore(
-    data: Record<string, CacheEntry<T>>,
-  ): Promise<void> {
+  private async writeStore(data: Record<string, CacheEntry<T>>): Promise<void> {
     const dir = join(this.filePath, '..');
     await mkdir(dir, { recursive: true });
     const tmpPath = `${this.filePath}.tmp`;

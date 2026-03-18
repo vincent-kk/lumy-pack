@@ -1,7 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { trace } from '@/core/core.js';
+import { detectPlatformAdapter } from '@/platform/index.js';
+
+import {
+  createMockPlatformAdapter,
+  createPRInfo,
+} from '../helpers/mock-platform.js';
 import { RepoBuilder } from '../helpers/repo-builder.js';
-import { createMockPlatformAdapter, createPRInfo } from '../helpers/mock-platform.js';
 
 vi.mock('@/platform/index.js', () => ({
   detectPlatformAdapter: vi.fn(),
@@ -15,14 +21,17 @@ vi.mock('@/ast/index.js', async (importOriginal) => {
 vi.mock('@/cache/file-cache.js', () => ({
   FileCache: class {
     private store = new Map<string, unknown>();
-    async get(key: string) { return this.store.get(key) ?? null; }
-    async set(key: string, value: unknown) { this.store.set(key, value); }
-    async clear() { this.store.clear(); }
+    async get(key: string) {
+      return this.store.get(key) ?? null;
+    }
+    async set(key: string, value: unknown) {
+      this.store.set(key, value);
+    }
+    async clear() {
+      this.store.clear();
+    }
   },
 }));
-
-import { trace } from '@/core/core.js';
-import { detectPlatformAdapter } from '@/platform/index.js';
 
 const mockDetectPlatform = detectPlatformAdapter as ReturnType<typeof vi.fn>;
 
@@ -51,19 +60,30 @@ describe('E11: Cache hit/miss behavior', { timeout: 30000 }, () => {
 
     repo.branch('feature/name');
     repo.commit(
-      { 'src/app.ts': 'export const NAME = "app";\nexport const VERSION = "1.0.0";\n' },
+      {
+        'src/app.ts':
+          'export const NAME = "app";\nexport const VERSION = "1.0.0";\n',
+      },
       'feat: add VERSION',
     );
 
     repo.checkout('main');
-    const mergeCommit = repo.merge('feature/name', 'Merge pull request #7 from feature/name');
+    const mergeCommit = repo.merge(
+      'feature/name',
+      'Merge pull request #7 from feature/name',
+    );
 
     const prMap = new Map();
     prMap.set(mergeCommit, createPRInfo({ number: 7, mergeCommit }));
     const adapter = createMockPlatformAdapter({ prMap });
     mockDetectPlatform.mockResolvedValue({
       adapter,
-      remote: { platform: 'github', host: 'github.com', owner: 'test', repo: 'repo' },
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
     });
 
     const result1 = await trace({ file: 'src/app.ts', line: 2 });
@@ -84,7 +104,10 @@ describe('E11: Cache hit/miss behavior', { timeout: 30000 }, () => {
 
   it('different file/line produces separate cache entries with independent results', async () => {
     repo.commit(
-      { 'src/a.ts': 'export const A = 1;\n', 'src/b.ts': 'export const B = 1;\n' },
+      {
+        'src/a.ts': 'export const A = 1;\n',
+        'src/b.ts': 'export const B = 1;\n',
+      },
       'chore: initial',
     );
 
@@ -95,7 +118,10 @@ describe('E11: Cache hit/miss behavior', { timeout: 30000 }, () => {
       'feat: add A2',
     );
     repo.checkout('main');
-    const mergeA = repo.merge('feature/a', 'Merge pull request #11 from feature/a');
+    const mergeA = repo.merge(
+      'feature/a',
+      'Merge pull request #11 from feature/a',
+    );
 
     // Feature for file B
     repo.branch('feature/b');
@@ -104,7 +130,10 @@ describe('E11: Cache hit/miss behavior', { timeout: 30000 }, () => {
       'feat: add B2',
     );
     repo.checkout('main');
-    const mergeB = repo.merge('feature/b', 'Merge pull request #22 from feature/b');
+    const mergeB = repo.merge(
+      'feature/b',
+      'Merge pull request #22 from feature/b',
+    );
 
     const prMap = new Map();
     prMap.set(mergeA, createPRInfo({ number: 11, mergeCommit: mergeA }));
@@ -112,7 +141,12 @@ describe('E11: Cache hit/miss behavior', { timeout: 30000 }, () => {
     const adapter = createMockPlatformAdapter({ prMap });
     mockDetectPlatform.mockResolvedValue({
       adapter,
-      remote: { platform: 'github', host: 'github.com', owner: 'test', repo: 'repo' },
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
     });
 
     const resultA = await trace({ file: 'src/a.ts', line: 2 });
@@ -140,7 +174,10 @@ describe('E11: Cache hit/miss behavior', { timeout: 30000 }, () => {
     expect(await cache.get('missing-key')).toBeNull();
 
     await cache.set('sha-abc', { number: 99, title: 'Test PR' });
-    expect(await cache.get('sha-abc')).toEqual({ number: 99, title: 'Test PR' });
+    expect(await cache.get('sha-abc')).toEqual({
+      number: 99,
+      title: 'Test PR',
+    });
 
     // Different keys are independent
     expect(await cache.get('sha-xyz')).toBeNull();
@@ -157,26 +194,39 @@ describe('E11: Cache hit/miss behavior', { timeout: 30000 }, () => {
 
     repo.branch('feature/flag');
     const featureSha = repo.commit(
-      { 'src/index.ts': 'export const INIT = true;\nexport const FLAG = false;\n' },
+      {
+        'src/index.ts':
+          'export const INIT = true;\nexport const FLAG = false;\n',
+      },
       'feat: add FLAG',
     );
 
     repo.checkout('main');
-    const mergeCommit = repo.merge('feature/flag', 'Merge pull request #3 from feature/flag');
+    const mergeCommit = repo.merge(
+      'feature/flag',
+      'Merge pull request #3 from feature/flag',
+    );
 
     const prMap = new Map();
     prMap.set(mergeCommit, createPRInfo({ number: 3, mergeCommit }));
     const adapter = createMockPlatformAdapter({ prMap });
     mockDetectPlatform.mockResolvedValue({
       adapter,
-      remote: { platform: 'github', host: 'github.com', owner: 'test', repo: 'repo' },
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
     });
 
     const run1 = await trace({ file: 'src/index.ts', line: 2 });
     const run2 = await trace({ file: 'src/index.ts', line: 2 });
 
     // Node types should be identical
-    expect(run1.nodes.map((n) => n.type)).toEqual(run2.nodes.map((n) => n.type));
+    expect(run1.nodes.map((n) => n.type)).toEqual(
+      run2.nodes.map((n) => n.type),
+    );
 
     // SHAs should be identical
     const commit1 = run1.nodes.find((n) => n.type === 'original_commit');

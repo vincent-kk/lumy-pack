@@ -1,5 +1,6 @@
-import { GitLabAdapter } from './gitlab-adapter.js';
 import type { RequestScheduler } from '../scheduler/index.js';
+
+import { GitLabAdapter } from './gitlab-adapter.js';
 
 export class GitLabSelfHostedAdapter extends GitLabAdapter {
   override readonly platform = 'gitlab-self-hosted' as const;

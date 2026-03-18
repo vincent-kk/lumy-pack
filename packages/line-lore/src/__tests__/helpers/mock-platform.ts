@@ -3,9 +3,9 @@ import { vi } from 'vitest';
 import type {
   AuthStatus,
   IssueInfo,
+  PRInfo,
   PlatformAdapter,
   PlatformType,
-  PRInfo,
   RateLimitInfo,
 } from '../../types/index.js';
 
@@ -67,7 +67,9 @@ export function createUnauthenticatedAdapter(
 }
 
 /** Convenience: create a PRInfo object with sensible defaults. */
-export function createPRInfo(overrides: Partial<PRInfo> & { number: number }): PRInfo {
+export function createPRInfo(
+  overrides: Partial<PRInfo> & { number: number },
+): PRInfo {
   return {
     title: `PR #${overrides.number}`,
     author: 'test-user',

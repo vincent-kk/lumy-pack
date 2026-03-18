@@ -1,16 +1,23 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
+import type { TraceFullResult } from '@/core/core.js';
 import {
-  createSuccessResponse,
+  formatHuman,
+  formatJson,
+  formatLlm,
+  formatQuiet,
+} from '@/output/formats.js';
+import { getHelpSchema } from '@/output/help-schema.js';
+import {
   createErrorResponse,
   createPartialResponse,
+  createSuccessResponse,
 } from '@/output/normalizer.js';
-import { formatHuman, formatJson, formatLlm, formatQuiet } from '@/output/formats.js';
-import { getHelpSchema } from '@/output/help-schema.js';
-import type { TraceFullResult } from '@/core/core.js';
 
 /** Minimal TraceFullResult with one original_commit and one pull_request node. */
-function makeFullResult(overrides: Partial<TraceFullResult> = {}): TraceFullResult {
+function makeFullResult(
+  overrides: Partial<TraceFullResult> = {},
+): TraceFullResult {
   return {
     operatingLevel: 2,
     warnings: [],
@@ -61,7 +68,9 @@ describe('E12: Output format normalization', () => {
 
     it('includes warnings and cacheHit hint when provided', () => {
       const response = createSuccessResponse('trace', {}, 1, {
-        warnings: ['Platform CLI not authenticated. Running in Level 1 (local only).'],
+        warnings: [
+          'Platform CLI not authenticated. Running in Level 1 (local only).',
+        ],
         cacheHit: true,
       });
 
@@ -74,12 +83,9 @@ describe('E12: Output format normalization', () => {
 
   describe('createPartialResponse', () => {
     it('sets status to "partial" and includes partialData and warnings', () => {
-      const response = createPartialResponse(
-        'trace',
-        { nodes: [] },
-        1,
-        ['some warning'],
-      );
+      const response = createPartialResponse('trace', { nodes: [] }, 1, [
+        'some warning',
+      ]);
 
       expect(response.tool).toBe('line-lore');
       expect(response.status).toBe('partial');
@@ -105,11 +111,18 @@ describe('E12: Output format normalization', () => {
       expect(response.error!.code).toBe('GIT_NOT_FOUND');
       expect(response.error!.message).toBe('Git repository not found');
       expect(response.error!.recoverable).toBe(false);
-      expect(response.error!.suggestion).toBe('Run from inside a git repository');
+      expect(response.error!.suggestion).toBe(
+        'Run from inside a git repository',
+      );
     });
 
     it('defaults recoverable to false when not specified', () => {
-      const response = createErrorResponse('trace', 'UNKNOWN', 'unknown error', 0);
+      const response = createErrorResponse(
+        'trace',
+        'UNKNOWN',
+        'unknown error',
+        0,
+      );
       expect(response.error!.recoverable).toBe(false);
     });
   });
@@ -131,7 +144,9 @@ describe('E12: Output format normalization', () => {
       });
       const output = formatHuman(result);
 
-      expect(output).toContain('Could not detect platform. Running in Level 0 (git only).');
+      expect(output).toContain(
+        'Could not detect platform. Running in Level 0 (git only).',
+      );
     });
 
     it('returns empty string for result with no nodes and no warnings', () => {
@@ -166,11 +181,19 @@ describe('E12: Output format normalization', () => {
     it('wraps result in NormalizedResponse envelope with tool="line-lore"', () => {
       // formatLlm uses require() which may fail in ESM — test the underlying normalizer instead
       const result = makeFullResult();
-      const response = createSuccessResponse('trace', result, result.operatingLevel);
+      const response = createSuccessResponse(
+        'trace',
+        result,
+        result.operatingLevel,
+      );
       const output = JSON.stringify(response);
 
       expect(() => JSON.parse(output)).not.toThrow();
-      const parsed = JSON.parse(output) as { tool: string; status: string; command: string };
+      const parsed = JSON.parse(output) as {
+        tool: string;
+        status: string;
+        command: string;
+      };
       expect(parsed.tool).toBe('line-lore');
       expect(parsed.status).toBe('success');
       expect(parsed.command).toBe('trace');
@@ -178,12 +201,19 @@ describe('E12: Output format normalization', () => {
 
     it('includes warnings in envelope when result has warnings', () => {
       const result = makeFullResult({
-        warnings: ['Platform CLI not authenticated. Running in Level 1 (local only).'],
+        warnings: [
+          'Platform CLI not authenticated. Running in Level 1 (local only).',
+        ],
         operatingLevel: 1,
       });
-      const response = createSuccessResponse('trace', result, result.operatingLevel, {
-        warnings: result.warnings,
-      });
+      const response = createSuccessResponse(
+        'trace',
+        result,
+        result.operatingLevel,
+        {
+          warnings: result.warnings,
+        },
+      );
       const output = JSON.stringify(response);
       const parsed = JSON.parse(output) as { warnings?: string[] };
 

@@ -1,7 +1,14 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { clearCache, trace } from '@/core/core.js';
+import { detectPlatformAdapter } from '@/platform/index.js';
+
+import {
+  createMockPlatformAdapter,
+  createPRInfo,
+  createUnauthenticatedAdapter,
+} from '../helpers/mock-platform.js';
 import { RepoBuilder } from '../helpers/repo-builder.js';
-import { createMockPlatformAdapter, createPRInfo, createUnauthenticatedAdapter } from '../helpers/mock-platform.js';
 
 vi.mock('@/platform/index.js', () => ({
   detectPlatformAdapter: vi.fn(),
@@ -15,14 +22,17 @@ vi.mock('@/ast/index.js', async (importOriginal) => {
 vi.mock('@/cache/file-cache.js', () => ({
   FileCache: class {
     private store = new Map<string, unknown>();
-    async get(key: string) { return this.store.get(key) ?? null; }
-    async set(key: string, value: unknown) { this.store.set(key, value); }
-    async clear() { this.store.clear(); }
+    async get(key: string) {
+      return this.store.get(key) ?? null;
+    }
+    async set(key: string, value: unknown) {
+      this.store.set(key, value);
+    }
+    async clear() {
+      this.store.clear();
+    }
   },
 }));
-
-import { trace, clearCache } from '@/core/core.js';
-import { detectPlatformAdapter } from '@/platform/index.js';
 
 const mockDetectPlatform = detectPlatformAdapter as ReturnType<typeof vi.fn>;
 
@@ -53,7 +63,10 @@ describe('E1: Merge Commit trace', { timeout: 30000 }, () => {
 
     // B: unrelated change on main
     repo.commit(
-      { 'src/utils.ts': 'export function existing(): void {}\nexport const VERSION = 1;\n' },
+      {
+        'src/utils.ts':
+          'export function existing(): void {}\nexport const VERSION = 1;\n',
+      },
       'chore: add version constant',
     );
 
@@ -69,14 +82,22 @@ describe('E1: Merge Commit trace', { timeout: 30000 }, () => {
 
     // M: merge back into main
     repo.checkout('main');
-    const mergeCommit = repo.merge('feature/add-helper', 'Merge pull request #42 from feature/add-helper');
+    const mergeCommit = repo.merge(
+      'feature/add-helper',
+      'Merge pull request #42 from feature/add-helper',
+    );
 
     const prMap = new Map();
     prMap.set(mergeCommit, createPRInfo({ number: 42, mergeCommit }));
     const adapter = createMockPlatformAdapter({ prMap });
     mockDetectPlatform.mockResolvedValue({
       adapter,
-      remote: { platform: 'github', host: 'github.com', owner: 'test', repo: 'repo' },
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
     });
 
     const result = await trace({ file: 'src/utils.ts', line: 3 });
@@ -97,7 +118,10 @@ describe('E1: Merge Commit trace', { timeout: 30000 }, () => {
 
     repo.branch('feature/thing');
     repo.commit(
-      { 'src/utils.ts': 'export function a(): void {}\nexport function b(): void {}\n' },
+      {
+        'src/utils.ts':
+          'export function a(): void {}\nexport function b(): void {}\n',
+      },
       'feat: add b',
     );
 
@@ -108,7 +132,12 @@ describe('E1: Merge Commit trace', { timeout: 30000 }, () => {
     const adapter = createUnauthenticatedAdapter();
     mockDetectPlatform.mockResolvedValue({
       adapter,
-      remote: { platform: 'github', host: 'github.com', owner: 'test', repo: 'repo' },
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
     });
 
     const result = await trace({ file: 'src/utils.ts', line: 2 });
@@ -130,12 +159,18 @@ describe('E1: Merge Commit trace', { timeout: 30000 }, () => {
 
     repo.branch('feature/thing');
     const commitC = repo.commit(
-      { 'src/utils.ts': 'export function a(): void {}\nexport function b(): void {}\n' },
+      {
+        'src/utils.ts':
+          'export function a(): void {}\nexport function b(): void {}\n',
+      },
       'feat: add b',
     );
 
     repo.checkout('main');
-    const mergeCommit = repo.merge('feature/thing', 'Merge pull request #42 from feature/thing');
+    const mergeCommit = repo.merge(
+      'feature/thing',
+      'Merge pull request #42 from feature/thing',
+    );
 
     const prInfo = createPRInfo({
       number: 42,
@@ -148,7 +183,12 @@ describe('E1: Merge Commit trace', { timeout: 30000 }, () => {
     const adapter = createMockPlatformAdapter({ prMap });
     mockDetectPlatform.mockResolvedValue({
       adapter,
-      remote: { platform: 'github', host: 'github.com', owner: 'test', repo: 'repo' },
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
     });
 
     const result = await trace({ file: 'src/utils.ts', line: 2 });
@@ -170,10 +210,7 @@ describe('E1: Merge Commit trace', { timeout: 30000 }, () => {
 
   it('returns only original_commit node when no merge commit and no adapter', async () => {
     // Straight commit to main — no branch, no PR
-    repo.commit(
-      { 'src/utils.ts': 'export const x = 1;\n' },
-      'chore: initial',
-    );
+    repo.commit({ 'src/utils.ts': 'export const x = 1;\n' }, 'chore: initial');
     const directCommit = repo.commit(
       { 'src/utils.ts': 'export const x = 1;\nexport const y = 2;\n' },
       'fix: add y directly on main',
@@ -190,10 +227,7 @@ describe('E1: Merge Commit trace', { timeout: 30000 }, () => {
   });
 
   it('result nodes contain original_commit followed by pull_request', async () => {
-    repo.commit(
-      { 'src/utils.ts': 'line1\n' },
-      'chore: init',
-    );
+    repo.commit({ 'src/utils.ts': 'line1\n' }, 'chore: init');
 
     repo.branch('feature/pr');
     const commitC = repo.commit(
@@ -202,14 +236,22 @@ describe('E1: Merge Commit trace', { timeout: 30000 }, () => {
     );
 
     repo.checkout('main');
-    const mergeCommit = repo.merge('feature/pr', 'Merge pull request #99 from feature/pr');
+    const mergeCommit = repo.merge(
+      'feature/pr',
+      'Merge pull request #99 from feature/pr',
+    );
 
     const prMap = new Map();
     prMap.set(mergeCommit, createPRInfo({ number: 99, mergeCommit }));
     const adapter = createMockPlatformAdapter({ prMap });
     mockDetectPlatform.mockResolvedValue({
       adapter,
-      remote: { platform: 'github', host: 'github.com', owner: 'test', repo: 'repo' },
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
     });
 
     const result = await trace({ file: 'src/utils.ts', line: 2 });

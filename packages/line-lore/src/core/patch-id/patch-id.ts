@@ -29,10 +29,14 @@ export async function computePatchId(
   try {
     const { execa: execaFn } = await import('execa');
     const cwd = options?.cwd ?? '.';
-    const result = await execaFn('bash', [
-      '-c',
-      `git -C "${cwd}" diff "${commitSha}^..${commitSha}" | git patch-id --stable`,
-    ], { timeout: options?.timeout });
+    const result = await execaFn(
+      'bash',
+      [
+        '-c',
+        `git -C "${cwd}" diff "${commitSha}^..${commitSha}" | git patch-id --stable`,
+      ],
+      { timeout: options?.timeout },
+    );
 
     const patchId = result.stdout.trim().split(/\s+/)[0];
     if (!patchId) return null;

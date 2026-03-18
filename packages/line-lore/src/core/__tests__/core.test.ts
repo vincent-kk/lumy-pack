@@ -1,8 +1,18 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { isAstAvailable } from '@/ast/index.js';
+import { gitExec } from '@/git/executor.js';
+import { detectPlatformAdapter } from '@/platform/index.js';
+import type { PRInfo, PlatformAdapter } from '@/types/index.js';
 
 // ---------------------------------------------------------------------------
-// Module mocks — must be declared before any imports that use them
+// Imports — after vi.mock() calls
 // ---------------------------------------------------------------------------
+import { clearCache, health, trace } from '../core.js';
+import { resetPatchIdCache } from '../patch-id/patch-id.js';
+import { resetPRCache } from '../pr-lookup/pr-lookup.js';
+
+// Module mocks — must be declared before any imports that use them
 
 const mockStore = new Map<string, unknown>();
 
@@ -22,9 +32,15 @@ vi.mock('@/ast/index.js', async (importOriginal) => {
 vi.mock('@/cache/file-cache.js', () => ({
   FileCache: class {
     private store = mockStore;
-    async get(key: string) { return this.store.get(key) ?? null; }
-    async set(key: string, value: unknown) { this.store.set(key, value); }
-    async clear() { this.store.clear(); }
+    async get(key: string) {
+      return this.store.get(key) ?? null;
+    }
+    async set(key: string, value: unknown) {
+      this.store.set(key, value);
+    }
+    async clear() {
+      this.store.clear();
+    }
   },
 }));
 
@@ -33,23 +49,17 @@ vi.mock('execa', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Imports — after vi.mock() calls
-// ---------------------------------------------------------------------------
 
-import { trace, health, clearCache } from '../core.js';
-import { gitExec } from '@/git/executor.js';
-import { detectPlatformAdapter } from '@/platform/index.js';
-import { isAstAvailable } from '@/ast/index.js';
-import { resetPRCache } from '../pr-lookup/pr-lookup.js';
-import { resetPatchIdCache } from '../patch-id/patch-id.js';
-import type { PlatformAdapter, PRInfo } from '@/types/index.js';
+// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Typed mock helpers
 // ---------------------------------------------------------------------------
 
 const mockGitExec = gitExec as ReturnType<typeof vi.fn>;
-const mockDetectPlatformAdapter = detectPlatformAdapter as ReturnType<typeof vi.fn>;
+const mockDetectPlatformAdapter = detectPlatformAdapter as ReturnType<
+  typeof vi.fn
+>;
 const mockIsAstAvailable = isAstAvailable as ReturnType<typeof vi.fn>;
 
 // ---------------------------------------------------------------------------
@@ -57,9 +67,9 @@ const mockIsAstAvailable = isAstAvailable as ReturnType<typeof vi.fn>;
 // ---------------------------------------------------------------------------
 
 const COMMIT_SHA = 'aaaa1111111111111111111111111111111111aa';
-const MERGE_SHA  = 'bbbb2222222222222222222222222222222222bb';
-const PARENT1    = 'cccc3333333333333333333333333333333333cc';
-const PARENT2    = 'dddd4444444444444444444444444444444444dd';
+const MERGE_SHA = 'bbbb2222222222222222222222222222222222bb';
+const PARENT1 = 'cccc3333333333333333333333333333333333cc';
+const PARENT2 = 'dddd4444444444444444444444444444444444dd';
 
 /**
  * Build a minimal git blame --porcelain block for one line.
@@ -95,15 +105,29 @@ function gitEmpty() {
   return gitOk('');
 }
 
-function createMockAdapter(prInfo: PRInfo | null, authenticated = true): PlatformAdapter {
+function createMockAdapter(
+  prInfo: PRInfo | null,
+  authenticated = true,
+): PlatformAdapter {
   return {
     platform: 'github',
-    checkAuth: vi.fn().mockResolvedValue({ authenticated, username: authenticated ? 'test-user' : undefined }),
+    checkAuth: vi
+      .fn()
+      .mockResolvedValue({
+        authenticated,
+        username: authenticated ? 'test-user' : undefined,
+      }),
     getPRForCommit: vi.fn().mockResolvedValue(prInfo),
     getPRCommits: vi.fn().mockResolvedValue([]),
     getLinkedIssues: vi.fn().mockResolvedValue([]),
     getLinkedPRs: vi.fn().mockResolvedValue([]),
-    getRateLimit: vi.fn().mockResolvedValue({ limit: 5000, remaining: 4999, resetAt: new Date().toISOString() }),
+    getRateLimit: vi
+      .fn()
+      .mockResolvedValue({
+        limit: 5000,
+        remaining: 4999,
+        resetAt: new Date().toISOString(),
+      }),
   };
 }
 
@@ -131,13 +155,15 @@ describe('trace() — pipeline orchestrator integration', () => {
     // Call 1: git blame
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
     // Call 2: getCosmeticDiff — non-cosmetic diff
-    mockGitExec.mockResolvedValueOnce(gitOk(
-      `@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`,
-    ));
+    mockGitExec.mockResolvedValueOnce(
+      gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
+    );
     // Call 3: git log --merges --ancestry-path (findMergeCommit)
-    mockGitExec.mockResolvedValueOnce(gitOk(
-      `${MERGE_SHA} ${PARENT1} ${PARENT2} Merge pull request #42 from feature/my-feature\n`,
-    ));
+    mockGitExec.mockResolvedValueOnce(
+      gitOk(
+        `${MERGE_SHA} ${PARENT1} ${PARENT2} Merge pull request #42 from feature/my-feature\n`,
+      ),
+    );
 
     const result = await trace({ file: 'src/foo.ts', line: 1 });
 
@@ -164,11 +190,13 @@ describe('trace() — pipeline orchestrator integration', () => {
     mockIsAstAvailable.mockReturnValue(false);
 
     // Call 1: git blame
-    mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA, '  const x = 1;  ')));
+    mockGitExec.mockResolvedValueOnce(
+      gitOk(buildBlamePorcelain(COMMIT_SHA, '  const x = 1;  ')),
+    );
     // Call 2: getCosmeticDiff — whitespace-only diff (same tokens, different spacing)
-    mockGitExec.mockResolvedValueOnce(gitOk(
-      `@@ -1,1 +1,1 @@\n-const x = 1;\n+  const x = 1;  \n`,
-    ));
+    mockGitExec.mockResolvedValueOnce(
+      gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+  const x = 1;  \n`),
+    );
     // Call 3: findMergeCommit → no merge
     mockGitExec.mockResolvedValueOnce(gitEmpty());
 
@@ -179,7 +207,9 @@ describe('trace() — pipeline orchestrator integration', () => {
     expect(cosmeticNode!.note).toMatch(/whitespace/i);
 
     // AST is disabled — no ast-signature node
-    const astNode = result.nodes.find((n) => n.trackingMethod === 'ast-signature');
+    const astNode = result.nodes.find(
+      (n) => n.trackingMethod === 'ast-signature',
+    );
     expect(astNode).toBeUndefined();
   });
 
@@ -202,9 +232,9 @@ describe('trace() — pipeline orchestrator integration', () => {
     // Call 1: git blame
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
     // Call 2: getCosmeticDiff — non-cosmetic
-    mockGitExec.mockResolvedValueOnce(gitOk(
-      `@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 42;\n`,
-    ));
+    mockGitExec.mockResolvedValueOnce(
+      gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 42;\n`),
+    );
     // Call 3: findMergeCommit → empty (no ancestry path)
     mockGitExec.mockResolvedValueOnce(gitEmpty());
     // execa mock already rejects (patch-id fails) — adapter.getPRForCommit will be used
@@ -222,14 +252,16 @@ describe('trace() — pipeline orchestrator integration', () => {
   // Scenario 4: Offline (Level 0) — detectPlatformAdapter throws
   // -------------------------------------------------------------------------
   it('offline mode: operatingLevel=0 and warning when platform detection fails', async () => {
-    mockDetectPlatformAdapter.mockRejectedValue(new Error('No GitHub CLI found'));
+    mockDetectPlatformAdapter.mockRejectedValue(
+      new Error('No GitHub CLI found'),
+    );
 
     // Call 1: git blame
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
     // Call 2: getCosmeticDiff
-    mockGitExec.mockResolvedValueOnce(gitOk(
-      `@@ -1,1 +1,1 @@\n-const x = 1;\n+const y = 1;\n`,
-    ));
+    mockGitExec.mockResolvedValueOnce(
+      gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const y = 1;\n`),
+    );
     // Call 3: findMergeCommit → empty
     mockGitExec.mockResolvedValueOnce(gitEmpty());
 
@@ -252,7 +284,7 @@ describe('trace() — pipeline orchestrator integration', () => {
     // 3 blame lines: line 1→SHA_A, line 2→SHA_A, line 3→SHA_B
     const blameOutput = [
       buildBlamePorcelain(SHA_A, 'line one'),
-      buildBlamePorcelain(SHA_A, 'line two'),   // same SHA — deduped
+      buildBlamePorcelain(SHA_A, 'line two'), // same SHA — deduped
       buildBlamePorcelain(SHA_B, 'line three'),
     ].join('\n');
 
@@ -271,7 +303,8 @@ describe('trace() — pipeline orchestrator integration', () => {
     expect(commitNodes).toHaveLength(3);
 
     // getPRForCommit called at most once per unique SHA (2), not 3 times
-    const getPRCalls = (adapter.getPRForCommit as ReturnType<typeof vi.fn>).mock.calls;
+    const getPRCalls = (adapter.getPRForCommit as ReturnType<typeof vi.fn>).mock
+      .calls;
     const uniqueShasQueried = new Set(getPRCalls.map((c: unknown[]) => c[0]));
     expect(uniqueShasQueried.size).toBeLessThanOrEqual(2);
   });
@@ -285,11 +318,13 @@ describe('trace() — pipeline orchestrator integration', () => {
     mockDetectPlatformAdapter.mockResolvedValue({ adapter });
 
     // Call 1: git blame
-    mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA, '  const x = 1;  ')));
+    mockGitExec.mockResolvedValueOnce(
+      gitOk(buildBlamePorcelain(COMMIT_SHA, '  const x = 1;  ')),
+    );
     // Call 2: getCosmeticDiff — whitespace only
-    mockGitExec.mockResolvedValueOnce(gitOk(
-      `@@ -1,1 +1,1 @@\n-const x = 1;\n+  const x = 1;  \n`,
-    ));
+    mockGitExec.mockResolvedValueOnce(
+      gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+  const x = 1;  \n`),
+    );
     // Call 3: findMergeCommit → empty
     mockGitExec.mockResolvedValueOnce(gitEmpty());
 
@@ -300,7 +335,9 @@ describe('trace() — pipeline orchestrator integration', () => {
     // Cosmetic node present but no AST follow-up node
     const cosmeticNode = result.nodes.find((n) => n.type === 'cosmetic_commit');
     expect(cosmeticNode).toBeDefined();
-    const astNode = result.nodes.find((n) => n.trackingMethod === 'ast-signature');
+    const astNode = result.nodes.find(
+      (n) => n.trackingMethod === 'ast-signature',
+    );
     expect(astNode).toBeUndefined();
   });
 
@@ -408,7 +445,14 @@ describe('clearCache()', () => {
 
   it('cache is empty after clearCache — subsequent lookups start fresh', async () => {
     // Pre-populate the store so FileCache.get() would return a hit
-    mockStore.set(COMMIT_SHA, { number: 1, title: 'cached', author: 'a', url: '', mergeCommit: '', baseBranch: '' });
+    mockStore.set(COMMIT_SHA, {
+      number: 1,
+      title: 'cached',
+      author: 'a',
+      url: '',
+      mergeCommit: '',
+      baseBranch: '',
+    });
 
     await clearCache();
 

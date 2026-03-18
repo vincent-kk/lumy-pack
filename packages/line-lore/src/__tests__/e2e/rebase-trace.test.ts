@@ -1,7 +1,14 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { trace } from '@/core/core.js';
+import { detectPlatformAdapter } from '@/platform/index.js';
+
+import {
+  createMockPlatformAdapter,
+  createPRInfo,
+  createUnauthenticatedAdapter,
+} from '../helpers/mock-platform.js';
 import { RepoBuilder } from '../helpers/repo-builder.js';
-import { createMockPlatformAdapter, createPRInfo, createUnauthenticatedAdapter } from '../helpers/mock-platform.js';
 
 vi.mock('@/platform/index.js', () => ({
   detectPlatformAdapter: vi.fn(),
@@ -15,14 +22,17 @@ vi.mock('@/ast/index.js', async (importOriginal) => {
 vi.mock('@/cache/file-cache.js', () => ({
   FileCache: class {
     private store = new Map<string, unknown>();
-    async get(key: string) { return this.store.get(key) ?? null; }
-    async set(key: string, value: unknown) { this.store.set(key, value); }
-    async clear() { this.store.clear(); }
+    async get(key: string) {
+      return this.store.get(key) ?? null;
+    }
+    async set(key: string, value: unknown) {
+      this.store.set(key, value);
+    }
+    async clear() {
+      this.store.clear();
+    }
   },
 }));
-
-import { trace } from '@/core/core.js';
-import { detectPlatformAdapter } from '@/platform/index.js';
 
 const mockDetectPlatform = detectPlatformAdapter as ReturnType<typeof vi.fn>;
 
@@ -46,7 +56,10 @@ describe('E3: Rebase Merge trace', { timeout: 30000 }, () => {
   it('blame finds the rebased commit C-prime (new SHA, not original C)', async () => {
     // A: initial file on main
     repo.commit(
-      { 'src/index.ts': 'export const A = 1;\n', 'src/main.ts': 'export const MAIN = true;\n' },
+      {
+        'src/index.ts': 'export const A = 1;\n',
+        'src/main.ts': 'export const MAIN = true;\n',
+      },
       'chore: initial',
     );
 
@@ -78,7 +91,12 @@ describe('E3: Rebase Merge trace', { timeout: 30000 }, () => {
     const adapter = createMockPlatformAdapter({ prMap: new Map() });
     mockDetectPlatform.mockResolvedValue({
       adapter,
-      remote: { platform: 'github', host: 'github.com', owner: 'test', repo: 'repo' },
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
     });
 
     const result = await trace({ file: 'src/index.ts', line: 2 });
@@ -93,7 +111,10 @@ describe('E3: Rebase Merge trace', { timeout: 30000 }, () => {
 
   it('no merge commit exists after rebase + fast-forward', async () => {
     repo.commit(
-      { 'src/index.ts': 'export const A = 1;\n', 'src/other.ts': 'export const X = 0;\n' },
+      {
+        'src/index.ts': 'export const A = 1;\n',
+        'src/other.ts': 'export const X = 0;\n',
+      },
       'chore: initial',
     );
 
@@ -118,7 +139,12 @@ describe('E3: Rebase Merge trace', { timeout: 30000 }, () => {
     const adapter = createMockPlatformAdapter({ prMap: new Map() });
     mockDetectPlatform.mockResolvedValue({
       adapter,
-      remote: { platform: 'github', host: 'github.com', owner: 'test', repo: 'repo' },
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
     });
 
     const result = await trace({ file: 'src/index.ts', line: 2 });
@@ -130,13 +156,18 @@ describe('E3: Rebase Merge trace', { timeout: 30000 }, () => {
 
   it('without adapter: no PR found (no merge commit, no message to parse)', async () => {
     repo.commit(
-      { 'src/index.ts': 'export const A = 1;\n', 'src/other.ts': 'export const X = 0;\n' },
+      {
+        'src/index.ts': 'export const A = 1;\n',
+        'src/other.ts': 'export const X = 0;\n',
+      },
       'chore: initial',
     );
 
     repo.branch('feature/ff');
     repo.commit(
-      { 'src/index.ts': 'export const A = 1;\nexport function fn(): void {}\n' },
+      {
+        'src/index.ts': 'export const A = 1;\nexport function fn(): void {}\n',
+      },
       'feat: plain commit message',
     );
 
@@ -155,7 +186,12 @@ describe('E3: Rebase Merge trace', { timeout: 30000 }, () => {
     const adapter = createUnauthenticatedAdapter();
     mockDetectPlatform.mockResolvedValue({
       adapter,
-      remote: { platform: 'github', host: 'github.com', owner: 'test', repo: 'repo' },
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
     });
 
     const result = await trace({ file: 'src/index.ts', line: 2 });
@@ -169,13 +205,18 @@ describe('E3: Rebase Merge trace', { timeout: 30000 }, () => {
 
   it('with adapter: getPRForCommit(rebasedSha) can find PR when API knows the rebased SHA', async () => {
     repo.commit(
-      { 'src/index.ts': 'export const A = 1;\n', 'src/other.ts': 'export const X = 0;\n' },
+      {
+        'src/index.ts': 'export const A = 1;\n',
+        'src/other.ts': 'export const X = 0;\n',
+      },
       'chore: initial',
     );
 
     repo.branch('feature/with-pr');
     repo.commit(
-      { 'src/index.ts': 'export const A = 1;\nexport function fn(): void {}\n' },
+      {
+        'src/index.ts': 'export const A = 1;\nexport function fn(): void {}\n',
+      },
       'feat: add fn',
     );
 
@@ -203,7 +244,12 @@ describe('E3: Rebase Merge trace', { timeout: 30000 }, () => {
     const adapter = createMockPlatformAdapter({ prMap });
     mockDetectPlatform.mockResolvedValue({
       adapter,
-      remote: { platform: 'github', host: 'github.com', owner: 'test', repo: 'repo' },
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
     });
 
     const result = await trace({ file: 'src/index.ts', line: 2 });
@@ -250,7 +296,12 @@ describe('E3: Rebase Merge trace', { timeout: 30000 }, () => {
     const adapter = createMockPlatformAdapter({ prMap: new Map() });
     mockDetectPlatform.mockResolvedValue({
       adapter,
-      remote: { platform: 'github', host: 'github.com', owner: 'test', repo: 'repo' },
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
     });
 
     const result = await trace({ file: 'src/index.ts', line: 2 });

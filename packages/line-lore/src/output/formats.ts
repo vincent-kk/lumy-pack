@@ -1,8 +1,7 @@
 import pc from 'picocolors';
 
-import type { TraceNode } from '../types/index.js';
-
 import type { TraceFullResult } from '../core/core.js';
+import type { TraceNode } from '../types/index.js';
 
 export function formatHuman(result: TraceFullResult): string {
   const lines: string[] = [];
@@ -26,10 +25,16 @@ export function formatJson(result: TraceFullResult): string {
 }
 
 export function formatLlm(result: TraceFullResult): string {
-  const { createSuccessResponse } = require('./normalizer.js') as typeof import('./normalizer.js');
-  const response = createSuccessResponse('trace', result, result.operatingLevel, {
-    warnings: result.warnings.length > 0 ? result.warnings : undefined,
-  });
+  const { createSuccessResponse } =
+    require('./normalizer.js') as typeof import('./normalizer.js');
+  const response = createSuccessResponse(
+    'trace',
+    result,
+    result.operatingLevel,
+    {
+      warnings: result.warnings.length > 0 ? result.warnings : undefined,
+    },
+  );
   return JSON.stringify(response);
 }
 

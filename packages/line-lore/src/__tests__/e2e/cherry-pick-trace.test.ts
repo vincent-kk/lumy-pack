@@ -1,7 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { trace } from '@/core/core.js';
+import { detectPlatformAdapter } from '@/platform/index.js';
+
+import {
+  createMockPlatformAdapter,
+  createPRInfo,
+} from '../helpers/mock-platform.js';
 import { RepoBuilder } from '../helpers/repo-builder.js';
-import { createMockPlatformAdapter, createPRInfo } from '../helpers/mock-platform.js';
 
 vi.mock('@/platform/index.js', () => ({
   detectPlatformAdapter: vi.fn(),
@@ -15,14 +21,17 @@ vi.mock('@/ast/index.js', async (importOriginal) => {
 vi.mock('@/cache/file-cache.js', () => ({
   FileCache: class {
     private store = new Map<string, unknown>();
-    async get(key: string) { return this.store.get(key) ?? null; }
-    async set(key: string, value: unknown) { this.store.set(key, value); }
-    async clear() { this.store.clear(); }
+    async get(key: string) {
+      return this.store.get(key) ?? null;
+    }
+    async set(key: string, value: unknown) {
+      this.store.set(key, value);
+    }
+    async clear() {
+      this.store.clear();
+    }
   },
 }));
-
-import { trace } from '@/core/core.js';
-import { detectPlatformAdapter } from '@/platform/index.js';
 
 const mockDetectPlatform = detectPlatformAdapter as ReturnType<typeof vi.fn>;
 
@@ -52,7 +61,10 @@ describe('E8: Cherry-pick patch-id matching', { timeout: 30000 }, () => {
 
     // B: unrelated commit on main
     repo.commit(
-      { 'src/core.ts': 'export function run(): void {}\nexport const VERSION = 1;\n' },
+      {
+        'src/core.ts':
+          'export function run(): void {}\nexport const VERSION = 1;\n',
+      },
       'chore: add version',
     );
 
@@ -99,7 +111,10 @@ describe('E8: Cherry-pick patch-id matching', { timeout: 30000 }, () => {
     // Back on main: add a commit that will be cherry-picked
     repo.checkout('main');
     const originalSha = repo.commit(
-      { 'src/core.ts': 'export function a(): void {}\nexport function urgentFix(): void {}\n' },
+      {
+        'src/core.ts':
+          'export function a(): void {}\nexport function urgentFix(): void {}\n',
+      },
       'fix: urgent fix',
     );
 
@@ -115,7 +130,10 @@ describe('E8: Cherry-pick patch-id matching', { timeout: 30000 }, () => {
     // Create a merge commit on v1 that references PR #77
     repo.branch('hotfix/v1-urgent');
     repo.checkout('v1');
-    const mergeOnV1 = repo.merge('hotfix/v1-urgent', 'Merge pull request #77 from hotfix/v1-urgent');
+    const mergeOnV1 = repo.merge(
+      'hotfix/v1-urgent',
+      'Merge pull request #77 from hotfix/v1-urgent',
+    );
 
     // Now trace from v1 branch context
     const prMap = new Map();
@@ -123,7 +141,12 @@ describe('E8: Cherry-pick patch-id matching', { timeout: 30000 }, () => {
     const adapter = createMockPlatformAdapter({ prMap });
     mockDetectPlatform.mockResolvedValue({
       adapter,
-      remote: { platform: 'github', host: 'github.com', owner: 'test', repo: 'repo' },
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
     });
 
     const result = await trace({ file: 'src/core.ts', line: 2 });
@@ -138,10 +161,7 @@ describe('E8: Cherry-pick patch-id matching', { timeout: 30000 }, () => {
 
   it('cherry-pick without adapter returns Level 0 with only commit node', async () => {
     // A: initial
-    repo.commit(
-      { 'src/core.ts': 'export const A = 1;\n' },
-      'chore: init',
-    );
+    repo.commit({ 'src/core.ts': 'export const A = 1;\n' }, 'chore: init');
 
     // Branch with fix
     repo.branch('fix/something');
@@ -160,7 +180,9 @@ describe('E8: Cherry-pick patch-id matching', { timeout: 30000 }, () => {
     const result = await trace({ file: 'src/core.ts', line: 2 });
 
     expect(result.operatingLevel).toBe(0);
-    expect(result.warnings).toContain('Could not detect platform. Running in Level 0 (git only).');
+    expect(result.warnings).toContain(
+      'Could not detect platform. Running in Level 0 (git only).',
+    );
 
     const commitNode = result.nodes.find(
       (n) => n.type === 'original_commit' || n.type === 'cosmetic_commit',
@@ -174,10 +196,7 @@ describe('E8: Cherry-pick patch-id matching', { timeout: 30000 }, () => {
   });
 
   it('cherry-pick commit SHA differs from original even with identical diff content', async () => {
-    repo.commit(
-      { 'src/core.ts': 'export const x = 1;\n' },
-      'chore: init',
-    );
+    repo.commit({ 'src/core.ts': 'export const x = 1;\n' }, 'chore: init');
 
     repo.branch('feat/thing');
     const original = repo.commit(

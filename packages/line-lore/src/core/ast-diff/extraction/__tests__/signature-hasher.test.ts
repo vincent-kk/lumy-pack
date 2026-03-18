@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
+  computeContentHash,
   computeExactHash,
   computeStructuralHash,
-  computeContentHash,
 } from '../signature-hasher.js';
 
 describe('computeExactHash', () => {

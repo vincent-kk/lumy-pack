@@ -1,6 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { RepoBuilder } from '../helpers/repo-builder.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { isAstAvailable } from '@/ast/index.js';
+import { trace } from '@/core/core.js';
+import { detectPlatformAdapter } from '@/platform/index.js';
+
 import { createMockPlatformAdapter } from '../helpers/mock-platform.js';
+import { RepoBuilder } from '../helpers/repo-builder.js';
 
 vi.mock('@/platform/index.js', () => ({
   detectPlatformAdapter: vi.fn(),
@@ -14,15 +19,17 @@ vi.mock('@/ast/index.js', async (importOriginal) => {
 vi.mock('@/cache/file-cache.js', () => ({
   FileCache: class {
     private store = new Map<string, unknown>();
-    async get(key: string) { return this.store.get(key) ?? null; }
-    async set(key: string, value: unknown) { this.store.set(key, value); }
-    async clear() { this.store.clear(); }
+    async get(key: string) {
+      return this.store.get(key) ?? null;
+    }
+    async set(key: string, value: unknown) {
+      this.store.set(key, value);
+    }
+    async clear() {
+      this.store.clear();
+    }
   },
 }));
-
-import { trace } from '@/core/core.js';
-import { detectPlatformAdapter } from '@/platform/index.js';
-import { isAstAvailable } from '@/ast/index.js';
 
 const mockDetectPlatform = detectPlatformAdapter as ReturnType<typeof vi.fn>;
 const mockIsAstAvailable = isAstAvailable as ReturnType<typeof vi.fn>;
@@ -82,7 +89,10 @@ describe('E5: Function rename detection', { timeout: 30000 }, () => {
     // B: unrelated change
     repo.commit({ 'src/helper.ts': HELPER_V1 }, 'chore: add helper');
     // R: rename calcTotal → calculateTotal
-    repo.commit({ 'src/utils.ts': UTILS_RENAMED }, 'refactor: rename calcTotal to calculateTotal');
+    repo.commit(
+      { 'src/utils.ts': UTILS_RENAMED },
+      'refactor: rename calcTotal to calculateTotal',
+    );
 
     // line 2 is the body of calculateTotal
     const result = await trace({ file: 'src/utils.ts', line: 2 });
@@ -96,17 +106,25 @@ describe('E5: Function rename detection', { timeout: 30000 }, () => {
 
   it('rename commit is NOT classified as cosmetic (code identity changed)', async () => {
     repo.commit({ 'src/utils.ts': UTILS_ORIGINAL }, 'feat: add calcTotal');
-    repo.commit({ 'src/utils.ts': UTILS_RENAMED }, 'refactor: rename calcTotal to calculateTotal');
+    repo.commit(
+      { 'src/utils.ts': UTILS_RENAMED },
+      'refactor: rename calcTotal to calculateTotal',
+    );
 
     const result = await trace({ file: 'src/utils.ts', line: 2 });
 
-    const cosmeticNodes = result.nodes.filter((n) => n.type === 'cosmetic_commit');
+    const cosmeticNodes = result.nodes.filter(
+      (n) => n.type === 'cosmetic_commit',
+    );
     expect(cosmeticNodes).toHaveLength(0);
   });
 
   it('featureFlags.astDiff is true when isAstAvailable is mocked true', async () => {
     repo.commit({ 'src/utils.ts': UTILS_ORIGINAL }, 'feat: add calcTotal');
-    repo.commit({ 'src/utils.ts': UTILS_RENAMED }, 'refactor: rename calcTotal to calculateTotal');
+    repo.commit(
+      { 'src/utils.ts': UTILS_RENAMED },
+      'refactor: rename calcTotal to calculateTotal',
+    );
 
     const result = await trace({ file: 'src/utils.ts', line: 2 });
 
@@ -114,7 +132,10 @@ describe('E5: Function rename detection', { timeout: 30000 }, () => {
   });
 
   it('trace returns at least one node with a valid commit SHA from the repo', async () => {
-    const originalSha = repo.commit({ 'src/utils.ts': UTILS_ORIGINAL }, 'feat: add calcTotal');
+    const originalSha = repo.commit(
+      { 'src/utils.ts': UTILS_ORIGINAL },
+      'feat: add calcTotal',
+    );
     const renameSha = repo.commit(
       { 'src/utils.ts': UTILS_RENAMED },
       'refactor: rename calcTotal to calculateTotal',
@@ -122,8 +143,8 @@ describe('E5: Function rename detection', { timeout: 30000 }, () => {
 
     const result = await trace({ file: 'src/utils.ts', line: 2 });
 
-    const commitNodes = result.nodes.filter((n) =>
-      n.type === 'original_commit' || n.type === 'cosmetic_commit',
+    const commitNodes = result.nodes.filter(
+      (n) => n.type === 'original_commit' || n.type === 'cosmetic_commit',
     );
     expect(commitNodes.length).toBeGreaterThanOrEqual(1);
     // blame -C -C -M may attribute to rename commit or original — both are valid
@@ -132,7 +153,10 @@ describe('E5: Function rename detection', { timeout: 30000 }, () => {
 
   it('tracing function declaration line (line 1) also returns a commit node', async () => {
     repo.commit({ 'src/utils.ts': UTILS_ORIGINAL }, 'feat: add calcTotal');
-    repo.commit({ 'src/utils.ts': UTILS_RENAMED }, 'refactor: rename calcTotal to calculateTotal');
+    repo.commit(
+      { 'src/utils.ts': UTILS_RENAMED },
+      'refactor: rename calcTotal to calculateTotal',
+    );
 
     const result = await trace({ file: 'src/utils.ts', line: 1 });
 
