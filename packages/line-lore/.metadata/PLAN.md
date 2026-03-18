@@ -106,7 +106,7 @@
 
 ### Phase 7: 마무리
 
-- [ ] `index.ts` — 공개 API 확정 (trace, graph, health, clearCache)
+- [x] `index.ts` — 공개 API 확정 (trace, graph, health, clearCache)
 - [ ] package.json exports 맵 확정
 - [ ] README.md 작성
 - [ ] 통합 테스트 + E2E 시나리오
