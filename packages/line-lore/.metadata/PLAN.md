@@ -73,10 +73,10 @@
 
 > 참조: [02-pipeline.md](./02-pipeline.md), [04-extensions.md](./04-extensions.md)
 
-- [ ] `core/core.ts` — 파이프라인 오케스트레이터 (1→2→3→4 조율)
-- [ ] `output/normalizer.ts` — NormalizedResponse 봉투
-- [ ] `output/formats.ts` — human / json / llm 출력
-- [ ] `output/help-schema.ts` — LLM용 JSON 도움말
+- [x] `core/core.ts` — 파이프라인 오케스트레이터 (1→2→3→4 조율)
+- [x] `output/normalizer.ts` — NormalizedResponse 봉투
+- [x] `output/formats.ts` — human / json / llm 출력
+- [x] `output/help-schema.ts` — LLM용 JSON 도움말
 
 **완료 기준**: `trace()` 함수 end-to-end 동작 (프로그래밍 API)
 

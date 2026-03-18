@@ -30,3 +30,6 @@ export {
 export type { PatchIdResult } from './patch-id/index.js';
 
 export { lookupPR, resetPRCache } from './pr-lookup/index.js';
+
+export { clearCache, health, trace } from './core.js';
+export type { TraceFullResult } from './core.js';
