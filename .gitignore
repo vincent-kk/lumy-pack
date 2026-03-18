@@ -29,4 +29,5 @@ packages/scene-sieve/.samples/*
 !.yarn/sdks
 !.yarn/versions
 
-.filid/
+.filid/review/
+.filid/cache/

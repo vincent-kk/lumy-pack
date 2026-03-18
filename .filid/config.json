@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "rules": {
+    "naming-convention": {
+      "enabled": true,
+      "severity": "warning"
+    },
+    "organ-no-intentmd": {
+      "enabled": true,
+      "severity": "error"
+    },
+    "index-barrel-pattern": {
+      "enabled": true,
+      "severity": "warning"
+    },
+    "module-entry-point": {
+      "enabled": true,
+      "severity": "warning"
+    },
+    "max-depth": {
+      "enabled": true,
+      "severity": "error"
+    },
+    "circular-dependency": {
+      "enabled": true,
+      "severity": "error"
+    },
+    "pure-function-isolation": {
+      "enabled": true,
+      "severity": "error"
+    },
+    "zero-peer-file": {
+      "enabled": true,
+      "severity": "warning"
+    }
+  }
+}
