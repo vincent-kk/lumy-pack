@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 
-import { traverseIssueGraph } from '../../../core/issue-graph/issue-graph.js';
-import type { PlatformAdapter, IssueInfo, PRInfo } from '../../../types/index.js';
+import { traverseIssueGraph } from '../issue-graph.js';
+import type { PlatformAdapter, IssueInfo, PRInfo } from '@/types/index.js';
 
 function createMockAdapter(
   linkedIssues: IssueInfo[] = [],

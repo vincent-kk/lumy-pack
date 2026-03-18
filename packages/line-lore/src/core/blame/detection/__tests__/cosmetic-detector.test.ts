@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { isCosmeticDiff } from '../../../../core/blame/detection/cosmetic-detector.js';
+import { isCosmeticDiff } from '../cosmetic-detector.js';
 
 const WHITESPACE_DIFF = `diff --git a/src/index.ts b/src/index.ts
 --- a/src/index.ts

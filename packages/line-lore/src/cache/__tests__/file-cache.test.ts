@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { FileCache } from '../../cache/file-cache.js';
+import { FileCache } from '../file-cache.js';
 
 describe('FileCache', () => {
   let cacheDir: string;

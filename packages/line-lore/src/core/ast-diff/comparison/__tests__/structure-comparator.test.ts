@@ -3,8 +3,8 @@ import { describe, it, expect } from 'vitest';
 import {
   compareSymbolMaps,
   findMatchAcrossFiles,
-} from '../../../../core/ast-diff/comparison/structure-comparator.js';
-import type { ContentHash } from '../../../../types/index.js';
+} from '../structure-comparator.js';
+import type { ContentHash } from '@/types/index.js';
 
 function hash(exact: string, structural?: string): ContentHash {
   return { exact, structural: structural ?? exact };

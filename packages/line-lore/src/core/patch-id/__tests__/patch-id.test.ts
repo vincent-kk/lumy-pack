@@ -6,11 +6,11 @@ vi.mock('execa', () => ({
   execa: vi.fn(),
 }));
 
-vi.mock('../../../git/executor.js', () => ({
+vi.mock('@/git/executor.js', () => ({
   gitExec: vi.fn(),
 }));
 
-vi.mock('../../../cache/file-cache.js', () => ({
+vi.mock('@/cache/file-cache.js', () => ({
   FileCache: class {
     get(key: string) {
       return Promise.resolve(mockStore.get(key) ?? null);
@@ -26,8 +26,8 @@ import {
   computePatchId,
   findPatchIdMatch,
   resetPatchIdCache,
-} from '../../../core/patch-id/patch-id.js';
-import { gitExec } from '../../../git/executor.js';
+} from '../patch-id.js';
+import { gitExec } from '@/git/executor.js';
 
 const mockGitExec = gitExec as ReturnType<typeof vi.fn>;
 

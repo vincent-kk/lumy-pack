@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
-import { formatHuman, formatJson, formatQuiet } from '../../output/formats.js';
-import type { TraceFullResult } from '../../core/core.js';
+import { formatHuman, formatJson, formatQuiet } from '../formats.js';
+import type { TraceFullResult } from '@/core/core.js';
 
 const mockResult: TraceFullResult = {
   nodes: [

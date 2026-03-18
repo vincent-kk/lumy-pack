@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
-import { LineLoreError, LineLoreErrorCode } from '../../errors.js';
-import { parseRemoteUrl, detectPlatform } from '../../git/remote.js';
+import { LineLoreError, LineLoreErrorCode } from '@/errors.js';
+import { parseRemoteUrl, detectPlatform } from '../remote.js';
 
 describe('parseRemoteUrl', () => {
   it('parses HTTPS GitHub URL', () => {

@@ -1,16 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { LineLoreError, LineLoreErrorCode } from '../../../errors.js';
+import { LineLoreError, LineLoreErrorCode } from '@/errors.js';
 
-vi.mock('../../../git/executor.js', () => ({
+vi.mock('@/git/executor.js', () => ({
   gitExec: vi.fn(),
 }));
 
 import {
   findMergeCommit,
   extractPRFromMergeMessage,
-} from '../../../core/ancestry/ancestry.js';
-import { gitExec } from '../../../git/executor.js';
+} from '../ancestry.js';
+import { gitExec } from '@/git/executor.js';
 
 const mockGitExec = gitExec as ReturnType<typeof vi.fn>;
 

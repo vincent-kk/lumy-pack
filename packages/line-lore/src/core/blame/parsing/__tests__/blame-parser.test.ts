@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { parsePorcelainOutput } from '../../../../core/blame/parsing/blame-parser.js';
+import { parsePorcelainOutput } from '../blame-parser.js';
 
 const BASIC_PORCELAIN = `abc1234567890123456789012345678901234567 10 10 1
 author John Doe

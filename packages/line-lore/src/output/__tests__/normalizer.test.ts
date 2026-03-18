@@ -4,7 +4,7 @@ import {
   createSuccessResponse,
   createErrorResponse,
   createPartialResponse,
-} from '../../output/normalizer.js';
+} from '../normalizer.js';
 
 describe('createSuccessResponse', () => {
   it('creates a success response envelope', () => {

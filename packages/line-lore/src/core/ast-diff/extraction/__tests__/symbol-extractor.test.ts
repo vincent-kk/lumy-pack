@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 
-import { findContainingSymbol } from '../../../../core/ast-diff/extraction/symbol-extractor.js';
-import { extractSymbolsFromText } from '../../../../ast/parser.js';
-import type { SymbolInfo } from '../../../../types/index.js';
+import { findContainingSymbol } from '../symbol-extractor.js';
+import { extractSymbolsFromText } from '@/ast/parser.js';
+import type { SymbolInfo } from '@/types/index.js';
 
 const TS_SOURCE = `export function greet(name: string): string {
   return \`Hello, \${name}!\`;

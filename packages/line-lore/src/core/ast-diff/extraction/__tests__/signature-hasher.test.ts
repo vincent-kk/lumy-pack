@@ -4,7 +4,7 @@ import {
   computeExactHash,
   computeStructuralHash,
   computeContentHash,
-} from '../../../../core/ast-diff/extraction/signature-hasher.js';
+} from '../signature-hasher.js';
 
 describe('computeExactHash', () => {
   it('produces same hash for code differing only in whitespace', () => {

@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { LineLoreError, LineLoreErrorCode } from '../../errors.js';
+import { LineLoreError, LineLoreErrorCode } from '@/errors.js';
 
-vi.mock('../../git/executor.js', () => ({
+vi.mock('../executor.js', () => ({
   gitExec: vi.fn(),
 }));
 
-import { checkGitHealth } from '../../git/health.js';
-import { gitExec } from '../../git/executor.js';
+import { checkGitHealth } from '../health.js';
+import { gitExec } from '../executor.js';
 
 const mockGitExec = gitExec as ReturnType<typeof vi.fn>;
 

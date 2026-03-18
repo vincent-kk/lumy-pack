@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 
-import { createAdapter } from '../../platform/platform.js';
-import { GitHubAdapter } from '../../platform/github/github-adapter.js';
-import { GitHubEnterpriseAdapter } from '../../platform/github/github-enterprise-adapter.js';
-import { GitLabAdapter } from '../../platform/gitlab/gitlab-adapter.js';
-import { GitLabSelfHostedAdapter } from '../../platform/gitlab/gitlab-self-hosted-adapter.js';
-import { RequestScheduler } from '../../platform/scheduler/request-scheduler.js';
+import { createAdapter } from '../platform.js';
+import { GitHubAdapter } from '../github/github-adapter.js';
+import { GitHubEnterpriseAdapter } from '../github/github-enterprise-adapter.js';
+import { GitLabAdapter } from '../gitlab/gitlab-adapter.js';
+import { GitLabSelfHostedAdapter } from '../gitlab/gitlab-self-hosted-adapter.js';
+import { RequestScheduler } from '../scheduler/request-scheduler.js';
 
 describe('createAdapter', () => {
   it('creates GitHubAdapter for github platform', () => {
