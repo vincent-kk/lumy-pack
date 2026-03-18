@@ -33,3 +33,6 @@ export { lookupPR, resetPRCache } from './pr-lookup/index.js';
 
 export { clearCache, health, trace } from './core.js';
 export type { TraceFullResult } from './core.js';
+
+export { traverseIssueGraph } from './issue-graph/index.js';
+export type { GraphTraversalOptions } from './issue-graph/index.js';

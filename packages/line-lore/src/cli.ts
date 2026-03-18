@@ -2,7 +2,7 @@ import { createRequire } from 'node:module';
 
 import { Command } from 'commander';
 
-import { registerCacheCommand, registerHealthCommand, registerTraceCommand } from './commands/index.js';
+import { registerCacheCommand, registerGraphCommand, registerHealthCommand, registerTraceCommand } from './commands/index.js';
 import { getHelpSchema } from './output/help-schema.js';
 
 const require = createRequire(import.meta.url);
@@ -18,6 +18,7 @@ program
 registerTraceCommand(program);
 registerHealthCommand(program);
 registerCacheCommand(program);
+registerGraphCommand(program);
 
 program
   .command('help-json')

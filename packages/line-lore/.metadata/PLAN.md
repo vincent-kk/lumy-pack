@@ -97,10 +97,10 @@
 
 > 참조: [04-extensions.md](./04-extensions.md)
 
-- [ ] `core/issue-graph/issue-graph.ts` — PR↔이슈 양방향 탐색
-- [ ] `commands/graph.tsx` — graph 명령어
-- [ ] `--deep` 플래그 구현 (squash PR 재귀 탐색)
-- [ ] `--graph-depth` 통합
+- [x] `core/issue-graph/issue-graph.ts` — PR↔이슈 양방향 탐색
+- [x] `commands/graph.tsx` — graph 명령어
+- [x] `--deep` 플래그 구현 (squash PR 재귀 탐색)
+- [x] `--graph-depth` 통합
 
 **완료 기준**: 이슈 그래프 탐색 + deep trace 동작
 
