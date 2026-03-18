@@ -27,6 +27,8 @@
 | ------------------------------------------------------------ | ------------- | -------------------------------------------------------------------------------------------------------- |
 | **[`@lumy-pack/syncpoint`](./packages/syncpoint/README.md)**     | npm module | 개인 환경 동기화, 백업/복원 및 머신 프로비저닝을 위한 CLI. npm에 배포됩니다.            |
 | **[`@lumy-pack/scene-sieve`](./packages/scene-sieve/README.md)** | npm module | 컴퓨터 비전을 사용하여 동영상/GIF에서 키 프레임을 추출하기 위한 CLI 및 라이브러리. npm에 배포됩니다.         |
+| **[`@lumy-pack/line-lore`](./packages/line-lore/README.md)**     | npm module | git blame 분석을 통해 코드 라인을 원본 Pull Request로 역추적하는 CLI 및 라이브러리. npm에 배포됩니다. |
+| **[`@lumy-pack/ink-veil`](./packages/ink-veil/README.md)**       | npm module | 다중 문서 형식을 지원하는 한국어 개인정보(PII) 탐지 및 마스킹 CLI 및 라이브러리. npm에 배포됩니다. |
 
 ---
 

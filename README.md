@@ -27,6 +27,8 @@ Each package has its own `README.md` with usage, dependencies, and examples.
 | ------------------------------------------------------------ | ------------- | -------------------------------------------------------------------------------------------------------- |
 | **[`@lumy-pack/syncpoint`](./packages/syncpoint/README.md)**     | npm module | CLI for personal environment sync, backup/restore, and machine provisioning. Published to npm.            |
 | **[`@lumy-pack/scene-sieve`](./packages/scene-sieve/README.md)** | npm module | CLI and library for extracting key frames from video/GIF using computer vision. Published to npm.         |
+| **[`@lumy-pack/line-lore`](./packages/line-lore/README.md)**     | npm module | CLI and library for tracing code lines to their originating Pull Requests via git blame analysis. Published to npm. |
+| **[`@lumy-pack/ink-veil`](./packages/ink-veil/README.md)**       | npm module | CLI and library for Korean PII detection and masking with multi-format document support. Published to npm. |
 
 ---
 
