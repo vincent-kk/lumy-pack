@@ -1,18 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import type { TraceFullResult } from '@/core/core.js';
-import {
-  formatHuman,
-  formatJson,
-  formatLlm,
-  formatQuiet,
-} from '@/output/formats.js';
+import { formatLlm } from '@/output/formats.js';
 import {
   createErrorResponse,
   createPartialResponse,
   createSuccessResponse,
 } from '@/output/normalizer.js';
-import { ALL_COMMANDS, TRACE_COMMAND } from '@/utils/command-registry.js';
 
 /** Minimal TraceFullResult with one original_commit and one pull_request node. */
 function makeFullResult(
@@ -49,7 +43,7 @@ function makeFullResult(
   };
 }
 
-describe('E12: Output format normalization', () => {
+describe('E12: Output format — LLM and normalizer', () => {
   describe('createSuccessResponse', () => {
     it('sets tool to "line-lore", status to "success", and valid ISO 8601 timestamp', () => {
       const data = { value: 'test' };
@@ -127,56 +121,6 @@ describe('E12: Output format normalization', () => {
     });
   });
 
-  describe('formatHuman', () => {
-    it('contains commit SHA (short) and PR number', () => {
-      const result = makeFullResult();
-      const output = formatHuman(result);
-
-      // Short SHA (7 chars) of the commit node
-      expect(output).toContain('abc1234');
-      // PR number
-      expect(output).toContain('42');
-    });
-
-    it('includes warning lines when warnings are present', () => {
-      const result = makeFullResult({
-        warnings: ['Could not detect platform. Running in Level 0 (git only).'],
-      });
-      const output = formatHuman(result);
-
-      expect(output).toContain(
-        'Could not detect platform. Running in Level 0 (git only).',
-      );
-    });
-
-    it('returns empty string for result with no nodes and no warnings', () => {
-      const result = makeFullResult({ nodes: [], warnings: [] });
-      const output = formatHuman(result);
-      expect(output).toBe('');
-    });
-  });
-
-  describe('formatJson', () => {
-    it('returns valid JSON that parses back to the original result', () => {
-      const result = makeFullResult();
-      const output = formatJson(result);
-
-      expect(() => JSON.parse(output)).not.toThrow();
-      const parsed = JSON.parse(output) as TraceFullResult;
-      expect(parsed.operatingLevel).toBe(2);
-      expect(parsed.nodes).toHaveLength(2);
-    });
-
-    it('pretty-prints with 2-space indentation', () => {
-      const result = makeFullResult({ nodes: [] });
-      const output = formatJson(result);
-
-      // Pretty-printed JSON has newlines and spaces
-      expect(output).toContain('\n');
-      expect(output).toContain('  ');
-    });
-  });
-
   describe('formatLlm', () => {
     it('wraps result in NormalizedResponse envelope with tool="line-lore"', () => {
       // formatLlm uses require() which may fail in ESM — test the underlying normalizer instead
@@ -226,63 +170,6 @@ describe('E12: Output format normalization', () => {
     it('formatLlm function is exported from formats module', () => {
       // Verify the function exists and is callable (ESM require issue is a source-level bug)
       expect(typeof formatLlm).toBe('function');
-    });
-  });
-
-  describe('formatQuiet', () => {
-    it('returns PR number as string when pull_request node is present', () => {
-      const result = makeFullResult();
-      const output = formatQuiet(result);
-      expect(output).toBe('42');
-    });
-
-    it('returns short SHA when no pull_request node is present', () => {
-      const result = makeFullResult({
-        nodes: [
-          {
-            type: 'original_commit',
-            sha: 'abc1234567890123456789012345678901234567',
-            trackingMethod: 'blame-CMw',
-            confidence: 'exact',
-          },
-        ],
-      });
-      const output = formatQuiet(result);
-      expect(output).toBe('abc1234');
-    });
-
-    it('returns empty string when nodes array is empty', () => {
-      const result = makeFullResult({ nodes: [] });
-      const output = formatQuiet(result);
-      expect(output).toBe('');
-    });
-  });
-
-  describe('command-registry', () => {
-    it('ALL_COMMANDS contains all 4 commands', () => {
-      expect(ALL_COMMANDS).toHaveLength(4);
-      const names = ALL_COMMANDS.map((c) => c.name);
-      expect(names).toContain('trace');
-      expect(names).toContain('health');
-      expect(names).toContain('cache');
-      expect(names).toContain('graph');
-    });
-
-    it('trace command has required file argument and options', () => {
-      expect(TRACE_COMMAND.arguments).toBeDefined();
-      expect(TRACE_COMMAND.arguments![0].name).toBe('file');
-      expect(TRACE_COMMAND.arguments![0].required).toBe(true);
-      expect(TRACE_COMMAND.options).toBeDefined();
-      expect(TRACE_COMMAND.options!.length).toBeGreaterThan(0);
-    });
-
-    it('graph and cache commands have subcommands', () => {
-      const graph = ALL_COMMANDS.find((c) => c.name === 'graph')!;
-      const cache = ALL_COMMANDS.find((c) => c.name === 'cache')!;
-      expect(graph.subcommands).toBeDefined();
-      expect(graph.subcommands!.length).toBe(2);
-      expect(cache.subcommands).toBeDefined();
-      expect(cache.subcommands!.length).toBe(2);
     });
   });
 });
