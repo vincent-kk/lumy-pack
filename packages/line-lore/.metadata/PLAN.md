@@ -21,13 +21,13 @@
 
 > 참조: [01-overview.md](./01-overview.md), [05-infrastructure.md](./05-infrastructure.md)
 
-- [ ] `types/index.ts` — 전체 타입 정의 확정 (TraceNode, PlatformAdapter 등)
-- [ ] `errors.ts` — 에러 코드 확장 반영
-- [ ] `git/executor.ts` — execa 기반 git 명령 실행기
-- [ ] `git/remote.ts` — remote URL 파싱 + 플랫폼 감지
-- [ ] `git/health.ts` — commit-graph / bloom filter 가용성 점검
-- [ ] `cache/file-cache.ts` — JSON 파일 캐시 (읽기/쓰기/원자적 교체)
-- [ ] `utils/line-range.ts` — 라인 범위 파싱/검증
+- [x] `types/index.ts` — 전체 타입 정의 확정 (TraceNode, PlatformAdapter 등)
+- [x] `errors.ts` — 에러 코드 확장 반영
+- [x] `git/executor.ts` — execa 기반 git 명령 실행기
+- [x] `git/remote.ts` — remote URL 파싱 + 플랫폼 감지
+- [x] `git/health.ts` — commit-graph / bloom filter 가용성 점검
+- [x] `cache/file-cache.ts` — JSON 파일 캐시 (읽기/쓰기/원자적 교체)
+- [x] `utils/line-range.ts` — 라인 범위 파싱/검증
 
 **완료 기준**: git 명령 실행, 캐시 읽기/쓰기, 타입 시스템 안정
 

@@ -1,8 +1,30 @@
 // Public API
 export type {
+  AuthStatus,
   BlameResult,
+  CacheEntry,
   CommitInfo,
+  Confidence,
+  FeatureFlags,
+  GitExecOptions,
+  GitExecResult,
+  GraphOptions,
+  GraphResult,
+  HealthReport,
+  IssueInfo,
+  LineRange,
+  NormalizedResponse,
+  OperatingLevel,
+  PlatformAdapter,
+  PlatformType,
   PRInfo,
+  RateLimitInfo,
+  RemoteInfo,
+  TraceNode,
+  TraceNodeType,
   TraceOptions,
   TraceResult,
+  TrackingMethod,
 } from './types/index.js';
+
+export { LineLoreError, LineLoreErrorCode } from './errors.js';
