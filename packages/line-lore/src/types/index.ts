@@ -252,6 +252,63 @@ export interface LineRange {
   end: number;
 }
 
+// --- AST types ---
+
+export type SymbolKind = 'function' | 'method' | 'class' | 'arrow_function';
+
+export interface SymbolInfo {
+  name: string;
+  kind: SymbolKind;
+  startLine: number;
+  endLine: number;
+  bodyText: string;
+}
+
+export interface ContentHash {
+  exact: string;
+  structural: string;
+}
+
+export type ChangeType =
+  | 'rename'
+  | 'move'
+  | 'extract'
+  | 'identical'
+  | 'new'
+  | 'modified';
+
+export interface ComparisonResult {
+  change: ChangeType;
+  fromName?: string;
+  toName?: string;
+  fromFile?: string;
+  confidence: Confidence;
+}
+
+export interface AstTraceResult {
+  originSha: string;
+  originSymbol: SymbolInfo;
+  trackingMethod: 'ast-signature';
+  confidence: Confidence;
+  changes: ComparisonResult[];
+}
+
+// --- Stage result types (for Phase 4 orchestrator) ---
+
+export type CosmeticReason = 'whitespace' | 'import-order' | 'formatting';
+
+export interface BlameStageResult {
+  blame: BlameResult;
+  isCosmetic: boolean;
+  cosmeticReason?: CosmeticReason;
+}
+
+export interface AstDiffStageResult {
+  originalSha: string;
+  confidence: Confidence;
+  changeType: ChangeType;
+}
+
 // --- Graph types ---
 
 export interface GraphOptions {

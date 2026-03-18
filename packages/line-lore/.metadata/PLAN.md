@@ -35,14 +35,14 @@
 
 > 참조: [02-pipeline.md](./02-pipeline.md) 1단계
 
-- [ ] `core/blame/parsing/blame-parser.ts` — porcelain 출력 파서
-- [ ] `core/blame/detection/cosmetic-detector.ts` — 외관상 커밋 판별
-- [ ] `core/blame/blame.ts` — 진입점 (파서 + 판별기 조율)
-- [ ] `ast/parser.ts` — @ast-grep/napi 다중 언어 래퍼
-- [ ] `core/ast-diff/extraction/symbol-extractor.ts` — 심볼 추출
-- [ ] `core/ast-diff/extraction/signature-hasher.ts` — 콘텐츠 해시
-- [ ] `core/ast-diff/comparison/structure-comparator.ts` — 구조 비교
-- [ ] `core/ast-diff/ast-diff.ts` — AST 역추적 진입점
+- [x] `core/blame/parsing/blame-parser.ts` — porcelain 출력 파서
+- [x] `core/blame/detection/cosmetic-detector.ts` — 외관상 커밋 판별
+- [x] `core/blame/blame.ts` — 진입점 (파서 + 판별기 조율)
+- [x] `ast/parser.ts` — @ast-grep/napi 다중 언어 래퍼
+- [x] `core/ast-diff/extraction/symbol-extractor.ts` — 심볼 추출
+- [x] `core/ast-diff/extraction/signature-hasher.ts` — 콘텐츠 해시
+- [x] `core/ast-diff/comparison/structure-comparator.ts` — 구조 비교
+- [x] `core/ast-diff/ast-diff.ts` — AST 역추적 진입점
 
 **완료 기준**: 파일+라인 → 원본 커밋 SHA 반환 (AST 포함)
 
