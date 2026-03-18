@@ -15,3 +15,16 @@ export {
   findMatchAcrossFiles,
   traceByAst,
 } from './ast-diff/index.js';
+
+export {
+  extractPRFromMergeMessage,
+  findMergeCommit,
+} from './ancestry/index.js';
+export type { AncestryResult } from './ancestry/index.js';
+
+export {
+  computePatchId,
+  findPatchIdMatch,
+  resetPatchIdCache,
+} from './patch-id/index.js';
+export type { PatchIdResult } from './patch-id/index.js';

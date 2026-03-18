@@ -50,8 +50,8 @@
 
 > 참조: [02-pipeline.md](./02-pipeline.md) 2~3단계
 
-- [ ] `core/ancestry/ancestry.ts` — ancestry-path 병합 커밋 탐색
-- [ ] `core/patch-id/patch-id.ts` — patch-id 충돌 매핑 + 캐시
+- [x] `core/ancestry/ancestry.ts` — ancestry-path 병합 커밋 탐색
+- [x] `core/patch-id/patch-id.ts` — patch-id 충돌 매핑 + 캐시
 
 **완료 기준**: 커밋 SHA → 병합 커밋 발견 (rebase/squash 포함)
 
