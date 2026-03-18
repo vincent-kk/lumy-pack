@@ -107,9 +107,9 @@
 ### Phase 7: 마무리
 
 - [x] `index.ts` — 공개 API 확정 (trace, graph, health, clearCache)
-- [ ] package.json exports 맵 확정
-- [ ] README.md 작성
-- [ ] 통합 테스트 + E2E 시나리오
+- [x] package.json exports 맵 확정
+- [x] README.md, README-ko_kr.md 작성
+- [x] 통합 테스트 + E2E 시나리오
 - [ ] changeset 생성
 
 ## 의존 관계
