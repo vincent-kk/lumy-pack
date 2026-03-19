@@ -1,6 +1,6 @@
 {
   "name": "@lumy-pack/line-lore",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "CLI tool for tracing code lines to their originating Pull Requests via git blame",
   "keywords": [
     "cli",
