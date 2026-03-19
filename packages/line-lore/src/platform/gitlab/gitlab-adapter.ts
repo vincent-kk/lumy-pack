@@ -1,4 +1,4 @@
-import { gitExec } from '../../git/executor.js';
+import { shellExec } from '../../git/executor.js';
 import type {
   AuthStatus,
   IssueInfo,
@@ -20,8 +20,9 @@ export class GitLabAdapter implements PlatformAdapter {
 
   async checkAuth(): Promise<AuthStatus> {
     try {
-      const result = await gitExec(
-        ['glab', 'auth', 'status', '--hostname', this.hostname].slice(1),
+      const result = await shellExec(
+        'glab',
+        ['auth', 'status', '--hostname', this.hostname],
         { allowExitCodes: [1] },
       );
 
@@ -42,15 +43,12 @@ export class GitLabAdapter implements PlatformAdapter {
     if (this.scheduler.isRateLimited()) return null;
 
     try {
-      const result = await gitExec(
-        [
-          'glab',
-          'api',
-          `projects/:id/repository/commits/${sha}/merge_requests`,
-          '--hostname',
-          this.hostname,
-        ].slice(1),
-      );
+      const result = await shellExec('glab', [
+        'api',
+        `projects/:id/repository/commits/${sha}/merge_requests`,
+        '--hostname',
+        this.hostname,
+      ]);
 
       const mrs = JSON.parse(result.stdout);
       if (!Array.isArray(mrs) || mrs.length === 0) return null;
@@ -73,15 +71,12 @@ export class GitLabAdapter implements PlatformAdapter {
 
   async getPRCommits(prNumber: number): Promise<string[]> {
     try {
-      const result = await gitExec(
-        [
-          'glab',
-          'api',
-          `projects/:id/merge_requests/${prNumber}/commits`,
-          '--hostname',
-          this.hostname,
-        ].slice(1),
-      );
+      const result = await shellExec('glab', [
+        'api',
+        `projects/:id/merge_requests/${prNumber}/commits`,
+        '--hostname',
+        this.hostname,
+      ]);
 
       const commits = JSON.parse(result.stdout);
       if (!Array.isArray(commits)) return [];
@@ -93,15 +88,12 @@ export class GitLabAdapter implements PlatformAdapter {
 
   async getLinkedIssues(prNumber: number): Promise<IssueInfo[]> {
     try {
-      const result = await gitExec(
-        [
-          'glab',
-          'api',
-          `projects/:id/merge_requests/${prNumber}/closes_issues`,
-          '--hostname',
-          this.hostname,
-        ].slice(1),
-      );
+      const result = await shellExec('glab', [
+        'api',
+        `projects/:id/merge_requests/${prNumber}/closes_issues`,
+        '--hostname',
+        this.hostname,
+      ]);
 
       const issues = JSON.parse(result.stdout);
       if (!Array.isArray(issues)) return [];
@@ -123,15 +115,12 @@ export class GitLabAdapter implements PlatformAdapter {
 
   async getLinkedPRs(issueNumber: number): Promise<PRInfo[]> {
     try {
-      const result = await gitExec(
-        [
-          'glab',
-          'api',
-          `projects/:id/issues/${issueNumber}/related_merge_requests`,
-          '--hostname',
-          this.hostname,
-        ].slice(1),
-      );
+      const result = await shellExec('glab', [
+        'api',
+        `projects/:id/issues/${issueNumber}/related_merge_requests`,
+        '--hostname',
+        this.hostname,
+      ]);
 
       const mrs = JSON.parse(result.stdout);
       if (!Array.isArray(mrs)) return [];
