@@ -1,4 +1,4 @@
-import { gitExec } from '../../git/executor.js';
+import { shellExec } from '../../git/executor.js';
 import type {
   AuthStatus,
   IssueInfo,
@@ -20,20 +20,20 @@ export class GitHubAdapter implements PlatformAdapter {
 
   async checkAuth(): Promise<AuthStatus> {
     try {
-      const result = await gitExec(
-        ['gh', 'auth', 'status', '--hostname', this.hostname].slice(1),
+      const result = await shellExec(
+        'gh',
+        ['auth', 'token', '--hostname', this.hostname],
         {
           allowExitCodes: [1],
         },
       );
 
-      // gh auth status returns user info on stdout/stderr
-      const output = result.stdout + result.stderr;
-      const usernameMatch = /Logged in to .+ as (\S+)/.exec(output);
+      // gh auth token returns the stored token on stdout (local read, no network)
+      // exit code 0 = token found, exit code 1 = not authenticated
+      const hasToken = result.exitCode === 0 && result.stdout.trim().length > 0;
 
       return {
-        authenticated: result.exitCode === 0,
-        username: usernameMatch?.[1],
+        authenticated: hasToken,
         hostname: this.hostname,
       };
     } catch {
@@ -45,17 +45,14 @@ export class GitHubAdapter implements PlatformAdapter {
     if (this.scheduler.isRateLimited()) return null;
 
     try {
-      const result = await gitExec(
-        [
-          'gh',
-          'api',
-          `repos/{owner}/{repo}/commits/${sha}/pulls`,
-          '--hostname',
-          this.hostname,
-          '--jq',
-          '.[0] | {number, title, user: .user.login, html_url, merge_commit_sha, base: .base.ref, merged_at}',
-        ].slice(1),
-      );
+      const result = await shellExec('gh', [
+        'api',
+        `repos/{owner}/{repo}/commits/${sha}/pulls`,
+        '--hostname',
+        this.hostname,
+        '--jq',
+        '.[0] | {number, title, user: .user.login, html_url, merge_commit_sha, base: .base.ref, merged_at}',
+      ]);
 
       const data = JSON.parse(result.stdout);
       if (!data?.number) return null;
@@ -76,17 +73,14 @@ export class GitHubAdapter implements PlatformAdapter {
 
   async getPRCommits(prNumber: number): Promise<string[]> {
     try {
-      const result = await gitExec(
-        [
-          'gh',
-          'api',
-          `repos/{owner}/{repo}/pulls/${prNumber}/commits`,
-          '--hostname',
-          this.hostname,
-          '--jq',
-          '.[].sha',
-        ].slice(1),
-      );
+      const result = await shellExec('gh', [
+        'api',
+        `repos/{owner}/{repo}/pulls/${prNumber}/commits`,
+        '--hostname',
+        this.hostname,
+        '--jq',
+        '.[].sha',
+      ]);
 
       return result.stdout.trim().split('\n').filter(Boolean);
     } catch {
@@ -96,19 +90,16 @@ export class GitHubAdapter implements PlatformAdapter {
 
   async getLinkedIssues(prNumber: number): Promise<IssueInfo[]> {
     try {
-      const result = await gitExec(
-        [
-          'gh',
-          'api',
-          'graphql',
-          '--hostname',
-          this.hostname,
-          '-f',
-          `query=query { repository(owner: "{owner}", name: "{repo}") { pullRequest(number: ${prNumber}) { closingIssuesReferences(first: 10) { nodes { number title url state labels(first: 5) { nodes { name } } } } } } }`,
-          '--jq',
-          '.data.repository.pullRequest.closingIssuesReferences.nodes',
-        ].slice(1),
-      );
+      const result = await shellExec('gh', [
+        'api',
+        'graphql',
+        '--hostname',
+        this.hostname,
+        '-f',
+        `query=query { repository(owner: "{owner}", name: "{repo}") { pullRequest(number: ${prNumber}) { closingIssuesReferences(first: 10) { nodes { number title url state labels(first: 5) { nodes { name } } } } } } }`,
+        '--jq',
+        '.data.repository.pullRequest.closingIssuesReferences.nodes',
+      ]);
 
       const nodes = JSON.parse(result.stdout);
       if (!Array.isArray(nodes)) return [];
@@ -131,17 +122,14 @@ export class GitHubAdapter implements PlatformAdapter {
 
   async getLinkedPRs(issueNumber: number): Promise<PRInfo[]> {
     try {
-      const result = await gitExec(
-        [
-          'gh',
-          'api',
-          `repos/{owner}/{repo}/issues/${issueNumber}/timeline`,
-          '--hostname',
-          this.hostname,
-          '--jq',
-          '[.[] | select(.source.issue.pull_request) | .source.issue] | map({number, title, user: .user.login, html_url, merge_commit_sha: .pull_request.merge_commit_sha, base: "main", merged_at: .pull_request.merged_at})',
-        ].slice(1),
-      );
+      const result = await shellExec('gh', [
+        'api',
+        `repos/{owner}/{repo}/issues/${issueNumber}/timeline`,
+        '--hostname',
+        this.hostname,
+        '--jq',
+        '[.[] | select(.source.issue.pull_request) | .source.issue] | map({number, title, user: .user.login, html_url, merge_commit_sha: .pull_request.merge_commit_sha, base: "main", merged_at: .pull_request.merged_at})',
+      ]);
 
       const prs = JSON.parse(result.stdout);
       if (!Array.isArray(prs)) return [];
@@ -162,17 +150,14 @@ export class GitHubAdapter implements PlatformAdapter {
 
   async getRateLimit(): Promise<RateLimitInfo> {
     try {
-      const result = await gitExec(
-        [
-          'gh',
-          'api',
-          'rate_limit',
-          '--hostname',
-          this.hostname,
-          '--jq',
-          '.rate | {limit, remaining, reset}',
-        ].slice(1),
-      );
+      const result = await shellExec('gh', [
+        'api',
+        'rate_limit',
+        '--hostname',
+        this.hostname,
+        '--jq',
+        '.rate | {limit, remaining, reset}',
+      ]);
 
       const data = JSON.parse(result.stdout);
       const info: RateLimitInfo = {

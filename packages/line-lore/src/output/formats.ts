@@ -60,8 +60,13 @@ function formatNodeHuman(node: TraceNode): string {
       return `${pc.blue('◆')} Merge ${sha}`;
     case 'rebased_commit':
       return `${pc.magenta('◇')} Rebased ${sha} → ${node.patchId ? pc.dim(`patch-id: ${node.patchId.slice(0, 7)}`) : ''}`;
-    case 'pull_request':
-      return `${pc.green('▸')} PR #${pc.bold(String(node.prNumber))} ${node.prTitle ? pc.white(node.prTitle) : ''} ${node.prUrl ? pc.dim(node.prUrl) : ''}`;
+    case 'pull_request': {
+      const prLine = `${pc.green('▸')} PR #${pc.bold(String(node.prNumber))} ${node.prTitle ? pc.white(node.prTitle) : ''}`;
+      if (node.prUrl) {
+        return `${prLine}\n  ${pc.dim('└─')} ${pc.underline(pc.dim(node.prUrl))}`;
+      }
+      return prLine;
+    }
     case 'issue':
       return `${pc.cyan('▹')} Issue #${node.issueNumber} ${node.issueTitle ?? ''}`;
     default:

@@ -34,22 +34,25 @@ export async function analyzeBlameResults(
   const uniqueShas = [...new Set(results.map((r) => r.commitHash))];
   const cosmeticMap = new Map<string, ReturnType<typeof isCosmeticDiff>>();
 
-  for (const sha of uniqueShas) {
-    if (sha === '0'.repeat(40)) continue;
-    try {
-      const blameResult = results.find((r) => r.commitHash === sha);
-      if (!blameResult) continue;
-      const file =
-        blameResult.originalFile ??
-        results.find((r) => r.commitHash === sha)?.lineContent;
+  const zeroSha = '0'.repeat(40);
+  await Promise.all(
+    uniqueShas
+      .filter((sha) => sha !== zeroSha)
+      .map(async (sha) => {
+        try {
+          const blameResult = results.find((r) => r.commitHash === sha);
+          if (!blameResult) return;
+          const file =
+            blameResult.originalFile ??
+            results.find((r) => r.commitHash === sha)?.lineContent;
 
-      // Try to get diff for this commit
-      const diff = await getCosmeticDiff(sha, file ?? '', options);
-      cosmeticMap.set(sha, isCosmeticDiff(diff));
-    } catch {
-      cosmeticMap.set(sha, { isCosmetic: false });
-    }
-  }
+          const diff = await getCosmeticDiff(sha, file ?? '', options);
+          cosmeticMap.set(sha, isCosmeticDiff(diff));
+        } catch {
+          cosmeticMap.set(sha, { isCosmetic: false });
+        }
+      }),
+  );
 
   return results.map((blame) => {
     const cosmetic = cosmeticMap.get(blame.commitHash);

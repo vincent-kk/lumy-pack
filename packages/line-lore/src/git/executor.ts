@@ -3,14 +3,17 @@ import { execa } from 'execa';
 import { LineLoreError, LineLoreErrorCode } from '../errors.js';
 import type { GitExecOptions, GitExecResult } from '../types/index.js';
 
-export async function gitExec(
+async function execCommand(
+  command: string,
   args: string[],
   options?: GitExecOptions,
+  errorCode?: LineLoreErrorCode,
 ): Promise<GitExecResult> {
   const { cwd, timeout, allowExitCodes = [] } = options ?? {};
+  const failCode = errorCode ?? LineLoreErrorCode.GIT_COMMAND_FAILED;
 
   try {
-    const result = await execa('git', args, {
+    const result = await execa(command, args, {
       cwd,
       timeout,
       reject: false,
@@ -20,9 +23,9 @@ export async function gitExec(
 
     if (exitCode !== 0 && !allowExitCodes.includes(exitCode)) {
       throw new LineLoreError(
-        LineLoreErrorCode.GIT_COMMAND_FAILED,
-        `git ${args[0]} failed with exit code ${exitCode}: ${result.stderr}`,
-        { args, exitCode, stderr: result.stderr, cwd },
+        failCode,
+        `${command} ${args[0]} failed with exit code ${exitCode}: ${result.stderr}`,
+        { command, args, exitCode, stderr: result.stderr, cwd },
       );
     }
 
@@ -42,15 +45,40 @@ export async function gitExec(
     if (isTimeout) {
       throw new LineLoreError(
         LineLoreErrorCode.GIT_TIMEOUT,
-        `git ${args[0]} timed out after ${timeout}ms`,
-        { args, timeout, cwd },
+        `${command} ${args[0]} timed out after ${timeout}ms`,
+        { command, args, timeout, cwd },
       );
     }
 
     throw new LineLoreError(
-      LineLoreErrorCode.GIT_COMMAND_FAILED,
-      `git ${args[0]} failed: ${error instanceof Error ? error.message : String(error)}`,
-      { args, cwd },
+      failCode,
+      `${command} ${args[0]} failed: ${error instanceof Error ? error.message : String(error)}`,
+      { command, args, cwd },
     );
   }
+}
+
+export async function gitExec(
+  args: string[],
+  options?: GitExecOptions,
+): Promise<GitExecResult> {
+  return execCommand(
+    'git',
+    args,
+    options,
+    LineLoreErrorCode.GIT_COMMAND_FAILED,
+  );
+}
+
+export async function shellExec(
+  command: string,
+  args: string[],
+  options?: GitExecOptions,
+): Promise<GitExecResult> {
+  return execCommand(
+    command,
+    args,
+    options,
+    LineLoreErrorCode.API_REQUEST_FAILED,
+  );
 }

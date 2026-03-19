@@ -2,6 +2,7 @@ import { isAstAvailable } from '../ast/index.js';
 import { checkGitHealth } from '../git/health.js';
 import { detectPlatformAdapter } from '../platform/index.js';
 import type {
+  AuthStatus,
   FeatureFlags,
   GitExecOptions,
   HealthReport,
@@ -23,13 +24,35 @@ export interface TraceFullResult {
   warnings: string[];
 }
 
-export async function trace(options: TraceOptions): Promise<TraceFullResult> {
+interface PlatformDetectionResult {
+  adapter: PlatformAdapter | null;
+  operatingLevel: OperatingLevel;
+  warnings: string[];
+}
+
+interface BlameAndAuthResult {
+  analyzed: Awaited<ReturnType<typeof analyzeBlameResults>>;
+  operatingLevel: OperatingLevel;
+  warnings: string[];
+}
+
+function computeFeatureFlags(
+  operatingLevel: OperatingLevel,
+  options: TraceOptions,
+): FeatureFlags {
+  return {
+    astDiff: isAstAvailable() && !options.noAst,
+    deepTrace: operatingLevel === 2 && (options.deep ?? false),
+    commitGraph: false,
+    issueGraph: operatingLevel === 2 && (options.graphDepth ?? 0) > 0,
+    graphql: operatingLevel === 2,
+  };
+}
+
+async function detectPlatform(
+  options: TraceOptions,
+): Promise<PlatformDetectionResult> {
   const warnings: string[] = [];
-  const nodes: TraceNode[] = [];
-
-  const execOptions: GitExecOptions = { cwd: undefined };
-
-  // Detect platform and operating level
   let adapter: PlatformAdapter | null = null;
   let operatingLevel: OperatingLevel = 0;
 
@@ -38,9 +61,39 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
       remoteName: options.remote,
     });
     adapter = detectedAdapter;
+  } catch {
+    operatingLevel = 0;
+    warnings.push('Could not detect platform. Running in Level 0 (git only).');
+  }
 
-    const authStatus = await adapter.checkAuth();
-    if (authStatus.authenticated) {
+  return { adapter, operatingLevel, warnings };
+}
+
+async function runBlameAndAuth(
+  adapter: PlatformAdapter | null,
+  options: TraceOptions,
+  execOptions: GitExecOptions,
+): Promise<BlameAndAuthResult> {
+  const warnings: string[] = [];
+
+  const lineRange = parseLineRange(
+    options.endLine ? `${options.line},${options.endLine}` : `${options.line}`,
+  );
+
+  const blameChain = executeBlame(options.file, lineRange, execOptions).then(
+    (results) => analyzeBlameResults(results, execOptions),
+  );
+
+  const [authResult, blameResult] = await Promise.allSettled([
+    adapter
+      ? adapter.checkAuth()
+      : Promise.resolve({ authenticated: false } as AuthStatus),
+    blameChain,
+  ]);
+
+  let operatingLevel: OperatingLevel = 0;
+  if (adapter && authResult.status === 'fulfilled') {
+    if (authResult.value.authenticated) {
       operatingLevel = 2;
     } else {
       operatingLevel = 1;
@@ -48,26 +101,23 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
         'Platform CLI not authenticated. Running in Level 1 (local only).',
       );
     }
-  } catch {
-    operatingLevel = 0;
-    warnings.push('Could not detect platform. Running in Level 0 (git only).');
   }
 
-  const featureFlags: FeatureFlags = {
-    astDiff: isAstAvailable() && !options.noAst,
-    deepTrace: operatingLevel === 2 && (options.deep ?? false),
-    commitGraph: false,
-    issueGraph: operatingLevel === 2 && (options.graphDepth ?? 0) > 0,
-    graphql: operatingLevel === 2,
-  };
+  if (blameResult.status === 'rejected') {
+    throw blameResult.reason;
+  }
 
-  // Stage 1: Line → Commit (Blame)
-  const lineRange = parseLineRange(
-    options.endLine ? `${options.line},${options.endLine}` : `${options.line}`,
-  );
+  return { analyzed: blameResult.value, operatingLevel, warnings };
+}
 
-  const blameResults = await executeBlame(options.file, lineRange, execOptions);
-  const analyzed = await analyzeBlameResults(blameResults, execOptions);
+async function buildTraceNodes(
+  analyzed: Awaited<ReturnType<typeof analyzeBlameResults>>,
+  featureFlags: FeatureFlags,
+  adapter: PlatformAdapter | null,
+  options: TraceOptions,
+  execOptions: GitExecOptions,
+): Promise<TraceNode[]> {
+  const nodes: TraceNode[] = [];
 
   for (const entry of analyzed) {
     const commitNode: TraceNode = {
@@ -81,7 +131,7 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
     };
     nodes.push(commitNode);
 
-    // Stage 1-B: AST trace for cosmetic commits
+    // AST trace for cosmetic commits
     if (entry.isCosmetic && featureFlags.astDiff) {
       const astResult = await traceByAst(
         options.file,
@@ -100,7 +150,7 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
       }
     }
 
-    // Stage 2-4: Commit → PR
+    // Commit → PR lookup
     const targetSha = nodes[nodes.length - 1].sha;
     if (targetSha) {
       const prInfo = await lookupPR(targetSha, adapter, execOptions);
@@ -118,6 +168,37 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
       }
     }
   }
+
+  return nodes;
+}
+
+export async function trace(options: TraceOptions): Promise<TraceFullResult> {
+  const execOptions: GitExecOptions = { cwd: undefined };
+
+  // Stage 1: Platform detection
+  const platform = await detectPlatform(options);
+
+  // Stage 2: Auth check + Blame in parallel
+  const blameAuth = await runBlameAndAuth(
+    platform.adapter,
+    options,
+    execOptions,
+  );
+
+  const operatingLevel = blameAuth.operatingLevel || platform.operatingLevel;
+  const warnings = [...platform.warnings, ...blameAuth.warnings];
+
+  // Stage 3: Compute feature flags
+  const featureFlags = computeFeatureFlags(operatingLevel, options);
+
+  // Stage 4: Build trace nodes
+  const nodes = await buildTraceNodes(
+    blameAuth.analyzed,
+    featureFlags,
+    platform.adapter,
+    options,
+    execOptions,
+  );
 
   return { nodes, operatingLevel, featureFlags, warnings };
 }
