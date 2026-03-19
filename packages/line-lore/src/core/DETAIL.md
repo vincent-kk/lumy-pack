@@ -2,7 +2,8 @@
 
 ## Requirements
 
-- blame → 코스메틱 감지 → 조상 추적 → PR 조회 단계를 오케스트레이션
+- 플랫폼 감지 → (인증 확인 ∥ blame 실행) → 조상 추적 → PR 조회 단계를 오케스트레이션
+- 인증 확인과 blame을 `Promise.allSettled`로 병렬 실행하여 지연 시간 최소화
 - git 헬스 및 플랫폼 가용성으로 운영 수준 결정
 - 스쿼시 머지 감지를 위한 AST diff 기반 딥 트레이싱 지원
 - 결과를 노드, 경고, 수준이 포함된 `TraceFullResult`로 집계
