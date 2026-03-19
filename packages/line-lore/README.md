@@ -79,13 +79,178 @@ console.log(result.warnings);         // degradation messages
 
 No ML or heuristics — results are always reproducible.
 
+## Understanding the Output
+
+### TraceNode — the core unit of output
+
+Every `trace()` call returns a `nodes` array. Each node represents one step in the ancestry chain from the code line back to its PR. Nodes are ordered from most recent (the line's direct commit) to most distant (the PR or issue).
+
+```typescript
+interface TraceNode {
+  type: TraceNodeType;         // What this node represents
+  sha?: string;                // Git commit hash (40 chars)
+  trackingMethod: TrackingMethod;  // How this node was discovered
+  confidence: Confidence;      // How reliable this result is
+  prNumber?: number;           // PR/MR number (only on pull_request nodes)
+  prUrl?: string;              // Full URL to PR (only with Level 2 API access)
+  prTitle?: string;            // PR title (only with Level 2 API access)
+  mergedAt?: string;           // When the PR was merged (ISO 8601)
+  patchId?: string;            // Git patch-id (only on rebased_commit nodes)
+  note?: string;               // Additional context (e.g., "Cosmetic change: whitespace")
+  issueNumber?: number;        // Issue number (only on issue nodes)
+  issueUrl?: string;           // Issue URL
+  issueTitle?: string;         // Issue title
+  issueState?: 'open' | 'closed';
+  issueLabels?: string[];
+}
+```
+
+### Node types
+
+| Type | Symbol | Meaning | When it appears |
+|------|--------|---------|-----------------|
+| `original_commit` | `●` | The commit that introduced or last modified this line | Always (at least one) |
+| `cosmetic_commit` | `○` | A formatting-only change (whitespace, imports) | When AST detects no logic change |
+| `merge_commit` | `◆` | The merge commit on the base branch | Merge-based workflows |
+| `rebased_commit` | `◇` | A rebased version of the original commit | Rebase workflows with patch-id match |
+| `pull_request` | `▸` | The PR/MR that introduced this change | When PR is found (Level 1 or 2) |
+| `issue` | `▹` | A linked issue from the PR | When `--graph-depth >= 1` with Level 2 |
+
+### Tracking methods
+
+| Method | Stage | Meaning |
+|--------|-------|---------|
+| `blame-CMw` | 1 | Found via `git blame -C -C -M -w` |
+| `ast-signature` | 1-B | Found via AST structural comparison |
+| `message-parse` | 3 | PR number extracted from merge commit message (e.g., `Merge pull request #42`) |
+| `ancestry-path` | 3 | Found via `git log --ancestry-path --merges` |
+| `patch-id` | 3 | Matched via `git patch-id` (rebase detection) |
+| `api` | 4 | Found via GitHub/GitLab REST API |
+| `issue-link` | 4+ | Found via PR-to-issue link in API |
+
+### Confidence levels
+
+| Level | Meaning |
+|-------|---------|
+| `exact` | Deterministic match (blame, API lookup) |
+| `structural` | AST structure matches but not byte-identical |
+| `heuristic` | Best-effort match (message parsing, patch-id) |
+
+### Output examples
+
+**Typical merge workflow (Level 2):**
+```
+● Commit a1b2c3d [exact] via blame-CMw
+▸ PR #42 feat: add authentication https://github.com/org/repo/pull/42
+```
+
+**Squash merge (Level 2):**
+```
+● Commit e4f5a6b [exact] via blame-CMw
+▸ PR #55 refactor: user service https://github.com/org/repo/pull/55
+```
+
+**Cosmetic change detected (AST enabled):**
+```
+○ Cosmetic d7e8f9a [exact] Cosmetic change: whitespace-only
+● Commit b2c3d4e [structural] via ast-signature
+▸ PR #31 feat: original logic https://github.com/org/repo/pull/31
+```
+
+**Level 0 (offline — no platform CLI):**
+```
+● Commit a1b2c3d [exact] via blame-CMw
+
+⚠ Could not detect platform. Running in Level 0 (git only).
+```
+
+**Level 1 (CLI found, not authenticated):**
+```
+● Commit a1b2c3d [exact] via blame-CMw
+▸ PR #42 [heuristic] via message-parse
+
+⚠ Platform CLI not authenticated. Running in Level 1 (local only).
+```
+
+**JSON output (`--output json`):**
+```json
+{
+  "nodes": [
+    {
+      "type": "original_commit",
+      "sha": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0",
+      "trackingMethod": "blame-CMw",
+      "confidence": "exact"
+    },
+    {
+      "type": "pull_request",
+      "sha": "f0e1d2c3b4a5f6e7d8c9b0a1f2e3d4c5b6a7f8e9",
+      "trackingMethod": "api",
+      "confidence": "exact",
+      "prNumber": 42,
+      "prUrl": "https://github.com/org/repo/pull/42",
+      "prTitle": "feat: add authentication",
+      "mergedAt": "2025-03-15T10:30:00Z"
+    }
+  ],
+  "operatingLevel": 2,
+  "featureFlags": {
+    "astDiff": true,
+    "deepTrace": false,
+    "commitGraph": false,
+    "issueGraph": false,
+    "graphql": true
+  },
+  "warnings": []
+}
+```
+
+**Quiet mode (`--quiet`):**
+```
+42
+```
+Returns just the PR number. If no PR is found, returns the short commit SHA (e.g., `a1b2c3d`).
+
+### How to interpret results
+
+| What you see | What it means |
+|--------------|---------------|
+| Only `original_commit` | The commit was found but no PR could be linked (direct push, or Level 0) |
+| `original_commit` + `pull_request` | Successfully traced line → commit → PR |
+| `cosmetic_commit` + `original_commit` + `pull_request` | Line was reformatted; AST traced back to the real logic change |
+| `prUrl` is empty | PR was found via message parsing (Level 1) but no API details available |
+| `warnings` array has entries | Some features are degraded — check `operatingLevel` |
+| `operatingLevel: 0` | No platform CLI — only git blame results available |
+| `operatingLevel: 1` | CLI found but not authenticated — PR lookup via merge message only |
+| `operatingLevel: 2` | Full API access — most accurate results |
+
 ## Operating Levels
 
-- **Level 0**: Git only (offline, fastest)
-- **Level 1**: Platform CLI detected but not authenticated
-- **Level 2**: Full API access (GitHub/GitLab authenticated)
+| Level | Requirements | What works | What doesn't |
+|-------|-------------|------------|--------------|
+| **0** | Git only | Blame, AST diff | PR lookup, issue graph |
+| **1** | `gh`/`glab` CLI installed | Blame, AST diff, PR via merge message | API-based PR lookup, issue graph, deep trace |
+| **2** | `gh`/`glab` CLI authenticated | Everything | — |
 
-Higher levels unlock deep tracing, issue graph traversal, and more accurate PR matching.
+Run `line-lore health` to check your current level:
+```bash
+npx @lumy-pack/line-lore health
+```
+
+### Upgrading your level
+
+```bash
+# Level 0 → 1: Install the CLI
+brew install gh        # GitHub
+brew install glab      # GitLab
+
+# Level 1 → 2: Authenticate
+gh auth login          # GitHub
+glab auth login        # GitLab
+
+# GitHub Enterprise: authenticate with your hostname
+gh auth login --hostname git.corp.com
+```
 
 ## Platform Support
 
@@ -93,6 +258,8 @@ Higher levels unlock deep tracing, issue graph traversal, and more accurate PR m
 - GitHub Enterprise Server
 - GitLab.com
 - GitLab Self-Hosted
+
+Platform is auto-detected from your git remote URL. Unknown hosts default to GitHub Enterprise.
 
 ## API Reference
 
@@ -115,10 +282,32 @@ Trace a code line to its originating PR.
 **Returns:**
 ```typescript
 {
-  nodes: TraceNode[];           // Ancestry nodes (commits, PRs, etc)
-  operatingLevel: 0 | 1 | 2;    // Capability level
-  featureFlags: FeatureFlags;   // Enabled features
+  nodes: TraceNode[];           // Ancestry chain (commits → PRs → issues)
+  operatingLevel: 0 | 1 | 2;    // Current capability level
+  featureFlags: FeatureFlags;   // Which features are active
   warnings: string[];           // Degradation notices
+}
+```
+
+**How to read the result:**
+```typescript
+const result = await trace({ file: 'src/auth.ts', line: 42 });
+
+// Did we find a PR?
+const prNode = result.nodes.find(n => n.type === 'pull_request');
+if (prNode) {
+  console.log(`PR #${prNode.prNumber}: ${prNode.prTitle}`);
+  console.log(`URL: ${prNode.prUrl}`);       // only at Level 2
+  console.log(`Merged: ${prNode.mergedAt}`);  // only at Level 2
+} else {
+  // No PR found — line was a direct commit or Level 0
+  const commit = result.nodes.find(n => n.type === 'original_commit');
+  console.log(`Direct commit: ${commit?.sha}`);
+}
+
+// Check if results are degraded
+if (result.operatingLevel < 2) {
+  console.warn('Limited results:', result.warnings);
 }
 ```
 
