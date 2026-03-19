@@ -141,20 +141,23 @@ interface TraceNode {
 **일반적인 merge 워크플로 (Level 2):**
 ```
 ● Commit a1b2c3d [exact] via blame-CMw
-▸ PR #42 feat: add authentication https://github.com/org/repo/pull/42
+▸ PR #42 feat: add authentication
+  └─ https://github.com/org/repo/pull/42
 ```
 
 **Squash merge (Level 2):**
 ```
 ● Commit e4f5a6b [exact] via blame-CMw
-▸ PR #55 refactor: user service https://github.com/org/repo/pull/55
+▸ PR #55 refactor: user service
+  └─ https://github.com/org/repo/pull/55
 ```
 
 **외관상 변경 감지 (AST 활성화):**
 ```
 ○ Cosmetic d7e8f9a [exact] Cosmetic change: whitespace-only
 ● Commit b2c3d4e [structural] via ast-signature
-▸ PR #31 feat: original logic https://github.com/org/repo/pull/31
+▸ PR #31 feat: original logic
+  └─ https://github.com/org/repo/pull/31
 ```
 
 **Level 0 (오프라인 — 플랫폼 CLI 없음):**
