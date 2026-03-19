@@ -1,3 +1,5 @@
+import { execa } from 'execa';
+
 import { FileCache } from '../../cache/file-cache.js';
 import { gitExec } from '../../git/executor.js';
 import type { GitExecOptions } from '../../types/index.js';
@@ -27,9 +29,8 @@ export async function computePatchId(
   if (cached) return cached;
 
   try {
-    const { execa: execaFn } = await import('execa');
     const cwd = options?.cwd ?? '.';
-    const result = await execaFn(
+    const result = await execa(
       'bash',
       [
         '-c',

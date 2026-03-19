@@ -22,19 +22,18 @@ export class GitHubAdapter implements PlatformAdapter {
     try {
       const result = await shellExec(
         'gh',
-        ['auth', 'status', '--hostname', this.hostname],
+        ['auth', 'token', '--hostname', this.hostname],
         {
           allowExitCodes: [1],
         },
       );
 
-      // gh auth status returns user info on stdout/stderr
-      const output = result.stdout + result.stderr;
-      const usernameMatch = /Logged in to .+ as (\S+)/.exec(output);
+      // gh auth token returns the stored token on stdout (local read, no network)
+      // exit code 0 = token found, exit code 1 = not authenticated
+      const hasToken = result.exitCode === 0 && result.stdout.trim().length > 0;
 
       return {
-        authenticated: result.exitCode === 0,
-        username: usernameMatch?.[1],
+        authenticated: hasToken,
         hostname: this.hostname,
       };
     } catch {

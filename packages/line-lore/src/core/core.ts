@@ -2,6 +2,7 @@ import { isAstAvailable } from '../ast/index.js';
 import { checkGitHealth } from '../git/health.js';
 import { detectPlatformAdapter } from '../platform/index.js';
 import type {
+  AuthStatus,
   FeatureFlags,
   GitExecOptions,
   HealthReport,
@@ -33,14 +34,36 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
   let adapter: PlatformAdapter | null = null;
   let operatingLevel: OperatingLevel = 0;
 
+  // Stage 1: Platform detection (local git operation — must complete before auth)
   try {
     const { adapter: detectedAdapter } = await detectPlatformAdapter({
       remoteName: options.remote,
     });
     adapter = detectedAdapter;
+  } catch {
+    operatingLevel = 0;
+    warnings.push('Could not detect platform. Running in Level 0 (git only).');
+  }
 
-    const authStatus = await adapter.checkAuth();
-    if (authStatus.authenticated) {
+  // Stage 2: Auth check + Blame run in parallel (independent operations)
+  const lineRange = parseLineRange(
+    options.endLine ? `${options.line},${options.endLine}` : `${options.line}`,
+  );
+
+  const blameChain = executeBlame(options.file, lineRange, execOptions).then(
+    (results) => analyzeBlameResults(results, execOptions),
+  );
+
+  const [authResult, blameResult] = await Promise.allSettled([
+    adapter
+      ? adapter.checkAuth()
+      : Promise.resolve({ authenticated: false } as AuthStatus),
+    blameChain,
+  ]);
+
+  // Determine operating level from auth result
+  if (adapter && authResult.status === 'fulfilled') {
+    if (authResult.value.authenticated) {
       operatingLevel = 2;
     } else {
       operatingLevel = 1;
@@ -48,10 +71,13 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
         'Platform CLI not authenticated. Running in Level 1 (local only).',
       );
     }
-  } catch {
-    operatingLevel = 0;
-    warnings.push('Could not detect platform. Running in Level 0 (git only).');
   }
+
+  // Extract blame results (rethrow if blame failed — it's critical)
+  if (blameResult.status === 'rejected') {
+    throw blameResult.reason;
+  }
+  const analyzed = blameResult.value;
 
   const featureFlags: FeatureFlags = {
     astDiff: isAstAvailable() && !options.noAst,
@@ -60,14 +86,6 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
     issueGraph: operatingLevel === 2 && (options.graphDepth ?? 0) > 0,
     graphql: operatingLevel === 2,
   };
-
-  // Stage 1: Line → Commit (Blame)
-  const lineRange = parseLineRange(
-    options.endLine ? `${options.line},${options.endLine}` : `${options.line}`,
-  );
-
-  const blameResults = await executeBlame(options.file, lineRange, execOptions);
-  const analyzed = await analyzeBlameResults(blameResults, execOptions);
 
   for (const entry of analyzed) {
     const commitNode: TraceNode = {

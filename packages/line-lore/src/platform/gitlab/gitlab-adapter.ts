@@ -19,6 +19,11 @@ export class GitLabAdapter implements PlatformAdapter {
   }
 
   async checkAuth(): Promise<AuthStatus> {
+    // Fast path: check GITLAB_TOKEN env var (no subprocess needed)
+    if (process.env.GITLAB_TOKEN) {
+      return { authenticated: true, hostname: this.hostname };
+    }
+
     try {
       const result = await shellExec(
         'glab',
@@ -26,12 +31,8 @@ export class GitLabAdapter implements PlatformAdapter {
         { allowExitCodes: [1] },
       );
 
-      const output = result.stdout + result.stderr;
-      const usernameMatch = /Logged in to .+ as (\S+)/.exec(output);
-
       return {
         authenticated: result.exitCode === 0,
-        username: usernameMatch?.[1],
         hostname: this.hostname,
       };
     } catch {

@@ -24,9 +24,9 @@ describe('GitHubAdapter uses shellExec with gh command', () => {
     adapter = new GitHubAdapter({ hostname: 'github.com' });
   });
 
-  it('checkAuth calls shellExec with gh', async () => {
+  it('checkAuth calls shellExec with gh auth token', async () => {
     mockShellExec.mockResolvedValueOnce({
-      stdout: 'Logged in to github.com as testuser',
+      stdout: 'gho_xxxxxxxxxxxx',
       stderr: '',
       exitCode: 0,
     });
@@ -36,7 +36,7 @@ describe('GitHubAdapter uses shellExec with gh command', () => {
     expect(result.authenticated).toBe(true);
     expect(mockShellExec).toHaveBeenCalledWith(
       'gh',
-      expect.arrayContaining(['auth', 'status']),
+      expect.arrayContaining(['auth', 'token']),
       expect.any(Object),
     );
     // Verify first arg is 'gh', NOT 'git'
@@ -69,7 +69,7 @@ describe('GitHubEnterpriseAdapter uses shellExec with gh command', () => {
 
   it('checkAuth passes enterprise hostname to gh', async () => {
     mockShellExec.mockResolvedValueOnce({
-      stdout: 'Logged in to git.corp.com as corpuser',
+      stdout: 'gho_enterprise_token',
       stderr: '',
       exitCode: 0,
     });
