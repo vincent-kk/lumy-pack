@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { gitExec } from '@/git/executor.js';
+import { gitExec, shellExec } from '@/git/executor.js';
 
 import {
   computePatchId,
@@ -10,12 +10,9 @@ import {
 
 const mockStore = new Map<string, unknown>();
 
-vi.mock('execa', () => ({
-  execa: vi.fn(),
-}));
-
 vi.mock('@/git/executor.js', () => ({
   gitExec: vi.fn(),
+  shellExec: vi.fn(),
 }));
 
 vi.mock('@/cache/file-cache.js', () => ({
@@ -31,25 +28,18 @@ vi.mock('@/cache/file-cache.js', () => ({
 }));
 
 const mockGitExec = gitExec as ReturnType<typeof vi.fn>;
-
-async function getExecaMock() {
-  const { execa } = await import('execa');
-  return execa as ReturnType<typeof vi.fn>;
-}
+const mockShellExec = shellExec as ReturnType<typeof vi.fn>;
 
 describe('computePatchId', () => {
-  let mockExeca: ReturnType<typeof vi.fn>;
-
-  beforeEach(async () => {
-    mockExeca = await getExecaMock();
-    mockExeca.mockReset();
+  beforeEach(() => {
+    mockShellExec.mockReset();
     mockGitExec.mockReset();
     mockStore.clear();
     resetPatchIdCache();
   });
 
   it('computes patch-id for a commit via shell pipe', async () => {
-    mockExeca.mockResolvedValueOnce({
+    mockShellExec.mockResolvedValueOnce({
       stdout: 'abc123patchid def456commitsha\n',
       stderr: '',
       exitCode: 0,
@@ -60,7 +50,7 @@ describe('computePatchId', () => {
   });
 
   it('returns null on failure', async () => {
-    mockExeca.mockRejectedValueOnce(new Error('git failed'));
+    mockShellExec.mockRejectedValueOnce(new Error('git failed'));
 
     const result = await computePatchId('abc'.padEnd(40, '0'));
     expect(result).toBeNull();
@@ -68,11 +58,8 @@ describe('computePatchId', () => {
 });
 
 describe('findPatchIdMatch', () => {
-  let mockExeca: ReturnType<typeof vi.fn>;
-
-  beforeEach(async () => {
-    mockExeca = await getExecaMock();
-    mockExeca.mockReset();
+  beforeEach(() => {
+    mockShellExec.mockReset();
     mockGitExec.mockReset();
     mockStore.clear();
     resetPatchIdCache();
@@ -83,7 +70,7 @@ describe('findPatchIdMatch', () => {
     const matchSha = 'bbb'.padEnd(40, '0');
 
     // computePatchId for target
-    mockExeca.mockResolvedValueOnce({
+    mockShellExec.mockResolvedValueOnce({
       stdout: 'samepatchid ' + targetSha,
       stderr: '',
       exitCode: 0,
@@ -97,7 +84,7 @@ describe('findPatchIdMatch', () => {
     });
 
     // computePatchId for match candidate
-    mockExeca.mockResolvedValueOnce({
+    mockShellExec.mockResolvedValueOnce({
       stdout: 'samepatchid ' + matchSha,
       stderr: '',
       exitCode: 0,
@@ -113,7 +100,7 @@ describe('findPatchIdMatch', () => {
     const targetSha = 'aaa'.padEnd(40, '0');
 
     // computePatchId for target
-    mockExeca.mockResolvedValueOnce({
+    mockShellExec.mockResolvedValueOnce({
       stdout: 'uniquepatchid ' + targetSha,
       stderr: '',
       exitCode: 0,
@@ -127,7 +114,7 @@ describe('findPatchIdMatch', () => {
     });
 
     // computePatchId for candidate - different
-    mockExeca.mockResolvedValueOnce({
+    mockShellExec.mockResolvedValueOnce({
       stdout: 'differentpatchid bbb',
       stderr: '',
       exitCode: 0,

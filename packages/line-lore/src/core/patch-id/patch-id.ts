@@ -1,7 +1,5 @@
-import { execa } from 'execa';
-
 import { FileCache } from '../../cache/file-cache.js';
-import { gitExec } from '../../git/executor.js';
+import { gitExec, shellExec } from '../../git/executor.js';
 import type { GitExecOptions } from '../../types/index.js';
 
 export interface PatchIdResult {
@@ -30,7 +28,7 @@ export async function computePatchId(
 
   try {
     const cwd = options?.cwd ?? '.';
-    const result = await execa(
+    const result = await shellExec(
       'bash',
       [
         '-c',
