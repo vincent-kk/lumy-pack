@@ -48,13 +48,15 @@ export async function lookupPR(
       // Try to get full PR info via API if available
       if (adapter) {
         const prInfo = await adapter.getPRForCommit(mergeResult.mergeCommitSha);
-        if (prInfo) {
+        // Only accept PRs that are actually merged (mergedAt is present)
+        if (prInfo?.mergedAt) {
           mergeBasedPR = prInfo;
         }
       }
 
       if (!mergeBasedPR) {
         // Fallback: construct minimal PR info from message
+        // (message-parse cannot verify merge status, so trust the merge commit)
         mergeBasedPR = {
           number: prNumber,
           title: mergeResult.subject,
@@ -96,9 +98,10 @@ export async function lookupPR(
   }
 
   // Level 3: Direct API lookup (most expensive)
+  // getPRForCommit() already filters for merged PRs at the adapter level
   if (adapter) {
     const prInfo = await adapter.getPRForCommit(commitSha);
-    if (prInfo) {
+    if (prInfo?.mergedAt) {
       await cache.set(commitSha, prInfo);
       return prInfo;
     }

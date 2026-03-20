@@ -54,7 +54,24 @@ export class GitLabAdapter implements PlatformAdapter {
       const mrs = JSON.parse(result.stdout);
       if (!Array.isArray(mrs) || mrs.length === 0) return null;
 
-      const mr = mrs[0] as Record<string, unknown>;
+      // Filter for merged MRs only, sort by merged_at (oldest first)
+      const mergedMRs = (mrs as Record<string, unknown>[])
+        .filter((mr) => mr.state === 'merged' && mr.merged_at != null)
+        .sort((a, b) => {
+          const aTime = new Date(a.merged_at as string).getTime();
+          const bTime = new Date(b.merged_at as string).getTime();
+          return aTime - bTime;
+        });
+
+      if (mergedMRs.length === 0) return null;
+
+      // Prefer MR targeting the default branch
+      const defaultBranchMR = mergedMRs.find(
+        (mr) =>
+          mr.target_branch === 'main' || mr.target_branch === 'master',
+      );
+      const mr = defaultBranchMR ?? mergedMRs[0];
+
       return {
         number: mr.iid as number,
         title: (mr.title as string) ?? '',

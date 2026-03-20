@@ -76,6 +76,7 @@ export function createPRInfo(
     url: `https://github.com/test/repo/pull/${overrides.number}`,
     mergeCommit: '0'.repeat(40),
     baseBranch: 'main',
+    mergedAt: new Date().toISOString(),
     ...overrides,
   };
 }

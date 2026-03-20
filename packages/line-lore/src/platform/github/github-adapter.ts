@@ -45,17 +45,25 @@ export class GitHubAdapter implements PlatformAdapter {
     if (this.scheduler.isRateLimited()) return null;
 
     try {
+      // Fetch all associated PRs, filter for merged only, sort by merged_at (oldest first)
       const result = await shellExec('gh', [
         'api',
         `repos/{owner}/{repo}/commits/${sha}/pulls`,
         '--hostname',
         this.hostname,
         '--jq',
-        '.[0] | {number, title, user: .user.login, html_url, merge_commit_sha, base: .base.ref, merged_at}',
+        '[.[] | select(.merged_at != null) | {number, title, user: .user.login, html_url, merge_commit_sha, base: .base.ref, merged_at}] | sort_by(.merged_at)',
       ]);
 
-      const data = JSON.parse(result.stdout);
-      if (!data?.number) return null;
+      const prs = JSON.parse(result.stdout);
+      if (!Array.isArray(prs) || prs.length === 0) return null;
+
+      // Pick the best PR: prefer the one targeting the default branch
+      const defaultBranch = await this.detectDefaultBranch();
+      const defaultBranchPR = prs.find(
+        (pr: Record<string, unknown>) => pr.base === defaultBranch,
+      );
+      const data = defaultBranchPR ?? prs[0];
 
       return {
         number: data.number,
@@ -63,11 +71,27 @@ export class GitHubAdapter implements PlatformAdapter {
         author: data.user ?? '',
         url: data.html_url ?? '',
         mergeCommit: data.merge_commit_sha ?? sha,
-        baseBranch: data.base ?? 'main',
+        baseBranch: data.base ?? defaultBranch,
         mergedAt: data.merged_at,
       };
     } catch {
       return null;
+    }
+  }
+
+  private async detectDefaultBranch(): Promise<string> {
+    try {
+      const result = await shellExec('gh', [
+        'api',
+        'repos/{owner}/{repo}',
+        '--hostname',
+        this.hostname,
+        '--jq',
+        '.default_branch',
+      ]);
+      return result.stdout.trim() || 'main';
+    } catch {
+      return 'main';
     }
   }
 
