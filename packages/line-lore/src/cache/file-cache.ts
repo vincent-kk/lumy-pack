@@ -10,29 +10,34 @@ const DEFAULT_MAX_ENTRIES = 10_000;
 export class FileCache<T> {
   private readonly filePath: string;
   private readonly maxEntries: number;
+  private readonly enabled: boolean;
   private writeQueue: Promise<void> = Promise.resolve();
 
   constructor(
     fileName: string,
-    options?: { maxEntries?: number; cacheDir?: string },
+    options?: { maxEntries?: number; cacheDir?: string; enabled?: boolean },
   ) {
     const cacheDir = options?.cacheDir ?? DEFAULT_CACHE_DIR;
     this.filePath = join(cacheDir, fileName);
     this.maxEntries = options?.maxEntries ?? DEFAULT_MAX_ENTRIES;
+    this.enabled = options?.enabled ?? true;
   }
 
   async get(key: string): Promise<T | null> {
+    if (!this.enabled) return null;
     const data = await this.readStore();
     const entry = data[key];
     return entry?.value ?? null;
   }
 
   async has(key: string): Promise<boolean> {
+    if (!this.enabled) return false;
     const data = await this.readStore();
     return key in data;
   }
 
   set(key: string, value: T): Promise<void> {
+    if (!this.enabled) return Promise.resolve();
     this.writeQueue = this.writeQueue
       .then(() => this.doSet(key, value))
       .catch(() => {});

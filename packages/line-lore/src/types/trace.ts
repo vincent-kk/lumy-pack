@@ -12,7 +12,7 @@ export interface TraceResult {
 }
 
 /**
- * Options for the trace operation.
+ * Options for the trace operation (library API).
  */
 export interface TraceOptions {
   /** Path to the file to trace */
@@ -23,18 +23,10 @@ export interface TraceOptions {
   endLine?: number;
   /** Git remote name to use for PR lookups (default: 'origin') */
   remote?: string;
-  /** Output in JSON format */
-  json?: boolean;
-  /** Enable deep trace (squash PR recursive exploration) */
+  /** Enable deep trace (squash PR recursive exploration, expands patch-id scan) */
   deep?: boolean;
-  /** Issue graph traversal depth (0=PR only, 1=issues, 2+=multi-hop) */
-  graphDepth?: number;
   /** Disable AST diff analysis */
   noAst?: boolean;
-  /** Disable cache */
+  /** Disable cache for this invocation */
   noCache?: boolean;
-  /** Output format */
-  output?: 'human' | 'json' | 'llm';
-  /** Suppress output (return PR number only) */
-  quiet?: boolean;
 }

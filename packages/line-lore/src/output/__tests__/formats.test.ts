@@ -27,7 +27,7 @@ const mockResult: TraceFullResult = {
     astDiff: true,
     deepTrace: false,
     commitGraph: false,
-    issueGraph: false,
+
     graphql: true,
   },
   warnings: [],

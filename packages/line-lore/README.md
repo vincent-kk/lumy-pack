@@ -34,7 +34,7 @@ npx @lumy-pack/line-lore trace src/config.ts -L 10,50
 npx @lumy-pack/line-lore trace src/auth.ts -L 42 --deep
 
 # Traverse PR-to-issues graph
-npx @lumy-pack/line-lore graph --pr 42 --depth 2
+npx @lumy-pack/line-lore graph pr 42 --depth 2
 
 # Check system health
 npx @lumy-pack/line-lore health
@@ -201,7 +201,6 @@ interface TraceNode {
     "astDiff": true,
     "deepTrace": false,
     "commitGraph": false,
-    "issueGraph": false,
     "graphql": true
   },
   "warnings": []
@@ -275,12 +274,9 @@ Trace a code line to its originating PR.
 - `line` (number): Starting line number (1-indexed)
 - `endLine?` (number): Ending line for range queries
 - `remote?` (string): Git remote name (default: 'origin')
-- `deep?` (boolean): Enable deep trace for squash merges
-- `graphDepth?` (number): Issue graph traversal depth
-- `output?` ('human' | 'json' | 'llm'): Output format
-- `quiet?` (boolean): Suppress formatting
+- `deep?` (boolean): Enable deep trace — expands patch-id scan range (500→2000) and continues searching after merge commit match for squash/rebase scenarios
 - `noAst?` (boolean): Disable AST analysis
-- `noCache?` (boolean): Disable caching
+- `noCache?` (boolean): Disable cache reads and writes for this invocation
 
 **Returns:**
 ```typescript
@@ -322,9 +318,31 @@ Check system health: git version, platform CLI status, authentication.
 
 Clear PR lookup and patch-id caches.
 
+### `graph(options: GraphOptions): Promise<GraphResult>`
+
+Traverse the PR/issue relationship graph. Handles platform detection and authentication internally.
+
+**Options:**
+- `type` ('pr' | 'issue'): Starting node type
+- `number` (number): PR or issue number
+- `depth?` (number): Traversal depth (default: 2)
+- `remote?` (string): Git remote name (default: 'origin')
+
+**Example:**
+```typescript
+import { graph } from '@lumy-pack/line-lore';
+
+const result = await graph({ type: 'pr', number: 42, depth: 1 });
+for (const node of result.nodes) {
+  if (node.type === 'issue') {
+    console.log(`Issue #${node.issueNumber}: ${node.issueTitle}`);
+  }
+}
+```
+
 ### `traverseIssueGraph(adapter, startType, startNumber, options?): Promise<GraphResult>`
 
-Traverse PR-to-issues graph (requires Level 2 access).
+Low-level graph traversal (requires a `PlatformAdapter`). Prefer `graph()` for library usage.
 
 ## CLI Reference
 
@@ -337,7 +355,8 @@ Traverse PR-to-issues graph (requires Level 2 access).
 | `--output <format>` | Output as json, llm, or human |
 | `--quiet` | Suppress formatting |
 | `npx @lumy-pack/line-lore health` | Check system health |
-| `npx @lumy-pack/line-lore graph --pr <num>` | Traverse PR graph |
+| `npx @lumy-pack/line-lore graph pr <num>` | Show issues linked to a PR |
+| `npx @lumy-pack/line-lore graph issue <num>` | Show PRs linked to an issue |
 | `--depth <num>` | Graph traversal depth |
 | `npx @lumy-pack/line-lore cache clear` | Clear caches |
 

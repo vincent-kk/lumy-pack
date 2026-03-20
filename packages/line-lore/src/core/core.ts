@@ -1,10 +1,13 @@
 import { isAstAvailable } from '../ast/index.js';
+import { LineLoreError, LineLoreErrorCode } from '../errors.js';
 import { checkGitHealth } from '../git/health.js';
 import { detectPlatformAdapter } from '../platform/index.js';
 import type {
   AuthStatus,
   FeatureFlags,
   GitExecOptions,
+  GraphOptions,
+  GraphResult,
   HealthReport,
   OperatingLevel,
   PlatformAdapter,
@@ -15,6 +18,7 @@ import { parseLineRange } from '../utils/line-range.js';
 
 import { traceByAst } from './ast-diff/index.js';
 import { analyzeBlameResults, executeBlame } from './blame/index.js';
+import { traverseIssueGraph } from './issue-graph/index.js';
 import { lookupPR } from './pr-lookup/index.js';
 
 export interface TraceFullResult {
@@ -44,7 +48,6 @@ function computeFeatureFlags(
     astDiff: isAstAvailable() && !options.noAst,
     deepTrace: operatingLevel === 2 && (options.deep ?? false),
     commitGraph: false,
-    issueGraph: operatingLevel === 2 && (options.graphDepth ?? 0) > 0,
     graphql: operatingLevel === 2,
   };
 }
@@ -153,7 +156,11 @@ async function buildTraceNodes(
     // Commit → PR lookup
     const targetSha = nodes[nodes.length - 1].sha;
     if (targetSha) {
-      const prInfo = await lookupPR(targetSha, adapter, execOptions);
+      const prInfo = await lookupPR(targetSha, adapter, {
+        ...execOptions,
+        noCache: options.noCache,
+        deep: featureFlags.deepTrace,
+      });
       if (prInfo) {
         nodes.push({
           type: 'pull_request',
@@ -201,6 +208,22 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
   );
 
   return { nodes, operatingLevel, featureFlags, warnings };
+}
+
+export async function graph(options: GraphOptions): Promise<GraphResult> {
+  const { adapter } = await detectPlatformAdapter({
+    remoteName: options.remote,
+  });
+  const auth = await adapter.checkAuth();
+  if (!auth.authenticated) {
+    throw new LineLoreError(
+      LineLoreErrorCode.CLI_NOT_AUTHENTICATED,
+      'Platform CLI is not authenticated. Run "gh auth login" or set the appropriate token.',
+    );
+  }
+  return traverseIssueGraph(adapter, options.type, options.number, {
+    maxDepth: options.depth,
+  });
 }
 
 export async function health(options?: {

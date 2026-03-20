@@ -8,7 +8,7 @@ import type { PRInfo, PlatformAdapter } from '@/types/index.js';
 // ---------------------------------------------------------------------------
 // Imports — after vi.mock() calls
 // ---------------------------------------------------------------------------
-import { clearCache, health, trace } from '../core.js';
+import { clearCache, graph, health, trace } from '../core.js';
 import { resetPatchIdCache } from '../patch-id/patch-id.js';
 import { resetPRCache } from '../pr-lookup/pr-lookup.js';
 
@@ -32,10 +32,16 @@ vi.mock('@/ast/index.js', async (importOriginal) => {
 vi.mock('@/cache/file-cache.js', () => ({
   FileCache: class {
     private store = mockStore;
+    private enabled: boolean;
+    constructor(_fileName: string, options?: { enabled?: boolean }) {
+      this.enabled = options?.enabled ?? true;
+    }
     async get(key: string) {
+      if (!this.enabled) return null;
       return this.store.get(key) ?? null;
     }
     async set(key: string, value: unknown) {
+      if (!this.enabled) return;
       this.store.set(key, value);
     }
     async clear() {
@@ -373,7 +379,7 @@ describe('trace() — pipeline orchestrator integration', () => {
     expect(result.featureFlags.astDiff).toBe(true);
     expect(result.featureFlags.graphql).toBe(true);
     expect(result.featureFlags.deepTrace).toBe(false); // deep not set
-    expect(result.featureFlags.issueGraph).toBe(false); // graphDepth not set
+    // issueGraph removed — graph() is a separate API
   });
 });
 
@@ -427,6 +433,157 @@ describe('health()', () => {
 
     expect(result.bloomFilter).toBe(false);
     expect(result.hints.some((h) => /bloom/i.test(h))).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// clearCache() tests
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// noCache option tests
+// ---------------------------------------------------------------------------
+
+describe('trace() — noCache option', () => {
+  beforeEach(() => {
+    mockGitExec.mockReset();
+    mockIsAstAvailable.mockReturnValue(false);
+    mockDetectPlatformAdapter.mockReset();
+    mockStore.clear();
+    resetPRCache();
+    resetPatchIdCache();
+  });
+
+  it('noCache: true bypasses cache and still returns PR from merge message', async () => {
+    // Pre-populate cache — should be ignored when noCache is true
+    mockStore.set(COMMIT_SHA, {
+      number: 999,
+      title: 'cached-stale',
+      author: '',
+      url: '',
+      mergeCommit: '',
+      baseBranch: '',
+    });
+
+    const adapter = createMockAdapter(null);
+    mockDetectPlatformAdapter.mockResolvedValue({ adapter });
+
+    // git blame
+    mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
+    // cosmetic diff check
+    mockGitExec.mockResolvedValueOnce(
+      gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
+    );
+    // findMergeCommit
+    mockGitExec.mockResolvedValueOnce(
+      gitOk(
+        `${MERGE_SHA} ${PARENT1} ${PARENT2} Merge pull request #42 from feature/branch\n`,
+      ),
+    );
+
+    const result = await trace({ file: 'src/foo.ts', line: 1, noCache: true });
+
+    const prNode = result.nodes.find((n) => n.type === 'pull_request');
+    expect(prNode).toBeDefined();
+    // Should find PR #42 from merge message, NOT #999 from stale cache
+    expect(prNode!.prNumber).toBe(42);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// deep option tests
+// ---------------------------------------------------------------------------
+
+describe('trace() — deep option', () => {
+  beforeEach(() => {
+    mockGitExec.mockReset();
+    mockIsAstAvailable.mockReturnValue(false);
+    mockDetectPlatformAdapter.mockReset();
+    mockStore.clear();
+    resetPRCache();
+    resetPatchIdCache();
+  });
+
+  it('deep: true sets deepTrace feature flag at Level 2', async () => {
+    const adapter = createMockAdapter(null);
+    mockDetectPlatformAdapter.mockResolvedValue({ adapter });
+
+    // git blame
+    mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
+    // cosmetic diff check
+    mockGitExec.mockResolvedValueOnce(
+      gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
+    );
+    // findMergeCommit — no merge found
+    mockGitExec.mockResolvedValueOnce(gitEmpty());
+    // patch-id: git diff | git patch-id (via execa — will fail, that's ok)
+    // git log for patch-id scan (will return empty)
+    mockGitExec.mockResolvedValueOnce(gitEmpty());
+
+    const result = await trace({ file: 'src/foo.ts', line: 1, deep: true });
+
+    expect(result.featureFlags.deepTrace).toBe(true);
+  });
+
+  it('deep: false (default) sets deepTrace=false', async () => {
+    const adapter = createMockAdapter(null);
+    mockDetectPlatformAdapter.mockResolvedValue({ adapter });
+
+    mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
+    mockGitExec.mockResolvedValueOnce(
+      gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
+    );
+    mockGitExec.mockResolvedValueOnce(gitEmpty());
+    mockGitExec.mockResolvedValueOnce(gitEmpty());
+
+    const result = await trace({ file: 'src/foo.ts', line: 1 });
+
+    expect(result.featureFlags.deepTrace).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// graph() tests
+// ---------------------------------------------------------------------------
+
+describe('graph()', () => {
+  beforeEach(() => {
+    mockDetectPlatformAdapter.mockReset();
+  });
+
+  it('returns graph result when authenticated', async () => {
+    const adapter = createMockAdapter(null, true);
+    (adapter.getLinkedIssues as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { number: 10, title: 'Fix bug', state: 'closed', url: '' },
+    ]);
+    mockDetectPlatformAdapter.mockResolvedValue({ adapter });
+
+    const result = await graph({ type: 'pr', number: 42, depth: 1 });
+
+    expect(result.nodes).toBeDefined();
+    expect(result.edges).toBeDefined();
+    // Should have PR node and issue node
+    const prNode = result.nodes.find((n) => n.type === 'pull_request');
+    const issueNode = result.nodes.find((n) => n.type === 'issue');
+    expect(prNode).toBeDefined();
+    expect(prNode!.prNumber).toBe(42);
+    expect(issueNode).toBeDefined();
+    expect(issueNode!.issueNumber).toBe(10);
+  });
+
+  it('throws LineLoreError when not authenticated', async () => {
+    const adapter = createMockAdapter(null, false);
+    mockDetectPlatformAdapter.mockResolvedValue({ adapter });
+
+    await expect(graph({ type: 'pr', number: 42 })).rejects.toThrow(
+      /not authenticated/i,
+    );
+  });
+
+  it('throws when platform detection fails', async () => {
+    mockDetectPlatformAdapter.mockRejectedValue(new Error('no platform'));
+
+    await expect(graph({ type: 'issue', number: 10 })).rejects.toThrow();
   });
 });
 

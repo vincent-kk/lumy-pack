@@ -6,13 +6,19 @@ import { createErrorResponse } from '../output/normalizer.js';
 import { LineLoreError } from '../errors.js';
 import type { TraceOptions } from '../types/index.js';
 
+/** CLI-only output options (not part of the library API) */
+interface CliOutputOptions {
+  json?: boolean;
+  output?: 'human' | 'json' | 'llm';
+  quiet?: boolean;
+}
+
 export function registerTraceCommand(program: Command): void {
   program
     .command('trace <file>')
     .description('Trace a file line to its originating PR')
     .requiredOption('-L, --line <range>', 'Line number or range (e.g., "42" or "10,50")')
     .option('--deep', 'Enable deep trace for squash PRs')
-    .option('--graph-depth <n>', 'Issue graph traversal depth', '0')
     .option('--no-ast', 'Disable AST diff analysis')
     .option('--no-cache', 'Disable cache')
     .option('--json', 'Output in JSON format')
@@ -25,28 +31,30 @@ export function registerTraceCommand(program: Command): void {
       const line = parseInt(parts[0], 10);
       const endLine = parts.length > 1 ? parseInt(parts[1], 10) : undefined;
 
-      const options: TraceOptions = {
+      const traceOptions: TraceOptions = {
         file,
         line,
         endLine,
         deep: opts.deep as boolean | undefined,
-        graphDepth: parseInt(opts.graphDepth as string, 10) || 0,
         noAst: opts.ast === false,
         noCache: opts.cache === false,
+      };
+
+      const cliOptions: CliOutputOptions = {
         json: opts.json as boolean | undefined,
         quiet: opts.quiet as boolean | undefined,
         output: (opts.output as 'human' | 'json' | 'llm') ?? 'human',
       };
 
       try {
-        const result = await trace(options);
+        const result = await trace(traceOptions);
 
         let output: string;
-        if (options.quiet) {
+        if (cliOptions.quiet) {
           output = formatQuiet(result);
-        } else if (options.json || options.output === 'json') {
+        } else if (cliOptions.json || cliOptions.output === 'json') {
           output = formatJson(result);
-        } else if (options.output === 'llm') {
+        } else if (cliOptions.output === 'llm') {
           output = formatLlm(result);
         } else {
           output = formatHuman(result);

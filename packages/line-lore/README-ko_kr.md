@@ -34,7 +34,7 @@ npx @lumy-pack/line-lore trace src/config.ts -L 10,50
 npx @lumy-pack/line-lore trace src/auth.ts -L 42 --deep
 
 # PR-to-issues 그래프 순회
-npx @lumy-pack/line-lore graph --pr 42 --depth 2
+npx @lumy-pack/line-lore graph pr 42 --depth 2
 
 # 시스템 상태 확인
 npx @lumy-pack/line-lore health
@@ -201,7 +201,6 @@ interface TraceNode {
     "astDiff": true,
     "deepTrace": false,
     "commitGraph": false,
-    "issueGraph": false,
     "graphql": true
   },
   "warnings": []
@@ -275,12 +274,9 @@ gh auth login --hostname git.corp.com
 - `line` (number): 시작 라인 번호 (1-indexed)
 - `endLine?` (number): 범위 쿼리의 종료 라인
 - `remote?` (string): Git 원격 이름 (기본값: 'origin')
-- `deep?` (boolean): squash merge 깊은 역추적 활성화
-- `graphDepth?` (number): issue 그래프 순회 깊이
-- `output?` ('human' | 'json' | 'llm'): 출력 형식
-- `quiet?` (boolean): 포맷 억제
+- `deep?` (boolean): 깊은 역추적 활성화 — patch-id 스캔 범위를 확대(500→2000)하고 merge commit 매칭 후에도 squash/rebase 시나리오를 위해 추가 탐색
 - `noAst?` (boolean): AST 분석 비활성화
-- `noCache?` (boolean): 캐싱 비활성화
+- `noCache?` (boolean): 이 호출에서 캐시 읽기/쓰기 비활성화
 
 **반환값:**
 ```typescript
@@ -322,9 +318,31 @@ if (result.operatingLevel < 2) {
 
 PR 검색 및 patch-id 캐시 삭제.
 
+### `graph(options: GraphOptions): Promise<GraphResult>`
+
+PR/issue 관계 그래프 순회. 플랫폼 감지와 인증을 내부에서 처리합니다.
+
+**옵션:**
+- `type` ('pr' | 'issue'): 시작 노드 타입
+- `number` (number): PR 또는 issue 번호
+- `depth?` (number): 순회 깊이 (기본값: 2)
+- `remote?` (string): Git 원격 이름 (기본값: 'origin')
+
+**예시:**
+```typescript
+import { graph } from '@lumy-pack/line-lore';
+
+const result = await graph({ type: 'pr', number: 42, depth: 1 });
+for (const node of result.nodes) {
+  if (node.type === 'issue') {
+    console.log(`Issue #${node.issueNumber}: ${node.issueTitle}`);
+  }
+}
+```
+
 ### `traverseIssueGraph(adapter, startType, startNumber, options?): Promise<GraphResult>`
 
-PR-to-issues 그래프 순회 (Level 2 접근 필요).
+저수준 그래프 순회 (`PlatformAdapter` 필요). 라이브러리 사용시에는 `graph()`를 사용하세요.
 
 ## CLI 참조
 
@@ -337,7 +355,8 @@ PR-to-issues 그래프 순회 (Level 2 접근 필요).
 | `--output <format>` | json, llm 또는 human으로 출력 |
 | `--quiet` | 포맷 억제 |
 | `npx @lumy-pack/line-lore health` | 시스템 상태 확인 |
-| `npx @lumy-pack/line-lore graph --pr <num>` | PR 그래프 순회 |
+| `npx @lumy-pack/line-lore graph pr <num>` | PR에 연결된 issue 조회 |
+| `npx @lumy-pack/line-lore graph issue <num>` | issue에 연결된 PR 조회 |
 | `--depth <num>` | 그래프 순회 깊이 |
 | `npx @lumy-pack/line-lore cache clear` | 캐시 삭제 |
 

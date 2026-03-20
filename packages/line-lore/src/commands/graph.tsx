@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 
-import { traverseIssueGraph } from '../core/issue-graph/index.js';
-import { detectPlatformAdapter } from '../platform/index.js';
+import { graph } from '../core/core.js';
+import { LineLoreError } from '../errors.js';
 
 export function registerGraphCommand(program: Command): void {
   const graphCmd = program
@@ -18,10 +18,7 @@ export function registerGraphCommand(program: Command): void {
       const depth = parseInt(opts.depth as string, 10) || 1;
 
       try {
-        const { adapter } = await detectPlatformAdapter();
-        const result = await traverseIssueGraph(adapter, 'pr', prNumber, {
-          maxDepth: depth,
-        });
+        const result = await graph({ type: 'pr', number: prNumber, depth });
 
         if (opts.json) {
           console.log(JSON.stringify(result, null, 2));
@@ -35,7 +32,11 @@ export function registerGraphCommand(program: Command): void {
           }
         }
       } catch (error) {
-        console.error('Graph traversal failed:', (error as Error).message);
+        if (error instanceof LineLoreError) {
+          console.error(`Graph traversal failed: ${error.message}`);
+        } else {
+          console.error('Graph traversal failed:', (error as Error).message);
+        }
         process.exit(1);
       }
     });
@@ -50,10 +51,7 @@ export function registerGraphCommand(program: Command): void {
       const depth = parseInt(opts.depth as string, 10) || 1;
 
       try {
-        const { adapter } = await detectPlatformAdapter();
-        const result = await traverseIssueGraph(adapter, 'issue', issueNumber, {
-          maxDepth: depth,
-        });
+        const result = await graph({ type: 'issue', number: issueNumber, depth });
 
         if (opts.json) {
           console.log(JSON.stringify(result, null, 2));
@@ -67,7 +65,11 @@ export function registerGraphCommand(program: Command): void {
           }
         }
       } catch (error) {
-        console.error('Graph traversal failed:', (error as Error).message);
+        if (error instanceof LineLoreError) {
+          console.error(`Graph traversal failed: ${error.message}`);
+        } else {
+          console.error('Graph traversal failed:', (error as Error).message);
+        }
         process.exit(1);
       }
     });
