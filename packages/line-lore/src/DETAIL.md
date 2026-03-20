@@ -12,8 +12,11 @@
 - `trace(options: TraceOptions): Promise<TraceFullResult>` — 메인 파이프라인 진입점
 - `health(): Promise<HealthReport>` — 시스템 기능 확인
 - `clearCache(): Promise<void>` — 모든 캐시 데이터 제거
-- `traverseIssueGraph(adapter, type, number, options?): Promise<GraphResult>` — PR/이슈 그래프
+- `graph(options: GraphOptions): Promise<GraphResult>` — PR/이슈 관계 그래프 탐색
+  - `GraphOptions`: `{ type: 'pr' | 'issue'; number: number; depth?: number; remote?: string }`
+  - `GraphResult`: `{ nodes: TraceNode[]; edges: Array<{ from: string; to: string; relation: string }> }`
+- `traverseIssueGraph(adapter, type, number, options?): Promise<GraphResult>` — 내부 그래프 탐색 엔진
 
 ## Last Updated
 
-2026-03-19
+2026-03-21

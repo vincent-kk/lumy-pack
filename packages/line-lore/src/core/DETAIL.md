@@ -13,7 +13,8 @@
 - `trace(options: TraceOptions): Promise<TraceFullResult>` — 전체 파이프라인 실행
 - `health(): Promise<HealthReport>` — Git 버전, 플랫폼 인증, AST 가용성
 - `clearCache(): Promise<void>` — 모든 FileCache 인스턴스 초기화
+- `graph(options: GraphOptions): Promise<GraphResult>` — 플랫폼 인증 후 `traverseIssueGraph`에 위임하여 PR/이슈 관계 그래프 반환
 
 ## Last Updated
 
-2026-03-19
+2026-03-21
