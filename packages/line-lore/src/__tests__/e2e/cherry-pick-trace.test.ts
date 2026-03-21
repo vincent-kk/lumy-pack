@@ -18,8 +18,8 @@ vi.mock('@/ast/index.js', async (importOriginal) => {
   return { ...original, isAstAvailable: vi.fn().mockReturnValue(false) };
 });
 
-vi.mock('@/cache/file-cache.js', () => ({
-  FileCache: class {
+vi.mock('@/cache/sharded-cache.js', () => ({
+  ShardedCache: class {
     private store = new Map<string, unknown>();
     async get(key: string) {
       return this.store.get(key) ?? null;
@@ -31,6 +31,7 @@ vi.mock('@/cache/file-cache.js', () => ({
       this.store.clear();
     }
   },
+  cleanupLegacyCache: () => Promise.resolve(),
 }));
 
 const mockDetectPlatform = detectPlatformAdapter as ReturnType<typeof vi.fn>;

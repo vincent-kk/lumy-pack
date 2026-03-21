@@ -18,8 +18,8 @@ vi.mock('@/ast/index.js', async (importOriginal) => {
   return { ...original, isAstAvailable: vi.fn().mockReturnValue(false) };
 });
 
-vi.mock('@/cache/file-cache.js', () => ({
-  FileCache: class {
+vi.mock('@/cache/sharded-cache.js', () => ({
+  ShardedCache: class {
     private store = new Map<string, unknown>();
     async get(key: string) {
       return this.store.get(key) ?? null;
@@ -31,6 +31,7 @@ vi.mock('@/cache/file-cache.js', () => ({
       this.store.clear();
     }
   },
+  cleanupLegacyCache: () => Promise.resolve(),
 }));
 
 const mockDetectPlatform = detectPlatformAdapter as ReturnType<typeof vi.fn>;
@@ -162,14 +163,14 @@ describe('E11: Cache hit/miss behavior', { timeout: 30000 }, () => {
     expect(prA!.prNumber).not.toBe(prB!.prNumber);
   });
 
-  it('in-memory FileCache mock stores and retrieves values correctly', async () => {
-    // Verify the FileCache mock itself works as expected
-    const { FileCache } = await import('@/cache/file-cache.js');
-    const cache = new (FileCache as new (name: string) => {
+  it('in-memory ShardedCache mock stores and retrieves values correctly', async () => {
+    // Verify the ShardedCache mock itself works as expected
+    const { ShardedCache } = await import('@/cache/sharded-cache.js');
+    const cache = new (ShardedCache as new (name: string) => {
       get(key: string): Promise<unknown>;
       set(key: string, value: unknown): Promise<void>;
       clear(): Promise<void>;
-    })('test.json');
+    })('test');
 
     expect(await cache.get('missing-key')).toBeNull();
 

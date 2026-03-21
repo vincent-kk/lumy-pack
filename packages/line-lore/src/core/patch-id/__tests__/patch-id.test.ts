@@ -15,8 +15,8 @@ vi.mock('@/git/executor.js', () => ({
   shellExec: vi.fn(),
 }));
 
-vi.mock('@/cache/file-cache.js', () => ({
-  FileCache: class {
+vi.mock('@/cache/sharded-cache.js', () => ({
+  ShardedCache: class {
     get(key: string) {
       return Promise.resolve(mockStore.get(key) ?? null);
     }
@@ -25,6 +25,7 @@ vi.mock('@/cache/file-cache.js', () => ({
       return Promise.resolve();
     }
   },
+  cleanupLegacyCache: () => Promise.resolve(),
 }));
 
 const mockGitExec = gitExec as ReturnType<typeof vi.fn>;

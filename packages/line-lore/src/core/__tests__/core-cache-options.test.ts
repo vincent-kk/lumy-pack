@@ -29,11 +29,11 @@ vi.mock('@/ast/index.js', async (importOriginal) => {
   return { ...original, isAstAvailable: vi.fn().mockReturnValue(false) };
 });
 
-vi.mock('@/cache/file-cache.js', () => ({
-  FileCache: class {
+vi.mock('@/cache/sharded-cache.js', () => ({
+  ShardedCache: class {
     private store = mockStore;
     private enabled: boolean;
-    constructor(_fileName: string, options?: { enabled?: boolean }) {
+    constructor(_namespace: string, options?: { enabled?: boolean }) {
       this.enabled = options?.enabled ?? true;
     }
     async get(key: string) {
@@ -48,6 +48,7 @@ vi.mock('@/cache/file-cache.js', () => ({
       this.store.clear();
     }
   },
+  cleanupLegacyCache: () => Promise.resolve(),
 }));
 
 vi.mock('execa', () => ({
@@ -167,6 +168,8 @@ describe('trace() — noCache option', () => {
     const adapter = createMockAdapter(null);
     mockDetectPlatformAdapter.mockResolvedValue({ adapter });
 
+    // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
+    mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
@@ -188,6 +191,8 @@ describe('trace() — noCache option', () => {
     const adapter = createMockAdapter(null);
     mockDetectPlatformAdapter.mockResolvedValue({ adapter });
 
+    // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
+    mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
@@ -221,6 +226,8 @@ describe('trace() — deep option', () => {
     const adapter = createMockAdapter(null);
     mockDetectPlatformAdapter.mockResolvedValue({ adapter });
 
+    // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
+    mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
@@ -237,6 +244,8 @@ describe('trace() — deep option', () => {
     const adapter = createMockAdapter(null);
     mockDetectPlatformAdapter.mockResolvedValue({ adapter });
 
+    // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
+    mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
@@ -253,6 +262,8 @@ describe('trace() — deep option', () => {
     const adapter = createMockAdapter(null);
     mockDetectPlatformAdapter.mockResolvedValue({ adapter });
 
+    // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
+    mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
@@ -270,6 +281,8 @@ describe('trace() — deep option', () => {
     const adapter = createMockAdapter(null);
     mockDetectPlatformAdapter.mockResolvedValue({ adapter });
 
+    // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
+    mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),

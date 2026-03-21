@@ -29,11 +29,11 @@ vi.mock('@/ast/index.js', async (importOriginal) => {
   return { ...original, isAstAvailable: vi.fn().mockReturnValue(false) };
 });
 
-vi.mock('@/cache/file-cache.js', () => ({
-  FileCache: class {
+vi.mock('@/cache/sharded-cache.js', () => ({
+  ShardedCache: class {
     private store = mockStore;
     private enabled: boolean;
-    constructor(_fileName: string, options?: { enabled?: boolean }) {
+    constructor(_namespace: string, options?: { enabled?: boolean }) {
       this.enabled = options?.enabled ?? true;
     }
     async get(key: string) {
@@ -48,6 +48,7 @@ vi.mock('@/cache/file-cache.js', () => ({
       this.store.clear();
     }
   },
+  cleanupLegacyCache: () => Promise.resolve(),
 }));
 
 vi.mock('execa', () => ({
@@ -150,6 +151,8 @@ describe('trace() — pipeline orchestrator integration', () => {
     const adapter = createMockAdapter(null);
     mockDetectPlatformAdapter.mockResolvedValue({ adapter });
 
+    // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
+    mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
     // Call 1: git blame
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
     // Call 2: getCosmeticDiff — non-cosmetic diff
@@ -187,6 +190,8 @@ describe('trace() — pipeline orchestrator integration', () => {
     mockDetectPlatformAdapter.mockResolvedValue({ adapter });
     mockIsAstAvailable.mockReturnValue(false);
 
+    // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
+    mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
     // Call 1: git blame
     mockGitExec.mockResolvedValueOnce(
       gitOk(buildBlamePorcelain(COMMIT_SHA, '  const x = 1;  ')),
@@ -227,6 +232,8 @@ describe('trace() — pipeline orchestrator integration', () => {
     const adapter = createMockAdapter(prInfo);
     mockDetectPlatformAdapter.mockResolvedValue({ adapter });
 
+    // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
+    mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
     // Call 1: git blame
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
     // Call 2: getCosmeticDiff — non-cosmetic
@@ -279,6 +286,9 @@ describe('trace() — pipeline orchestrator integration', () => {
     const adapter = createMockAdapter(null);
     mockDetectPlatformAdapter.mockResolvedValue({ adapter });
 
+    // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
+    mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
+
     // 3 blame lines: line 1→SHA_A, line 2→SHA_A, line 3→SHA_B
     const blameOutput = [
       buildBlamePorcelain(SHA_A, 'line one'),
@@ -315,6 +325,8 @@ describe('trace() — pipeline orchestrator integration', () => {
     const adapter = createMockAdapter(null);
     mockDetectPlatformAdapter.mockResolvedValue({ adapter });
 
+    // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
+    mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
     // Call 1: git blame
     mockGitExec.mockResolvedValueOnce(
       gitOk(buildBlamePorcelain(COMMIT_SHA, '  const x = 1;  ')),
