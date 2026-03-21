@@ -1,4 +1,5 @@
-import { FileCache } from '../../cache/file-cache.js';
+import type { RepoIdentity } from '../../cache/index.js';
+import { ShardedCache } from '../../cache/index.js';
 import type {
   GitExecOptions,
   PRInfo,
@@ -10,21 +11,29 @@ import {
 } from '../ancestry/index.js';
 import { findPatchIdMatch } from '../patch-id/index.js';
 
-let prCache: FileCache<PRInfo> | null = null;
+const cacheRegistry = new Map<string, ShardedCache<PRInfo>>();
 
-function getCache(noCache?: boolean): FileCache<PRInfo> {
+function repoKey(repoId: RepoIdentity): string {
+  return `${repoId.host}/${repoId.owner}/${repoId.repo}`;
+}
+
+function getCache(repoId?: RepoIdentity, noCache?: boolean): ShardedCache<PRInfo> {
   if (noCache) {
-    return new FileCache<PRInfo>('sha-to-pr.json', { enabled: false });
+    return new ShardedCache<PRInfo>('pr', { repoId, enabled: false });
   }
-  if (!prCache) {
-    prCache = new FileCache<PRInfo>('sha-to-pr.json');
+  const key = repoKey(repoId ?? { host: '_local', owner: '_', repo: '_default' });
+  let cache = cacheRegistry.get(key);
+  if (!cache) {
+    cache = new ShardedCache<PRInfo>('pr', { repoId });
+    cacheRegistry.set(key, cache);
   }
-  return prCache;
+  return cache;
 }
 
 export interface PRLookupOptions extends GitExecOptions {
   noCache?: boolean;
   deep?: boolean;
+  repoId?: RepoIdentity;
 }
 
 const DEEP_SCAN_DEPTH = 2000;
@@ -34,7 +43,7 @@ export async function lookupPR(
   adapter: PlatformAdapter | null,
   options?: PRLookupOptions,
 ): Promise<PRInfo | null> {
-  const cache = getCache(options?.noCache);
+  const cache = getCache(options?.repoId, options?.noCache);
   const cached = await cache.get(commitSha);
   if (cached) return cached;
 
@@ -97,5 +106,5 @@ export async function lookupPR(
 }
 
 export function resetPRCache(): void {
-  prCache = null;
+  cacheRegistry.clear();
 }

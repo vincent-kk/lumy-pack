@@ -1,6 +1,7 @@
 import { filter, isTruthy } from '@winglet/common-utils';
 
-import { FileCache } from '../../cache/file-cache.js';
+import type { RepoIdentity } from '../../cache/index.js';
+import { ShardedCache } from '../../cache/index.js';
 import { gitExec, shellExec } from '../../git/executor.js';
 import type { GitExecOptions } from '../../types/index.js';
 
@@ -11,27 +12,35 @@ export interface PatchIdResult {
 
 const DEFAULT_SCAN_DEPTH = 500;
 
-let patchIdCache: FileCache<string> | null = null;
+const cacheRegistry = new Map<string, ShardedCache<string>>();
 
-function getCache(noCache?: boolean): FileCache<string> {
+function repoKey(repoId: RepoIdentity): string {
+  return `${repoId.host}/${repoId.owner}/${repoId.repo}`;
+}
+
+function getCache(repoId?: RepoIdentity, noCache?: boolean): ShardedCache<string> {
   if (noCache) {
-    return new FileCache<string>('sha-to-patch-id.json', { enabled: false });
+    return new ShardedCache<string>('patch-id', { repoId, enabled: false });
   }
-  if (!patchIdCache) {
-    patchIdCache = new FileCache<string>('sha-to-patch-id.json');
+  const key = repoKey(repoId ?? { host: '_local', owner: '_', repo: '_default' });
+  let cache = cacheRegistry.get(key);
+  if (!cache) {
+    cache = new ShardedCache<string>('patch-id', { repoId });
+    cacheRegistry.set(key, cache);
   }
-  return patchIdCache;
+  return cache;
 }
 
 export interface PatchIdOptions extends GitExecOptions {
   noCache?: boolean;
+  repoId?: RepoIdentity;
 }
 
 export async function computePatchId(
   commitSha: string,
   options?: PatchIdOptions,
 ): Promise<string | null> {
-  const cache = getCache(options?.noCache);
+  const cache = getCache(options?.repoId, options?.noCache);
   const cached = await cache.get(commitSha);
   if (cached) return cached;
 
@@ -91,5 +100,5 @@ export async function findPatchIdMatch(
 }
 
 export function resetPatchIdCache(): void {
-  patchIdCache = null;
+  cacheRegistry.clear();
 }

@@ -23,6 +23,8 @@ export interface TraceOptions {
   endLine?: number;
   /** Git remote name to use for PR lookups (default: 'origin') */
   remote?: string;
+  /** Working directory of the target repository */
+  cwd?: string;
   /** Enable deep trace (squash PR recursive exploration, expands patch-id scan) */
   deep?: boolean;
   /** Disable AST diff analysis */

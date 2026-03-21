@@ -1,0 +1,183 @@
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+
+import type { CacheEntry } from '../types/index.js';
+
+export interface RepoIdentity {
+  host: string;
+  owner: string;
+  repo: string;
+}
+
+const DEFAULT_CACHE_BASE = join(homedir(), '.line-lore', 'cache');
+const DEFAULT_MAX_ENTRIES = 10_000;
+
+function shardDir(
+  base: string,
+  namespace: string,
+  repoId?: RepoIdentity,
+): string {
+  if (!repoId) {
+    return join(base, namespace);
+  }
+  return join(base, repoId.host, repoId.owner, repoId.repo, namespace);
+}
+
+export class ShardedCache<T> {
+  private readonly filePath: string;
+  private readonly maxEntries: number;
+  private readonly enabled: boolean;
+  private writeQueue: Promise<void> = Promise.resolve();
+  private store: Record<string, CacheEntry<T>> | null = null;
+
+  constructor(
+    namespace: string,
+    options?: {
+      repoId?: RepoIdentity;
+      maxEntries?: number;
+      cacheBase?: string;
+      enabled?: boolean;
+    },
+  ) {
+    const cacheBase = options?.cacheBase ?? DEFAULT_CACHE_BASE;
+    const dir = shardDir(cacheBase, namespace, options?.repoId);
+    this.filePath = join(dir, 'cache.json');
+    this.maxEntries = options?.maxEntries ?? DEFAULT_MAX_ENTRIES;
+    this.enabled = options?.enabled ?? true;
+  }
+
+  async get(key: string): Promise<T | null> {
+    if (!this.enabled) return null;
+    const data = await this.readStore();
+    const entry = data[key];
+    return entry?.value ?? null;
+  }
+
+  async has(key: string): Promise<boolean> {
+    if (!this.enabled) return false;
+    const data = await this.readStore();
+    return key in data;
+  }
+
+  set(key: string, value: T): Promise<void> {
+    if (!this.enabled) return Promise.resolve();
+    this.writeQueue = this.writeQueue
+      .then(() => this.doSet(key, value))
+      .catch(() => {});
+    return this.writeQueue;
+  }
+
+  delete(key: string): Promise<boolean> {
+    let deleted = false;
+    this.writeQueue = this.writeQueue
+      .then(async () => {
+        const data = await this.readStore();
+        if (key in data) {
+          delete data[key];
+          this.store = data;
+          await this.writeStore(data);
+          deleted = true;
+        }
+      })
+      .catch(() => {});
+    return this.writeQueue.then(() => deleted);
+  }
+
+  clear(): Promise<void> {
+    this.store = {};
+    this.writeQueue = this.writeQueue
+      .then(() => this.writeStore({}))
+      .catch(() => {});
+    return this.writeQueue;
+  }
+
+  async size(): Promise<number> {
+    const data = await this.readStore();
+    return Object.keys(data).length;
+  }
+
+  private async doSet(key: string, value: T): Promise<void> {
+    const data = await this.readStore();
+    data[key] = { key, value, createdAt: Date.now() };
+
+    const keys = Object.keys(data);
+    if (keys.length > this.maxEntries) {
+      const sorted = keys.sort((a, b) => data[a].createdAt - data[b].createdAt);
+      const toRemove = sorted.slice(0, keys.length - this.maxEntries);
+      for (const k of toRemove) {
+        delete data[k];
+      }
+    }
+
+    this.store = data;
+    await this.writeStore(data);
+  }
+
+  private async readStore(): Promise<Record<string, CacheEntry<T>>> {
+    if (this.store !== null) return this.store;
+
+    try {
+      const content = await readFile(this.filePath, 'utf-8');
+      this.store = JSON.parse(content) as Record<string, CacheEntry<T>>;
+      return this.store;
+    } catch (error) {
+      if (
+        error instanceof SyntaxError ||
+        (error instanceof Error &&
+          'code' in error &&
+          (error as NodeJS.ErrnoException).code === 'ERR_INVALID_JSON')
+      ) {
+        console.warn(
+          `[line-lore] Cache file corrupted, resetting: ${this.filePath}`,
+        );
+        this.store = {};
+        await this.writeStore({});
+        return this.store;
+      }
+      this.store = {};
+      return this.store;
+    }
+  }
+
+  private async writeStore(data: Record<string, CacheEntry<T>>): Promise<void> {
+    const dir = join(this.filePath, '..');
+    await mkdir(dir, { recursive: true });
+    const tmpPath = `${this.filePath}.tmp`;
+    await writeFile(tmpPath, JSON.stringify(data), 'utf-8');
+    await rename(tmpPath, this.filePath);
+  }
+
+  async destroy(): Promise<void> {
+    this.store = null;
+    try {
+      await rm(this.filePath, { force: true });
+    } catch {
+      // ignored
+    }
+  }
+}
+
+/**
+ * Removes the legacy flat cache directory structure (pre-sharding).
+ * Safe to call multiple times — no-ops if already cleaned.
+ */
+export async function cleanupLegacyCache(): Promise<void> {
+  const legacyDir = join(homedir(), '.line-lore', 'cache');
+  try {
+    const { readdir } = await import('node:fs/promises');
+    const entries = await readdir(legacyDir, { withFileTypes: true });
+    const legacyFiles = entries.filter(
+      (e) => e.isFile() && e.name.endsWith('.json'),
+    );
+    for (const file of legacyFiles) {
+      try {
+        await rm(join(legacyDir, file.name), { force: true });
+      } catch {
+        // ignored
+      }
+    }
+  } catch {
+    // Directory doesn't exist or unreadable — nothing to clean
+  }
+}
