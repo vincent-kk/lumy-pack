@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import { lstat, readFile, readlink } from 'node:fs/promises';
 
+import { isString } from '@winglet/common-utils';
+
 import { validateMetadata } from '../schemas/metadata.schema.js';
 import { contractTilde } from '../utils/paths.js';
 import { getHostname, getSystemInfo } from '../utils/system.js';
@@ -44,7 +46,7 @@ export function createMetadata(
  * Parse and validate metadata from a buffer or string.
  */
 export function parseMetadata(data: Buffer | string): BackupMetadata {
-  const str = typeof data === 'string' ? data : data.toString('utf-8');
+  const str = isString(data) ? data : data.toString('utf-8');
   const parsed = JSON.parse(str) as unknown;
 
   const result = validateMetadata(parsed);

@@ -2,6 +2,7 @@ import { exec } from 'node:child_process';
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { filter, isTruthy } from '@winglet/common-utils';
 import YAML from 'yaml';
 
 import { TEMPLATES_DIR, getSubDir } from '../constants.js';
@@ -177,7 +178,7 @@ export async function executeStep(step: TemplateStep): Promise<StepResult> {
   // Execute the command
   try {
     const { stdout, stderr } = await execAsync(step.command);
-    const output = [stdout, stderr].filter(Boolean).join('\n').trim();
+    const output = filter([stdout, stderr], isTruthy).join('\n').trim();
     return {
       name: step.name,
       status: 'success',
@@ -188,8 +189,7 @@ export async function executeStep(step: TemplateStep): Promise<StepResult> {
     const error = err instanceof Error ? err : new Error(String(err));
     const stdout = (err as { stdout?: string })?.stdout ?? '';
     const stderr = (err as { stderr?: string })?.stderr ?? '';
-    const errorOutput = [stdout, stderr, error.message]
-      .filter(Boolean)
+    const errorOutput = filter([stdout, stderr, error.message], isTruthy)
       .join('\n')
       .trim();
 
