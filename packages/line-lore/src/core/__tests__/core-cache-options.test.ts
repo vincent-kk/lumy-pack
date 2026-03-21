@@ -155,7 +155,6 @@ describe('trace() — noCache option', () => {
   });
 
   it('noCache: true bypasses cache and still returns PR from merge message', async () => {
-    // Pre-populate cache — should be ignored when noCache is true
     mockStore.set(COMMIT_SHA, {
       number: 999,
       title: 'cached-stale',
@@ -168,13 +167,10 @@ describe('trace() — noCache option', () => {
     const adapter = createMockAdapter(null);
     mockDetectPlatformAdapter.mockResolvedValue({ adapter });
 
-    // git blame
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
-    // cosmetic diff check
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
     );
-    // findMergeCommit
     mockGitExec.mockResolvedValueOnce(
       gitOk(
         `${MERGE_SHA} ${PARENT1} ${PARENT2} Merge pull request #42 from feature/branch\n`,
@@ -185,7 +181,6 @@ describe('trace() — noCache option', () => {
 
     const prNode = result.nodes.find((n) => n.type === 'pull_request');
     expect(prNode).toBeDefined();
-    // Should find PR #42 from merge message, NOT #999 from stale cache
     expect(prNode!.prNumber).toBe(42);
   });
 
@@ -197,7 +192,6 @@ describe('trace() — noCache option', () => {
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
     );
-    // findMergeCommit → empty (falls through to patch-id path)
     mockGitExec.mockResolvedValueOnce(gitEmpty());
 
     await trace({ file: 'src/foo.ts', line: 1, noCache: true });
@@ -227,16 +221,11 @@ describe('trace() — deep option', () => {
     const adapter = createMockAdapter(null);
     mockDetectPlatformAdapter.mockResolvedValue({ adapter });
 
-    // git blame
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
-    // cosmetic diff check
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
     );
-    // findMergeCommit — no merge found
     mockGitExec.mockResolvedValueOnce(gitEmpty());
-    // patch-id: git diff | git patch-id (via execa — will fail, that's ok)
-    // git log for patch-id scan (will return empty)
     mockGitExec.mockResolvedValueOnce(gitEmpty());
 
     const result = await trace({ file: 'src/foo.ts', line: 1, deep: true });
@@ -268,7 +257,6 @@ describe('trace() — deep option', () => {
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
     );
-    // findMergeCommit → empty (falls through to patch-id path)
     mockGitExec.mockResolvedValueOnce(gitEmpty());
 
     await trace({ file: 'src/foo.ts', line: 1, deep: true });
@@ -305,8 +293,7 @@ describe('clearCache()', () => {
     await expect(clearCache()).resolves.toBeUndefined();
   });
 
-  it('cache is empty after clearCache — subsequent lookups start fresh', async () => {
-    // Pre-populate the store so FileCache.get() would return a hit
+  it('does not throw when store is pre-populated', async () => {
     mockStore.set(COMMIT_SHA, {
       number: 1,
       title: 'cached',
@@ -316,11 +303,6 @@ describe('clearCache()', () => {
       baseBranch: '',
     });
 
-    await clearCache();
-
-    // After clear, store should be empty (FileCache.clear() was NOT called by resetPRCache,
-    // which only nulls the module ref — but the mockStore shared instance persists;
-    // verify clearCache does not throw regardless of store state)
-    expect(true).toBe(true);
+    await expect(clearCache()).resolves.toBeUndefined();
   });
 });
