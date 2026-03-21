@@ -6,14 +6,17 @@
  *   Stage 3: Dynamic plain token scan  CAT_NNN or {{CAT_NNN}}
  * MUST NOT import from detection/, document/, node:fs, node:crypto
  */
-import type { Dictionary } from '../dictionary/dictionary.js';
-import type { UnveilResult } from './types.js';
+import { map } from "@winglet/common-utils";
+
+import type { Dictionary } from "../dictionary/dictionary.js";
+import type { UnveilResult } from "./types.js";
 
 // Stage 1: strict XML tag — `<iv-cat id="NNN">CAT_NNN</iv-cat>`
 const STAGE1_REGEX = /<iv-([a-z]+)\s+id="(\d+)">([A-Z]+_\d+)<\/iv-\1>/g;
 
 // Stage 2: loose XML — handles single quotes and extra whitespace
-const STAGE2_REGEX = /<iv-([a-z]+)\s+id=['"](\d+)['"]>\s*([A-Z]+_\d+)\s*<\/iv-\1>/g;
+const STAGE2_REGEX =
+  /<iv-([a-z]+)\s+id=['"](\d+)['"]>\s*([A-Z]+_\d+)\s*<\/iv-\1>/g;
 
 // Stage 3 bracket: {{CAT_NNN}}
 const STAGE3_BRACKET_REGEX = /\{\{([A-Z]+_\d+)\}\}/g;
@@ -21,8 +24,10 @@ const STAGE3_BRACKET_REGEX = /\{\{([A-Z]+_\d+)\}\}/g;
 // Stage 3 plain: bare CAT_NNN token (must be a known category prefix)
 function buildStage3PlainRegex(categories: string[]): RegExp | null {
   if (categories.length === 0) return null;
-  const alt = categories.map((c) => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-  return new RegExp(`\\b((?:${alt})_\\d+)\\b`, 'g');
+  const alt = map(categories, (c) =>
+    c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+  ).join("|");
+  return new RegExp(`\\b((?:${alt})_\\d+)\\b`, "g");
 }
 
 export function unveilText(text: string, dictionary: Dictionary): UnveilResult {
@@ -87,8 +92,10 @@ export function unveilText(text: string, dictionary: Dictionary): UnveilResult {
   const modifiedDeduped = dedupe(modifiedTokens);
   const unmatchedDeduped = dedupe(unmatchedTokens);
 
-  const totalFound = matchedDeduped.length + modifiedDeduped.length + unmatchedDeduped.length;
-  const tokenIntegrity = totalFound === 0 ? 1.0 : matchedDeduped.length / totalFound;
+  const totalFound =
+    matchedDeduped.length + modifiedDeduped.length + unmatchedDeduped.length;
+  const tokenIntegrity =
+    totalFound === 0 ? 1.0 : matchedDeduped.length / totalFound;
 
   return {
     text: result,
