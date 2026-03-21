@@ -15,10 +15,10 @@ export interface ModelEntry {
  *   2. Add/update the entry below.
  */
 export const MODEL_REGISTRY: Record<string, ModelEntry> = {
-  'kiwi-base': {
-    url: 'https://github.com/bab2min/Kiwi/releases/download/v0.22.2/kiwi_model_v0.22.2_base.tgz',
-    sha256: 'aa11a6e5b06c7db43e9b07148620f5fb7838a30172dacb40f75202333110f2d1',
-    sizeLabel: '~16MB',
+  "kiwi-base": {
+    url: "https://github.com/bab2min/Kiwi/releases/download/v0.22.2/kiwi_model_v0.22.2_base.tgz",
+    sha256: "aa11a6e5b06c7db43e9b07148620f5fb7838a30172dacb40f75202333110f2d1",
+    sizeLabel: "~16MB",
     stripComponents: 2,
   },
 };

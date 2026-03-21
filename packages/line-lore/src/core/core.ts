@@ -1,3 +1,5 @@
+import { map } from '@winglet/common-utils';
+
 import { isAstAvailable } from '../ast/index.js';
 import { LineLoreError, LineLoreErrorCode } from '../errors.js';
 import { checkGitHealth } from '../git/health.js';
@@ -183,7 +185,7 @@ async function buildTraceNodes(
   execOptions: GitExecOptions,
 ): Promise<TraceNode[]> {
   const results = await Promise.allSettled(
-    analyzed.map((entry) =>
+    map(analyzed, (entry) =>
       processEntry(entry, featureFlags, adapter, options, execOptions),
     ),
   );

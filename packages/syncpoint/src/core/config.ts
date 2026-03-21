@@ -1,6 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { isArray, map } from '@winglet/common-utils';
 import YAML from 'yaml';
 
 import {
@@ -19,7 +20,7 @@ import type { SyncpointConfig } from '../utils/types.js';
 
 function stripDangerousKeys(obj: unknown): unknown {
   if (obj === null || typeof obj !== 'object') return obj;
-  if (Array.isArray(obj)) return obj.map(stripDangerousKeys);
+  if (isArray(obj)) return map(obj, stripDangerousKeys);
   const cleaned: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
     if (['__proto__', 'constructor', 'prototype'].includes(key)) continue;

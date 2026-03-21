@@ -1,18 +1,24 @@
-import type { DetectionSpan, DetectionConfig } from './types.js';
-import { ensureModel, ensureModelAt } from './kiwi/downloader.js';
-import { normalizeNFC } from './normalize.js';
-import { stripTrailingParticle, KOREAN_PARTICLES } from './particles.js';
-import { mergeSpans } from './merger.js';
-import { RegexEngine } from './regex/engine.js';
-import { chunkText, type ChunkOptions } from './chunker.js';
-import type { KiwiEngine } from './kiwi/engine.js';
+import { map, filter } from "@winglet/common-utils";
 
-export type { DetectionSpan, DetectionConfig, DetectionEngine } from './types.js';
-export { normalizeNFC } from './normalize.js';
-export { stripTrailingParticle, KOREAN_PARTICLES } from './particles.js';
-export { mergeSpans } from './merger.js';
-export { RegexEngine } from './regex/engine.js';
-export { chunkText, type ChunkOptions } from './chunker.js';
+import type { DetectionSpan, DetectionConfig } from "./types.js";
+import { ensureModel, ensureModelAt } from "./kiwi/downloader.js";
+import { normalizeNFC } from "./normalize.js";
+import { stripTrailingParticle, KOREAN_PARTICLES } from "./particles.js";
+import { mergeSpans } from "./merger.js";
+import { RegexEngine } from "./regex/engine.js";
+import { chunkText, type ChunkOptions } from "./chunker.js";
+import type { KiwiEngine } from "./kiwi/engine.js";
+
+export type {
+  DetectionSpan,
+  DetectionConfig,
+  DetectionEngine,
+} from "./types.js";
+export { normalizeNFC } from "./normalize.js";
+export { stripTrailingParticle, KOREAN_PARTICLES } from "./particles.js";
+export { mergeSpans } from "./merger.js";
+export { RegexEngine } from "./regex/engine.js";
+export { chunkText, type ChunkOptions } from "./chunker.js";
 
 export interface ManualRule {
   pattern: string | RegExp;
@@ -68,9 +74,11 @@ export class DetectionPipeline {
 
   constructor(options: DetectionPipelineOptions = {}) {
     this.regexEngine = new RegexEngine();
-    this.config = options.config ?? { priorityOrder: ['MANUAL', 'REGEX', 'NER'] };
+    this.config = options.config ?? {
+      priorityOrder: ["MANUAL", "REGEX", "NER"],
+    };
     this.noNer = options.noNer ?? false;
-    this.nerModel = options.nerModel ?? 'kiwi-base';
+    this.nerModel = options.nerModel ?? "kiwi-base";
     this.nerModelPath = options.nerModelPath;
     this.nerThreshold = options.nerThreshold ?? 0.2;
 
@@ -106,15 +114,20 @@ export class DetectionPipeline {
           ? await ensureModelAt(this.nerModel, this.nerModelPath)
           : await ensureModel(this.nerModel);
         if (!modelDir) {
-          process.stderr.write('ink-veil: Kiwi model not available. Using regex-only detection.\n');
+          process.stderr.write(
+            "ink-veil: Kiwi model not available. Using regex-only detection.\n",
+          );
           return;
         }
 
-        const { KiwiEngine: KiwiEngineClass } = await import('./kiwi/engine.js');
+        const { KiwiEngine: KiwiEngineClass } =
+          await import("./kiwi/engine.js");
         this.kiwiEngine = new KiwiEngineClass();
         await this.kiwiEngine.init(modelDir);
       } catch (e) {
-        process.stderr.write(`ink-veil: Kiwi init failed: ${e instanceof Error ? e.message : String(e)}. Using regex-only.\n`);
+        process.stderr.write(
+          `ink-veil: Kiwi init failed: ${e instanceof Error ? e.message : String(e)}. Using regex-only.\n`,
+        );
         this.kiwiEngine = null;
         this.kiwiInitPromise = null;
       }
@@ -127,7 +140,10 @@ export class DetectionPipeline {
    * 텍스트에서 PII 엔티티를 감지하고, 감지된 스팬을 반환합니다.
    * dictionary가 제공되면 각 엔티티에 대해 addEntity()를 호출합니다.
    */
-  async detect(rawText: string, dictionary?: DictionaryLike): Promise<DetectionSpan[]> {
+  async detect(
+    rawText: string,
+    dictionary?: DictionaryLike,
+  ): Promise<DetectionSpan[]> {
     // 1. NFC 정규화
     const text = normalizeNFC(rawText);
 
@@ -143,16 +159,21 @@ export class DetectionPipeline {
         try {
           nerSpans = this.kiwiEngine.detect(text);
         } catch (e) {
-          process.stderr.write(`ink-veil: Kiwi detection error: ${e instanceof Error ? e.message : String(e)}\n`);
+          process.stderr.write(
+            `ink-veil: Kiwi detection error: ${e instanceof Error ? e.message : String(e)}\n`,
+          );
         }
       }
     }
 
     // 3. nerThreshold 필터링
-    const filteredNerSpans = nerSpans.filter((span) => span.confidence >= this.nerThreshold);
+    const filteredNerSpans = filter(
+      nerSpans,
+      (span) => span.confidence >= this.nerThreshold,
+    );
 
     // 4. 조사 제거 (NER 스팬에서 후처리)
-    const processedNerSpans = filteredNerSpans.map((span) => {
+    const processedNerSpans = map(filteredNerSpans, (span) => {
       const { entity, particle } = stripTrailingParticle(span.text);
       if (particle) {
         return { ...span, text: entity, end: span.end - particle.length };
@@ -179,7 +200,11 @@ export class DetectionPipeline {
    * Deduplicates overlap spans by (start, end, text) triple.
    * Falls back to detect() for texts <= chunkSize.
    */
-  async detectChunked(rawText: string, options?: ChunkOptions, dictionary?: DictionaryLike): Promise<DetectionSpan[]> {
+  async detectChunked(
+    rawText: string,
+    options?: ChunkOptions,
+    dictionary?: DictionaryLike,
+  ): Promise<DetectionSpan[]> {
     const chunkSize = options?.chunkSize ?? 65536;
 
     // Small text: delegate directly
@@ -245,7 +270,10 @@ export class DetectionPipeline {
   }
 }
 
-function createInlineManualEngine(rules: ManualRule[], userWords: UserWord[]): DetectionEngineManual {
+function createInlineManualEngine(
+  rules: ManualRule[],
+  userWords: UserWord[],
+): DetectionEngineManual {
   return {
     detect(text: string): DetectionSpan[] {
       const spans: DetectionSpan[] = [];
@@ -255,7 +283,7 @@ function createInlineManualEngine(rules: ManualRule[], userWords: UserWord[]): D
         const confidence = rule.confidence ?? 1.0;
         const priority = rule.priority ?? 1;
 
-        if (typeof rule.pattern === 'string') {
+        if (typeof rule.pattern === "string") {
           let idx = text.indexOf(rule.pattern);
           while (idx !== -1) {
             spans.push({
@@ -263,7 +291,7 @@ function createInlineManualEngine(rules: ManualRule[], userWords: UserWord[]): D
               end: idx + rule.pattern.length,
               text: rule.pattern,
               category: rule.category,
-              method: 'MANUAL',
+              method: "MANUAL",
               confidence,
               priority,
             });
@@ -272,7 +300,9 @@ function createInlineManualEngine(rules: ManualRule[], userWords: UserWord[]): D
         } else {
           const re = new RegExp(
             rule.pattern.source,
-            rule.pattern.flags.includes('g') ? rule.pattern.flags : rule.pattern.flags + 'g',
+            rule.pattern.flags.includes("g")
+              ? rule.pattern.flags
+              : rule.pattern.flags + "g",
           );
           let match: RegExpExecArray | null;
           while ((match = re.exec(text)) !== null) {
@@ -281,7 +311,7 @@ function createInlineManualEngine(rules: ManualRule[], userWords: UserWord[]): D
               end: match.index + match[0].length,
               text: match[0],
               category: rule.category,
-              method: 'MANUAL',
+              method: "MANUAL",
               confidence,
               priority,
             });
@@ -295,17 +325,18 @@ function createInlineManualEngine(rules: ManualRule[], userWords: UserWord[]): D
         while (idx !== -1) {
           const afterEnd = idx + word.text.length;
           const rest = text.slice(afterEnd);
-          const isWordBoundary = rest.length === 0
-            || /^[\s,.\n;:!?)\]>}]/.test(rest)
-            || KOREAN_PARTICLES.some(p => rest.startsWith(p));
+          const isWordBoundary =
+            rest.length === 0 ||
+            /^[\s,.\n;:!?)\]>}]/.test(rest) ||
+            KOREAN_PARTICLES.some((p) => rest.startsWith(p));
 
           if (isWordBoundary) {
             spans.push({
               start: idx,
               end: afterEnd,
               text: word.text,
-              category: word.category ?? 'CUSTOM',
-              method: 'MANUAL',
+              category: word.category ?? "CUSTOM",
+              method: "MANUAL",
               confidence: 1.0,
               priority: 1,
             });

@@ -1,4 +1,4 @@
-import type { DetectionSpan, DetectionMethod } from './types.js';
+import type { DetectionSpan, DetectionMethod } from "./types.js";
 
 const METHOD_PRIORITY: Record<DetectionMethod, number> = {
   MANUAL: 1,

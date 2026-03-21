@@ -16,10 +16,12 @@ export function pLimit(concurrency: number) {
   return <T>(fn: () => Promise<T>): Promise<T> => {
     return new Promise<T>((resolve, reject) => {
       const run = () => {
-        fn().then(resolve, reject).finally(() => {
-          activeCount--;
-          next();
-        });
+        fn()
+          .then(resolve, reject)
+          .finally(() => {
+            activeCount--;
+            next();
+          });
       };
 
       if (activeCount < concurrency) {

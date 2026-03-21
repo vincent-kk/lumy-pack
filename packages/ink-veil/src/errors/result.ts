@@ -1,4 +1,4 @@
-import type { InkVeilError } from './types.js';
+import type { InkVeilError } from "./types.js";
 
 export type Result<T, E = InkVeilError> =
   | { ok: true; value: T }

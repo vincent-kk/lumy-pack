@@ -74,7 +74,7 @@ export function chunkText(text: string, options?: ChunkOptions): TextChunk[] {
  */
 function findSplitPoint(window: string, chunkSize: number): number {
   // Tier 1: Find last newline
-  const lastNewline = window.lastIndexOf('\n');
+  const lastNewline = window.lastIndexOf("\n");
   if (lastNewline > chunkSize * 0.5) {
     return lastNewline + 1; // Include the newline in current chunk
   }

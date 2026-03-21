@@ -1,4 +1,4 @@
-import type { DetectionSpan } from '../types.js';
+import type { DetectionSpan } from "../types.js";
 
 /** A manual detection rule — string literal or RegExp. */
 export interface ManualRule {
@@ -26,7 +26,7 @@ export class ManualEngine {
     const spans: DetectionSpan[] = [];
 
     for (const rule of rules) {
-      if (typeof rule.pattern === 'string') {
+      if (typeof rule.pattern === "string") {
         this.detectString(text, rule.pattern, rule.category, spans);
       } else {
         this.detectRegex(text, rule.pattern, rule.category, spans);
@@ -54,7 +54,7 @@ export class ManualEngine {
         end: idx + pattern.length,
         text: pattern,
         category,
-        method: 'MANUAL',
+        method: "MANUAL",
         confidence: 1.0,
       });
       searchFrom = idx + pattern.length;
@@ -78,7 +78,7 @@ export class ManualEngine {
         end: start + matched.length,
         text: matched,
         category,
-        method: 'MANUAL',
+        method: "MANUAL",
         confidence: 1.0,
       });
       // Guard against zero-width matches to prevent infinite loop.
@@ -88,5 +88,5 @@ export class ManualEngine {
 }
 
 function ensureGlobal(flags: string): string {
-  return flags.includes('g') ? flags : flags + 'g';
+  return flags.includes("g") ? flags : flags + "g";
 }

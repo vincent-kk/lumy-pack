@@ -2,11 +2,11 @@
  * Dictionary merge module.
  * Supports 4 strategies: keep-mine, keep-theirs, prompt (callback), rename (ID reassignment).
  */
-import { Dictionary } from './dictionary.js';
-import { compositeKey } from './entry.js';
-import type { DictionaryEntry } from './entry.js';
+import { Dictionary } from "./dictionary.js";
+import { compositeKey } from "./entry.js";
+import type { DictionaryEntry } from "./entry.js";
 
-export type MergeStrategy = 'keep-mine' | 'keep-theirs' | 'prompt' | 'rename';
+export type MergeStrategy = "keep-mine" | "keep-theirs" | "prompt" | "rename";
 
 export interface MergeConflict {
   key: string;
@@ -26,7 +26,9 @@ export interface MergeResult {
  * Callback invoked for each conflict in 'prompt' mode.
  * Return 'mine' to keep the existing entry, 'theirs' to replace with the incoming entry.
  */
-export type ConflictResolver = (conflict: MergeConflict) => Promise<'mine' | 'theirs'> | 'mine' | 'theirs';
+export type ConflictResolver = (
+  conflict: MergeConflict,
+) => Promise<"mine" | "theirs"> | "mine" | "theirs";
 
 export interface MergeOptions {
   strategy: MergeStrategy;
@@ -64,15 +66,27 @@ export async function mergeDictionaries(
     const key = compositeKey(entry.original, entry.category);
     const existing = merged.lookup(entry.original, entry.category);
 
-    if (strategy === 'rename') {
+    if (strategy === "rename") {
       // rename: always add, but reassign a new ID if the token ID already exists
       const reverseHit = merged.reverseLookup(entry.tokenPlain);
       if (reverseHit && reverseHit.original !== entry.original) {
         // ID collision — add with a new ID (addEntity generates a fresh sequential ID)
-        merged.addEntity(entry.original, entry.category, entry.method, entry.confidence, entry.addedFromDocument);
+        merged.addEntity(
+          entry.original,
+          entry.category,
+          entry.method,
+          entry.confidence,
+          entry.addedFromDocument,
+        );
         renamed++;
       } else if (!existing) {
-        merged.addEntity(entry.original, entry.category, entry.method, entry.confidence, entry.addedFromDocument);
+        merged.addEntity(
+          entry.original,
+          entry.category,
+          entry.method,
+          entry.confidence,
+          entry.addedFromDocument,
+        );
         added++;
       } else {
         // Same composite key: skip (already present with same text+category)
@@ -83,7 +97,13 @@ export async function mergeDictionaries(
 
     if (!existing) {
       // No conflict — add directly
-      merged.addEntity(entry.original, entry.category, entry.method, entry.confidence, entry.addedFromDocument);
+      merged.addEntity(
+        entry.original,
+        entry.category,
+        entry.method,
+        entry.confidence,
+        entry.addedFromDocument,
+      );
       added++;
       continue;
     }
@@ -92,12 +112,12 @@ export async function mergeDictionaries(
     const conflict: MergeConflict = { key, mine: existing, theirs: entry };
     conflicts.push(conflict);
 
-    let resolution: 'mine' | 'theirs';
+    let resolution: "mine" | "theirs";
 
-    if (strategy === 'keep-mine') {
-      resolution = 'mine';
-    } else if (strategy === 'keep-theirs') {
-      resolution = 'theirs';
+    if (strategy === "keep-mine") {
+      resolution = "mine";
+    } else if (strategy === "keep-theirs") {
+      resolution = "theirs";
     } else {
       // prompt
       if (!resolver) {
@@ -106,7 +126,7 @@ export async function mergeDictionaries(
       resolution = await resolver(conflict);
     }
 
-    if (resolution === 'theirs') {
+    if (resolution === "theirs") {
       // Replace: restore existing to theirs values by updating occurrenceCount and method
       existing.occurrenceCount = entry.occurrenceCount;
       existing.method = entry.method;

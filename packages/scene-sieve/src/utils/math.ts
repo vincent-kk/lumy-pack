@@ -1,3 +1,5 @@
+import { filter, map } from '@winglet/common-utils';
+
 import {
   NORMALIZATION_ALPHA,
   NORMALIZATION_LOGISTIC_K,
@@ -35,11 +37,11 @@ export interface ScoredItem {
 export function normalizeScores<T extends ScoredItem>(items: T[]): number[] {
   if (items.length === 0) return [];
 
-  const safeScores = items.map((e) =>
+  const safeScores = map(items, (e) =>
     Number.isFinite(e.score) && e.score > 0 ? e.score : 0,
   );
 
-  const positiveScores = safeScores.filter((s) => s > 0);
+  const positiveScores = filter(safeScores, (s) => s > 0);
   if (positiveScores.length === 0) return safeScores;
 
   const sorted = [...positiveScores].sort((a, b) => a - b);
@@ -48,8 +50,8 @@ export function normalizeScores<T extends ScoredItem>(items: T[]): number[] {
   if (positiveScores.length <= NORMALIZATION_MIN_SAMPLE_SIZE) {
     const min = sorted[0]!;
     const max = sorted[sorted.length - 1]!;
-    if (max === min) return safeScores.map((s) => (s > 0 ? 1.0 : 0));
-    return safeScores.map((s) =>
+    if (max === min) return map(safeScores, (s) => (s > 0 ? 1.0 : 0));
+    return map(safeScores, (s) =>
       s <= 0 ? 0 : Math.max(0, Math.min((s - min) / (max - min), 1.0)),
     );
   }
@@ -58,7 +60,7 @@ export function normalizeScores<T extends ScoredItem>(items: T[]): number[] {
 
   // 1. Logistic-Robust-Z
   const median = sorted[Math.floor(sorted.length / 2)]!;
-  const absoluteDiffs = positiveScores.map((v) => Math.abs(v - median));
+  const absoluteDiffs = map(positiveScores, (v) => Math.abs(v - median));
   const mad = [...absoluteDiffs].sort((a, b) => a - b)[
     Math.floor(absoluteDiffs.length / 2)
   ]!;
@@ -66,7 +68,7 @@ export function normalizeScores<T extends ScoredItem>(items: T[]): number[] {
   // Scale coefficient for Z-score
   const scale = mad === 0 ? median : mad * NORMALIZATION_MAD_COEFFICIENT;
 
-  const logisticZ = safeScores.map((s) => {
+  const logisticZ = map(safeScores, (s) => {
     if (s <= 0) return 0;
     if (scale === 0) return 1.0;
     const z = (s - median) / scale;
@@ -74,14 +76,15 @@ export function normalizeScores<T extends ScoredItem>(items: T[]): number[] {
   });
 
   // 2. CDF (Percentile Rank)
-  const cdf = safeScores.map((s) => {
+  const cdf = map(safeScores, (s) => {
     if (s <= 0) return 0;
     const rank = sorted.findIndex((v) => v >= s);
     return rank / sorted.length;
   });
 
   // 3. Hybrid Combination
-  return logisticZ.map(
+  return map(
+    logisticZ,
     (z, i) => z * (1 - NORMALIZATION_ALPHA) + cdf[i]! * NORMALIZATION_ALPHA,
   );
 }

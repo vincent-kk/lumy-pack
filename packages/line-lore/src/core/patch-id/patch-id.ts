@@ -1,3 +1,5 @@
+import { filter, isTruthy } from '@winglet/common-utils';
+
 import { FileCache } from '../../cache/file-cache.js';
 import { gitExec, shellExec } from '../../git/executor.js';
 import type { GitExecOptions } from '../../types/index.js';
@@ -71,7 +73,7 @@ export async function findPatchIdMatch(
       { cwd: options?.cwd, timeout: options?.timeout },
     );
 
-    const candidates = logResult.stdout.trim().split('\n').filter(Boolean);
+    const candidates = filter(logResult.stdout.trim().split('\n'), isTruthy);
 
     for (const candidateSha of candidates) {
       if (candidateSha === commitSha) continue;

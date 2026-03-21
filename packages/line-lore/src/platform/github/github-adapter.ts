@@ -1,3 +1,5 @@
+import { filter, isArray, isTruthy, map } from '@winglet/common-utils';
+
 import { gitExec, shellExec } from '../../git/executor.js';
 import type {
   AuthStatus,
@@ -64,7 +66,7 @@ export class GitHubAdapter implements PlatformAdapter {
       ]);
 
       const prs = JSON.parse(result.stdout);
-      if (!Array.isArray(prs) || prs.length === 0) return null;
+      if (!isArray(prs) || prs.length === 0) return null;
 
       // Pick the best PR: prefer the one targeting the default branch
       const defaultBranch = await this.detectDefaultBranch();
@@ -116,7 +118,7 @@ export class GitHubAdapter implements PlatformAdapter {
         '.[].sha',
       ]);
 
-      return result.stdout.trim().split('\n').filter(Boolean);
+      return filter(result.stdout.trim().split('\n'), isTruthy);
     } catch {
       return [];
     }
@@ -136,18 +138,19 @@ export class GitHubAdapter implements PlatformAdapter {
       ]);
 
       const nodes = JSON.parse(result.stdout);
-      if (!Array.isArray(nodes)) return [];
+      if (!isArray(nodes)) return [];
 
-      return nodes.map((node: Record<string, unknown>) => ({
+      return map(nodes, (node: Record<string, unknown>) => ({
         number: node.number as number,
         title: (node.title as string) ?? '',
         url: (node.url as string) ?? '',
         state: ((node.state as string) ?? 'open').toLowerCase() as
           | 'open'
           | 'closed',
-        labels: (
-          (node.labels as { nodes: Array<{ name: string }> })?.nodes ?? []
-        ).map((l) => l.name),
+        labels: map(
+          (node.labels as { nodes: Array<{ name: string }> })?.nodes ?? [],
+          (l) => l.name,
+        ),
       }));
     } catch {
       return [];
@@ -166,10 +169,10 @@ export class GitHubAdapter implements PlatformAdapter {
       ]);
 
       const prs = JSON.parse(result.stdout);
-      if (!Array.isArray(prs)) return [];
+      if (!isArray(prs)) return [];
 
       const defaultBranch = await this.detectDefaultBranch();
-      return prs.map((pr: Record<string, unknown>) => ({
+      return map(prs, (pr: Record<string, unknown>) => ({
         number: pr.number as number,
         title: (pr.title as string) ?? '',
         author: (pr.user as string) ?? '',

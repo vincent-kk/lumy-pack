@@ -1209,6 +1209,8 @@ __metadata:
     "@types/node": "npm:^20.11.0"
     "@types/papaparse": "npm:^5.3.14"
     "@vitest/coverage-v8": "npm:^3.2.4"
+    "@winglet/common-utils": "npm:^0.11.2"
+    "@winglet/react-utils": "npm:^0.11.2"
     ajv: "npm:^8.17.0"
     chardet: "npm:^2.0.0"
     commander: "npm:^12.1.0"
@@ -1234,6 +1236,8 @@ __metadata:
     "@types/node": "npm:^20.11.0"
     "@types/react": "npm:^18.0.0"
     "@vitest/coverage-v8": "npm:^3.2.4"
+    "@winglet/common-utils": "npm:^0.11.2"
+    "@winglet/react-utils": "npm:^0.11.2"
     commander: "npm:^12.1.0"
     execa: "npm:^9.5.0"
     ink: "npm:^5.0.0"
@@ -1256,6 +1260,8 @@ __metadata:
     "@types/node": "npm:^20.11.0"
     "@types/react": "npm:^18.0.0"
     "@vitest/coverage-v8": "npm:^3.2.4"
+    "@winglet/common-utils": "npm:^0.11.2"
+    "@winglet/react-utils": "npm:^0.11.2"
     commander: "npm:^12.1.0"
     execa: "npm:^9.5.0"
     ffmpeg-static: "npm:^5.2.0"
@@ -1284,6 +1290,8 @@ __metadata:
     "@types/node": "npm:^20.11.0"
     "@types/react": "npm:^18.0.0"
     "@vitest/coverage-v8": "npm:^3.2.4"
+    "@winglet/common-utils": "npm:^0.11.2"
+    "@winglet/react-utils": "npm:^0.11.2"
     ajv: "npm:^8.0.0"
     ajv-formats: "npm:^3.0.0"
     commander: "npm:^12.1.0"
@@ -2148,6 +2156,32 @@ __metadata:
     loupe: "npm:^3.1.4"
     tinyrainbow: "npm:^2.0.0"
   checksum: 10c0/024a9b8c8bcc12cf40183c246c244b52ecff861c6deb3477cbf487ac8781ad44c68a9c5fd69f8c1361878e55b97c10d99d511f2597f1f7244b5e5101d028ba64
+  languageName: node
+  linkType: hard
+
+"@winglet/common-utils@npm:^0.11.1":
+  version: 0.11.1
+  resolution: "@winglet/common-utils@npm:0.11.1"
+  checksum: 10c0/c91748a1bfec9a2f270bbd879e9564607494e343e4de25aa41ecdbbb1fd6b73f705ed3afba9d1d5567d2c15e733d3e332055b49899bf62595c4019677bbbe71b
+  languageName: node
+  linkType: hard
+
+"@winglet/common-utils@npm:^0.11.2":
+  version: 0.11.2
+  resolution: "@winglet/common-utils@npm:0.11.2"
+  checksum: 10c0/0d0bac48a5ae7f7ac609c803c9da7cd6013ae83f52d362145423d44859126d05170c7494373e650c404bba85fe4c045768d3007d4d902eaa223ad72d16a85d28
+  languageName: node
+  linkType: hard
+
+"@winglet/react-utils@npm:^0.11.2":
+  version: 0.11.2
+  resolution: "@winglet/react-utils@npm:0.11.2"
+  dependencies:
+    "@winglet/common-utils": "npm:^0.11.1"
+  peerDependencies:
+    react: ">=16 <20"
+    react-dom: ">=16 <20"
+  checksum: 10c0/ccb677657472f4f356329f42a00072de056b31d45ef54654020117346c74dea35aca75445c7406bbd954c8db916eb0473ec5baebec5d3c31e2f5a31f05e359e0
   languageName: node
   linkType: hard
 

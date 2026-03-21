@@ -54,9 +54,7 @@ describe('gitExec', () => {
       expect.unreachable('should have thrown');
     } catch (err) {
       expect(err).toBeInstanceOf(LineLoreError);
-      expect((err as LineLoreError).code).toBe(
-        LineLoreErrorCode.NOT_GIT_REPO,
-      );
+      expect((err as LineLoreError).code).toBe(LineLoreErrorCode.NOT_GIT_REPO);
     }
   });
 
