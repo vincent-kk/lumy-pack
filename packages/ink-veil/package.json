@@ -1,6 +1,6 @@
 {
   "name": "@lumy-pack/ink-veil",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Korean PII detection and veiling CLI tool",
   "keywords": [
     "cli",
