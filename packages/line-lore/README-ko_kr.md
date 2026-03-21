@@ -6,6 +6,7 @@
 
 - **라인-to-PR 역추적**: 모든 코드 라인을 몇 초 만에 출발지 PR로 역추적
 - **4단계 파이프라인**: Blame → 외관상 변경 감지 → 계보 순회 → PR 검색
+- **PR/Issue 그래프 순회**: PR과 Issue 간 관계를 edge 정보와 함께 탐색
 - **다중 플랫폼 지원**: GitHub, GitHub Enterprise, GitLab, GitLab self-hosted
 - **운영 레벨**: 오프라인(Level 0)부터 전체 API 접근(Level 2)까지 우아한 기능 축소
 - **이중 배포**: CLI 도구로 사용하거나 라이브러리로 import
@@ -34,7 +35,7 @@ npx @lumy-pack/line-lore trace src/config.ts -L 10,50
 npx @lumy-pack/line-lore trace src/auth.ts -L 42 --deep
 
 # PR-to-issues 그래프 순회
-npx @lumy-pack/line-lore graph --pr 42 --depth 2
+npx @lumy-pack/line-lore graph pr 42 --depth 2
 
 # 시스템 상태 확인
 npx @lumy-pack/line-lore health
@@ -55,7 +56,7 @@ npx @lumy-pack/line-lore trace src/auth.ts -L 42 --quiet
 ### 프로그래밍 API
 
 ```typescript
-import { trace, health, clearCache } from '@lumy-pack/line-lore';
+import { trace, graph, health, clearCache } from '@lumy-pack/line-lore';
 
 // 라인을 PR로 역추적
 const result = await trace({
@@ -63,9 +64,24 @@ const result = await trace({
   line: 42,
 });
 
-console.log(result.nodes);           // TraceNode[]
-console.log(result.operatingLevel);  // 0 | 1 | 2
-console.log(result.warnings);         // 기능 축소 메시지
+// PR 노드 찾기
+const prNode = result.nodes.find(n => n.type === 'pull_request');
+if (prNode) {
+  console.log(`PR #${prNode.prNumber}: ${prNode.prTitle}`);
+}
+
+// PR → Issue 그래프 순회
+const graphResult = await graph({ type: 'pr', number: 42, depth: 1 });
+for (const node of graphResult.nodes) {
+  if (node.type === 'issue') {
+    console.log(`Issue #${node.issueNumber}: ${node.issueTitle}`);
+  }
+}
+
+// 시스템 준비 상태 확인
+const report = await health();
+console.log(`운영 레벨: ${report.operatingLevel}`);
+console.log(`Git 버전: ${report.gitVersion}`);
 ```
 
 ## 작동 원리
@@ -75,7 +91,7 @@ console.log(result.warnings);         // 기능 축소 메시지
 1. **라인 → 커밋 (Blame)**: `-C -C -M` 플래그로 파일 이름 변경과 복사본 감지
 2. **외관상 변경 감지**: AST 구조 비교로 포맷 전용 변경 건너뛰기
 3. **커밋 → 병합 커밋**: ancestry-path 순회 + patch-id 매칭으로 병합 커밋 해결
-4. **병합 커밋 → PR**: 커밋 메시지 파싱 + 플랫폼 API 검색
+4. **병합 커밋 → PR**: 커밋 메시지 파싱 + 플랫폼 API 검색 (미병합 PR 필터링)
 
 ML이나 휴리스틱을 사용하지 않으므로 결과는 항상 재현 가능합니다.
 
@@ -201,7 +217,6 @@ interface TraceNode {
     "astDiff": true,
     "deepTrace": false,
     "commitGraph": false,
-    "issueGraph": false,
     "graphql": true
   },
   "warnings": []
@@ -262,69 +277,284 @@ gh auth login --hostname git.corp.com
 - GitLab.com
 - GitLab Self-Hosted
 
-플랫폼은 git remote URL에서 자동 감지됩니다. 알 수 없는 호스트는 GitHub Enterprise로 기본 설정됩니다.
+플랫폼은 git remote URL에서 자동 감지됩니다. 알 수 없는 호스트의 경우, 기본 브랜치 감지는 로컬 `origin/HEAD` symbolic ref를 사용합니다.
 
-## API 참조
+## 프로그래밍 API 참조
 
-### `trace(options: TraceOptions): Promise<TraceFullResult>`
+모든 함수는 패키지 루트에서 export됩니다:
+
+```typescript
+import { trace, graph, health, clearCache, LineLoreError } from '@lumy-pack/line-lore';
+```
+
+### `trace(options): Promise<TraceFullResult>`
 
 코드 라인을 원본 PR로 역추적합니다.
 
-**옵션:**
-- `file` (string): 파일 경로
-- `line` (number): 시작 라인 번호 (1-indexed)
-- `endLine?` (number): 범위 쿼리의 종료 라인
-- `remote?` (string): Git 원격 이름 (기본값: 'origin')
-- `deep?` (boolean): squash merge 깊은 역추적 활성화
-- `graphDepth?` (number): issue 그래프 순회 깊이
-- `output?` ('human' | 'json' | 'llm'): 출력 형식
-- `quiet?` (boolean): 포맷 억제
-- `noAst?` (boolean): AST 분석 비활성화
-- `noCache?` (boolean): 캐싱 비활성화
+**옵션 (`TraceOptions`):**
 
-**반환값:**
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---------|------|------|--------|------|
+| `file` | `string` | 예 | — | 파일 경로 |
+| `line` | `number` | 예 | — | 시작 라인 번호 (1-indexed) |
+| `endLine` | `number` | 아니오 | — | 범위 쿼리의 종료 라인 |
+| `remote` | `string` | 아니오 | `'origin'` | Git 원격 이름 |
+| `deep` | `boolean` | 아니오 | `false` | patch-id 스캔 범위 확대(500→2000), merge commit 매칭 후에도 추가 탐색 |
+| `noAst` | `boolean` | 아니오 | `false` | AST 분석 비활성화 |
+| `noCache` | `boolean` | 아니오 | `false` | 캐시 읽기/쓰기 비활성화 |
+
+**반환값 (`TraceFullResult`):**
+
 ```typescript
 {
   nodes: TraceNode[];           // 계보 체인 (커밋 → PR → issue)
-  operatingLevel: 0 | 1 | 2;    // 현재 기능 레벨
+  operatingLevel: 0 | 1 | 2;   // 현재 기능 레벨
   featureFlags: FeatureFlags;   // 활성화된 기능
   warnings: string[];           // 기능 축소 알림
 }
 ```
 
-**결과 읽는 방법:**
+**예시 — PR 정보 추출:**
+
 ```typescript
 const result = await trace({ file: 'src/auth.ts', line: 42 });
 
-// PR을 찾았는가?
+// PR 찾기
 const prNode = result.nodes.find(n => n.type === 'pull_request');
 if (prNode) {
   console.log(`PR #${prNode.prNumber}: ${prNode.prTitle}`);
   console.log(`URL: ${prNode.prUrl}`);       // Level 2에서만
   console.log(`병합 시각: ${prNode.mergedAt}`);  // Level 2에서만
 } else {
-  // PR 없음 — 직접 커밋이거나 Level 0
   const commit = result.nodes.find(n => n.type === 'original_commit');
   console.log(`직접 커밋: ${commit?.sha}`);
 }
 
-// 결과가 축소되었는지 확인
+// 결과 축소 여부 확인
 if (result.operatingLevel < 2) {
   console.warn('제한된 결과:', result.warnings);
 }
 ```
 
-### `health(options?: { cwd?: string }): Promise<HealthReport>`
+**예시 — 라인 범위 역추적:**
 
-시스템 상태 확인: git 버전, 플랫폼 CLI 상태, 인증 여부.
+```typescript
+const result = await trace({
+  file: 'src/config.ts',
+  line: 10,
+  endLine: 50,
+  deep: true,    // squash merge를 더 열심히 탐색
+  noCache: true, // 신선한 결과를 위해 캐시 건너뛰기
+});
+```
+
+### `graph(options): Promise<GraphResult>`
+
+PR/issue 관계 그래프를 순회합니다. Level 2 (인증된 CLI)가 필요합니다.
+
+**옵션 (`GraphOptions`):**
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---------|------|------|--------|------|
+| `type` | `'pr' \| 'issue'` | 예 | — | 시작 노드 타입 |
+| `number` | `number` | 예 | — | PR 또는 issue 번호 |
+| `depth` | `number` | 아니오 | `2` | 순회 깊이 |
+| `remote` | `string` | 아니오 | `'origin'` | Git 원격 이름 |
+
+**반환값 (`GraphResult`):**
+
+```typescript
+{
+  nodes: TraceNode[];  // 발견된 모든 노드 (PR + issue)
+  edges: Array<{       // 노드 간 관계
+    from: string;      // 소스 노드 식별자
+    to: string;        // 타겟 노드 식별자
+    relation: string;  // 관계 유형 (예: "closes", "references")
+  }>;
+}
+```
+
+**예시 — PR에 연결된 issue 찾기:**
+
+```typescript
+const result = await graph({ type: 'pr', number: 42, depth: 1 });
+
+const issues = result.nodes.filter(n => n.type === 'issue');
+for (const issue of issues) {
+  console.log(`#${issue.issueNumber} [${issue.issueState}]: ${issue.issueTitle}`);
+  console.log(`  Labels: ${issue.issueLabels?.join(', ')}`);
+}
+
+// edge 정보로 관계 세부사항 확인
+for (const edge of result.edges) {
+  console.log(`${edge.from} -[${edge.relation}]-> ${edge.to}`);
+}
+```
+
+**예시 — issue에서 의존성 맵 구성:**
+
+```typescript
+const result = await graph({ type: 'issue', number: 100, depth: 2 });
+
+const prs = result.nodes.filter(n => n.type === 'pull_request');
+console.log(`issue #100에 연결된 PR ${prs.length}개`);
+```
+
+### `health(options?): Promise<HealthReport & { operatingLevel }>`
+
+시스템 준비 상태 확인: git 버전, 플랫폼 CLI 상태, 인증 여부.
+
+**옵션:**
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---------|------|------|--------|------|
+| `cwd` | `string` | 아니오 | process cwd | 작업 디렉터리 |
+
+**반환값:**
+
+```typescript
+{
+  gitVersion: string;          // 예: "2.43.0"
+  commitGraph: boolean;        // commit-graph 파일 감지됨
+  bloomFilter: boolean;        // bloom filter 지원 가능
+  hints: string[];             // 최적화 제안
+  operatingLevel: 0 | 1 | 2;  // 현재 기능 레벨
+}
+```
+
+**예시 — 배치 처리 전 사전 점검:**
+
+```typescript
+const report = await health();
+
+if (report.operatingLevel < 2) {
+  console.error('전체 API 접근이 필요합니다. 실행: gh auth login');
+  process.exit(1);
+}
+
+if (!report.bloomFilter) {
+  console.warn('다음 명령을 실행하는 것을 권장합니다: git commit-graph write --reachable');
+}
+```
 
 ### `clearCache(): Promise<void>`
 
-PR 검색 및 patch-id 캐시 삭제.
+PR 검색 및 patch-id 캐시를 삭제합니다.
 
-### `traverseIssueGraph(adapter, startType, startNumber, options?): Promise<GraphResult>`
+```typescript
+await clearCache();
+```
 
-PR-to-issues 그래프 순회 (Level 2 접근 필요).
+### `traverseIssueGraph(adapter, startType, startNumber, options?)`
+
+`PlatformAdapter` 인스턴스가 필요한 저수준 그래프 순회입니다. 어댑터 생성을 직접 제어해야 하는 경우가 아니라면 `graph()`를 사용하세요.
+
+## 프로그래밍 활용 패턴
+
+### VSCode 확장 연동
+
+```typescript
+import { trace } from '@lumy-pack/line-lore';
+
+async function getPRForActiveLine(filePath: string, lineNumber: number) {
+  const result = await trace({ file: filePath, line: lineNumber });
+
+  const pr = result.nodes.find(n => n.type === 'pull_request');
+  if (pr?.prUrl) {
+    return { number: pr.prNumber, title: pr.prTitle, url: pr.prUrl };
+  }
+
+  return null;
+}
+```
+
+### CI 파이프라인 — PR 영향 분석
+
+```typescript
+import { trace, graph } from '@lumy-pack/line-lore';
+
+async function analyzeChangedLines(file: string, lines: number[]) {
+  const prs = new Map<number, { title: string; issues: string[] }>();
+
+  for (const line of lines) {
+    const result = await trace({ file, line });
+    const pr = result.nodes.find(n => n.type === 'pull_request');
+
+    if (pr?.prNumber && !prs.has(pr.prNumber)) {
+      const graphResult = await graph({
+        type: 'pr',
+        number: pr.prNumber,
+        depth: 1,
+      });
+
+      const issues = graphResult.nodes
+        .filter(n => n.type === 'issue')
+        .map(n => `#${n.issueNumber}`);
+
+      prs.set(pr.prNumber, { title: pr.prTitle ?? '', issues });
+    }
+  }
+
+  return prs;
+}
+```
+
+### 캐시 제어를 통한 배치 처리
+
+```typescript
+import { trace, clearCache } from '@lumy-pack/line-lore';
+
+async function batchTrace(entries: Array<{ file: string; line: number }>) {
+  // 배치 실행 전 오래된 캐시 정리
+  await clearCache();
+
+  const results = [];
+  for (const entry of entries) {
+    const result = await trace({
+      file: entry.file,
+      line: entry.line,
+      // 캐시는 기본적으로 활성화 — 동일 PR에 대한 후속 조회가 빠름
+    });
+    results.push({ ...entry, result });
+  }
+
+  return results;
+}
+```
+
+## 내보내는 타입
+
+TypeScript 사용자를 위해 모든 타입이 패키지 루트에서 re-export됩니다:
+
+```typescript
+import type {
+  // 핵심 결과 타입
+  TraceNode,
+  TraceFullResult,
+  GraphResult,
+  GraphOptions,
+  TraceOptions,
+  HealthReport,
+  FeatureFlags,
+
+  // 노드 분류
+  TraceNodeType,     // 'original_commit' | 'cosmetic_commit' | ...
+  TrackingMethod,    // 'blame-CMw' | 'ast-signature' | ...
+  Confidence,        // 'exact' | 'structural' | 'heuristic'
+  OperatingLevel,    // 0 | 1 | 2
+
+  // 플랫폼 타입
+  PlatformType,      // 'github' | 'github-enterprise' | ...
+  PlatformAdapter,
+  AuthStatus,
+  PRInfo,
+  IssueInfo,
+  RateLimitInfo,
+
+  // 그래프 순회
+  GraphTraversalOptions,
+} from '@lumy-pack/line-lore';
+```
 
 ## CLI 참조
 
@@ -337,7 +567,8 @@ PR-to-issues 그래프 순회 (Level 2 접근 필요).
 | `--output <format>` | json, llm 또는 human으로 출력 |
 | `--quiet` | 포맷 억제 |
 | `npx @lumy-pack/line-lore health` | 시스템 상태 확인 |
-| `npx @lumy-pack/line-lore graph --pr <num>` | PR 그래프 순회 |
+| `npx @lumy-pack/line-lore graph pr <num>` | PR에 연결된 issue 조회 |
+| `npx @lumy-pack/line-lore graph issue <num>` | issue에 연결된 PR 조회 |
 | `--depth <num>` | 그래프 순회 깊이 |
 | `npx @lumy-pack/line-lore cache clear` | 캐시 삭제 |
 
@@ -352,21 +583,27 @@ try {
   await trace({ file: 'src/auth.ts', line: 42 });
 } catch (error) {
   if (error instanceof LineLoreError) {
-    console.error(error.code);  // 예: 'FILE_NOT_FOUND'
+    console.error(error.code);     // 예: 'FILE_NOT_FOUND'
     console.error(error.message);
-    console.error(error.context); // 추가 메타데이터
+    console.error(error.context);  // 추가 메타데이터
   }
 }
 ```
 
 주요 에러 코드:
-- `NOT_GIT_REPO` — git 저장소가 아님
-- `FILE_NOT_FOUND` — 파일이 존재하지 않음
-- `INVALID_LINE` — 라인 번호가 범위를 벗어남
-- `GIT_BLAME_FAILED` — git blame 실행 실패
-- `PR_NOT_FOUND` — 커밋에 해당하는 PR을 찾을 수 없음
-- `CLI_NOT_AUTHENTICATED` — 플랫폼 CLI 인증되지 않음
-- `API_RATE_LIMITED` — 플랫폼 API 속도 제한 도달
+
+| 코드 | 의미 |
+|------|------|
+| `NOT_GIT_REPO` | git 저장소가 아님 |
+| `FILE_NOT_FOUND` | 파일이 존재하지 않음 |
+| `INVALID_LINE` | 라인 번호가 범위를 벗어남 |
+| `GIT_BLAME_FAILED` | git blame 실행 실패 |
+| `PR_NOT_FOUND` | 커밋에 해당하는 PR을 찾을 수 없음 |
+| `CLI_NOT_AUTHENTICATED` | 플랫폼 CLI 인증되지 않음 |
+| `API_RATE_LIMITED` | 플랫폼 API 속도 제한 도달 |
+| `API_REQUEST_FAILED` | 플랫폼 API 요청 실패 |
+| `GIT_COMMAND_FAILED` | Git 명령 실행 실패 |
+| `GIT_TIMEOUT` | Git 명령 시간 초과 |
 
 ## 요구사항
 

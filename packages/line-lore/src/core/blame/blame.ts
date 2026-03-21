@@ -14,10 +14,7 @@ export async function executeBlame(
   lineRange: LineRange,
   options?: GitExecOptions,
 ): Promise<BlameResult[]> {
-  const lineSpec =
-    lineRange.start === lineRange.end
-      ? `${lineRange.start},${lineRange.end}`
-      : `${lineRange.start},${lineRange.end}`;
+  const lineSpec = `${lineRange.start},${lineRange.end}`;
 
   const result = await gitExec(
     ['blame', '-w', '-C', '-C', '-M', '--porcelain', '-L', lineSpec, file],
@@ -29,6 +26,7 @@ export async function executeBlame(
 
 export async function analyzeBlameResults(
   results: BlameResult[],
+  filePath: string,
   options?: GitExecOptions,
 ): Promise<BlameStageResult[]> {
   const uniqueShas = [...new Set(results.map((r) => r.commitHash))];
@@ -42,11 +40,9 @@ export async function analyzeBlameResults(
         try {
           const blameResult = results.find((r) => r.commitHash === sha);
           if (!blameResult) return;
-          const file =
-            blameResult.originalFile ??
-            results.find((r) => r.commitHash === sha)?.lineContent;
+          const file = blameResult.originalFile ?? filePath;
 
-          const diff = await getCosmeticDiff(sha, file ?? '', options);
+          const diff = await getCosmeticDiff(sha, file, options);
           cosmeticMap.set(sha, isCosmeticDiff(diff));
         } catch {
           cosmeticMap.set(sha, { isCosmetic: false });

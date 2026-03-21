@@ -1,4 +1,4 @@
-import { detectLanguage, isAstAvailable } from '../../ast/index.js';
+import { detectLanguage } from '../../ast/index.js';
 import { gitExec } from '../../git/executor.js';
 import type {
   AstTraceResult,
@@ -22,12 +22,6 @@ export async function traceByAst(
   startCommitSha: string,
   options?: GitExecOptions & { maxDepth?: number },
 ): Promise<AstTraceResult | null> {
-  if (!isAstAvailable()) {
-    // Fallback: try text-based extraction
-    const lang = detectLanguage(file);
-    if (!lang) return null;
-  }
-
   const lang = detectLanguage(file);
   if (!lang) return null;
 
@@ -37,7 +31,6 @@ export async function traceByAst(
   let currentSha = startCommitSha;
   let currentSymbol: SymbolInfo | null = null;
 
-  // Get initial file content and find containing symbol
   try {
     const content = await getFileAtCommit(currentSha, file, options);
     const symbols = await extractSymbols(content, lang);
@@ -76,7 +69,6 @@ export async function traceByAst(
         changes.push(result);
 
         if (result.change === 'identical') {
-          // Symbol exists in parent with same hash — keep going
           originSha = parentSha;
           const parentSymbol = parentSymbols.find(
             (s) => s.name === currentSymbol!.name,
@@ -86,7 +78,6 @@ export async function traceByAst(
             currentSymbol = parentSymbol;
           }
         } else if (result.change === 'rename' && result.fromName) {
-          // Symbol renamed — track the old name
           originSha = parentSha;
           const parentSymbol = parentSymbols.find(
             (s) => s.name === result.fromName,
@@ -96,7 +87,6 @@ export async function traceByAst(
             currentSymbol = parentSymbol;
           }
         } else if (result.change === 'new') {
-          // Symbol first appears here — origin found
           break;
         } else {
           break;

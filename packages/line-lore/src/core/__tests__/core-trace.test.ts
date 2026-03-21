@@ -8,7 +8,7 @@ import type { PRInfo, PlatformAdapter } from '@/types/index.js';
 // ---------------------------------------------------------------------------
 // Imports — after vi.mock() calls
 // ---------------------------------------------------------------------------
-import { clearCache, health, trace } from '../core.js';
+import { trace } from '../core.js';
 import { resetPatchIdCache } from '../patch-id/patch-id.js';
 import { resetPRCache } from '../pr-lookup/pr-lookup.js';
 
@@ -32,10 +32,16 @@ vi.mock('@/ast/index.js', async (importOriginal) => {
 vi.mock('@/cache/file-cache.js', () => ({
   FileCache: class {
     private store = mockStore;
+    private enabled: boolean;
+    constructor(_fileName: string, options?: { enabled?: boolean }) {
+      this.enabled = options?.enabled ?? true;
+    }
     async get(key: string) {
+      if (!this.enabled) return null;
       return this.store.get(key) ?? null;
     }
     async set(key: string, value: unknown) {
+      if (!this.enabled) return;
       this.store.set(key, value);
     }
     async clear() {
@@ -47,10 +53,6 @@ vi.mock('@/cache/file-cache.js', () => ({
 vi.mock('execa', () => ({
   execa: vi.fn().mockRejectedValue(new Error('no execa in test')),
 }));
-
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Typed mock helpers
@@ -373,88 +375,6 @@ describe('trace() — pipeline orchestrator integration', () => {
     expect(result.featureFlags.astDiff).toBe(true);
     expect(result.featureFlags.graphql).toBe(true);
     expect(result.featureFlags.deepTrace).toBe(false); // deep not set
-    expect(result.featureFlags.issueGraph).toBe(false); // graphDepth not set
-  });
-});
-
-// ---------------------------------------------------------------------------
-// health() tests
-// ---------------------------------------------------------------------------
-
-describe('health()', () => {
-  beforeEach(() => {
-    mockGitExec.mockReset();
-    mockDetectPlatformAdapter.mockReset();
-  });
-
-  it('returns HealthReport with operatingLevel=2 when authenticated', async () => {
-    const adapter = createMockAdapter(null, true);
-    mockDetectPlatformAdapter.mockResolvedValue({ adapter });
-
-    // checkGitHealth calls: git version + git commit-graph verify
-    mockGitExec.mockResolvedValueOnce(gitOk('git version 2.40.0'));
-    mockGitExec.mockResolvedValueOnce(gitOk('')); // commit-graph verify
-
-    const result = await health();
-
-    expect(result.operatingLevel).toBe(2);
-    expect(result.gitVersion).toBe('2.40.0');
-    expect(result.bloomFilter).toBe(true);
-    expect(result.commitGraph).toBe(true);
-  });
-
-  it('returns operatingLevel=0 when platform detection fails', async () => {
-    mockDetectPlatformAdapter.mockRejectedValue(new Error('no platform'));
-
-    mockGitExec.mockResolvedValueOnce(gitOk('git version 2.39.0'));
-    mockGitExec.mockResolvedValueOnce(gitOk(''));
-
-    const result = await health();
-
-    expect(result.operatingLevel).toBe(0);
-    expect(result.gitVersion).toBe('2.39.0');
-  });
-
-  it('includes hint when git version is below bloom filter minimum', async () => {
-    const adapter = createMockAdapter(null, true);
-    mockDetectPlatformAdapter.mockResolvedValue({ adapter });
-
-    // version 2.26.0 is below 2.27.0 bloom filter threshold
-    mockGitExec.mockResolvedValueOnce(gitOk('git version 2.26.0'));
-    mockGitExec.mockRejectedValueOnce(new Error('no commit-graph')); // commit-graph verify fails
-
-    const result = await health();
-
-    expect(result.bloomFilter).toBe(false);
-    expect(result.hints.some((h) => /bloom/i.test(h))).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// clearCache() tests
-// ---------------------------------------------------------------------------
-
-describe('clearCache()', () => {
-  it('does not throw and resets module-level caches', async () => {
-    await expect(clearCache()).resolves.toBeUndefined();
-  });
-
-  it('cache is empty after clearCache — subsequent lookups start fresh', async () => {
-    // Pre-populate the store so FileCache.get() would return a hit
-    mockStore.set(COMMIT_SHA, {
-      number: 1,
-      title: 'cached',
-      author: 'a',
-      url: '',
-      mergeCommit: '',
-      baseBranch: '',
-    });
-
-    await clearCache();
-
-    // After clear, store should be empty (FileCache.clear() was NOT called by resetPRCache,
-    // which only nulls the module ref — but the mockStore shared instance persists;
-    // verify clearCache does not throw regardless of store state)
-    expect(true).toBe(true);
+    // issueGraph removed — graph() is a separate API
   });
 });

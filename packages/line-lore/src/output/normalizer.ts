@@ -1,4 +1,5 @@
 import type { NormalizedResponse, OperatingLevel } from '../types/index.js';
+import { VERSION } from '../version.js';
 
 export function createSuccessResponse<T>(
   command: string,
@@ -9,7 +10,7 @@ export function createSuccessResponse<T>(
   return {
     tool: 'line-lore',
     command,
-    version: getVersion(),
+    version: VERSION,
     timestamp: new Date().toISOString(),
     status: 'success',
     operatingLevel,
@@ -29,7 +30,7 @@ export function createPartialResponse<T>(
   return {
     tool: 'line-lore',
     command,
-    version: getVersion(),
+    version: VERSION,
     timestamp: new Date().toISOString(),
     status: 'partial',
     operatingLevel,
@@ -52,7 +53,7 @@ export function createErrorResponse(
   return {
     tool: 'line-lore',
     command,
-    version: getVersion(),
+    version: VERSION,
     timestamp: new Date().toISOString(),
     status: 'error',
     operatingLevel,
@@ -64,13 +65,4 @@ export function createErrorResponse(
       suggestion: options?.suggestion,
     },
   };
-}
-
-function getVersion(): string {
-  try {
-    // Dynamic import to avoid circular dependencies
-    return '0.0.1';
-  } catch {
-    return 'unknown';
-  }
 }

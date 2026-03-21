@@ -42,6 +42,5 @@ export interface FeatureFlags {
   astDiff: boolean;
   deepTrace: boolean;
   commitGraph: boolean;
-  issueGraph: boolean;
   graphql: boolean;
 }

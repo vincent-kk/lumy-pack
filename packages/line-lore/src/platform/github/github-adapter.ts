@@ -1,4 +1,4 @@
-import { shellExec } from '../../git/executor.js';
+import { gitExec, shellExec } from '../../git/executor.js';
 import type {
   AuthStatus,
   IssueInfo,
@@ -12,10 +12,18 @@ export class GitHubAdapter implements PlatformAdapter {
   readonly platform: PlatformAdapter['platform'] = 'github';
   private readonly scheduler: RequestScheduler;
   private readonly hostname: string;
+  private defaultBranchCache: string | null = null;
 
-  constructor(options?: { hostname?: string; scheduler?: RequestScheduler }) {
+  private readonly remoteName: string;
+
+  constructor(options?: {
+    hostname?: string;
+    scheduler?: RequestScheduler;
+    remoteName?: string;
+  }) {
     this.hostname = options?.hostname ?? 'github.com';
     this.scheduler = options?.scheduler ?? new RequestScheduler();
+    this.remoteName = options?.remoteName ?? 'origin';
   }
 
   async checkAuth(): Promise<AuthStatus> {
@@ -45,17 +53,25 @@ export class GitHubAdapter implements PlatformAdapter {
     if (this.scheduler.isRateLimited()) return null;
 
     try {
+      // Fetch all associated PRs, filter for merged only, sort by merged_at (oldest first)
       const result = await shellExec('gh', [
         'api',
         `repos/{owner}/{repo}/commits/${sha}/pulls`,
         '--hostname',
         this.hostname,
         '--jq',
-        '.[0] | {number, title, user: .user.login, html_url, merge_commit_sha, base: .base.ref, merged_at}',
+        '[.[] | select(.merged_at != null) | {number, title, user: .user.login, html_url, merge_commit_sha, base: .base.ref, merged_at}] | sort_by(.merged_at)',
       ]);
 
-      const data = JSON.parse(result.stdout);
-      if (!data?.number) return null;
+      const prs = JSON.parse(result.stdout);
+      if (!Array.isArray(prs) || prs.length === 0) return null;
+
+      // Pick the best PR: prefer the one targeting the default branch
+      const defaultBranch = await this.detectDefaultBranch();
+      const defaultBranchPR = prs.find(
+        (pr: Record<string, unknown>) => pr.base === defaultBranch,
+      );
+      const data = defaultBranchPR ?? prs[0];
 
       return {
         number: data.number,
@@ -63,11 +79,29 @@ export class GitHubAdapter implements PlatformAdapter {
         author: data.user ?? '',
         url: data.html_url ?? '',
         mergeCommit: data.merge_commit_sha ?? sha,
-        baseBranch: data.base ?? 'main',
+        baseBranch: (data.base as string) ?? defaultBranch,
         mergedAt: data.merged_at,
       };
     } catch {
       return null;
+    }
+  }
+
+  private async detectDefaultBranch(): Promise<string> {
+    if (this.defaultBranchCache) return this.defaultBranchCache;
+
+    try {
+      // Local git only — no network call
+      const result = await gitExec(
+        ['symbolic-ref', `refs/remotes/${this.remoteName}/HEAD`],
+        {},
+      );
+      const ref = result.stdout.trim();
+      this.defaultBranchCache =
+        ref.replace(`refs/remotes/${this.remoteName}/`, '') || 'main';
+      return this.defaultBranchCache;
+    } catch {
+      return 'main';
     }
   }
 
@@ -128,19 +162,20 @@ export class GitHubAdapter implements PlatformAdapter {
         '--hostname',
         this.hostname,
         '--jq',
-        '[.[] | select(.source.issue.pull_request) | .source.issue] | map({number, title, user: .user.login, html_url, merge_commit_sha: .pull_request.merge_commit_sha, base: "main", merged_at: .pull_request.merged_at})',
+        '[.[] | select(.source.issue.pull_request) | .source.issue] | map({number, title, user: .user.login, html_url, merge_commit_sha: .pull_request.merge_commit_sha, merged_at: .pull_request.merged_at})',
       ]);
 
       const prs = JSON.parse(result.stdout);
       if (!Array.isArray(prs)) return [];
 
+      const defaultBranch = await this.detectDefaultBranch();
       return prs.map((pr: Record<string, unknown>) => ({
         number: pr.number as number,
         title: (pr.title as string) ?? '',
         author: (pr.user as string) ?? '',
         url: (pr.html_url as string) ?? '',
         mergeCommit: (pr.merge_commit_sha as string) ?? '',
-        baseBranch: (pr.base as string) ?? 'main',
+        baseBranch: defaultBranch,
         mergedAt: pr.merged_at as string | undefined,
       }));
     } catch {

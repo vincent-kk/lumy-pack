@@ -34,14 +34,6 @@ vi.mock('@/cache/file-cache.js', () => ({
 const mockDetectPlatform = detectPlatformAdapter as ReturnType<typeof vi.fn>;
 const mockIsAstAvailable = isAstAvailable as ReturnType<typeof vi.fn>;
 
-// File with a simple function body
-// Line 1: function handleRequest(req, res) {
-// Line 2:   const path = req.path;
-// Line 3:   const method = req.method;
-// Line 4:   const timestamp = Date.now();
-// Line 5:   const result = process(path, method);
-// Line 6:   res.json({ result, timestamp });
-// Line 7: }
 const APP_ORIGINAL = `function handleRequest(req, res) {
   const path = req.path;
   const method = req.method;
@@ -51,7 +43,6 @@ const APP_ORIGINAL = `function handleRequest(req, res) {
 }
 `;
 
-// Logic change: different alphanumeric tokens → original_commit
 const APP_LOGIC_CHANGE = `function handleRequest(req, res) {
   const path = req.path;
   const method = req.method;
@@ -61,9 +52,6 @@ const APP_LOGIC_CHANGE = `function handleRequest(req, res) {
 }
 `;
 
-// Formatting change: same tokens, different layout → original_commit
-// (analyzeBlameResults uses lineContent as filePath due to current implementation,
-//  so getCosmeticDiff gets an empty diff → isCosmetic=false at E2E level)
 const APP_REFORMATTED = `function handleRequest(req, res) {
   const path = req.path;
   const method = req.method;
@@ -114,7 +102,6 @@ describe('E4: Cosmetic commit pass-through', { timeout: 30000 }, () => {
       'fix: use processRequest',
     );
 
-    // line 5: the changed line with processRequest
     const result = await trace({ file: 'src/app.ts', line: 5 });
 
     expect(result.nodes[0].type).toBe('original_commit');
@@ -155,11 +142,9 @@ describe('E4: Cosmetic commit pass-through', { timeout: 30000 }, () => {
       'style: reformat process call',
     );
 
-    // line 4 (timestamp) was NOT changed by reformatting → blame points to sha1
     const result = await trace({ file: 'src/app.ts', line: 4 });
 
     expect(result.nodes.length).toBeGreaterThanOrEqual(1);
-    // line 4 is unchanged between sha1→sha2, so blame -w should point to sha1
     expect([sha1, sha2]).toContain(result.nodes[0].sha);
     expect(result.nodes[0].sha).toBeDefined();
   });

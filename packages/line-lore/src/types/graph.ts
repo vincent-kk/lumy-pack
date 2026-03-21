@@ -4,7 +4,8 @@ export interface GraphOptions {
   type: 'pr' | 'issue';
   number: number;
   depth?: number;
-  json?: boolean;
+  /** Git remote name to use for platform detection (default: 'origin') */
+  remote?: string;
 }
 
 export interface GraphResult {

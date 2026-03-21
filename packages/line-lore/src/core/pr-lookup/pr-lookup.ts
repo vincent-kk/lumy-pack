@@ -12,55 +12,67 @@ import { findPatchIdMatch } from '../patch-id/index.js';
 
 let prCache: FileCache<PRInfo> | null = null;
 
-function getCache(): FileCache<PRInfo> {
+function getCache(noCache?: boolean): FileCache<PRInfo> {
+  if (noCache) {
+    return new FileCache<PRInfo>('sha-to-pr.json', { enabled: false });
+  }
   if (!prCache) {
     prCache = new FileCache<PRInfo>('sha-to-pr.json');
   }
   return prCache;
 }
 
+export interface PRLookupOptions extends GitExecOptions {
+  noCache?: boolean;
+  deep?: boolean;
+}
+
+const DEEP_SCAN_DEPTH = 2000;
+
 export async function lookupPR(
   commitSha: string,
   adapter: PlatformAdapter | null,
-  options?: GitExecOptions,
+  options?: PRLookupOptions,
 ): Promise<PRInfo | null> {
-  // Level 0: Check cache first
-  const cache = getCache();
+  const cache = getCache(options?.noCache);
   const cached = await cache.get(commitSha);
   if (cached) return cached;
 
-  // Level 1: Git-only — merge commit message parsing
+  let mergeBasedPR: PRInfo | null = null;
   const mergeResult = await findMergeCommit(commitSha, options);
   if (mergeResult) {
     const prNumber = extractPRFromMergeMessage(mergeResult.subject);
     if (prNumber) {
-      // Try to get full PR info via API if available
       if (adapter) {
         const prInfo = await adapter.getPRForCommit(mergeResult.mergeCommitSha);
-        if (prInfo) {
-          await cache.set(commitSha, prInfo);
-          return prInfo;
+        if (prInfo?.mergedAt) {
+          mergeBasedPR = prInfo;
         }
       }
 
-      // Fallback: construct minimal PR info from message
-      const minimalPR: PRInfo = {
-        number: prNumber,
-        title: mergeResult.subject,
-        author: '',
-        url: '',
-        mergeCommit: mergeResult.mergeCommitSha,
-        baseBranch: '',
-      };
-      await cache.set(commitSha, minimalPR);
-      return minimalPR;
+      if (!mergeBasedPR) {
+        mergeBasedPR = {
+          number: prNumber,
+          title: mergeResult.subject,
+          author: '',
+          url: '',
+          mergeCommit: mergeResult.mergeCommitSha,
+          baseBranch: '',
+        };
+      }
+
+      if (!options?.deep || mergeBasedPR.mergedAt) {
+        await cache.set(commitSha, mergeBasedPR);
+        return mergeBasedPR;
+      }
     }
   }
 
-  // Level 2: Patch-ID matching for rebased/squashed commits
-  const patchIdMatch = await findPatchIdMatch(commitSha, options);
+  const patchIdMatch = await findPatchIdMatch(commitSha, {
+    ...options,
+    scanDepth: options?.deep ? DEEP_SCAN_DEPTH : undefined,
+  });
   if (patchIdMatch) {
-    // Try the matched commit instead
     const result = await lookupPR(patchIdMatch.matchedSha, adapter, options);
     if (result) {
       await cache.set(commitSha, result);
@@ -68,10 +80,14 @@ export async function lookupPR(
     }
   }
 
-  // Level 3: Direct API lookup (most expensive)
+  if (mergeBasedPR) {
+    await cache.set(commitSha, mergeBasedPR);
+    return mergeBasedPR;
+  }
+
   if (adapter) {
     const prInfo = await adapter.getPRForCommit(commitSha);
-    if (prInfo) {
+    if (prInfo?.mergedAt) {
       await cache.set(commitSha, prInfo);
       return prInfo;
     }

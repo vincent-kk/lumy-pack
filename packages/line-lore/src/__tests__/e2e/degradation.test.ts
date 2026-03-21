@@ -174,8 +174,6 @@ describe(
       );
       expect(result.featureFlags.graphql).toBe(false);
       expect(result.featureFlags.deepTrace).toBe(false);
-      expect(result.featureFlags.issueGraph).toBe(false);
-
       // Still finds PR via merge message parsing even at Level 0
       const prNode = result.nodes.find((n) => n.type === 'pull_request');
       expect(prNode).toBeDefined();
@@ -204,7 +202,6 @@ describe(
       expect(result.featureFlags).toMatchObject({
         deepTrace: false, // options.deep not set
         commitGraph: false,
-        issueGraph: false, // options.graphDepth not set
         graphql: true, // Level 2
       });
       // astDiff depends on isAstAvailable() — may be false or undefined in test env
@@ -221,7 +218,6 @@ describe(
       expect(result.featureFlags).toMatchObject({
         deepTrace: false,
         commitGraph: false,
-        issueGraph: false,
         graphql: false,
       });
       expect(result.featureFlags.astDiff).toBeFalsy();

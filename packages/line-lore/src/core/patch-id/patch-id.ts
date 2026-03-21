@@ -11,18 +11,25 @@ const DEFAULT_SCAN_DEPTH = 500;
 
 let patchIdCache: FileCache<string> | null = null;
 
-function getCache(): FileCache<string> {
+function getCache(noCache?: boolean): FileCache<string> {
+  if (noCache) {
+    return new FileCache<string>('sha-to-patch-id.json', { enabled: false });
+  }
   if (!patchIdCache) {
     patchIdCache = new FileCache<string>('sha-to-patch-id.json');
   }
   return patchIdCache;
 }
 
+export interface PatchIdOptions extends GitExecOptions {
+  noCache?: boolean;
+}
+
 export async function computePatchId(
   commitSha: string,
-  options?: GitExecOptions,
+  options?: PatchIdOptions,
 ): Promise<string | null> {
-  const cache = getCache();
+  const cache = getCache(options?.noCache);
   const cached = await cache.get(commitSha);
   if (cached) return cached;
 
@@ -49,7 +56,7 @@ export async function computePatchId(
 
 export async function findPatchIdMatch(
   commitSha: string,
-  options?: GitExecOptions & { scanDepth?: number; ref?: string },
+  options?: PatchIdOptions & { scanDepth?: number; ref?: string },
 ): Promise<PatchIdResult | null> {
   const scanDepth = options?.scanDepth ?? DEFAULT_SCAN_DEPTH;
   const ref = options?.ref ?? 'HEAD';

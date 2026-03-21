@@ -81,6 +81,7 @@ describe('lookupPR', () => {
       url: 'https://github.com/org/repo/pull/99',
       mergeCommit: 'abc'.padEnd(40, '0'),
       baseBranch: 'main',
+      mergedAt: new Date().toISOString(),
     };
 
     const adapter = createMockAdapter(prInfo);

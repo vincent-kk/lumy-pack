@@ -15,7 +15,7 @@ function makeFullResult(
       astDiff: false,
       deepTrace: false,
       commitGraph: false,
-      issueGraph: false,
+
       graphql: true,
     },
     nodes: [

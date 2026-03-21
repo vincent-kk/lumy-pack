@@ -38,7 +38,7 @@ export type {
 export { LineLoreError, LineLoreErrorCode } from './errors.js';
 
 // Public API — Core functions
-export { clearCache, health, trace } from './core/core.js';
+export { clearCache, graph, health, trace } from './core/core.js';
 export type { TraceFullResult } from './core/core.js';
 
 // Public API — Issue graph

@@ -66,17 +66,21 @@ async function traverse(
           to: `issue:${issue.number}`,
           relation: 'closes',
         });
-        await traverse(
-          adapter,
-          'issue',
-          issue.number,
-          depth + 1,
-          maxDepth,
-          nodes,
-          edges,
-          visited,
-        );
       }
+      await Promise.all(
+        linkedIssues.map((issue) =>
+          traverse(
+            adapter,
+            'issue',
+            issue.number,
+            depth + 1,
+            maxDepth,
+            nodes,
+            edges,
+            visited,
+          ),
+        ),
+      );
     }
   } else {
     nodes.push({
@@ -94,17 +98,21 @@ async function traverse(
           to: `pr:${pr.number}`,
           relation: 'referenced-by',
         });
-        await traverse(
-          adapter,
-          'pr',
-          pr.number,
-          depth + 1,
-          maxDepth,
-          nodes,
-          edges,
-          visited,
-        );
       }
+      await Promise.all(
+        linkedPRs.map((pr) =>
+          traverse(
+            adapter,
+            'pr',
+            pr.number,
+            depth + 1,
+            maxDepth,
+            nodes,
+            edges,
+            visited,
+          ),
+        ),
+      );
     }
   }
 }

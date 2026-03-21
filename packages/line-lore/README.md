@@ -6,6 +6,7 @@ Trace code lines to their originating Pull Requests via deterministic git blame 
 
 - **Line-to-PR tracing**: Reverse-trace any code line to its source PR in seconds
 - **4-stage pipeline**: Blame → Cosmetic detection → Ancestry traversal → PR lookup
+- **PR/Issue graph traversal**: Explore relationships between PRs and issues with edges
 - **Multi-platform support**: GitHub, GitHub Enterprise, GitLab, and GitLab self-hosted
 - **Operating levels**: Graceful degradation from offline (Level 0) to full API access (Level 2)
 - **Dual deployment**: Use as CLI tool or import as a programmatic library
@@ -34,7 +35,7 @@ npx @lumy-pack/line-lore trace src/config.ts -L 10,50
 npx @lumy-pack/line-lore trace src/auth.ts -L 42 --deep
 
 # Traverse PR-to-issues graph
-npx @lumy-pack/line-lore graph --pr 42 --depth 2
+npx @lumy-pack/line-lore graph pr 42 --depth 2
 
 # Check system health
 npx @lumy-pack/line-lore health
@@ -55,7 +56,7 @@ npx @lumy-pack/line-lore trace src/auth.ts -L 42 --quiet
 ### Programmatic API
 
 ```typescript
-import { trace, health, clearCache } from '@lumy-pack/line-lore';
+import { trace, graph, health, clearCache } from '@lumy-pack/line-lore';
 
 // Trace a line to its PR
 const result = await trace({
@@ -63,9 +64,24 @@ const result = await trace({
   line: 42,
 });
 
-console.log(result.nodes);           // TraceNode[]
-console.log(result.operatingLevel);  // 0 | 1 | 2
-console.log(result.warnings);         // degradation messages
+// Find the PR node
+const prNode = result.nodes.find(n => n.type === 'pull_request');
+if (prNode) {
+  console.log(`PR #${prNode.prNumber}: ${prNode.prTitle}`);
+}
+
+// Traverse PR → issue graph
+const graphResult = await graph({ type: 'pr', number: 42, depth: 1 });
+for (const node of graphResult.nodes) {
+  if (node.type === 'issue') {
+    console.log(`Issue #${node.issueNumber}: ${node.issueTitle}`);
+  }
+}
+
+// Check system readiness
+const report = await health();
+console.log(`Operating Level: ${report.operatingLevel}`);
+console.log(`Git version: ${report.gitVersion}`);
 ```
 
 ## How It Works
@@ -75,7 +91,7 @@ console.log(result.warnings);         // degradation messages
 1. **Line → Commit (Blame)**: Git blame with `-C -C -M` flags to detect renames and copies
 2. **Cosmetic Detection**: AST structural comparison to skip formatting-only changes
 3. **Commit → Merge Commit**: Ancestry-path traversal + patch-id matching to resolve merge commits
-4. **Merge Commit → PR**: Commit message parsing + platform API lookup
+4. **Merge Commit → PR**: Commit message parsing + platform API lookup (filters unmerged PRs)
 
 No ML or heuristics — results are always reproducible.
 
@@ -201,7 +217,6 @@ interface TraceNode {
     "astDiff": true,
     "deepTrace": false,
     "commitGraph": false,
-    "issueGraph": false,
     "graphql": true
   },
   "warnings": []
@@ -262,69 +277,285 @@ gh auth login --hostname git.corp.com
 - GitLab.com
 - GitLab Self-Hosted
 
-Platform is auto-detected from your git remote URL. Unknown hosts default to GitHub Enterprise.
+Platform is auto-detected from your git remote URL. For unknown hosts, default branch detection falls back to the local `origin/HEAD` symbolic ref.
 
-## API Reference
+## Programmatic API Reference
 
-### `trace(options: TraceOptions): Promise<TraceFullResult>`
+All functions are exported from the package root:
+
+```typescript
+import { trace, graph, health, clearCache, LineLoreError } from '@lumy-pack/line-lore';
+```
+
+### `trace(options): Promise<TraceFullResult>`
 
 Trace a code line to its originating PR.
 
-**Options:**
-- `file` (string): Path to the file
-- `line` (number): Starting line number (1-indexed)
-- `endLine?` (number): Ending line for range queries
-- `remote?` (string): Git remote name (default: 'origin')
-- `deep?` (boolean): Enable deep trace for squash merges
-- `graphDepth?` (number): Issue graph traversal depth
-- `output?` ('human' | 'json' | 'llm'): Output format
-- `quiet?` (boolean): Suppress formatting
-- `noAst?` (boolean): Disable AST analysis
-- `noCache?` (boolean): Disable caching
+**Options (`TraceOptions`):**
 
-**Returns:**
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `file` | `string` | yes | — | Path to the file |
+| `line` | `number` | yes | — | Starting line number (1-indexed) |
+| `endLine` | `number` | no | — | Ending line for range queries |
+| `remote` | `string` | no | `'origin'` | Git remote name |
+| `deep` | `boolean` | no | `false` | Expand patch-id scan range (500→2000), continue search after merge commit match |
+| `noAst` | `boolean` | no | `false` | Disable AST analysis |
+| `noCache` | `boolean` | no | `false` | Disable cache reads and writes |
+
+**Returns (`TraceFullResult`):**
+
 ```typescript
 {
   nodes: TraceNode[];           // Ancestry chain (commits → PRs → issues)
-  operatingLevel: 0 | 1 | 2;    // Current capability level
+  operatingLevel: 0 | 1 | 2;   // Current capability level
   featureFlags: FeatureFlags;   // Which features are active
   warnings: string[];           // Degradation notices
 }
 ```
 
-**How to read the result:**
+**Example — extracting PR info:**
+
 ```typescript
 const result = await trace({ file: 'src/auth.ts', line: 42 });
 
-// Did we find a PR?
+// Find the PR
 const prNode = result.nodes.find(n => n.type === 'pull_request');
 if (prNode) {
   console.log(`PR #${prNode.prNumber}: ${prNode.prTitle}`);
   console.log(`URL: ${prNode.prUrl}`);       // only at Level 2
   console.log(`Merged: ${prNode.mergedAt}`);  // only at Level 2
 } else {
-  // No PR found — line was a direct commit or Level 0
   const commit = result.nodes.find(n => n.type === 'original_commit');
   console.log(`Direct commit: ${commit?.sha}`);
 }
 
-// Check if results are degraded
+// Check degradation
 if (result.operatingLevel < 2) {
   console.warn('Limited results:', result.warnings);
 }
 ```
 
-### `health(options?: { cwd?: string }): Promise<HealthReport>`
+**Example — trace a line range:**
 
-Check system health: git version, platform CLI status, authentication.
+```typescript
+const result = await trace({
+  file: 'src/config.ts',
+  line: 10,
+  endLine: 50,
+  deep: true,    // search harder for squash merges
+  noCache: true, // skip cache for fresh results
+});
+```
+
+### `graph(options): Promise<GraphResult>`
+
+Traverse the PR/issue relationship graph. Requires Level 2 (authenticated CLI).
+
+**Options (`GraphOptions`):**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `type` | `'pr' \| 'issue'` | yes | — | Starting node type |
+| `number` | `number` | yes | — | PR or issue number |
+| `depth` | `number` | no | `2` | Traversal depth |
+| `remote` | `string` | no | `'origin'` | Git remote name |
+
+**Returns (`GraphResult`):**
+
+```typescript
+{
+  nodes: TraceNode[];  // All discovered nodes (PRs + issues)
+  edges: Array<{       // Relationships between nodes
+    from: string;      // Source node identifier
+    to: string;        // Target node identifier
+    relation: string;  // Relationship type (e.g., "closes", "references")
+  }>;
+}
+```
+
+**Example — find issues linked to a PR:**
+
+```typescript
+const result = await graph({ type: 'pr', number: 42, depth: 1 });
+
+const issues = result.nodes.filter(n => n.type === 'issue');
+for (const issue of issues) {
+  console.log(`#${issue.issueNumber} [${issue.issueState}]: ${issue.issueTitle}`);
+  console.log(`  Labels: ${issue.issueLabels?.join(', ')}`);
+}
+
+// Inspect edges for relationship details
+for (const edge of result.edges) {
+  console.log(`${edge.from} -[${edge.relation}]-> ${edge.to}`);
+}
+```
+
+**Example — build a dependency map from an issue:**
+
+```typescript
+const result = await graph({ type: 'issue', number: 100, depth: 2 });
+
+const prs = result.nodes.filter(n => n.type === 'pull_request');
+console.log(`${prs.length} PRs linked to issue #100`);
+```
+
+### `health(options?): Promise<HealthReport & { operatingLevel }>`
+
+Check system readiness: git version, platform CLI status, authentication.
+
+**Options:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `cwd` | `string` | no | process cwd | Working directory |
+
+**Returns:**
+
+```typescript
+{
+  gitVersion: string;          // e.g., "2.43.0"
+  commitGraph: boolean;        // commit-graph file detected
+  bloomFilter: boolean;        // bloom filter support available
+  hints: string[];             // optimization suggestions
+  operatingLevel: 0 | 1 | 2;  // current capability level
+}
+```
+
+**Example — pre-flight check before batch processing:**
+
+```typescript
+const report = await health();
+
+if (report.operatingLevel < 2) {
+  console.error('Full API access required. Run: gh auth login');
+  process.exit(1);
+}
+
+if (!report.bloomFilter) {
+  console.warn('Consider running: git commit-graph write --reachable');
+}
+```
 
 ### `clearCache(): Promise<void>`
 
 Clear PR lookup and patch-id caches.
 
-### `traverseIssueGraph(adapter, startType, startNumber, options?): Promise<GraphResult>`
+```typescript
+await clearCache();
+```
 
-Traverse PR-to-issues graph (requires Level 2 access).
+### `traverseIssueGraph(adapter, startType, startNumber, options?)`
+
+Low-level graph traversal that requires a `PlatformAdapter` instance. Prefer `graph()` unless you need to control adapter creation.
+
+## Programmatic Usage Patterns
+
+### VSCode Extension Integration
+
+```typescript
+import { trace } from '@lumy-pack/line-lore';
+
+async function getPRForActiveLine(filePath: string, lineNumber: number) {
+  const result = await trace({ file: filePath, line: lineNumber });
+
+  const pr = result.nodes.find(n => n.type === 'pull_request');
+  if (pr?.prUrl) {
+    return { number: pr.prNumber, title: pr.prTitle, url: pr.prUrl };
+  }
+
+  return null;
+}
+```
+
+### CI Pipeline — PR Impact Analysis
+
+```typescript
+import { trace, graph } from '@lumy-pack/line-lore';
+
+async function analyzeChangedLines(file: string, lines: number[]) {
+  const prs = new Map<number, { title: string; issues: string[] }>();
+
+  for (const line of lines) {
+    const result = await trace({ file, line });
+    const pr = result.nodes.find(n => n.type === 'pull_request');
+
+    if (pr?.prNumber && !prs.has(pr.prNumber)) {
+      const graphResult = await graph({
+        type: 'pr',
+        number: pr.prNumber,
+        depth: 1,
+      });
+
+      const issues = graphResult.nodes
+        .filter(n => n.type === 'issue')
+        .map(n => `#${n.issueNumber}`);
+
+      prs.set(pr.prNumber, { title: pr.prTitle ?? '', issues });
+    }
+  }
+
+  return prs;
+}
+```
+
+### Batch Processing with Cache Control
+
+```typescript
+import { trace, clearCache } from '@lumy-pack/line-lore';
+
+async function batchTrace(entries: Array<{ file: string; line: number }>) {
+  // Clear stale cache before batch run
+  await clearCache();
+
+  const results = [];
+  for (const entry of entries) {
+    const result = await trace({
+      file: entry.file,
+      line: entry.line,
+      // Cache is enabled by default — subsequent lookups for the same
+      // PR will be fast
+    });
+    results.push({ ...entry, result });
+  }
+
+  return results;
+}
+```
+
+## Exported Types
+
+All types are re-exported from the package root for TypeScript consumers:
+
+```typescript
+import type {
+  // Core result types
+  TraceNode,
+  TraceFullResult,
+  GraphResult,
+  GraphOptions,
+  TraceOptions,
+  HealthReport,
+  FeatureFlags,
+
+  // Node classification
+  TraceNodeType,     // 'original_commit' | 'cosmetic_commit' | ...
+  TrackingMethod,    // 'blame-CMw' | 'ast-signature' | ...
+  Confidence,        // 'exact' | 'structural' | 'heuristic'
+  OperatingLevel,    // 0 | 1 | 2
+
+  // Platform types
+  PlatformType,      // 'github' | 'github-enterprise' | ...
+  PlatformAdapter,
+  AuthStatus,
+  PRInfo,
+  IssueInfo,
+  RateLimitInfo,
+
+  // Graph traversal
+  GraphTraversalOptions,
+} from '@lumy-pack/line-lore';
+```
 
 ## CLI Reference
 
@@ -337,7 +568,8 @@ Traverse PR-to-issues graph (requires Level 2 access).
 | `--output <format>` | Output as json, llm, or human |
 | `--quiet` | Suppress formatting |
 | `npx @lumy-pack/line-lore health` | Check system health |
-| `npx @lumy-pack/line-lore graph --pr <num>` | Traverse PR graph |
+| `npx @lumy-pack/line-lore graph pr <num>` | Show issues linked to a PR |
+| `npx @lumy-pack/line-lore graph issue <num>` | Show PRs linked to an issue |
 | `--depth <num>` | Graph traversal depth |
 | `npx @lumy-pack/line-lore cache clear` | Clear caches |
 
@@ -352,21 +584,27 @@ try {
   await trace({ file: 'src/auth.ts', line: 42 });
 } catch (error) {
   if (error instanceof LineLoreError) {
-    console.error(error.code);  // e.g., 'FILE_NOT_FOUND'
+    console.error(error.code);     // e.g., 'FILE_NOT_FOUND'
     console.error(error.message);
-    console.error(error.context); // additional metadata
+    console.error(error.context);  // additional metadata
   }
 }
 ```
 
-Common codes:
-- `NOT_GIT_REPO` — not in a git repository
-- `FILE_NOT_FOUND` — file does not exist
-- `INVALID_LINE` — line number out of range
-- `GIT_BLAME_FAILED` — git blame execution failed
-- `PR_NOT_FOUND` — PR not found for commit
-- `CLI_NOT_AUTHENTICATED` — platform CLI not authenticated
-- `API_RATE_LIMITED` — platform API rate limit exceeded
+Common error codes:
+
+| Code | Meaning |
+|------|---------|
+| `NOT_GIT_REPO` | Not in a git repository |
+| `FILE_NOT_FOUND` | File does not exist |
+| `INVALID_LINE` | Line number out of range |
+| `GIT_BLAME_FAILED` | Git blame execution failed |
+| `PR_NOT_FOUND` | PR not found for commit |
+| `CLI_NOT_AUTHENTICATED` | Platform CLI not authenticated |
+| `API_RATE_LIMITED` | Platform API rate limit exceeded |
+| `API_REQUEST_FAILED` | Platform API request failed |
+| `GIT_COMMAND_FAILED` | Git command execution failed |
+| `GIT_TIMEOUT` | Git command timed out |
 
 ## Requirements
 
