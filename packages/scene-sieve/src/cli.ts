@@ -1,8 +1,7 @@
 import { createRequire } from 'node:module';
 
-import { Command } from 'commander';
-
 import { respond, respondError } from '@lumy-pack/shared';
+import { Command } from 'commander';
 
 import { registerSieveCommand } from './commands/Sieve.js';
 import { SieveErrorCode } from './errors.js';
@@ -40,7 +39,13 @@ if (process.argv.includes('--describe')) {
 
 program.parseAsync(process.argv).catch((error: Error) => {
   if (process.argv.includes('--json')) {
-    respondError('extract', SieveErrorCode.UNKNOWN, error.message, Date.now(), version);
+    respondError(
+      'extract',
+      SieveErrorCode.UNKNOWN,
+      error.message,
+      Date.now(),
+      version,
+    );
   } else {
     console.error('Fatal error:', error.message);
   }

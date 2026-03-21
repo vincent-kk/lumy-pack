@@ -7,13 +7,20 @@ export const SieveErrorCode = {
   UNKNOWN: 'UNKNOWN',
 } as const;
 
-export type SieveErrorCode = (typeof SieveErrorCode)[keyof typeof SieveErrorCode];
+export type SieveErrorCode =
+  (typeof SieveErrorCode)[keyof typeof SieveErrorCode];
 
 export function classifyError(error: Error): SieveErrorCode {
   const msg = error.message.toLowerCase();
-  if ((error as NodeJS.ErrnoException).code === 'ENOENT' || msg.includes('not found')) {
+  if (
+    (error as NodeJS.ErrnoException).code === 'ENOENT' ||
+    msg.includes('not found')
+  ) {
     return SieveErrorCode.FILE_NOT_FOUND;
-  } else if (msg.includes('no video stream') || msg.includes('invalid format')) {
+  } else if (
+    msg.includes('no video stream') ||
+    msg.includes('invalid format')
+  ) {
     return SieveErrorCode.INVALID_FORMAT;
   } else if (msg.includes('worker')) {
     return SieveErrorCode.WORKER_ERROR;

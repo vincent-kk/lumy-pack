@@ -7,7 +7,17 @@ import type { SieveOptionsBase } from '../types/index.js';
 export type ParsedPipelineOptions = Pick<
   Required<SieveOptionsBase>,
   'fps' | 'maxFrames' | 'scale' | 'quality' | 'debug'
-> & Pick<SieveOptionsBase, 'count' | 'threshold' | 'outputPath' | 'iouThreshold' | 'animationThreshold' | 'maxSegmentDuration' | 'concurrency'>;
+> &
+  Pick<
+    SieveOptionsBase,
+    | 'count'
+    | 'threshold'
+    | 'outputPath'
+    | 'iouThreshold'
+    | 'animationThreshold'
+    | 'maxSegmentDuration'
+    | 'concurrency'
+  >;
 
 export interface RawCliOptions {
   count?: string;
@@ -24,14 +34,14 @@ export interface RawCliOptions {
   debug?: boolean;
 }
 
-export function parsePipelineOptions(opts: RawCliOptions): ParsedPipelineOptions {
+export function parsePipelineOptions(
+  opts: RawCliOptions,
+): ParsedPipelineOptions {
   return {
     ...(opts.threshold !== undefined
       ? { threshold: parseFloat(opts.threshold) }
       : {}),
-    ...(opts.count !== undefined
-      ? { count: parseInt(opts.count, 10) }
-      : {}),
+    ...(opts.count !== undefined ? { count: parseInt(opts.count, 10) } : {}),
     outputPath: opts.output,
     fps: parseInt(opts.fps, 10),
     maxFrames: parseInt(opts.maxFrames, 10),
