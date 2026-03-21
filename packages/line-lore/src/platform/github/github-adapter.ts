@@ -1,4 +1,4 @@
-import { shellExec } from '../../git/executor.js';
+import { gitExec, shellExec } from '../../git/executor.js';
 import type {
   AuthStatus,
   IssueInfo,
@@ -12,6 +12,7 @@ export class GitHubAdapter implements PlatformAdapter {
   readonly platform: PlatformAdapter['platform'] = 'github';
   private readonly scheduler: RequestScheduler;
   private readonly hostname: string;
+  private defaultBranchCache: string | null = null;
 
   constructor(options?: { hostname?: string; scheduler?: RequestScheduler }) {
     this.hostname = options?.hostname ?? 'github.com';
@@ -80,16 +81,18 @@ export class GitHubAdapter implements PlatformAdapter {
   }
 
   private async detectDefaultBranch(): Promise<string> {
+    if (this.defaultBranchCache) return this.defaultBranchCache;
+
     try {
-      const result = await shellExec('gh', [
-        'api',
-        'repos/{owner}/{repo}',
-        '--hostname',
-        this.hostname,
-        '--jq',
-        '.default_branch',
-      ]);
-      return result.stdout.trim() || 'main';
+      // Local git only — no network call
+      const result = await gitExec(
+        ['symbolic-ref', 'refs/remotes/origin/HEAD'],
+        {},
+      );
+      // "refs/remotes/origin/main" → "main"
+      const ref = result.stdout.trim();
+      this.defaultBranchCache = ref.replace('refs/remotes/origin/', '') || 'main';
+      return this.defaultBranchCache;
     } catch {
       return 'main';
     }

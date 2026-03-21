@@ -1,4 +1,4 @@
-import { shellExec } from '../../git/executor.js';
+import { gitExec, shellExec } from '../../git/executor.js';
 import type {
   AuthStatus,
   IssueInfo,
@@ -12,6 +12,7 @@ export class GitLabAdapter implements PlatformAdapter {
   readonly platform: PlatformAdapter['platform'] = 'gitlab';
   private readonly scheduler: RequestScheduler;
   private readonly hostname: string;
+  private defaultBranchCache: string | null = null;
 
   constructor(options?: { hostname?: string; scheduler?: RequestScheduler }) {
     this.hostname = options?.hostname ?? 'gitlab.com';
@@ -65,10 +66,10 @@ export class GitLabAdapter implements PlatformAdapter {
 
       if (mergedMRs.length === 0) return null;
 
-      // Prefer MR targeting the default branch
+      // Prefer MR targeting the default branch (detected locally)
+      const defaultBranch = await this.detectDefaultBranch();
       const defaultBranchMR = mergedMRs.find(
-        (mr) =>
-          mr.target_branch === 'main' || mr.target_branch === 'master',
+        (mr) => mr.target_branch === defaultBranch,
       );
       const mr = defaultBranchMR ?? mergedMRs[0];
 
@@ -84,6 +85,22 @@ export class GitLabAdapter implements PlatformAdapter {
       };
     } catch {
       return null;
+    }
+  }
+
+  private async detectDefaultBranch(): Promise<string> {
+    if (this.defaultBranchCache) return this.defaultBranchCache;
+
+    try {
+      const result = await gitExec(
+        ['symbolic-ref', 'refs/remotes/origin/HEAD'],
+        {},
+      );
+      const ref = result.stdout.trim();
+      this.defaultBranchCache = ref.replace('refs/remotes/origin/', '') || 'main';
+      return this.defaultBranchCache;
+    } catch {
+      return 'main';
     }
   }
 
