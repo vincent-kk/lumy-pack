@@ -1,3 +1,5 @@
+import { filter, isArray, isNotNil, map } from '@winglet/common-utils';
+
 import { gitExec, shellExec } from '../../git/executor.js';
 import type {
   AuthStatus,
@@ -60,16 +62,17 @@ export class GitLabAdapter implements PlatformAdapter {
       ]);
 
       const mrs = JSON.parse(result.stdout);
-      if (!Array.isArray(mrs) || mrs.length === 0) return null;
+      if (!isArray(mrs) || mrs.length === 0) return null;
 
       // Filter for merged MRs only, sort by merged_at (oldest first)
-      const mergedMRs = (mrs as Record<string, unknown>[])
-        .filter((mr) => mr.state === 'merged' && mr.merged_at != null)
-        .sort((a, b) => {
-          const aTime = new Date(a.merged_at as string).getTime();
-          const bTime = new Date(b.merged_at as string).getTime();
-          return aTime - bTime;
-        });
+      const mergedMRs = filter(
+        mrs as Record<string, unknown>[],
+        (mr) => mr.state === 'merged' && isNotNil(mr.merged_at),
+      ).sort((a, b) => {
+        const aTime = new Date(a.merged_at as string).getTime();
+        const bTime = new Date(b.merged_at as string).getTime();
+        return aTime - bTime;
+      });
 
       if (mergedMRs.length === 0) return null;
 
@@ -122,8 +125,8 @@ export class GitLabAdapter implements PlatformAdapter {
       ]);
 
       const commits = JSON.parse(result.stdout);
-      if (!Array.isArray(commits)) return [];
-      return commits.map((c: Record<string, unknown>) => c.id as string);
+      if (!isArray(commits)) return [];
+      return map(commits, (c: Record<string, unknown>) => c.id as string);
     } catch {
       return [];
     }
@@ -139,9 +142,9 @@ export class GitLabAdapter implements PlatformAdapter {
       ]);
 
       const issues = JSON.parse(result.stdout);
-      if (!Array.isArray(issues)) return [];
+      if (!isArray(issues)) return [];
 
-      return issues.map((issue: Record<string, unknown>) => ({
+      return map(issues, (issue: Record<string, unknown>) => ({
         number: issue.iid as number,
         title: (issue.title as string) ?? '',
         url: (issue.web_url as string) ?? '',
@@ -166,10 +169,10 @@ export class GitLabAdapter implements PlatformAdapter {
       ]);
 
       const mrs = JSON.parse(result.stdout);
-      if (!Array.isArray(mrs)) return [];
+      if (!isArray(mrs)) return [];
 
       const defaultBranch = await this.detectDefaultBranch();
-      return mrs.map((mr: Record<string, unknown>) => ({
+      return map(mrs, (mr: Record<string, unknown>) => ({
         number: mr.iid as number,
         title: (mr.title as string) ?? '',
         author:
