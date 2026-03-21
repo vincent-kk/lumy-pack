@@ -42,7 +42,7 @@ describe('gitExec', () => {
     });
   });
 
-  it('throws GIT_COMMAND_FAILED on non-zero exit code', async () => {
+  it('throws NOT_GIT_REPO on exit code 128 with "not a git repository"', async () => {
     mockExeca.mockResolvedValueOnce({
       stdout: '',
       stderr: 'fatal: not a git repository',
@@ -51,6 +51,24 @@ describe('gitExec', () => {
 
     try {
       await gitExec(['status']);
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect(err).toBeInstanceOf(LineLoreError);
+      expect((err as LineLoreError).code).toBe(
+        LineLoreErrorCode.NOT_GIT_REPO,
+      );
+    }
+  });
+
+  it('throws GIT_COMMAND_FAILED on non-zero exit code', async () => {
+    mockExeca.mockResolvedValueOnce({
+      stdout: '',
+      stderr: 'fatal: bad revision',
+      exitCode: 128,
+    });
+
+    try {
+      await gitExec(['log', 'bad-ref']);
       expect.unreachable('should have thrown');
     } catch (err) {
       expect(err).toBeInstanceOf(LineLoreError);

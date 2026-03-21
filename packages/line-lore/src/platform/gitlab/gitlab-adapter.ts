@@ -14,9 +14,16 @@ export class GitLabAdapter implements PlatformAdapter {
   private readonly hostname: string;
   private defaultBranchCache: string | null = null;
 
-  constructor(options?: { hostname?: string; scheduler?: RequestScheduler }) {
+  private readonly remoteName: string;
+
+  constructor(options?: {
+    hostname?: string;
+    scheduler?: RequestScheduler;
+    remoteName?: string;
+  }) {
     this.hostname = options?.hostname ?? 'gitlab.com';
     this.scheduler = options?.scheduler ?? new RequestScheduler();
+    this.remoteName = options?.remoteName ?? 'origin';
   }
 
   async checkAuth(): Promise<AuthStatus> {
@@ -80,7 +87,7 @@ export class GitLabAdapter implements PlatformAdapter {
           ((mr.author as Record<string, unknown>)?.username as string) ?? '',
         url: (mr.web_url as string) ?? '',
         mergeCommit: (mr.merge_commit_sha as string) ?? sha,
-        baseBranch: (mr.target_branch as string) ?? 'main',
+        baseBranch: (mr.target_branch as string) ?? defaultBranch,
         mergedAt: mr.merged_at as string | undefined,
       };
     } catch {
@@ -93,11 +100,12 @@ export class GitLabAdapter implements PlatformAdapter {
 
     try {
       const result = await gitExec(
-        ['symbolic-ref', 'refs/remotes/origin/HEAD'],
+        ['symbolic-ref', `refs/remotes/${this.remoteName}/HEAD`],
         {},
       );
       const ref = result.stdout.trim();
-      this.defaultBranchCache = ref.replace('refs/remotes/origin/', '') || 'main';
+      this.defaultBranchCache =
+        ref.replace(`refs/remotes/${this.remoteName}/`, '') || 'main';
       return this.defaultBranchCache;
     } catch {
       return 'main';
@@ -160,6 +168,7 @@ export class GitLabAdapter implements PlatformAdapter {
       const mrs = JSON.parse(result.stdout);
       if (!Array.isArray(mrs)) return [];
 
+      const defaultBranch = await this.detectDefaultBranch();
       return mrs.map((mr: Record<string, unknown>) => ({
         number: mr.iid as number,
         title: (mr.title as string) ?? '',
@@ -167,7 +176,7 @@ export class GitLabAdapter implements PlatformAdapter {
           ((mr.author as Record<string, unknown>)?.username as string) ?? '',
         url: (mr.web_url as string) ?? '',
         mergeCommit: (mr.merge_commit_sha as string) ?? '',
-        baseBranch: (mr.target_branch as string) ?? 'main',
+        baseBranch: (mr.target_branch as string) ?? defaultBranch,
         mergedAt: mr.merged_at as string | undefined,
       }));
     } catch {

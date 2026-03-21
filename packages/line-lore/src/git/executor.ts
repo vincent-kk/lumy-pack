@@ -22,9 +22,16 @@ async function execCommand(
     const exitCode = result.exitCode ?? 0;
 
     if (exitCode !== 0 && !allowExitCodes.includes(exitCode)) {
+      const isNotGitRepo =
+        exitCode === 128 &&
+        command === 'git' &&
+        /not a git repository/i.test(result.stderr);
+
       throw new LineLoreError(
-        failCode,
-        `${command} ${args[0]} failed with exit code ${exitCode}: ${result.stderr}`,
+        isNotGitRepo ? LineLoreErrorCode.NOT_GIT_REPO : failCode,
+        isNotGitRepo
+          ? `Not a git repository: ${result.stderr.trim()}`
+          : `${command} ${args[0]} failed with exit code ${exitCode}: ${result.stderr}`,
         { command, args, exitCode, stderr: result.stderr, cwd },
       );
     }
