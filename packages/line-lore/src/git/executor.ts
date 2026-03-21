@@ -77,6 +77,67 @@ export async function gitExec(
   );
 }
 
+export async function gitPipe(
+  producerArgs: string[],
+  consumerArgs: string[],
+  options?: GitExecOptions,
+): Promise<GitExecResult> {
+  const { cwd, timeout } = options ?? {};
+
+  const pipeArgs = [...producerArgs, '|', ...consumerArgs];
+
+  try {
+    const result = await execa('git', producerArgs, {
+      cwd,
+      timeout,
+      reject: false,
+    }).pipe('git', consumerArgs, { cwd, timeout, reject: false });
+
+    const exitCode = result.exitCode ?? 0;
+
+    if (exitCode !== 0) {
+      throw new LineLoreError(
+        LineLoreErrorCode.GIT_COMMAND_FAILED,
+        `git pipe failed with exit code ${exitCode}: ${result.stderr}`,
+        {
+          command: 'git',
+          args: pipeArgs,
+          exitCode,
+          stderr: result.stderr,
+          cwd,
+        },
+      );
+    }
+
+    return {
+      stdout: result.stdout,
+      stderr: result.stderr,
+      exitCode,
+    };
+  } catch (error) {
+    if (error instanceof LineLoreError) throw error;
+
+    const isTimeout =
+      error instanceof Error &&
+      'isTerminated' in error &&
+      (error as Record<string, unknown>).timedOut === true;
+
+    if (isTimeout) {
+      throw new LineLoreError(
+        LineLoreErrorCode.GIT_TIMEOUT,
+        `git pipe timed out after ${timeout}ms`,
+        { command: 'git', args: pipeArgs, timeout, cwd },
+      );
+    }
+
+    throw new LineLoreError(
+      LineLoreErrorCode.GIT_COMMAND_FAILED,
+      `git pipe failed: ${error instanceof Error ? error.message : String(error)}`,
+      { command: 'git', args: pipeArgs, cwd },
+    );
+  }
+}
+
 export async function shellExec(
   command: string,
   args: string[],

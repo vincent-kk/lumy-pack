@@ -82,6 +82,21 @@ export async function lookupPR(
     }
   }
 
+  if (mergeBasedPR) {
+    await cache.set(commitSha, mergeBasedPR);
+    return mergeBasedPR;
+  }
+
+  // Strategy 3: API direct lookup (fast single request, try before expensive patch-id scan)
+  if (adapter) {
+    const prInfo = await adapter.getPRForCommit(commitSha);
+    if (prInfo?.mergedAt) {
+      await cache.set(commitSha, prInfo);
+      return prInfo;
+    }
+  }
+
+  // Strategy 4: Patch-ID matching (expensive — streams full log through patch-id)
   const patchIdMatch = await findPatchIdMatch(commitSha, {
     ...options,
     scanDepth: options?.deep ? DEEP_SCAN_DEPTH : undefined,
@@ -91,19 +106,6 @@ export async function lookupPR(
     if (result) {
       await cache.set(commitSha, result);
       return result;
-    }
-  }
-
-  if (mergeBasedPR) {
-    await cache.set(commitSha, mergeBasedPR);
-    return mergeBasedPR;
-  }
-
-  if (adapter) {
-    const prInfo = await adapter.getPRForCommit(commitSha);
-    if (prInfo?.mergedAt) {
-      await cache.set(commitSha, prInfo);
-      return prInfo;
     }
   }
 

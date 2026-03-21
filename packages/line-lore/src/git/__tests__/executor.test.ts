@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LineLoreError, LineLoreErrorCode } from '@/errors.js';
 
-import { gitExec, shellExec } from '../executor.js';
+import { gitExec, gitPipe, shellExec } from '../executor.js';
 
 vi.mock('execa', () => ({
   execa: vi.fn(),
@@ -190,5 +190,117 @@ describe('shellExec', () => {
     });
 
     expect(result.exitCode).toBe(1);
+  });
+});
+
+describe('gitPipe', () => {
+  let mockExeca: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    mockExeca = await getExecaMock();
+    mockExeca.mockReset();
+  });
+
+  function mockPipeResult(result: {
+    stdout: string;
+    stderr: string;
+    exitCode: number;
+  }) {
+    const mockPipe = vi.fn().mockResolvedValueOnce(result);
+    mockExeca.mockReturnValueOnce({ pipe: mockPipe });
+    return mockPipe;
+  }
+
+  it('returns stdout/stderr/exitCode on success', async () => {
+    mockPipeResult({
+      stdout: 'patchid abc123',
+      stderr: '',
+      exitCode: 0,
+    });
+
+    const result = await gitPipe(
+      ['diff', 'abc^..abc'],
+      ['patch-id', '--stable'],
+    );
+
+    expect(result).toEqual({
+      stdout: 'patchid abc123',
+      stderr: '',
+      exitCode: 0,
+    });
+  });
+
+  it('passes cwd and timeout to both producer and consumer', async () => {
+    const mockPipe = mockPipeResult({
+      stdout: '',
+      stderr: '',
+      exitCode: 0,
+    });
+
+    await gitPipe(['log', '-p'], ['patch-id'], {
+      cwd: '/tmp/repo',
+      timeout: 30_000,
+    });
+
+    expect(mockExeca).toHaveBeenCalledWith('git', ['log', '-p'], {
+      cwd: '/tmp/repo',
+      timeout: 30_000,
+      reject: false,
+    });
+    expect(mockPipe).toHaveBeenCalledWith('git', ['patch-id'], {
+      cwd: '/tmp/repo',
+      timeout: 30_000,
+      reject: false,
+    });
+  });
+
+  it('throws GIT_COMMAND_FAILED on non-zero exit code', async () => {
+    mockPipeResult({
+      stdout: '',
+      stderr: 'fatal: bad revision',
+      exitCode: 128,
+    });
+
+    try {
+      await gitPipe(['diff', 'bad^..bad'], ['patch-id']);
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect(err).toBeInstanceOf(LineLoreError);
+      expect((err as LineLoreError).code).toBe(
+        LineLoreErrorCode.GIT_COMMAND_FAILED,
+      );
+      expect((err as LineLoreError).message).toContain('exit code 128');
+    }
+  });
+
+  it('throws GIT_TIMEOUT when pipe times out', async () => {
+    const timeoutError = new Error('timed out');
+    Object.assign(timeoutError, { isTerminated: true, timedOut: true });
+    const mockPipe = vi.fn().mockRejectedValueOnce(timeoutError);
+    mockExeca.mockReturnValueOnce({ pipe: mockPipe });
+
+    try {
+      await gitPipe(['log', '-p'], ['patch-id'], { timeout: 5000 });
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect(err).toBeInstanceOf(LineLoreError);
+      expect((err as LineLoreError).code).toBe(LineLoreErrorCode.GIT_TIMEOUT);
+    }
+  });
+
+  it('throws GIT_COMMAND_FAILED on unexpected error', async () => {
+    const mockPipe = vi.fn().mockRejectedValueOnce(new Error('EPIPE'));
+    mockExeca.mockReturnValueOnce({ pipe: mockPipe });
+
+    try {
+      await gitPipe(['log'], ['patch-id']);
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect(err).toBeInstanceOf(LineLoreError);
+      expect((err as LineLoreError).code).toBe(
+        LineLoreErrorCode.GIT_COMMAND_FAILED,
+      );
+      expect((err as LineLoreError).message).toContain('EPIPE');
+    }
   });
 });

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { gitExec, shellExec } from '@/git/executor.js';
+import { gitPipe } from '@/git/executor.js';
 
 import {
   computePatchId,
@@ -11,8 +11,7 @@ import {
 const mockStore = new Map<string, unknown>();
 
 vi.mock('@/git/executor.js', () => ({
-  gitExec: vi.fn(),
-  shellExec: vi.fn(),
+  gitPipe: vi.fn(),
 }));
 
 vi.mock('@/cache/sharded-cache.js', () => ({
@@ -28,19 +27,17 @@ vi.mock('@/cache/sharded-cache.js', () => ({
   cleanupLegacyCache: () => Promise.resolve(),
 }));
 
-const mockGitExec = gitExec as ReturnType<typeof vi.fn>;
-const mockShellExec = shellExec as ReturnType<typeof vi.fn>;
+const mockGitPipe = gitPipe as ReturnType<typeof vi.fn>;
 
 describe('computePatchId', () => {
   beforeEach(() => {
-    mockShellExec.mockReset();
-    mockGitExec.mockReset();
+    mockGitPipe.mockReset();
     mockStore.clear();
     resetPatchIdCache();
   });
 
-  it('computes patch-id for a commit via shell pipe', async () => {
-    mockShellExec.mockResolvedValueOnce({
+  it('computes patch-id via gitPipe (git diff | git patch-id)', async () => {
+    mockGitPipe.mockResolvedValueOnce({
       stdout: 'abc123patchid def456commitsha\n',
       stderr: '',
       exitCode: 0,
@@ -51,7 +48,7 @@ describe('computePatchId', () => {
   });
 
   it('returns null on failure', async () => {
-    mockShellExec.mockRejectedValueOnce(new Error('git failed'));
+    mockGitPipe.mockRejectedValueOnce(new Error('git failed'));
 
     const result = await computePatchId('abc'.padEnd(40, '0'));
     expect(result).toBeNull();
@@ -60,33 +57,26 @@ describe('computePatchId', () => {
 
 describe('findPatchIdMatch', () => {
   beforeEach(() => {
-    mockShellExec.mockReset();
-    mockGitExec.mockReset();
+    mockGitPipe.mockReset();
     mockStore.clear();
     resetPatchIdCache();
   });
 
-  it('finds matching commit by patch-id', async () => {
+  it('finds matching commit by patch-id via batch pipe', async () => {
     const targetSha = 'aaa'.padEnd(40, '0');
     const matchSha = 'bbb'.padEnd(40, '0');
+    const otherSha = 'ccc'.padEnd(40, '0');
 
-    // computePatchId for target
-    mockShellExec.mockResolvedValueOnce({
+    // computePatchId for target (git diff | git patch-id)
+    mockGitPipe.mockResolvedValueOnce({
       stdout: 'samepatchid ' + targetSha,
       stderr: '',
       exitCode: 0,
     });
 
-    // git log for candidates
-    mockGitExec.mockResolvedValueOnce({
-      stdout: matchSha + '\n' + 'ccc'.padEnd(40, '0') + '\n',
-      stderr: '',
-      exitCode: 0,
-    });
-
-    // computePatchId for match candidate
-    mockShellExec.mockResolvedValueOnce({
-      stdout: 'samepatchid ' + matchSha,
+    // batch scan (git log -p | git patch-id --stable)
+    mockGitPipe.mockResolvedValueOnce({
+      stdout: `samepatchid ${matchSha}\ndifferentid ${otherSha}\n`,
       stderr: '',
       exitCode: 0,
     });
@@ -99,24 +89,18 @@ describe('findPatchIdMatch', () => {
 
   it('returns null when no match found', async () => {
     const targetSha = 'aaa'.padEnd(40, '0');
+    const otherSha = 'bbb'.padEnd(40, '0');
 
     // computePatchId for target
-    mockShellExec.mockResolvedValueOnce({
+    mockGitPipe.mockResolvedValueOnce({
       stdout: 'uniquepatchid ' + targetSha,
       stderr: '',
       exitCode: 0,
     });
 
-    // git log
-    mockGitExec.mockResolvedValueOnce({
-      stdout: 'bbb'.padEnd(40, '0') + '\n',
-      stderr: '',
-      exitCode: 0,
-    });
-
-    // computePatchId for candidate - different
-    mockShellExec.mockResolvedValueOnce({
-      stdout: 'differentpatchid bbb',
+    // batch scan
+    mockGitPipe.mockResolvedValueOnce({
+      stdout: `differentpatchid ${otherSha}\n`,
       stderr: '',
       exitCode: 0,
     });

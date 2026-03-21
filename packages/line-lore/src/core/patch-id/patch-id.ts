@@ -2,7 +2,7 @@ import { filter, isTruthy } from '@winglet/common-utils';
 
 import type { RepoIdentity } from '../../cache/index.js';
 import { ShardedCache } from '../../cache/index.js';
-import { gitExec, shellExec } from '../../git/executor.js';
+import { gitPipe } from '../../git/executor.js';
 import type { GitExecOptions } from '../../types/index.js';
 
 export interface PatchIdResult {
@@ -50,14 +50,10 @@ export async function computePatchId(
   if (cached) return cached;
 
   try {
-    const cwd = options?.cwd ?? '.';
-    const result = await shellExec(
-      'bash',
-      [
-        '-c',
-        `git -C "${cwd}" diff "${commitSha}^..${commitSha}" | git patch-id --stable`,
-      ],
-      { timeout: options?.timeout },
+    const result = await gitPipe(
+      ['diff', `${commitSha}^..${commitSha}`],
+      ['patch-id', '--stable'],
+      { cwd: options?.cwd, timeout: options?.timeout },
     );
 
     const patchId = result.stdout.trim().split(/\s+/)[0];
@@ -81,19 +77,23 @@ export async function findPatchIdMatch(
   if (!targetPatchId) return null;
 
   try {
-    // Get recent commits on main branch
-    const logResult = await gitExec(
-      ['log', '--format=%H', `-${scanDepth}`, ref],
-      { cwd: options?.cwd, timeout: options?.timeout },
+    // Batch compute all candidate patch-ids in a single streaming pipe
+    const result = await gitPipe(
+      ['log', `-${scanDepth}`, '-p', ref],
+      ['patch-id', '--stable'],
+      { cwd: options?.cwd, timeout: options?.timeout ?? 60_000 },
     );
 
-    const candidates = filter(logResult.stdout.trim().split('\n'), isTruthy);
+    const lines = filter(result.stdout.trim().split('\n'), isTruthy);
+    const cache = getCache(options?.repoId, options?.noCache);
 
-    for (const candidateSha of candidates) {
-      if (candidateSha === commitSha) continue;
+    for (const line of lines) {
+      const [patchId, candidateSha] = line.split(/\s+/);
+      if (!patchId || !candidateSha) continue;
 
-      const candidatePatchId = await computePatchId(candidateSha, options);
-      if (candidatePatchId && candidatePatchId === targetPatchId) {
+      await cache.set(candidateSha, patchId);
+
+      if (candidateSha !== commitSha && patchId === targetPatchId) {
         return { matchedSha: candidateSha, patchId: targetPatchId };
       }
     }
