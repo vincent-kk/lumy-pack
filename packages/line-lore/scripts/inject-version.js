@@ -71,7 +71,6 @@ function generateVersionFile(version) {
     }
 
     if (currentVersion === version) {
-      console.log(`✓ Version file already up to date: ${version}`);
       return false;
     }
 
@@ -105,9 +104,7 @@ try {
   const version = readPackageVersion();
   const updated = generateVersionFile(version);
 
-  if (!updated) {
-    console.log(`\n✅ Version is synchronized: ${version}`);
-  } else {
+  if (updated) {
     console.log(`\n✅ Version synchronization complete: ${version}`);
   }
 } catch (error) {
