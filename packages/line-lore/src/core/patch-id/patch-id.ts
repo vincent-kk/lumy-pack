@@ -18,11 +18,16 @@ function repoKey(repoId: RepoIdentity): string {
   return `${repoId.host}/${repoId.owner}/${repoId.repo}`;
 }
 
-function getCache(repoId?: RepoIdentity, noCache?: boolean): ShardedCache<string> {
+function getCache(
+  repoId?: RepoIdentity,
+  noCache?: boolean,
+): ShardedCache<string> {
   if (noCache) {
     return new ShardedCache<string>('patch-id', { repoId, enabled: false });
   }
-  const key = repoKey(repoId ?? { host: '_local', owner: '_', repo: '_default' });
+  const key = repoKey(
+    repoId ?? { host: '_local', owner: '_', repo: '_default' },
+  );
   let cache = cacheRegistry.get(key);
   if (!cache) {
     cache = new ShardedCache<string>('patch-id', { repoId });

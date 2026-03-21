@@ -1,4 +1,11 @@
-import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
+import {
+  mkdir,
+  readFile,
+  readdir,
+  rename,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
@@ -142,20 +149,14 @@ export class ShardedCache<T> {
     return state;
   }
 
-  private async doSet(
-    prefix: string,
-    key: string,
-    value: T,
-  ): Promise<void> {
+  private async doSet(prefix: string, key: string, value: T): Promise<void> {
     const state = this.getShardState(prefix);
     const data = await this.readShard(prefix);
     data[key] = { key, value, createdAt: Date.now() };
 
     const keys = Object.keys(data);
     if (keys.length > this.maxEntriesPerShard) {
-      const sorted = keys.sort(
-        (a, b) => data[a].createdAt - data[b].createdAt,
-      );
+      const sorted = keys.sort((a, b) => data[a].createdAt - data[b].createdAt);
       const toRemove = sorted.slice(0, keys.length - this.maxEntriesPerShard);
       for (const k of toRemove) {
         delete data[k];
@@ -194,10 +195,7 @@ export class ShardedCache<T> {
     }
   }
 
-  private async writeShard(
-    prefix: string,
-    data: ShardStore<T>,
-  ): Promise<void> {
+  private async writeShard(prefix: string, data: ShardStore<T>): Promise<void> {
     await mkdir(this.baseDir, { recursive: true });
     const filePath = join(this.baseDir, `${prefix}.json`);
     const tmpPath = `${filePath}.tmp`;

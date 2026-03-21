@@ -14,25 +14,26 @@ export async function detectPlatformAdapter(options?: {
     cwd: options?.cwd,
   });
 
-  const adapter = createAdapter(remote, options?.remoteName);
+  const adapter = createAdapter(remote, options?.remoteName, options?.cwd);
   return { adapter, remote };
 }
 
 export function createAdapter(
   remote: RemoteInfo,
   remoteName?: string,
+  cwd?: string,
 ): PlatformAdapter {
   switch (remote.platform) {
     case 'github':
-      return new GitHubAdapter({ hostname: remote.host, remoteName });
+      return new GitHubAdapter({ hostname: remote.host, remoteName, cwd });
     case 'github-enterprise':
-      return new GitHubEnterpriseAdapter(remote.host, { remoteName });
+      return new GitHubEnterpriseAdapter(remote.host, { remoteName, cwd });
     case 'gitlab':
-      return new GitLabAdapter({ hostname: remote.host, remoteName });
+      return new GitLabAdapter({ hostname: remote.host, remoteName, cwd });
     case 'gitlab-self-hosted':
-      return new GitLabSelfHostedAdapter(remote.host, { remoteName });
+      return new GitLabSelfHostedAdapter(remote.host, { remoteName, cwd });
     case 'unknown':
       // Try GitHub first for unknown hosts (enterprise)
-      return new GitHubEnterpriseAdapter(remote.host, { remoteName });
+      return new GitHubEnterpriseAdapter(remote.host, { remoteName, cwd });
   }
 }

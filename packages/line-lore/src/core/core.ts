@@ -1,13 +1,13 @@
-import { map } from '@winglet/common-utils';
-
 import { createHash } from 'node:crypto';
 
+import { map } from '@winglet/common-utils';
+
+import { isAstAvailable } from '../ast/index.js';
 import type { RepoIdentity } from '../cache/index.js';
 import { cleanupLegacyCache } from '../cache/index.js';
-import { isAstAvailable } from '../ast/index.js';
 import { LineLoreError, LineLoreErrorCode } from '../errors.js';
-import { checkGitHealth } from '../git/health.js';
 import { gitExec } from '../git/executor.js';
+import { checkGitHealth } from '../git/health.js';
 import { detectPlatformAdapter } from '../platform/index.js';
 import type {
   AuthStatus,

@@ -7,12 +7,17 @@ export class GitLabSelfHostedAdapter extends GitLabAdapter {
 
   constructor(
     hostname: string,
-    options?: { scheduler?: RequestScheduler; remoteName?: string },
+    options?: {
+      scheduler?: RequestScheduler;
+      remoteName?: string;
+      cwd?: string;
+    },
   ) {
     super({
       hostname,
       scheduler: options?.scheduler,
       remoteName: options?.remoteName,
+      cwd: options?.cwd,
     });
   }
 }
