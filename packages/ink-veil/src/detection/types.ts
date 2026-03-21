@@ -1,4 +1,4 @@
-export type DetectionMethod = 'MANUAL' | 'REGEX' | 'NER';
+export type DetectionMethod = "MANUAL" | "REGEX" | "NER";
 
 export interface DetectionSpan {
   start: number;

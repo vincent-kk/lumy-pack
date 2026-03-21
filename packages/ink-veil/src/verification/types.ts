@@ -1,4 +1,4 @@
-import type { FidelityTier } from '../types.js';
+import type { FidelityTier } from "../types.js";
 
 export interface VerificationResult {
   passed: boolean | null;

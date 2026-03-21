@@ -1,12 +1,12 @@
-import type { FidelityTier } from '../types.js';
+import type { FidelityTier } from "../types.js";
 
 export type SegmentPosition =
-  | { type: 'offset'; start: number; end: number }
-  | { type: 'jsonpath'; path: string }
-  | { type: 'xmlpath'; xpath: string }
-  | { type: 'cell'; row: number; col: number }
-  | { type: 'node'; nodeId: string }
-  | { type: 'generic'; info: Record<string, unknown> };
+  | { type: "offset"; start: number; end: number }
+  | { type: "jsonpath"; path: string }
+  | { type: "xmlpath"; xpath: string }
+  | { type: "cell"; row: number; col: number }
+  | { type: "node"; nodeId: string }
+  | { type: "generic"; info: Record<string, unknown> };
 
 export interface TextSegment {
   text: string;

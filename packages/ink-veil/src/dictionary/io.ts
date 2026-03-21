@@ -2,32 +2,45 @@
  * I/O layer for the Dictionary.
  * This file uses node:fs and is NOT re-exported from transform/ subpath.
  */
-import { readFile, writeFile } from 'node:fs/promises';
-import { DictionaryError } from '../errors/types.js';
-import { Dictionary } from './dictionary.js';
-import { encryptDictionary, decryptDictionary, isEncryptedDictionary } from './encryption.js';
-import type { DictionaryJSON } from './types.js';
+import { readFile, writeFile } from "node:fs/promises";
+import { DictionaryError } from "../errors/types.js";
+import { Dictionary } from "./dictionary.js";
+import {
+  encryptDictionary,
+  decryptDictionary,
+  isEncryptedDictionary,
+} from "./encryption.js";
+import type { DictionaryJSON } from "./types.js";
 
 /** Save a dictionary to a JSON file. */
-export async function saveDictionary(dict: Dictionary, path: string): Promise<void> {
+export async function saveDictionary(
+  dict: Dictionary,
+  path: string,
+): Promise<void> {
   const data = dict.toJSON();
-  await writeFile(path, JSON.stringify(data, null, 2), 'utf-8');
+  await writeFile(path, JSON.stringify(data, null, 2), "utf-8");
 }
 
 /** Load a dictionary from a JSON file. */
 export async function loadDictionary(path: string): Promise<Dictionary> {
   let raw: string;
   try {
-    raw = await readFile(path, 'utf-8');
+    raw = await readFile(path, "utf-8");
   } catch (cause) {
-    throw new DictionaryError(`Failed to read dictionary file: ${path}`, { path, cause });
+    throw new DictionaryError(`Failed to read dictionary file: ${path}`, {
+      path,
+      cause,
+    });
   }
 
   let data: DictionaryJSON;
   try {
     data = JSON.parse(raw) as DictionaryJSON;
   } catch (cause) {
-    throw new DictionaryError(`Failed to parse dictionary JSON: ${path}`, { path, cause });
+    throw new DictionaryError(`Failed to parse dictionary JSON: ${path}`, {
+      path,
+      cause,
+    });
   }
 
   return Dictionary.fromJSON(data);
@@ -53,7 +66,10 @@ export async function loadDictionaryEncrypted(
   try {
     data = await readFile(path);
   } catch (cause) {
-    throw new DictionaryError(`Failed to read encrypted dictionary: ${path}`, { path, cause });
+    throw new DictionaryError(`Failed to read encrypted dictionary: ${path}`, {
+      path,
+      cause,
+    });
   }
 
   if (!isEncryptedDictionary(data)) {
@@ -69,7 +85,10 @@ export async function loadDictionaryEncrypted(
   try {
     parsed = JSON.parse(plaintext) as DictionaryJSON;
   } catch (cause) {
-    throw new DictionaryError('Failed to parse decrypted dictionary JSON', { path, cause });
+    throw new DictionaryError("Failed to parse decrypted dictionary JSON", {
+      path,
+      cause,
+    });
   }
 
   return Dictionary.fromJSON(parsed);

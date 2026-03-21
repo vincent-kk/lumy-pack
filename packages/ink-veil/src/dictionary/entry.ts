@@ -1,4 +1,4 @@
-import type { DetectionMethod } from '../types.js';
+import type { DetectionMethod } from "../types.js";
 
 /** A single entry in the veil dictionary. */
 export interface DictionaryEntry {

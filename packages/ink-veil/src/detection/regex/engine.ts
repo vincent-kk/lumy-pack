@@ -1,5 +1,9 @@
-import type { DetectionSpan, DetectionConfig, DetectionEngine } from '../types.js';
-import { PATTERNS, applyPattern } from './patterns.js';
+import type {
+  DetectionSpan,
+  DetectionConfig,
+  DetectionEngine,
+} from "../types.js";
+import { PATTERNS, applyPattern } from "./patterns.js";
 
 export class RegexEngine implements DetectionEngine {
   detect(text: string, config?: DetectionConfig): DetectionSpan[] {

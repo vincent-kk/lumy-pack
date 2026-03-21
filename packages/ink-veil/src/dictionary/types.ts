@@ -1,5 +1,5 @@
-import type { DictionaryEntry } from './entry.js';
-import type { TokenMode } from '../types.js';
+import type { DictionaryEntry } from "./entry.js";
+import type { TokenMode } from "../types.js";
 
 /** Serializable snapshot of the dictionary (indexes excluded). */
 export interface DictionaryJSON {

@@ -22,7 +22,10 @@ export interface MergedNNP {
  * Merge consecutive NNP tokens that are on the same line
  * and adjacent (only whitespace between them) in the original text.
  */
-export function mergeConsecutiveNNP(nnpTokens: KiwiTokenInfo[], text: string): MergedNNP[] {
+export function mergeConsecutiveNNP(
+  nnpTokens: KiwiTokenInfo[],
+  text: string,
+): MergedNNP[] {
   const result: MergedNNP[] = [];
   let current: MergedNNP | null = null;
 
@@ -45,7 +48,7 @@ export function mergeConsecutiveNNP(nnpTokens: KiwiTokenInfo[], text: string): M
     const gap = text.slice(current.end, tokenStart);
     const isAdjacent =
       token.lineNumber === current.lineNumber &&
-      (gap === '' || /^[ \t]+$/.test(gap));
+      (gap === "" || /^[ \t]+$/.test(gap));
 
     if (isAdjacent) {
       // Merge: extend span to include gap + new token
