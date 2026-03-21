@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "0.1.4",
+  "syncedAt": "2026-03-21T16:28:57.685Z",
+  "packages": {
+    "winglet-reactUtils": {
+      "originalName": "@winglet/react-utils",
+      "version": "0.11.2",
+      "local": false,
+      "files": {
+        "commands": [
+          {
+            "name": "guide.md",
+            "isDirectory": false
+          }
+        ],
+        "skills": [
+          {
+            "name": "expert",
+            "isDirectory": true,
+            "transformed": "winglet-reactUtils_expert",
+            "internalFiles": [
+              "SKILL.md",
+              "knowledge/hoc-patterns.md",
+              "knowledge/hooks.md",
+              "knowledge/portal-system.md",
+              "knowledge/utility-functions.md"
+            ]
+          }
+        ]
+      }
+    },
+    "winglet-commonUtils": {
+      "originalName": "@winglet/common-utils",
+      "version": "0.11.1",
+      "local": false,
+      "files": {
+        "commands": [
+          {
+            "name": "guide.md",
+            "isDirectory": false
+          }
+        ],
+        "skills": [
+          {
+            "name": "expert",
+            "isDirectory": true,
+            "transformed": "winglet-commonUtils_expert",
+            "internalFiles": [
+              "SKILL.md",
+              "knowledge/array-utils.md",
+              "knowledge/async-utils.md",
+              "knowledge/core-utils.md",
+              "knowledge/filter-utils.md",
+              "knowledge/function-utils.md",
+              "knowledge/math-utils.md",
+              "knowledge/object-utils.md"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "skillUnitFormat": "2"
+}
