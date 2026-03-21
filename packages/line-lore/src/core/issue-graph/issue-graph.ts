@@ -1,3 +1,5 @@
+import { map } from '@winglet/common-utils';
+
 import type {
   GraphResult,
   PlatformAdapter,
@@ -68,7 +70,7 @@ async function traverse(
         });
       }
       await Promise.all(
-        linkedIssues.map((issue) =>
+        map(linkedIssues, (issue) =>
           traverse(
             adapter,
             'issue',
@@ -100,7 +102,7 @@ async function traverse(
         });
       }
       await Promise.all(
-        linkedPRs.map((pr) =>
+        map(linkedPRs, (pr) =>
           traverse(
             adapter,
             'pr',

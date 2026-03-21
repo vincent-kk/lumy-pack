@@ -1,6 +1,13 @@
+import { map } from '@winglet/common-utils';
+
+import { createHash } from 'node:crypto';
+
+import type { RepoIdentity } from '../cache/index.js';
+import { cleanupLegacyCache } from '../cache/index.js';
 import { isAstAvailable } from '../ast/index.js';
 import { LineLoreError, LineLoreErrorCode } from '../errors.js';
 import { checkGitHealth } from '../git/health.js';
+import { gitExec } from '../git/executor.js';
 import { detectPlatformAdapter } from '../platform/index.js';
 import type {
   AuthStatus,
@@ -11,6 +18,7 @@ import type {
   HealthReport,
   OperatingLevel,
   PlatformAdapter,
+  RemoteInfo,
   TraceNode,
   TraceOptions,
 } from '../types/index.js';
@@ -30,6 +38,7 @@ export interface TraceFullResult {
 
 interface PlatformDetectionResult {
   adapter: PlatformAdapter | null;
+  remote: RemoteInfo | null;
   operatingLevel: OperatingLevel;
   warnings: string[];
 }
@@ -52,24 +61,40 @@ function computeFeatureFlags(
   };
 }
 
+async function resolveRepoIdentity(cwd?: string): Promise<RepoIdentity> {
+  try {
+    const result = await gitExec(['rev-parse', '--show-toplevel'], { cwd });
+    const hash = createHash('sha256')
+      .update(result.stdout.trim())
+      .digest('hex')
+      .slice(0, 16);
+    return { host: '_local', owner: '_', repo: hash };
+  } catch {
+    return { host: '_local', owner: '_', repo: '_unknown' };
+  }
+}
+
 async function detectPlatform(
   options: TraceOptions,
 ): Promise<PlatformDetectionResult> {
   const warnings: string[] = [];
   let adapter: PlatformAdapter | null = null;
+  let remote: RemoteInfo | null = null;
   let operatingLevel: OperatingLevel = 0;
 
   try {
-    const { adapter: detectedAdapter } = await detectPlatformAdapter({
+    const detected = await detectPlatformAdapter({
       remoteName: options.remote,
+      cwd: options.cwd,
     });
-    adapter = detectedAdapter;
+    adapter = detected.adapter;
+    remote = detected.remote;
   } catch {
     operatingLevel = 0;
     warnings.push('Could not detect platform. Running in Level 0 (git only).');
   }
 
-  return { adapter, operatingLevel, warnings };
+  return { adapter, remote, operatingLevel, warnings };
 }
 
 async function runBlameAndAuth(
@@ -119,6 +144,7 @@ async function processEntry(
   adapter: PlatformAdapter | null,
   options: TraceOptions,
   execOptions: GitExecOptions,
+  repoId: RepoIdentity,
 ): Promise<TraceNode[]> {
   const nodes: TraceNode[] = [];
 
@@ -157,6 +183,7 @@ async function processEntry(
       ...execOptions,
       noCache: options.noCache,
       deep: featureFlags.deepTrace,
+      repoId,
     });
     if (prInfo) {
       nodes.push({
@@ -181,20 +208,40 @@ async function buildTraceNodes(
   adapter: PlatformAdapter | null,
   options: TraceOptions,
   execOptions: GitExecOptions,
+  repoId: RepoIdentity,
 ): Promise<TraceNode[]> {
   const results = await Promise.allSettled(
-    analyzed.map((entry) =>
-      processEntry(entry, featureFlags, adapter, options, execOptions),
+    map(analyzed, (entry) =>
+      processEntry(entry, featureFlags, adapter, options, execOptions, repoId),
     ),
   );
 
   return results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
 }
 
+let legacyCacheCleaned = false;
+
 export async function trace(options: TraceOptions): Promise<TraceFullResult> {
-  const execOptions: GitExecOptions = { cwd: undefined };
+  const execOptions: GitExecOptions = { cwd: options.cwd };
+
+  if (!legacyCacheCleaned) {
+    legacyCacheCleaned = true;
+    cleanupLegacyCache().catch(() => {});
+  }
 
   const platform = await detectPlatform(options);
+
+  let repoId: RepoIdentity;
+  if (platform.remote) {
+    repoId = {
+      host: platform.remote.host,
+      owner: platform.remote.owner,
+      repo: platform.remote.repo,
+    };
+  } else {
+    repoId = await resolveRepoIdentity(options.cwd);
+  }
+
   const blameAuth = await runBlameAndAuth(
     platform.adapter,
     options,
@@ -211,6 +258,7 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
     platform.adapter,
     options,
     execOptions,
+    repoId,
   );
 
   return { nodes, operatingLevel, featureFlags, warnings };
@@ -250,8 +298,19 @@ export async function health(options?: {
 }
 
 export async function clearCache(): Promise<void> {
+  const { rm } = await import('node:fs/promises');
+  const { homedir } = await import('node:os');
+  const { join } = await import('node:path');
   const { resetPRCache } = await import('./pr-lookup/index.js');
   const { resetPatchIdCache } = await import('./patch-id/index.js');
   resetPRCache();
   resetPatchIdCache();
+  try {
+    await rm(join(homedir(), '.line-lore', 'cache'), {
+      recursive: true,
+      force: true,
+    });
+  } catch {
+    // ignored
+  }
 }

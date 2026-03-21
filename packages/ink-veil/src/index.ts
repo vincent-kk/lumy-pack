@@ -3,6 +3,8 @@
  * Full programmatic API: InkVeil.create() factory + all re-exports.
  */
 
+import { map } from "@winglet/common-utils";
+
 // ── Core types ────────────────────────────────────────────────────────────────
 export type {
   TokenMode,
@@ -15,7 +17,7 @@ export type {
   ManualRule,
   VeilResult,
   UnveilResult,
-} from './types.js';
+} from "./types.js";
 
 // ── Errors ────────────────────────────────────────────────────────────────────
 export {
@@ -26,57 +28,76 @@ export {
   DictionaryError,
   NERModelError,
   VerificationError,
-} from './errors/types.js';
-export { ok, err } from './errors/result.js';
-export type { Result } from './errors/result.js';
+} from "./errors/types.js";
+export { ok, err } from "./errors/result.js";
+export type { Result } from "./errors/result.js";
 
 // ── Dictionary ────────────────────────────────────────────────────────────────
-export { Dictionary } from './dictionary/dictionary.js';
-export { compositeKey } from './dictionary/entry.js';
-export type { DictionaryEntry as DictionaryEntryFull } from './dictionary/entry.js';
-export { TokenGenerator } from './dictionary/token-generator.js';
-export type { DictionaryJSON, DictionaryStats, DocumentManifest } from './dictionary/types.js';
-export { saveDictionary, loadDictionary } from './dictionary/io.js';
+export { Dictionary } from "./dictionary/dictionary.js";
+export { compositeKey } from "./dictionary/entry.js";
+export type { DictionaryEntry as DictionaryEntryFull } from "./dictionary/entry.js";
+export { TokenGenerator } from "./dictionary/token-generator.js";
+export type {
+  DictionaryJSON,
+  DictionaryStats,
+  DocumentManifest,
+} from "./dictionary/types.js";
+export { saveDictionary, loadDictionary } from "./dictionary/io.js";
 
 // ── Detection ─────────────────────────────────────────────────────────────────
-export { DetectionPipeline } from './detection/index.js';
-export type { DetectionConfig, ManualRule as DetectionManualRule } from './detection/index.js';
-export { RegexEngine } from './detection/regex/engine.js';
-export { normalizeNFC } from './detection/normalize.js';
-export { stripTrailingParticle } from './detection/particles.js';
-export { mergeSpans } from './detection/merger.js';
+export { DetectionPipeline } from "./detection/index.js";
+export type {
+  DetectionConfig,
+  ManualRule as DetectionManualRule,
+} from "./detection/index.js";
+export { RegexEngine } from "./detection/regex/engine.js";
+export { normalizeNFC } from "./detection/normalize.js";
+export { stripTrailingParticle } from "./detection/particles.js";
+export { mergeSpans } from "./detection/merger.js";
 
 // ── Transform ─────────────────────────────────────────────────────────────────
-export { veilTextFromSpans } from './transform/veil-from-spans.js';
-export type { Span } from './transform/veil-from-spans.js';
-export { veilTextFromDictionary } from './transform/veil-from-dictionary.js';
-export { unveilText } from './transform/unveil.js';
-export { insertSignature, detectSignature, removeSignature } from './transform/signature.js';
-export type { VeilResult as TextVeilResult, UnveilResult as TextUnveilResult, TokenIntegrity } from './transform/types.js';
+export { veilTextFromSpans } from "./transform/veil-from-spans.js";
+export type { Span } from "./transform/veil-from-spans.js";
+export { veilTextFromDictionary } from "./transform/veil-from-dictionary.js";
+export { unveilText } from "./transform/unveil.js";
+export {
+  insertSignature,
+  detectSignature,
+  removeSignature,
+} from "./transform/signature.js";
+export type {
+  VeilResult as TextVeilResult,
+  UnveilResult as TextUnveilResult,
+  TokenIntegrity,
+} from "./transform/types.js";
 
 // ── Verification ──────────────────────────────────────────────────────────────
-export { verify } from './verification/verify.js';
-export { sha256 } from './verification/hash.js';
-export type { VerificationResult } from './verification/types.js';
+export { verify } from "./verification/verify.js";
+export { sha256 } from "./verification/hash.js";
+export type { VerificationResult } from "./verification/types.js";
 
 // ── Document parsers ──────────────────────────────────────────────────────────
-export { getParser } from './document/parser.js';
-export type { ParsedDocument, TextSegment, FormatParser } from './document/types.js';
+export { getParser } from "./document/parser.js";
+export type {
+  ParsedDocument,
+  TextSegment,
+  FormatParser,
+} from "./document/types.js";
 
 // ── Version ───────────────────────────────────────────────────────────────────
-export const VERSION = '0.0.1';
+export const VERSION = "0.0.1";
 
 // ── InkVeil factory ───────────────────────────────────────────────────────────
-import { Dictionary } from './dictionary/dictionary.js';
-import { saveDictionary, loadDictionary } from './dictionary/io.js';
-import { DetectionPipeline } from './detection/index.js';
-import type { DetectionSpan } from './detection/index.js';
-import { veilTextFromSpans } from './transform/veil-from-spans.js';
-import { veilTextFromDictionary } from './transform/veil-from-dictionary.js';
-import { unveilText } from './transform/unveil.js';
-import { verify } from './verification/verify.js';
-import { getParser } from './document/parser.js';
-import type { TokenMode, FidelityTier, ManualRule } from './types.js';
+import { Dictionary } from "./dictionary/dictionary.js";
+import { saveDictionary, loadDictionary } from "./dictionary/io.js";
+import { DetectionPipeline } from "./detection/index.js";
+import type { DetectionSpan } from "./detection/index.js";
+import { veilTextFromSpans } from "./transform/veil-from-spans.js";
+import { veilTextFromDictionary } from "./transform/veil-from-dictionary.js";
+import { unveilText } from "./transform/unveil.js";
+import { verify } from "./verification/verify.js";
+import { getParser } from "./document/parser.js";
+import type { TokenMode, FidelityTier, ManualRule } from "./types.js";
 
 export interface InkVeilOptions {
   /** Token output mode (default: 'tag'). */
@@ -106,13 +127,15 @@ export class InkVeil {
   static async create(options: InkVeilOptions = {}): Promise<InkVeil> {
     const dict = options.dictionaryPath
       ? await loadDictionary(options.dictionaryPath)
-      : Dictionary.create(options.tokenMode ?? 'tag');
+      : Dictionary.create(options.tokenMode ?? "tag");
 
     const pipeline = new DetectionPipeline({
-      manual: options.manualRules?.map((r) => ({
-        pattern: r.pattern,
-        category: r.category,
-      })),
+      manual: options.manualRules
+        ? map(options.manualRules, (r) => ({
+            pattern: r.pattern,
+            category: r.category,
+          }))
+        : undefined,
       noNer: options.noNer,
     });
 
@@ -125,7 +148,7 @@ export class InkVeil {
   }
 
   /** Veil text using detection pipeline. */
-  async veilText(text: string, sourceDocument = 'unknown') {
+  async veilText(text: string, sourceDocument = "unknown") {
     const spans = await this.pipeline.detect(text);
     return veilTextFromSpans(text, spans, this.dictionary, sourceDocument);
   }
@@ -146,7 +169,12 @@ export class InkVeil {
   }
 
   /** Verify round-trip fidelity. */
-  verify(original: Buffer, restored: Buffer, tier: FidelityTier, format?: string) {
+  verify(
+    original: Buffer,
+    restored: Buffer,
+    tier: FidelityTier,
+    format?: string,
+  ) {
     return verify(original, restored, tier, format);
   }
 

@@ -1,3 +1,5 @@
+import { filter, forEach, isTruthy, map } from '@winglet/common-utils';
+
 import { gitExec } from '../../../git/executor.js';
 import type { CosmeticReason, GitExecOptions } from '../../../types/index.js';
 
@@ -74,8 +76,19 @@ function normalize(line: string): string {
 
 function isWhitespaceOnly(hunks: DiffHunk[]): boolean {
   return hunks.every((hunk) => {
-    const removedNorm = hunk.removed.map(normalize).filter(Boolean).sort();
-    const addedNorm = hunk.added.map(normalize).filter(Boolean).sort();
+    const removedNorm: string[] = [];
+    forEach(hunk.removed, (line) => {
+      const n = normalize(line);
+      if (isTruthy(n)) removedNorm.push(n);
+    });
+    removedNorm.sort();
+
+    const addedNorm: string[] = [];
+    forEach(hunk.added, (line) => {
+      const n = normalize(line);
+      if (isTruthy(n)) addedNorm.push(n);
+    });
+    addedNorm.sort();
 
     if (removedNorm.length !== addedNorm.length) return false;
     return removedNorm.every((line, idx) => line === addedNorm[idx]);
@@ -84,17 +97,23 @@ function isWhitespaceOnly(hunks: DiffHunk[]): boolean {
 
 function isImportReorder(hunks: DiffHunk[]): boolean {
   return hunks.every((hunk) => {
-    const removedImports = hunk.removed.filter(isImportLine);
-    const addedImports = hunk.added.filter(isImportLine);
+    const removedImports = filter(hunk.removed, isImportLine);
+    const addedImports = filter(hunk.added, isImportLine);
 
     if (removedImports.length === 0) return false;
-    if (removedImports.length !== hunk.removed.filter((l) => l.trim()).length)
+    if (
+      removedImports.length !==
+      filter(hunk.removed, (l) => isTruthy(l.trim())).length
+    )
       return false;
-    if (addedImports.length !== hunk.added.filter((l) => l.trim()).length)
+    if (
+      addedImports.length !==
+      filter(hunk.added, (l) => isTruthy(l.trim())).length
+    )
       return false;
 
-    const removedSorted = removedImports.map(normalize).sort();
-    const addedSorted = addedImports.map(normalize).sort();
+    const removedSorted = map(removedImports, normalize).sort();
+    const addedSorted = map(addedImports, normalize).sort();
 
     if (removedSorted.length !== addedSorted.length) return false;
     return removedSorted.every((line, idx) => line === addedSorted[idx]);

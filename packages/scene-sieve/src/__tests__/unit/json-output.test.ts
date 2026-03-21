@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { SieveErrorCode, classifyError } from '../../errors.js';
 
@@ -67,7 +67,9 @@ describe('describe schema shape', () => {
       version: '1.0.0',
       description: 'Extract key frames from video and GIF files',
       arguments: [{ name: 'input', description: 'Input file', required: true }],
-      options: [{ flag: '--json', description: 'Output JSON', default: undefined }],
+      options: [
+        { flag: '--json', description: 'Output JSON', default: undefined },
+      ],
     };
 
     expect(schema).toHaveProperty('name');
@@ -80,7 +82,11 @@ describe('describe schema shape', () => {
   });
 
   it('option entries have flag, description, default fields', () => {
-    const opt = { flag: '--json', description: 'Output structured JSON to stdout', default: undefined };
+    const opt = {
+      flag: '--json',
+      description: 'Output structured JSON to stdout',
+      default: undefined,
+    };
     expect(opt).toHaveProperty('flag');
     expect(opt).toHaveProperty('description');
     expect('default' in opt).toBe(true);

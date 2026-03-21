@@ -1,5 +1,6 @@
 import { createRequire } from 'node:module';
 
+import { filter, map } from '@winglet/common-utils';
 import sharp from 'sharp';
 
 import {
@@ -250,7 +251,8 @@ export class IoUTracker {
       }
     }
 
-    this.regions = this.regions.filter(
+    this.regions = filter(
+      this.regions,
       (r, i) => r.weight > 0.01 || matched.has(i),
     );
 
@@ -520,7 +522,7 @@ async function analyzeBatch(
   const edges: ScoreEdge[] = [];
 
   const preprocessed = await Promise.all(
-    frames.map((f) => preprocessFrame(f.extractPath, scale)),
+    map(frames, (f) => preprocessFrame(f.extractPath, scale)),
   );
 
   const imageWidth = preprocessed[0]?.width ?? scale;
@@ -574,7 +576,7 @@ async function analyzeBatch(
       }
 
       const animationIndices = tracker.update(clusters, pairIndex);
-      const animationWeights = clusters.map((_, ci) =>
+      const animationWeights = map(clusters, (_, ci) =>
         animationIndices.has(ci) ? tracker.getAnimationWeight(ci, clusters) : 0,
       );
 

@@ -1,3 +1,5 @@
+import { map } from '@winglet/common-utils';
+
 import type { HealthReport } from '../types/index.js';
 
 import { gitExec } from './executor.js';
@@ -14,7 +16,7 @@ function isVersionAtLeast(
   version: string,
   minVersion: readonly [number, number, number],
 ): boolean {
-  const parts = version.split('.').map(Number);
+  const parts = map(version.split('.'), Number);
   for (let i = 0; i < 3; i++) {
     if ((parts[i] ?? 0) > minVersion[i]) return true;
     if ((parts[i] ?? 0) < minVersion[i]) return false;

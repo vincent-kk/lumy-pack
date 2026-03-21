@@ -1,3 +1,5 @@
+import { map } from '@winglet/common-utils';
+
 import configSchema from '../../assets/schemas/config.schema.json';
 import type { SyncpointConfig } from '../utils/types.js';
 
@@ -11,8 +13,11 @@ export function validateConfig(data: unknown): {
 } {
   const valid = validate(data);
   if (valid) return { valid: true };
-  const errors = validate.errors?.map(
-    (e) => `${e.instancePath || '/'} ${e.message ?? 'unknown error'}`,
-  );
+  const errors = validate.errors
+    ? map(
+        validate.errors,
+        (e) => `${e.instancePath || '/'} ${e.message ?? 'unknown error'}`,
+      )
+    : undefined;
   return { valid: false, errors };
 }

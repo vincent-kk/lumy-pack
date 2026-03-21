@@ -3,22 +3,26 @@
  * MUST NOT import node:fs or node:crypto.
  * I/O is handled separately in io.ts.
  */
-import type { DetectionMethod, TokenMode } from '../types.js';
-import { compositeKey, type DictionaryEntry } from './entry.js';
-import { TokenGenerator } from './token-generator.js';
-import type { DictionaryJSON, DictionaryStats, DocumentManifest } from './types.js';
+import type { DetectionMethod, TokenMode } from "../types.js";
+import { compositeKey, type DictionaryEntry } from "./entry.js";
+import { TokenGenerator } from "./token-generator.js";
+import type {
+  DictionaryJSON,
+  DictionaryStats,
+  DocumentManifest,
+} from "./types.js";
 
-const CURRENT_VERSION = '1.0.0';
+const CURRENT_VERSION = "1.0.0";
 
 function buildToken(category: string, id: string, mode: TokenMode): string {
   const tag = category.toLowerCase();
-  const numericId = id.split('_')[1];
+  const numericId = id.split("_")[1];
   switch (mode) {
-    case 'tag':
+    case "tag":
       return `<iv-${tag} id="${numericId}">${id}</iv-${tag}>`;
-    case 'bracket':
+    case "bracket":
       return `{{${id}}}`;
-    case 'plain':
+    case "plain":
     default:
       return id;
   }
@@ -43,7 +47,7 @@ export class Dictionary {
   }
 
   /** Create a new empty dictionary. */
-  static create(tokenMode: TokenMode = 'tag'): Dictionary {
+  static create(tokenMode: TokenMode = "tag"): Dictionary {
     return new Dictionary(tokenMode, new Date().toISOString());
   }
 
@@ -55,7 +59,10 @@ export class Dictionary {
 
     for (const entry of data.entries) {
       dict.entriesList.push(entry);
-      dict.forwardIndex.set(compositeKey(entry.original, entry.category), entry);
+      dict.forwardIndex.set(
+        compositeKey(entry.original, entry.category),
+        entry,
+      );
       dict.reverseIndex.set(entry.tokenPlain, entry);
 
       const catList = dict.categoryIndex.get(entry.category) ?? [];
@@ -63,7 +70,7 @@ export class Dictionary {
       dict.categoryIndex.set(entry.category, catList);
 
       // Init counter from max numeric ID to prevent collisions
-      const numericPart = parseInt(entry.id.split('_').pop() ?? '0', 10);
+      const numericPart = parseInt(entry.id.split("_").pop() ?? "0", 10);
       if (!isNaN(numericPart)) {
         dict.tokenGen.initFromExisting(entry.category, numericPart);
       }
@@ -95,7 +102,7 @@ export class Dictionary {
     category: string,
     method: DetectionMethod,
     confidence: number,
-    sourceDocument = 'unknown',
+    sourceDocument = "unknown",
   ): DictionaryEntry {
     const key = compositeKey(original, category);
     const existing = this.forwardIndex.get(key);
@@ -182,14 +189,17 @@ export class Dictionary {
     const newGen = new TokenGenerator();
 
     for (const entry of this.entriesList) {
-      this.forwardIndex.set(compositeKey(entry.original, entry.category), entry);
+      this.forwardIndex.set(
+        compositeKey(entry.original, entry.category),
+        entry,
+      );
       this.reverseIndex.set(entry.tokenPlain, entry);
 
       const catList = this.categoryIndex.get(entry.category) ?? [];
       catList.push(entry);
       this.categoryIndex.set(entry.category, catList);
 
-      const numericPart = parseInt(entry.id.split('_').pop() ?? '0', 10);
+      const numericPart = parseInt(entry.id.split("_").pop() ?? "0", 10);
       if (!isNaN(numericPart)) {
         newGen.initFromExisting(entry.category, numericPart);
       }

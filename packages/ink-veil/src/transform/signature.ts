@@ -3,26 +3,23 @@
  * Uses zero-width Unicode characters to embed a marker.
  * MUST NOT import from detection/, document/, node:fs, node:crypto
  */
+import { map, filter } from "@winglet/common-utils";
 
 // Zero-width non-joiner (U+200C) = 0 bit, Zero-width joiner (U+200D) = 1 bit
-const ZWJ = '\u200D'; // 1
-const ZWNJ = '\u200C'; // 0
-const MARKER_START = '\u2060'; // Word joiner — marks start of signature
+const ZWJ = "\u200D"; // 1
+const ZWNJ = "\u200C"; // 0
+const MARKER_START = "\u2060"; // Word joiner — marks start of signature
 
-const SIGNATURE_PAYLOAD = 'INK-VEIL';
+const SIGNATURE_PAYLOAD = "INK-VEIL";
 
 function encodeSignature(payload: string): string {
-  let bits = '';
+  let bits = "";
   for (const char of payload) {
     const code = char.charCodeAt(0);
-    bits += code.toString(2).padStart(8, '0');
+    bits += code.toString(2).padStart(8, "0");
   }
   return (
-    MARKER_START +
-    bits
-      .split('')
-      .map((b) => (b === '1' ? ZWJ : ZWNJ))
-      .join('')
+    MARKER_START + map(bits.split(""), (b) => (b === "1" ? ZWJ : ZWNJ)).join("")
   );
 }
 
@@ -30,16 +27,14 @@ function decodeSignature(encoded: string): string | null {
   const start = encoded.indexOf(MARKER_START);
   if (start === -1) return null;
 
-  const bits = encoded
-    .slice(start + 1)
-    .split('')
-    .filter((c) => c === ZWJ || c === ZWNJ)
-    .map((c) => (c === ZWJ ? '1' : '0'))
-    .join('');
+  const bits = map(
+    filter(encoded.slice(start + 1).split(""), (c) => c === ZWJ || c === ZWNJ),
+    (c) => (c === ZWJ ? "1" : "0"),
+  ).join("");
 
   if (bits.length % 8 !== 0) return null;
 
-  let result = '';
+  let result = "";
   for (let i = 0; i < bits.length; i += 8) {
     result += String.fromCharCode(parseInt(bits.slice(i, i + 8), 2));
   }
@@ -61,8 +56,5 @@ export function detectSignature(text: string): boolean {
 
 /** Remove signature from text if present. */
 export function removeSignature(text: string): string {
-  return text.replace(
-    new RegExp(`${MARKER_START}[${ZWJ}${ZWNJ}]+`, 'g'),
-    '',
-  );
+  return text.replace(new RegExp(`${MARKER_START}[${ZWJ}${ZWNJ}]+`, "g"), "");
 }

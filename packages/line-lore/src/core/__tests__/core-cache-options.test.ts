@@ -9,7 +9,7 @@ import type { PRInfo, PlatformAdapter } from '@/types/index.js';
 // Imports — after vi.mock() calls
 // ---------------------------------------------------------------------------
 import { clearCache, trace } from '../core.js';
-import { resetPatchIdCache } from '../patch-id/patch-id.js';
+import { findPatchIdMatch, resetPatchIdCache } from '../patch-id/patch-id.js';
 import { resetPRCache } from '../pr-lookup/pr-lookup.js';
 
 // Module mocks — must be declared before any imports that use them
@@ -29,11 +29,11 @@ vi.mock('@/ast/index.js', async (importOriginal) => {
   return { ...original, isAstAvailable: vi.fn().mockReturnValue(false) };
 });
 
-vi.mock('@/cache/file-cache.js', () => ({
-  FileCache: class {
+vi.mock('@/cache/sharded-cache.js', () => ({
+  ShardedCache: class {
     private store = mockStore;
     private enabled: boolean;
-    constructor(_fileName: string, options?: { enabled?: boolean }) {
+    constructor(_namespace: string, options?: { enabled?: boolean }) {
       this.enabled = options?.enabled ?? true;
     }
     async get(key: string) {
@@ -48,11 +48,21 @@ vi.mock('@/cache/file-cache.js', () => ({
       this.store.clear();
     }
   },
+  cleanupLegacyCache: () => Promise.resolve(),
 }));
 
 vi.mock('execa', () => ({
   execa: vi.fn().mockRejectedValue(new Error('no execa in test')),
 }));
+
+vi.mock('../patch-id/patch-id.js', async (importOriginal) => {
+  const original =
+    await importOriginal<typeof import('../patch-id/patch-id.js')>();
+  return {
+    ...original,
+    findPatchIdMatch: vi.fn().mockResolvedValue(null),
+  };
+});
 
 // ---------------------------------------------------------------------------
 // Typed mock helpers
@@ -63,6 +73,7 @@ const mockDetectPlatformAdapter = detectPlatformAdapter as ReturnType<
   typeof vi.fn
 >;
 const mockIsAstAvailable = isAstAvailable as ReturnType<typeof vi.fn>;
+const mockFindPatchIdMatch = findPatchIdMatch as ReturnType<typeof vi.fn>;
 
 // ---------------------------------------------------------------------------
 // Test data helpers
@@ -138,13 +149,13 @@ describe('trace() — noCache option', () => {
     mockGitExec.mockReset();
     mockIsAstAvailable.mockReturnValue(false);
     mockDetectPlatformAdapter.mockReset();
+    mockFindPatchIdMatch.mockReset().mockResolvedValue(null);
     mockStore.clear();
     resetPRCache();
     resetPatchIdCache();
   });
 
   it('noCache: true bypasses cache and still returns PR from merge message', async () => {
-    // Pre-populate cache — should be ignored when noCache is true
     mockStore.set(COMMIT_SHA, {
       number: 999,
       title: 'cached-stale',
@@ -157,13 +168,12 @@ describe('trace() — noCache option', () => {
     const adapter = createMockAdapter(null);
     mockDetectPlatformAdapter.mockResolvedValue({ adapter });
 
-    // git blame
+    // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
+    mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
-    // cosmetic diff check
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
     );
-    // findMergeCommit
     mockGitExec.mockResolvedValueOnce(
       gitOk(
         `${MERGE_SHA} ${PARENT1} ${PARENT2} Merge pull request #42 from feature/branch\n`,
@@ -174,8 +184,26 @@ describe('trace() — noCache option', () => {
 
     const prNode = result.nodes.find((n) => n.type === 'pull_request');
     expect(prNode).toBeDefined();
-    // Should find PR #42 from merge message, NOT #999 from stale cache
     expect(prNode!.prNumber).toBe(42);
+  });
+
+  it('noCache: true propagates to findPatchIdMatch options', async () => {
+    const adapter = createMockAdapter(null);
+    mockDetectPlatformAdapter.mockResolvedValue({ adapter });
+
+    // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
+    mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
+    mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
+    mockGitExec.mockResolvedValueOnce(
+      gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
+    );
+    mockGitExec.mockResolvedValueOnce(gitEmpty());
+
+    await trace({ file: 'src/foo.ts', line: 1, noCache: true });
+
+    expect(mockFindPatchIdMatch).toHaveBeenCalled();
+    const callArgs = mockFindPatchIdMatch.mock.calls[0];
+    expect(callArgs[1]).toMatchObject({ noCache: true });
   });
 });
 
@@ -188,6 +216,7 @@ describe('trace() — deep option', () => {
     mockGitExec.mockReset();
     mockIsAstAvailable.mockReturnValue(false);
     mockDetectPlatformAdapter.mockReset();
+    mockFindPatchIdMatch.mockReset().mockResolvedValue(null);
     mockStore.clear();
     resetPRCache();
     resetPatchIdCache();
@@ -197,16 +226,13 @@ describe('trace() — deep option', () => {
     const adapter = createMockAdapter(null);
     mockDetectPlatformAdapter.mockResolvedValue({ adapter });
 
-    // git blame
+    // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
+    mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
-    // cosmetic diff check
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
     );
-    // findMergeCommit — no merge found
     mockGitExec.mockResolvedValueOnce(gitEmpty());
-    // patch-id: git diff | git patch-id (via execa — will fail, that's ok)
-    // git log for patch-id scan (will return empty)
     mockGitExec.mockResolvedValueOnce(gitEmpty());
 
     const result = await trace({ file: 'src/foo.ts', line: 1, deep: true });
@@ -218,6 +244,8 @@ describe('trace() — deep option', () => {
     const adapter = createMockAdapter(null);
     mockDetectPlatformAdapter.mockResolvedValue({ adapter });
 
+    // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
+    mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
@@ -228,6 +256,44 @@ describe('trace() — deep option', () => {
     const result = await trace({ file: 'src/foo.ts', line: 1 });
 
     expect(result.featureFlags.deepTrace).toBe(false);
+  });
+
+  it('deep: true passes scanDepth=2000 to findPatchIdMatch', async () => {
+    const adapter = createMockAdapter(null);
+    mockDetectPlatformAdapter.mockResolvedValue({ adapter });
+
+    // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
+    mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
+    mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
+    mockGitExec.mockResolvedValueOnce(
+      gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
+    );
+    mockGitExec.mockResolvedValueOnce(gitEmpty());
+
+    await trace({ file: 'src/foo.ts', line: 1, deep: true });
+
+    expect(mockFindPatchIdMatch).toHaveBeenCalled();
+    const callArgs = mockFindPatchIdMatch.mock.calls[0];
+    expect(callArgs[1]).toMatchObject({ scanDepth: 2000, deep: true });
+  });
+
+  it('deep: false (default) does not expand scanDepth', async () => {
+    const adapter = createMockAdapter(null);
+    mockDetectPlatformAdapter.mockResolvedValue({ adapter });
+
+    // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
+    mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
+    mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
+    mockGitExec.mockResolvedValueOnce(
+      gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
+    );
+    mockGitExec.mockResolvedValueOnce(gitEmpty());
+
+    await trace({ file: 'src/foo.ts', line: 1 });
+
+    expect(mockFindPatchIdMatch).toHaveBeenCalled();
+    const callArgs = mockFindPatchIdMatch.mock.calls[0];
+    expect(callArgs[1]?.scanDepth).toBeUndefined();
   });
 });
 
@@ -240,8 +306,7 @@ describe('clearCache()', () => {
     await expect(clearCache()).resolves.toBeUndefined();
   });
 
-  it('cache is empty after clearCache — subsequent lookups start fresh', async () => {
-    // Pre-populate the store so FileCache.get() would return a hit
+  it('does not throw when store is pre-populated', async () => {
     mockStore.set(COMMIT_SHA, {
       number: 1,
       title: 'cached',
@@ -251,11 +316,6 @@ describe('clearCache()', () => {
       baseBranch: '',
     });
 
-    await clearCache();
-
-    // After clear, store should be empty (FileCache.clear() was NOT called by resetPRCache,
-    // which only nulls the module ref — but the mockStore shared instance persists;
-    // verify clearCache does not throw regardless of store state)
-    expect(true).toBe(true);
+    await expect(clearCache()).resolves.toBeUndefined();
   });
 });

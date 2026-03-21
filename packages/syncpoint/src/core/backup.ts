@@ -1,6 +1,7 @@
 import { readdir } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 
+import { filter } from '@winglet/common-utils';
 import fg from 'fast-glob';
 
 import {
@@ -94,7 +95,8 @@ export async function scanTargets(
             '**/Library/**',
             '**/.cache/**',
             '**/node_modules/**',
-            ...config.backup.exclude.filter(
+            ...filter(
+              config.backup.exclude,
               (p) => detectPatternType(p) === 'glob',
             ),
           ],

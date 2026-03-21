@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
+import { filter } from '@winglet/common-utils';
+
 import type {
   ProcessContext,
   SieveOptions,
@@ -94,7 +96,7 @@ export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
       resolvedOptions.threshold,
       resolvedOptions.count,
     );
-    const prunedFrames = ctx.frames.filter((f) => survivingIds.has(f.id));
+    const prunedFrames = filter(ctx.frames, (f) => survivingIds.has(f.id));
     ctx.emitProgress(100);
 
     // 5. Finalize output

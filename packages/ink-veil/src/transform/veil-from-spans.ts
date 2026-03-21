@@ -2,10 +2,10 @@
  * Veil text using pre-computed detection spans.
  * MUST NOT import from detection/, document/, node:fs, node:crypto
  */
-import type { Dictionary } from '../dictionary/dictionary.js';
-import type { DictionaryEntry } from '../dictionary/entry.js';
-import type { DetectionMethod } from '../types.js';
-import type { VeilResult } from './types.js';
+import type { Dictionary } from "../dictionary/dictionary.js";
+import type { DictionaryEntry } from "../dictionary/entry.js";
+import type { DetectionMethod } from "../types.js";
+import type { VeilResult } from "./types.js";
 
 /** A minimal span descriptor accepted by veilTextFromSpans. */
 export interface Span {
@@ -26,7 +26,7 @@ export function veilTextFromSpans(
   text: string,
   spans: Span[],
   dictionary: Dictionary,
-  sourceDocument = 'unknown',
+  sourceDocument = "unknown",
 ): VeilResult {
   if (spans.length === 0) {
     return { text, substitutions: 0 };
@@ -54,5 +54,5 @@ export function veilTextFromSpans(
 
   segments.push(text.slice(prevEnd));
 
-  return { text: segments.join(''), substitutions: sorted.length };
+  return { text: segments.join(""), substitutions: sorted.length };
 }

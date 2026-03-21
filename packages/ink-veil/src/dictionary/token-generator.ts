@@ -53,5 +53,5 @@ export class TokenGenerator {
 /** Format an integer ID with minimum 3 digits (4+ for values >= 1000). */
 function formatId(n: number): string {
   if (n >= 1000) return String(n);
-  return String(n).padStart(3, '0');
+  return String(n).padStart(3, "0");
 }

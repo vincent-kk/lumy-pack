@@ -1,5 +1,6 @@
 import { copyFile, readFile, writeFile } from 'node:fs/promises';
 
+import { filter, map } from '@winglet/common-utils';
 import YAML from 'yaml';
 
 import configSchema from '../../assets/schemas/config.schema.json';
@@ -81,25 +82,26 @@ export function diffConfigFields(userData: unknown): DiffResult {
   const templatePaths = extractDataPaths(templateData);
   const userPaths = extractDataPaths(userData);
 
-  const schemaKeys = new Set(schemaPaths.map(pathKey));
-  const userKeys = new Set(userPaths.map(pathKey));
+  const schemaKeys = new Set(map(schemaPaths, pathKey));
+  const userKeys = new Set(map(userPaths, pathKey));
 
   const isEditorDirective = (p: string[]) =>
     p.length === 1 && p[0] === 'yaml-language-server';
 
   return {
     // Fields present in template with defaults AND valid in schema, but missing from user
-    added: templatePaths.filter((p) => {
+    added: filter(templatePaths, (p) => {
       if (isEditorDirective(p)) return false;
       const key = pathKey(p);
       return schemaKeys.has(key) && !userKeys.has(key);
     }),
     // Fields in user but not in schema (truly deprecated)
-    removed: userPaths.filter(
+    removed: filter(
+      userPaths,
       (p) => !isEditorDirective(p) && !schemaKeys.has(pathKey(p)),
     ),
     // Fields in user AND in schema (preserve user values)
-    existing: userPaths.filter((p) => schemaKeys.has(pathKey(p))),
+    existing: filter(userPaths, (p) => schemaKeys.has(pathKey(p))),
   };
 }
 
@@ -169,16 +171,16 @@ export async function migrateConfig(options?: {
     return {
       added: [],
       deprecated: [],
-      preserved: diff.existing.map(pathKey),
+      preserved: map(diff.existing, pathKey),
       backupPath: '',
       migrated: false,
     };
   }
 
   const result: MigrateResult = {
-    added: diff.added.map(pathKey),
-    deprecated: diff.removed.map(pathKey),
-    preserved: diff.existing.map(pathKey),
+    added: map(diff.added, pathKey),
+    deprecated: map(diff.removed, pathKey),
+    preserved: map(diff.existing, pathKey),
     backupPath: '',
     migrated: false,
   };

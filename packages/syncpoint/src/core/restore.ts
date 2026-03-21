@@ -1,6 +1,8 @@
 import { copyFile, lstat, readdir, stat } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
+import { forEach } from '@winglet/common-utils';
+
 import { BACKUPS_DIR, METADATA_FILENAME, getSubDir } from '../constants.js';
 import { formatDatetime } from '../utils/format.js';
 import { logger } from '../utils/logger.js';
@@ -180,9 +182,10 @@ export async function restoreBackup(
   const skippedFiles: string[] = [];
 
   // Determine which files will be overwritten
-  const overwritePaths = plan.actions
-    .filter((a) => a.action === 'overwrite')
-    .map((a) => a.path);
+  const overwritePaths: string[] = [];
+  forEach(plan.actions, (a) => {
+    if (a.action === 'overwrite') overwritePaths.push(a.path);
+  });
 
   // Create safety backup if there are files to overwrite
   let safetyBackupPath: string | undefined;
@@ -191,13 +194,17 @@ export async function restoreBackup(
   }
 
   if (options.dryRun) {
+    const restoredFiles: string[] = [];
+    forEach(plan.actions, (a) => {
+      if (a.action !== 'skip') restoredFiles.push(a.path);
+    });
+    const skippedFiles: string[] = [];
+    forEach(plan.actions, (a) => {
+      if (a.action === 'skip') skippedFiles.push(a.path);
+    });
     return {
-      restoredFiles: plan.actions
-        .filter((a) => a.action !== 'skip')
-        .map((a) => a.path),
-      skippedFiles: plan.actions
-        .filter((a) => a.action === 'skip')
-        .map((a) => a.path),
+      restoredFiles,
+      skippedFiles,
       safetyBackupPath,
     };
   }

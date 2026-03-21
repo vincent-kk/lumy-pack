@@ -1,5 +1,5 @@
-import type { FidelityTier } from '../../types.js';
-import type { FormatParser, ParsedDocument } from '../types.js';
+import type { FidelityTier } from "../../types.js";
+import type { FormatParser, ParsedDocument } from "../types.js";
 
 /**
  * PDF Parser — Tier 3 (text-layer extraction).
@@ -14,28 +14,29 @@ import type { FormatParser, ParsedDocument } from '../types.js';
  * INSTALL: yarn workspace @lumy-pack/ink-veil add @libpdf/core
  */
 export class PdfParser implements FormatParser {
-  readonly tier: FidelityTier = '3';
+  readonly tier: FidelityTier = "3";
 
   async parse(buffer: Buffer, _encoding?: string): Promise<ParsedDocument> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let libpdf: any = null;
     try {
       // @ts-ignore — @libpdf/core is an optional dependency
-      libpdf = await import('@libpdf/core');
+      libpdf = await import("@libpdf/core");
     } catch {
       // @libpdf/core not installed — return empty segments with limitation warning
       process.stderr.write(
-        '[ink-veil] Warning: PDF text extraction requires @libpdf/core (beta). ' +
-        'Install with: yarn workspace @lumy-pack/ink-veil add @libpdf/core\n' +
-        '[ink-veil] Warning: Korean CID font mapping may cause incorrect text extraction.\n',
+        "[ink-veil] Warning: PDF text extraction requires @libpdf/core (beta). " +
+          "Install with: yarn workspace @lumy-pack/ink-veil add @libpdf/core\n" +
+          "[ink-veil] Warning: Korean CID font mapping may cause incorrect text extraction.\n",
       );
       return {
-        format: 'pdf',
+        format: "pdf",
         tier: this.tier,
-        encoding: 'binary',
+        encoding: "binary",
         segments: [],
         metadata: {
-          limitation: 'PDF text extraction requires @libpdf/core. Korean CID fonts may not extract correctly.',
+          limitation:
+            "PDF text extraction requires @libpdf/core. Korean CID fonts may not extract correctly.",
           cidWarning: true,
         },
         originalBuffer: buffer,
@@ -44,12 +45,12 @@ export class PdfParser implements FormatParser {
 
     // @libpdf/core is available — perform text extraction
     process.stderr.write(
-      '[ink-veil] Warning: Korean CID font mapping may cause incorrect text extraction for Korean PDFs.\n',
+      "[ink-veil] Warning: Korean CID font mapping may cause incorrect text extraction for Korean PDFs.\n",
     );
 
     try {
       const doc = await libpdf.getDocument({ data: buffer }).promise;
-      const segments: ParsedDocument['segments'] = [];
+      const segments: ParsedDocument["segments"] = [];
 
       for (let pageNum = 1; pageNum <= doc.numPages; pageNum++) {
         const page = await doc.getPage(pageNum);
@@ -57,11 +58,11 @@ export class PdfParser implements FormatParser {
 
         for (let i = 0; i < textContent.items.length; i++) {
           const item = textContent.items[i] as { str?: string };
-          if (typeof item.str === 'string' && item.str.trim()) {
+          if (typeof item.str === "string" && item.str.trim()) {
             segments.push({
               text: item.str,
               position: {
-                type: 'generic',
+                type: "generic",
                 info: { page: pageNum, itemIndex: i },
               },
               skippable: false,
@@ -71,14 +72,15 @@ export class PdfParser implements FormatParser {
       }
 
       return {
-        format: 'pdf',
+        format: "pdf",
         tier: this.tier,
-        encoding: 'binary',
+        encoding: "binary",
         segments,
         metadata: {
           pageCount: doc.numPages,
           cidWarning: true,
-          limitation: 'Binary PDF output differs from input. Korean CID fonts may not extract correctly.',
+          limitation:
+            "Binary PDF output differs from input. Korean CID fonts may not extract correctly.",
         },
         originalBuffer: buffer,
       };
@@ -86,14 +88,15 @@ export class PdfParser implements FormatParser {
       const msg = e instanceof Error ? e.message : String(e);
       process.stderr.write(`[ink-veil] PDF parse error: ${msg}\n`);
       return {
-        format: 'pdf',
+        format: "pdf",
         tier: this.tier,
-        encoding: 'binary',
+        encoding: "binary",
         segments: [],
         metadata: {
           error: msg,
           cidWarning: true,
-          limitation: 'PDF parsing failed. Korean CID fonts may not extract correctly.',
+          limitation:
+            "PDF parsing failed. Korean CID fonts may not extract correctly.",
         },
         originalBuffer: buffer,
       };
@@ -104,7 +107,7 @@ export class PdfParser implements FormatParser {
     // PDF reconstruction is not supported at Tier 3.
     // Return the original buffer — text-layer verification uses extracted text, not binary comparison.
     process.stderr.write(
-      '[ink-veil] Warning: PDF binary reconstruction not supported (Tier 3). Returning original buffer.\n',
+      "[ink-veil] Warning: PDF binary reconstruction not supported (Tier 3). Returning original buffer.\n",
     );
     return parsedDoc.originalBuffer ?? Buffer.alloc(0);
   }

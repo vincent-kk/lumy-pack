@@ -1,3 +1,5 @@
+import { map } from '@winglet/common-utils';
+
 /**
  * Format validation errors for human-readable feedback to LLM
  */
@@ -6,7 +8,7 @@ export function formatValidationErrors(errors: string[]): string {
     return 'No validation errors.';
   }
 
-  const formattedErrors = errors.map((error, index) => {
+  const formattedErrors = map(errors, (error, index) => {
     return `${index + 1}. ${error}`;
   });
 

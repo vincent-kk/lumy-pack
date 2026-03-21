@@ -1,3 +1,5 @@
+import { filter, isTruthy } from '@winglet/common-utils';
+
 import { gitExec } from '../../git/executor.js';
 import type { GitExecOptions } from '../../types/index.js';
 
@@ -47,7 +49,7 @@ async function findMergeCommitWithArgs(
       { cwd: options?.cwd, timeout: options?.timeout },
     );
 
-    const lines = result.stdout.trim().split('\n').filter(Boolean);
+    const lines = filter(result.stdout.trim().split('\n'), isTruthy);
     if (lines.length === 0) return null;
 
     return parseMergeLogLine(lines[0]);

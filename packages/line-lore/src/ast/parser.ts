@@ -1,3 +1,5 @@
+import { isNil } from '@winglet/common-utils';
+
 import type { SymbolInfo, SymbolKind } from '../types/index.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -63,7 +65,7 @@ export async function parseFile(
 
     const langEnum =
       sgLang[lang] ?? sgLang[lang.charAt(0).toUpperCase() + lang.slice(1)];
-    if (langEnum == null) return null;
+    if (isNil(langEnum)) return null;
 
     const parse = (astGrep as Record<string, (...args: unknown[]) => unknown>)
       .parse;
@@ -101,7 +103,7 @@ export async function findSymbols(
 
     const langEnum =
       Lang[lang] ?? Lang[lang.charAt(0).toUpperCase() + lang.slice(1)];
-    if (langEnum == null) return [];
+    if (isNil(langEnum)) return [];
 
     const root = parse(langEnum, source).root();
     const symbols: SymbolInfo[] = [];

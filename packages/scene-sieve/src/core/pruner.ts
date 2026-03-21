@@ -1,3 +1,5 @@
+import { filter, map } from '@winglet/common-utils';
+
 import type { FrameNode, ScoreEdge } from '../types/index.js';
 import { normalizeScores } from '../utils/math.js';
 import { MinHeap } from '../utils/min-heap.js';
@@ -27,7 +29,7 @@ export function pruneTo(
   targetCount: number,
 ): Set<number> {
   if (frames.length <= targetCount) {
-    return new Set(frames.map((f) => f.id));
+    return new Set(map(frames, (f) => f.id));
   }
 
   // Doubly-linked list: frameId -> prev/next frameId
@@ -52,7 +54,7 @@ export function pruneTo(
     });
   }
 
-  const surviving = new Set(frames.map((f) => f.id));
+  const surviving = new Set(map(frames, (f) => f.id));
   const firstId = frames[0]!.id;
   const lastId = frames[frames.length - 1]!.id;
 
@@ -251,7 +253,7 @@ export function pruneByThresholdWithCap(
   }
 
   // Stage 2: rebuild subgraph for surviving frames, then pruneTo
-  const survivingFrames = frames.filter((f) => thresholdSurvivors.has(f.id));
+  const survivingFrames = filter(frames, (f) => thresholdSurvivors.has(f.id));
 
   // Build index: frameId -> position in original frames array
   const idToOrigIdx = new Map<number, number>();

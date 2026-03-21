@@ -1,3 +1,5 @@
+import { forEach, map } from '@winglet/common-utils';
+
 import { gitExec } from '../../git/executor.js';
 import type {
   BlameResult,
@@ -29,14 +31,15 @@ export async function analyzeBlameResults(
   filePath: string,
   options?: GitExecOptions,
 ): Promise<BlameStageResult[]> {
-  const uniqueShas = [...new Set(results.map((r) => r.commitHash))];
+  const uniqueShas = [...new Set(map(results, (r) => r.commitHash))];
   const cosmeticMap = new Map<string, ReturnType<typeof isCosmeticDiff>>();
-
   const zeroSha = '0'.repeat(40);
-  await Promise.all(
-    uniqueShas
-      .filter((sha) => sha !== zeroSha)
-      .map(async (sha) => {
+
+  const tasks: Promise<void>[] = [];
+  forEach(uniqueShas, (sha) => {
+    if (sha === zeroSha) return;
+    tasks.push(
+      (async () => {
         try {
           const blameResult = results.find((r) => r.commitHash === sha);
           if (!blameResult) return;
@@ -47,10 +50,12 @@ export async function analyzeBlameResults(
         } catch {
           cosmeticMap.set(sha, { isCosmetic: false });
         }
-      }),
-  );
+      })(),
+    );
+  });
+  await Promise.all(tasks);
 
-  return results.map((blame) => {
+  return map(results, (blame) => {
     const cosmetic = cosmeticMap.get(blame.commitHash);
     return {
       blame,

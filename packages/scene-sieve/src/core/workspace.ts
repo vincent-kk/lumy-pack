@@ -1,6 +1,7 @@
 import { readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { map } from '@winglet/common-utils';
 import sharp from 'sharp';
 
 import {
@@ -67,7 +68,7 @@ export async function finalizeOutput(
       },
     },
     frames: framesMetadata,
-    animations: (ctx.animations || []).map((anim) => ({
+    animations: map(ctx.animations || [], (anim) => ({
       ...anim,
       startFrameId: anim.startFrameId + 1,
       endFrameId: anim.endFrameId + 1,
@@ -177,7 +178,7 @@ export async function readFramesAsBuffers(
   quality: number,
 ): Promise<Buffer[]> {
   return Promise.all(
-    frameNodes.map((f) =>
+    map(frameNodes, (f) =>
       sharp(f.extractPath).jpeg({ quality, mozjpeg: true }).toBuffer(),
     ),
   );

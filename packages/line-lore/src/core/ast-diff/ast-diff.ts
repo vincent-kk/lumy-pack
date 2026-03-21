@@ -1,3 +1,5 @@
+import { isTruthy, map } from '@winglet/common-utils';
+
 import { detectLanguage } from '../../ast/index.js';
 import { gitExec } from '../../git/executor.js';
 import type {
@@ -54,12 +56,12 @@ export async function traceByAst(
 
       const currentMap = new Map(
         [currentSymbol]
-          .filter(Boolean)
+          .filter(isTruthy)
           .map((s) => [s!.name, computeContentHash(s!.bodyText)]),
       );
 
       const parentMap = new Map(
-        parentSymbols.map((s) => [s.name, computeContentHash(s.bodyText)]),
+        map(parentSymbols, (s) => [s.name, computeContentHash(s.bodyText)]),
       );
 
       const comparison = compareSymbolMaps(currentMap, parentMap);

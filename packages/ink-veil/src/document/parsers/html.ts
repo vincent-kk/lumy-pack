@@ -1,8 +1,8 @@
-import { JSDOM } from 'jsdom';
-import type { FidelityTier } from '../../types.js';
-import type { FormatParser, ParsedDocument, TextSegment } from '../types.js';
+import { JSDOM } from "jsdom";
+import type { FidelityTier } from "../../types.js";
+import type { FormatParser, ParsedDocument, TextSegment } from "../types.js";
 
-const SKIP_TAGS = new Set(['script', 'style', 'code', 'pre']);
+const SKIP_TAGS = new Set(["script", "style", "code", "pre"]);
 
 function collectTextNodes(
   node: Node,
@@ -10,11 +10,11 @@ function collectTextNodes(
   index: { n: number },
 ): void {
   if (node.nodeType === node.TEXT_NODE) {
-    const text = node.textContent ?? '';
+    const text = node.textContent ?? "";
     if (text.trim()) {
       segments.push({
         text,
-        position: { type: 'node', nodeId: String(index.n++) },
+        position: { type: "node", nodeId: String(index.n++) },
         skippable: false,
       });
     } else {
@@ -43,7 +43,7 @@ function applyTextNodes(
   index: { n: number },
 ): void {
   if (node.nodeType === node.TEXT_NODE) {
-    const text = node.textContent ?? '';
+    const text = node.textContent ?? "";
     const id = String(index.n++);
     if (text.trim() && segmentMap.has(id)) {
       node.textContent = segmentMap.get(id)!;
@@ -65,19 +65,23 @@ function applyTextNodes(
 }
 
 export class HtmlParser implements FormatParser {
-  readonly tier: FidelityTier = '2';
+  readonly tier: FidelityTier = "2";
 
   async parse(buffer: Buffer, _encoding?: string): Promise<ParsedDocument> {
-    const html = buffer.toString('utf-8');
+    const html = buffer.toString("utf-8");
     const dom = new JSDOM(html);
     const segments: TextSegment[] = [];
     const index = { n: 0 };
-    collectTextNodes(dom.window.document.body ?? dom.window.document, segments, index);
+    collectTextNodes(
+      dom.window.document.body ?? dom.window.document,
+      segments,
+      index,
+    );
 
     return {
-      format: 'html',
+      format: "html",
       tier: this.tier,
-      encoding: 'utf-8',
+      encoding: "utf-8",
       segments,
       metadata: { originalHtml: html },
       originalBuffer: buffer,
@@ -87,17 +91,21 @@ export class HtmlParser implements FormatParser {
   async reconstruct(parsedDoc: ParsedDocument): Promise<Buffer> {
     const segmentMap = new Map<string, string>();
     for (const seg of parsedDoc.segments) {
-      if (seg.position.type === 'node') {
+      if (seg.position.type === "node") {
         segmentMap.set(seg.position.nodeId, seg.text);
       }
     }
 
-    const html = parsedDoc.metadata['originalHtml'] as string;
+    const html = parsedDoc.metadata["originalHtml"] as string;
     const dom = new JSDOM(html);
     const index = { n: 0 };
-    applyTextNodes(dom.window.document.body ?? dom.window.document, segmentMap, index);
+    applyTextNodes(
+      dom.window.document.body ?? dom.window.document,
+      segmentMap,
+      index,
+    );
 
     const result = dom.serialize();
-    return Buffer.from(result, 'utf-8');
+    return Buffer.from(result, "utf-8");
   }
 }

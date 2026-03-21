@@ -4,7 +4,7 @@
  * - 'bracket': Double-brace format — `{{PER_001}}`
  * - 'plain':   Plain token — `PER_001`
  */
-export type TokenMode = 'tag' | 'bracket' | 'plain';
+export type TokenMode = "tag" | "bracket" | "plain";
 
 /**
  * Fidelity tier — round-trip guarantee strength per document format.
@@ -14,11 +14,15 @@ export type TokenMode = 'tag' | 'bracket' | 'plain';
  * - '3':  Text-layer extraction (PDF, PPTX, EPUB)
  * - '4':  Experimental / best-effort (HWP, LaTeX)
  */
-export type FidelityTier = '1a' | '1b' | '2' | '3' | '4';
+export type FidelityTier = "1a" | "1b" | "2" | "3" | "4";
 
 // Canonical detection types — re-exported from detection layer
-import type { DetectionMethod as _DetectionMethod } from './detection/types.js';
-export type { DetectionMethod, DetectionSpan, DetectionConfig } from './detection/types.js';
+import type { DetectionMethod as _DetectionMethod } from "./detection/types.js";
+export type {
+  DetectionMethod,
+  DetectionSpan,
+  DetectionConfig,
+} from "./detection/types.js";
 type DetectionMethod = _DetectionMethod;
 
 /** A single entry in the veil dictionary. */
@@ -58,12 +62,12 @@ export interface TextSegment {
 
 /** Format-specific position descriptor for a text segment. */
 export type SegmentPosition =
-  | { type: 'offset'; start: number; end: number }
-  | { type: 'jsonpath'; path: string }
-  | { type: 'xmlpath'; xpath: string }
-  | { type: 'cell'; row: number; col: number }
-  | { type: 'node'; nodeId: string }
-  | { type: 'generic'; info: Record<string, unknown> };
+  | { type: "offset"; start: number; end: number }
+  | { type: "jsonpath"; path: string }
+  | { type: "xmlpath"; xpath: string }
+  | { type: "cell"; row: number; col: number }
+  | { type: "node"; nodeId: string }
+  | { type: "generic"; info: Record<string, unknown> };
 
 /** Parsed document produced by a format parser. */
 export interface ParsedDocument {
@@ -79,7 +83,7 @@ export interface ParsedDocument {
 /** Options for a veil operation. */
 export interface VeilOptions {
   /** Detection engines to enable (default: all three). */
-  engines?: Array<'MANUAL' | 'REGEX' | 'NER'>;
+  engines?: Array<"MANUAL" | "REGEX" | "NER">;
   /** Token output mode (default: 'tag'). */
   mode?: TokenMode;
   /** NER model name (default: 'kiwi-base'). */
@@ -145,4 +149,3 @@ export interface BatchResult<T> {
   succeeded: number;
   failed: number;
 }
-

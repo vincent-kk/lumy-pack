@@ -21,14 +21,15 @@ vi.mock('@/ast/index.js', async (importOriginal) => {
   return { ...original, isAstAvailable: vi.fn().mockReturnValue(false) };
 });
 
-vi.mock('@/cache/file-cache.js', () => ({
-  FileCache: class {
+vi.mock('@/cache/sharded-cache.js', () => ({
+  ShardedCache: class {
     async get() {
       return null;
     }
     async set() {}
     async clear() {}
   },
+  cleanupLegacyCache: () => Promise.resolve(),
 }));
 
 vi.mock('execa', () => ({

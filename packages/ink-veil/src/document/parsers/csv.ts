@@ -1,18 +1,18 @@
-import Papa from 'papaparse';
-import type { FidelityTier } from '../../types.js';
-import type { FormatParser, ParsedDocument, TextSegment } from '../types.js';
+import Papa from "papaparse";
+import type { FidelityTier } from "../../types.js";
+import type { FormatParser, ParsedDocument, TextSegment } from "../types.js";
 
 export class CsvParser implements FormatParser {
-  readonly tier: FidelityTier = '1a';
+  readonly tier: FidelityTier = "1a";
   private readonly format: string;
 
-  constructor(format: string = 'csv') {
+  constructor(format: string = "csv") {
     this.format = format;
   }
 
   async parse(buffer: Buffer, _encoding?: string): Promise<ParsedDocument> {
-    const text = buffer.toString('utf-8');
-    const delimiter = this.format === 'tsv' ? '\t' : ',';
+    const text = buffer.toString("utf-8");
+    const delimiter = this.format === "tsv" ? "\t" : ",";
 
     const result = Papa.parse<string[]>(text, {
       delimiter,
@@ -35,7 +35,7 @@ export class CsvParser implements FormatParser {
         const cellText = result.data[row][col];
         segments.push({
           text: cellText,
-          position: { type: 'cell', row, col },
+          position: { type: "cell", row, col },
           skippable: false,
         });
       }
@@ -44,47 +44,49 @@ export class CsvParser implements FormatParser {
     return {
       format: this.format,
       tier: this.tier,
-      encoding: 'utf-8',
+      encoding: "utf-8",
       segments,
       metadata: {
         delimiter,
         rowCount: result.data.length,
         quotedFields: [...quotedFields],
-        lineEnding: text.includes('\r\n') ? '\r\n' : '\n',
+        lineEnding: text.includes("\r\n") ? "\r\n" : "\n",
       },
       originalBuffer: buffer,
     };
   }
 
   async reconstruct(parsed: ParsedDocument): Promise<Buffer> {
-    const delimiter = parsed.metadata['delimiter'] as string;
-    const quotedFields = new Set(parsed.metadata['quotedFields'] as string[]);
-    const lineEnding = (parsed.metadata['lineEnding'] as string) ?? '\n';
+    const delimiter = parsed.metadata["delimiter"] as string;
+    const quotedFields = new Set(parsed.metadata["quotedFields"] as string[]);
+    const lineEnding = (parsed.metadata["lineEnding"] as string) ?? "\n";
 
     // Rebuild rows from segments
     const rows: string[][] = [];
     for (const seg of parsed.segments) {
       const pos = seg.position;
-      if (pos.type !== 'cell') continue;
+      if (pos.type !== "cell") continue;
       while (rows.length <= pos.row) rows.push([]);
-      while (rows[pos.row].length <= pos.col) rows[pos.row].push('');
+      while (rows[pos.row].length <= pos.col) rows[pos.row].push("");
       rows[pos.row][pos.col] = seg.text;
     }
 
-    const lines = rows.map(row =>
-      row.map(cell => {
-        const needsQuoting =
-          quotedFields.has(cell) ||
-          cell.includes(delimiter) ||
-          cell.includes('\n') ||
-          cell.includes('"');
-        if (needsQuoting) {
-          return '"' + cell.replace(/"/g, '""') + '"';
-        }
-        return cell;
-      }).join(delimiter)
+    const lines = rows.map((row) =>
+      row
+        .map((cell) => {
+          const needsQuoting =
+            quotedFields.has(cell) ||
+            cell.includes(delimiter) ||
+            cell.includes("\n") ||
+            cell.includes('"');
+          if (needsQuoting) {
+            return '"' + cell.replace(/"/g, '""') + '"';
+          }
+          return cell;
+        })
+        .join(delimiter),
     );
 
-    return Buffer.from(lines.join(lineEnding), 'utf-8');
+    return Buffer.from(lines.join(lineEnding), "utf-8");
   }
 }
