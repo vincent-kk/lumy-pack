@@ -2,6 +2,7 @@ import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { path as ffprobePath } from '@ffprobe-installer/ffprobe';
+import { filter, map } from '@winglet/common-utils';
 import { execa } from 'execa';
 import ffmpegPath from 'ffmpeg-static';
 
@@ -133,13 +134,13 @@ async function buildFrameList(
   duration: number,
 ): Promise<FrameNode[]> {
   const files = await readdir(framesDir);
-  const jpgFiles = files.filter((f) => f.endsWith('.jpg')).sort();
+  const jpgFiles = filter(files, (f) => f.endsWith('.jpg')).sort();
 
   if (jpgFiles.length === 0) {
     return [];
   }
 
-  return jpgFiles.map((file, index) => ({
+  return map(jpgFiles, (file, index) => ({
     id: index,
     timestamp:
       duration > 0 && jpgFiles.length > 1

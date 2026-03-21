@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 
+import { filter, map } from '@winglet/common-utils';
+
 import type {
   AnimationMetadata,
   FrameNode,
@@ -429,7 +431,7 @@ export async function runSegmentedPipeline(
     // 5. Process segments with concurrency limit
     const limit = concurrencyLimit(resolvedOptions.concurrency);
     const segmentProgresses = new Array<number>(segments.length).fill(0);
-    const weights = segments.map((s) => s.duration / totalDuration);
+    const weights = map(segments, (s) => s.duration / totalDuration);
 
     const emitOverallProgress = (phase: 'EXTRACTING' | 'ANALYZING') => {
       if (!options.onProgress) return;
@@ -443,7 +445,7 @@ export async function runSegmentedPipeline(
     options.onProgress?.('EXTRACTING', 0);
 
     const results = await Promise.all(
-      segments.map((segment) =>
+      map(segments, (segment) =>
         limit(async () => {
           const segWorkspace = await createSegmentWorkspace(
             mainWorkspace,
@@ -482,7 +484,7 @@ export async function runSegmentedPipeline(
       resolvedOptions.threshold,
       resolvedOptions.count,
     );
-    const prunedFrames = frames.filter((f) => survivingIds.has(f.id));
+    const prunedFrames = filter(frames, (f) => survivingIds.has(f.id));
     options.onProgress?.('PRUNING', 100);
 
     // 8. Finalize output
