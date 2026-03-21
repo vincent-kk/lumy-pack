@@ -12,6 +12,7 @@ export class FileCache<T> {
   private readonly maxEntries: number;
   private readonly enabled: boolean;
   private writeQueue: Promise<void> = Promise.resolve();
+  private store: Record<string, CacheEntry<T>> | null = null;
 
   constructor(
     fileName: string,
@@ -51,6 +52,7 @@ export class FileCache<T> {
         const data = await this.readStore();
         if (key in data) {
           delete data[key];
+          this.store = data;
           await this.writeStore(data);
           deleted = true;
         }
@@ -60,6 +62,7 @@ export class FileCache<T> {
   }
 
   clear(): Promise<void> {
+    this.store = {};
     this.writeQueue = this.writeQueue
       .then(() => this.writeStore({}))
       .catch(() => {});
@@ -84,13 +87,17 @@ export class FileCache<T> {
       }
     }
 
+    this.store = data;
     await this.writeStore(data);
   }
 
   private async readStore(): Promise<Record<string, CacheEntry<T>>> {
+    if (this.store !== null) return this.store;
+
     try {
       const content = await readFile(this.filePath, 'utf-8');
-      return JSON.parse(content) as Record<string, CacheEntry<T>>;
+      this.store = JSON.parse(content) as Record<string, CacheEntry<T>>;
+      return this.store;
     } catch (error) {
       if (
         error instanceof SyntaxError ||
@@ -101,10 +108,12 @@ export class FileCache<T> {
         console.warn(
           `[line-lore] Cache file corrupted, resetting: ${this.filePath}`,
         );
+        this.store = {};
         await this.writeStore({});
-        return {};
+        return this.store;
       }
-      return {};
+      this.store = {};
+      return this.store;
     }
   }
 
@@ -117,10 +126,11 @@ export class FileCache<T> {
   }
 
   async destroy(): Promise<void> {
+    this.store = null;
     try {
       await unlink(this.filePath);
     } catch {
-      // File may not exist
+      // ignored
     }
   }
 }

@@ -84,7 +84,7 @@ async function runBlameAndAuth(
   );
 
   const blameChain = executeBlame(options.file, lineRange, execOptions).then(
-    (results) => analyzeBlameResults(results, execOptions),
+    (results) => analyzeBlameResults(results, options.file, execOptions),
   );
 
   const [authResult, blameResult] = await Promise.allSettled([
@@ -113,8 +113,8 @@ async function runBlameAndAuth(
   return { analyzed: blameResult.value, operatingLevel, warnings };
 }
 
-async function buildTraceNodes(
-  analyzed: Awaited<ReturnType<typeof analyzeBlameResults>>,
+async function processEntry(
+  entry: Awaited<ReturnType<typeof analyzeBlameResults>>[number],
   featureFlags: FeatureFlags,
   adapter: PlatformAdapter | null,
   options: TraceOptions,
@@ -122,70 +122,79 @@ async function buildTraceNodes(
 ): Promise<TraceNode[]> {
   const nodes: TraceNode[] = [];
 
-  for (const entry of analyzed) {
-    const commitNode: TraceNode = {
-      type: entry.isCosmetic ? 'cosmetic_commit' : 'original_commit',
-      sha: entry.blame.commitHash,
-      trackingMethod: 'blame-CMw',
-      confidence: 'exact',
-      note: entry.cosmeticReason
-        ? `Cosmetic change: ${entry.cosmeticReason}`
-        : undefined,
-    };
-    nodes.push(commitNode);
+  const commitNode: TraceNode = {
+    type: entry.isCosmetic ? 'cosmetic_commit' : 'original_commit',
+    sha: entry.blame.commitHash,
+    trackingMethod: 'blame-CMw',
+    confidence: 'exact',
+    note: entry.cosmeticReason
+      ? `Cosmetic change: ${entry.cosmeticReason}`
+      : undefined,
+  };
+  nodes.push(commitNode);
 
-    // AST trace for cosmetic commits
-    if (entry.isCosmetic && featureFlags.astDiff) {
-      const astResult = await traceByAst(
-        options.file,
-        options.line,
-        entry.blame.commitHash,
-        execOptions,
-      );
+  if (entry.isCosmetic && featureFlags.astDiff) {
+    const astResult = await traceByAst(
+      options.file,
+      options.line,
+      entry.blame.commitHash,
+      execOptions,
+    );
 
-      if (astResult) {
-        nodes.push({
-          type: 'original_commit',
-          sha: astResult.originSha,
-          trackingMethod: 'ast-signature',
-          confidence: astResult.confidence,
-        });
-      }
-    }
-
-    // Commit → PR lookup
-    const targetSha = nodes[nodes.length - 1].sha;
-    if (targetSha) {
-      const prInfo = await lookupPR(targetSha, adapter, {
-        ...execOptions,
-        noCache: options.noCache,
-        deep: featureFlags.deepTrace,
+    if (astResult) {
+      nodes.push({
+        type: 'original_commit',
+        sha: astResult.originSha,
+        trackingMethod: 'ast-signature',
+        confidence: astResult.confidence,
       });
-      if (prInfo) {
-        nodes.push({
-          type: 'pull_request',
-          sha: prInfo.mergeCommit,
-          trackingMethod: prInfo.url ? 'api' : 'message-parse',
-          confidence: prInfo.url ? 'exact' : 'heuristic',
-          prNumber: prInfo.number,
-          prUrl: prInfo.url || undefined,
-          prTitle: prInfo.title || undefined,
-          mergedAt: prInfo.mergedAt,
-        });
-      }
+    }
+  }
+
+  const targetSha = nodes[nodes.length - 1].sha;
+  if (targetSha) {
+    const prInfo = await lookupPR(targetSha, adapter, {
+      ...execOptions,
+      noCache: options.noCache,
+      deep: featureFlags.deepTrace,
+    });
+    if (prInfo) {
+      nodes.push({
+        type: 'pull_request',
+        sha: prInfo.mergeCommit,
+        trackingMethod: prInfo.url ? 'api' : 'message-parse',
+        confidence: prInfo.url ? 'exact' : 'heuristic',
+        prNumber: prInfo.number,
+        prUrl: prInfo.url || undefined,
+        prTitle: prInfo.title || undefined,
+        mergedAt: prInfo.mergedAt,
+      });
     }
   }
 
   return nodes;
 }
 
+async function buildTraceNodes(
+  analyzed: Awaited<ReturnType<typeof analyzeBlameResults>>,
+  featureFlags: FeatureFlags,
+  adapter: PlatformAdapter | null,
+  options: TraceOptions,
+  execOptions: GitExecOptions,
+): Promise<TraceNode[]> {
+  const results = await Promise.allSettled(
+    analyzed.map((entry) =>
+      processEntry(entry, featureFlags, adapter, options, execOptions),
+    ),
+  );
+
+  return results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+}
+
 export async function trace(options: TraceOptions): Promise<TraceFullResult> {
   const execOptions: GitExecOptions = { cwd: undefined };
 
-  // Stage 1: Platform detection
   const platform = await detectPlatform(options);
-
-  // Stage 2: Auth check + Blame in parallel
   const blameAuth = await runBlameAndAuth(
     platform.adapter,
     options,
@@ -194,11 +203,8 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
 
   const operatingLevel = blameAuth.operatingLevel || platform.operatingLevel;
   const warnings = [...platform.warnings, ...blameAuth.warnings];
-
-  // Stage 3: Compute feature flags
   const featureFlags = computeFeatureFlags(operatingLevel, options);
 
-  // Stage 4: Build trace nodes
   const nodes = await buildTraceNodes(
     blameAuth.analyzed,
     featureFlags,

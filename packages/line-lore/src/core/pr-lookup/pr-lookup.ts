@@ -34,29 +34,23 @@ export async function lookupPR(
   adapter: PlatformAdapter | null,
   options?: PRLookupOptions,
 ): Promise<PRInfo | null> {
-  // Level 0: Check cache first
   const cache = getCache(options?.noCache);
   const cached = await cache.get(commitSha);
   if (cached) return cached;
 
-  // Level 1: Git-only — merge commit message parsing
   let mergeBasedPR: PRInfo | null = null;
   const mergeResult = await findMergeCommit(commitSha, options);
   if (mergeResult) {
     const prNumber = extractPRFromMergeMessage(mergeResult.subject);
     if (prNumber) {
-      // Try to get full PR info via API if available
       if (adapter) {
         const prInfo = await adapter.getPRForCommit(mergeResult.mergeCommitSha);
-        // Only accept PRs that are actually merged (mergedAt is present)
         if (prInfo?.mergedAt) {
           mergeBasedPR = prInfo;
         }
       }
 
       if (!mergeBasedPR) {
-        // Fallback: construct minimal PR info from message
-        // (message-parse cannot verify merge status, so trust the merge commit)
         mergeBasedPR = {
           number: prNumber,
           title: mergeResult.subject,
@@ -67,23 +61,18 @@ export async function lookupPR(
         };
       }
 
-      // In non-deep mode, return immediately with merge-based result
-      if (!options?.deep) {
+      if (!options?.deep || mergeBasedPR.mergedAt) {
         await cache.set(commitSha, mergeBasedPR);
         return mergeBasedPR;
       }
-      // In deep mode, continue to patch-id matching for additional context
     }
   }
 
-  // Level 2: Patch-ID matching for rebased/squashed commits
-  // In deep mode, use expanded scan depth (2000 vs default 500)
   const patchIdMatch = await findPatchIdMatch(commitSha, {
     ...options,
     scanDepth: options?.deep ? DEEP_SCAN_DEPTH : undefined,
   });
   if (patchIdMatch) {
-    // Try the matched commit instead
     const result = await lookupPR(patchIdMatch.matchedSha, adapter, options);
     if (result) {
       await cache.set(commitSha, result);
@@ -91,14 +80,11 @@ export async function lookupPR(
     }
   }
 
-  // If deep mode found a merge-based PR but patch-id didn't improve, use it
   if (mergeBasedPR) {
     await cache.set(commitSha, mergeBasedPR);
     return mergeBasedPR;
   }
 
-  // Level 3: Direct API lookup (most expensive)
-  // getPRForCommit() already filters for merged PRs at the adapter level
   if (adapter) {
     const prInfo = await adapter.getPRForCommit(commitSha);
     if (prInfo?.mergedAt) {

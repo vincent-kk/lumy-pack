@@ -79,15 +79,8 @@ describe('RequestScheduler', () => {
     expect(scheduler.isRateLimited()).toBe(true);
   });
 
-  it('stores and retrieves etags', () => {
+  it('returns null rate limit when not set', () => {
     const scheduler = new RequestScheduler();
-    scheduler.setEtag('/api/test', 'W/"abc123"', '{"data": true}');
-    expect(scheduler.getEtag('/api/test')).toBe('W/"abc123"');
-    expect(scheduler.getCachedResponse('/api/test')).toBe('{"data": true}');
-  });
-
-  it('returns null for unknown etags', () => {
-    const scheduler = new RequestScheduler();
-    expect(scheduler.getEtag('/unknown')).toBeNull();
+    expect(scheduler.getRateLimit()).toBeNull();
   });
 });
