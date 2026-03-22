@@ -40,6 +40,9 @@ npx @lumy-pack/line-lore graph pr 42 --depth 2
 # 시스템 상태 확인
 npx @lumy-pack/line-lore health
 
+# 캐시된 결과만 반환 (API 호출 없음)
+npx @lumy-pack/line-lore trace src/auth.ts -L 42 --cache-only
+
 # 캐시 삭제
 npx @lumy-pack/line-lore cache clear
 
@@ -106,6 +109,7 @@ lookupPR(commitSha)
 Strategy 1 — 캐시 ──────────────────── 비용: O(1), 즉시
   │ ShardedCache<PRInfo>에서 SHA로 조회
   │ 히트? → 캐시된 PRInfo 반환
+  │ 미스 + --cache-only? → null 반환 (모든 폴백 건너뛰기)
   ▼
 Strategy 2 — Ancestry-path + 메시지 ── 비용: git log 1회
   │ 1차: git log --merges --ancestry-path --first-parent sha..HEAD
@@ -343,6 +347,7 @@ import { trace, graph, health, clearCache, LineLoreError } from '@lumy-pack/line
 | `deep` | `boolean` | 아니오 | `false` | patch-id 스캔 범위 확대(500→2000), merge commit 매칭 후에도 추가 탐색 |
 | `noAst` | `boolean` | 아니오 | `false` | AST 분석 비활성화 |
 | `noCache` | `boolean` | 아니오 | `false` | 캐시 읽기/쓰기 비활성화 |
+| `cacheOnly` | `boolean` | 아니오 | `false` | 캐시된 결과만 반환 — API 호출, ancestry 순회, patch-id 스캔을 건너뜀. `cacheOnly`와 `noCache`가 동시에 설정되면 `cacheOnly`가 우선하며(캐시 읽기 유지) 경고가 발생합니다. |
 
 **반환값 (`TraceFullResult`):**
 
@@ -540,6 +545,30 @@ async function analyzeChangedLines(file: string, lines: number[]) {
 }
 ```
 
+### 캐시 전용 조회
+
+`cacheOnly`를 사용하면 API 호출이나 blame 이후의 git 연산 없이, 이전에 캐시된 PR 데이터를 즉시 반환합니다. 속도가 최신 데이터보다 중요한 IDE 연동이나 반복 조회에 적합합니다.
+
+```typescript
+import { trace } from '@lumy-pack/line-lore';
+
+async function getCachedPR(filePath: string, lineNumber: number) {
+  const result = await trace({
+    file: filePath,
+    line: lineNumber,
+    cacheOnly: true, // 캐시된 데이터만 반환, fetch 하지 않음
+  });
+
+  const pr = result.nodes.find(n => n.type === 'pull_request');
+  if (pr) {
+    return { number: pr.prNumber, url: pr.prUrl };
+  }
+
+  // 캐시 미스 — fetch 없이는 PR 데이터를 사용할 수 없음
+  return null;
+}
+```
+
 ### 캐시 제어를 통한 배치 처리
 
 ```typescript
@@ -606,6 +635,7 @@ import type {
 | `--end-line <num>` | 범위의 종료 라인 |
 | `--deep` | 깊은 역추적 (squash merge) |
 | `--output <format>` | json, llm 또는 human으로 출력 |
+| `--cache-only` | 캐시된 결과만 반환 (API 호출 없음) |
 | `--quiet` | 포맷 억제 |
 | `npx @lumy-pack/line-lore health` | 시스템 상태 확인 |
 | `npx @lumy-pack/line-lore graph pr <num>` | PR에 연결된 issue 조회 |

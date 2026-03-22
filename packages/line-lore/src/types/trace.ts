@@ -31,4 +31,6 @@ export interface TraceOptions {
   noAst?: boolean;
   /** Disable cache for this invocation */
   noCache?: boolean;
+  /** Return cached results only — skip API calls, ancestry traversal, and patch-id scan */
+  cacheOnly?: boolean;
 }

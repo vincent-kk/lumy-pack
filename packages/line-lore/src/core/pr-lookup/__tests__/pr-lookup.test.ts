@@ -108,4 +108,56 @@ describe('lookupPR', () => {
     const result = await lookupPR(commitSha, adapter);
     expect(result).toBeNull();
   });
+
+  it('cacheOnly returns cached PRInfo when present', async () => {
+    const commitSha = 'ddd'.padEnd(40, '0');
+    const prInfo: PRInfo = {
+      number: 55,
+      title: 'Cached PR',
+      author: 'dev',
+      url: 'https://github.com/org/repo/pull/55',
+      mergeCommit: 'def'.padEnd(40, '0'),
+      baseBranch: 'main',
+      mergedAt: new Date().toISOString(),
+    };
+    mockStore.set(commitSha, prInfo);
+
+    const result = await lookupPR(commitSha, null, { cacheOnly: true });
+
+    expect(result).not.toBeNull();
+    expect(result!.number).toBe(55);
+  });
+
+  it('cacheOnly returns null on cache miss without calling API', async () => {
+    const commitSha = 'eee'.padEnd(40, '0');
+    const adapter = createMockAdapter(null);
+
+    const result = await lookupPR(commitSha, adapter, { cacheOnly: true });
+
+    expect(result).toBeNull();
+    expect(adapter.getPRForCommit).not.toHaveBeenCalled();
+    expect(mockGitExec).not.toHaveBeenCalled();
+  });
+
+  it('cacheOnly overrides noCache to allow cache reads', async () => {
+    const commitSha = 'fff'.padEnd(40, '0');
+    const prInfo: PRInfo = {
+      number: 77,
+      title: 'Override PR',
+      author: 'dev',
+      url: 'https://github.com/org/repo/pull/77',
+      mergeCommit: 'ghi'.padEnd(40, '0'),
+      baseBranch: 'main',
+      mergedAt: new Date().toISOString(),
+    };
+    mockStore.set(commitSha, prInfo);
+
+    const result = await lookupPR(commitSha, null, {
+      cacheOnly: true,
+      noCache: true,
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.number).toBe(77);
+  });
 });

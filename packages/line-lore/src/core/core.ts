@@ -182,6 +182,7 @@ async function processEntry(
     const prInfo = await lookupPR(targetSha, adapter, {
       ...execOptions,
       noCache: options.noCache,
+      cacheOnly: options.cacheOnly,
       deep: featureFlags.deepTrace,
       repoId,
     });
@@ -250,6 +251,12 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
 
   const operatingLevel = blameAuth.operatingLevel || platform.operatingLevel;
   const warnings = [...platform.warnings, ...blameAuth.warnings];
+
+  if (options.cacheOnly && options.noCache) {
+    warnings.push(
+      'Both cacheOnly and noCache are set. cacheOnly takes precedence — cache reads are enabled.',
+    );
+  }
   const featureFlags = computeFeatureFlags(operatingLevel, options);
 
   const nodes = await buildTraceNodes(

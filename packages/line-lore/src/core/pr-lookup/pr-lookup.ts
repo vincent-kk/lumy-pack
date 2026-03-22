@@ -37,6 +37,8 @@ function getCache(
 
 export interface PRLookupOptions extends GitExecOptions {
   noCache?: boolean;
+  /** Return cached results only — skip all fallback strategies */
+  cacheOnly?: boolean;
   deep?: boolean;
   repoId?: RepoIdentity;
 }
@@ -48,9 +50,13 @@ export async function lookupPR(
   adapter: PlatformAdapter | null,
   options?: PRLookupOptions,
 ): Promise<PRInfo | null> {
-  const cache = getCache(options?.repoId, options?.noCache);
+  const cache = getCache(
+    options?.repoId,
+    options?.cacheOnly ? false : options?.noCache,
+  );
   const cached = await cache.get(commitSha);
   if (cached) return cached;
+  if (options?.cacheOnly) return null;
 
   let mergeBasedPR: PRInfo | null = null;
   const mergeResult = await findMergeCommit(commitSha, options);

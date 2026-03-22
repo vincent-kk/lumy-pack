@@ -40,6 +40,9 @@ npx @lumy-pack/line-lore graph pr 42 --depth 2
 # Check system health
 npx @lumy-pack/line-lore health
 
+# Return cached results only (no API calls)
+npx @lumy-pack/line-lore trace src/auth.ts -L 42 --cache-only
+
 # Clear caches
 npx @lumy-pack/line-lore cache clear
 
@@ -106,6 +109,7 @@ lookupPR(commitSha)
 Strategy 1 — Cache ─────────────────── cost: O(1), instant
   │ ShardedCache<PRInfo> lookup by SHA
   │ hit? → return cached PRInfo
+  │ miss + --cache-only? → return null (skip all fallbacks)
   ▼
 Strategy 2 — Ancestry-path + Message ─ cost: 1 git-log
   │ 1st: git log --merges --ancestry-path --first-parent sha..HEAD
@@ -343,6 +347,7 @@ Trace a code line to its originating PR.
 | `deep` | `boolean` | no | `false` | Expand patch-id scan range (500→2000), continue search after merge commit match |
 | `noAst` | `boolean` | no | `false` | Disable AST analysis |
 | `noCache` | `boolean` | no | `false` | Disable cache reads and writes |
+| `cacheOnly` | `boolean` | no | `false` | Return cached results only — skip API calls, ancestry traversal, and patch-id scan. If both `cacheOnly` and `noCache` are set, `cacheOnly` takes precedence (cache reads remain enabled) and a warning is emitted. |
 
 **Returns (`TraceFullResult`):**
 
@@ -540,6 +545,30 @@ async function analyzeChangedLines(file: string, lines: number[]) {
 }
 ```
 
+### Cache-Only Lookups
+
+Use `cacheOnly` to instantly return previously cached PR data without any API calls or git operations beyond blame. Ideal for IDE integrations and repeated lookups where speed matters more than freshness.
+
+```typescript
+import { trace } from '@lumy-pack/line-lore';
+
+async function getCachedPR(filePath: string, lineNumber: number) {
+  const result = await trace({
+    file: filePath,
+    line: lineNumber,
+    cacheOnly: true, // return cached data only, never fetch
+  });
+
+  const pr = result.nodes.find(n => n.type === 'pull_request');
+  if (pr) {
+    return { number: pr.prNumber, url: pr.prUrl };
+  }
+
+  // Cache miss — no PR data available without fetching
+  return null;
+}
+```
+
 ### Batch Processing with Cache Control
 
 ```typescript
@@ -607,6 +636,7 @@ import type {
 | `--end-line <num>` | Ending line for range |
 | `--deep` | Deep trace (squash merges) |
 | `--output <format>` | Output as json, llm, or human |
+| `--cache-only` | Return cached results only (no API calls) |
 | `--quiet` | Suppress formatting |
 | `npx @lumy-pack/line-lore health` | Check system health |
 | `npx @lumy-pack/line-lore graph pr <num>` | Show issues linked to a PR |

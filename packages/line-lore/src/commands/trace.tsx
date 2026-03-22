@@ -21,6 +21,7 @@ export function registerTraceCommand(program: Command): void {
     .option('--deep', 'Enable deep trace for squash PRs')
     .option('--no-ast', 'Disable AST diff analysis')
     .option('--no-cache', 'Disable cache')
+    .option('--cache-only', 'Return cached results only (no API calls)')
     .option('--json', 'Output in JSON format')
     .option('-q, --quiet', 'Output PR number only')
     .option('--output <format>', 'Output format: human, json, llm', 'human')
@@ -38,6 +39,7 @@ export function registerTraceCommand(program: Command): void {
         deep: opts.deep as boolean | undefined,
         noAst: opts.ast === false,
         noCache: opts.cache === false,
+        cacheOnly: opts.cacheOnly as boolean | undefined,
       };
 
       const cliOptions: CliOutputOptions = {
