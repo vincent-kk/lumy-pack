@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { dirname, isAbsolute, relative } from 'node:path';
 
 import { map } from '@winglet/common-utils';
 
@@ -71,6 +72,28 @@ async function resolveRepoIdentity(cwd?: string): Promise<RepoIdentity> {
     return { host: '_local', owner: '_', repo: hash };
   } catch {
     return { host: '_local', owner: '_', repo: '_unknown' };
+  }
+}
+
+async function resolveFileContext(
+  file: string,
+  cwd?: string,
+): Promise<{ file: string; cwd?: string }> {
+  if (cwd || !isAbsolute(file)) return { file, cwd };
+
+  const fileDir = dirname(file);
+
+  try {
+    const result = await gitExec(['rev-parse', '--show-toplevel'], {
+      cwd: fileDir,
+    });
+    const repoRoot = result.stdout.trim();
+    return {
+      file: relative(repoRoot, file),
+      cwd: repoRoot,
+    };
+  } catch {
+    return { file, cwd };
   }
 }
 
@@ -234,14 +257,15 @@ async function buildTraceNodes(
 let legacyCacheCleaned = false;
 
 export async function trace(options: TraceOptions): Promise<TraceFullResult> {
-  const execOptions: GitExecOptions = { cwd: options.cwd };
+  const { file, cwd } = await resolveFileContext(options.file, options.cwd);
+  const execOptions: GitExecOptions = { cwd };
 
   if (!legacyCacheCleaned) {
     legacyCacheCleaned = true;
     cleanupLegacyCache().catch(() => {});
   }
 
-  const platform = await detectPlatform(options);
+  const platform = await detectPlatform({ ...options, cwd });
 
   let repoId: RepoIdentity;
   if (platform.remote) {
@@ -251,12 +275,12 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
       repo: platform.remote.repo,
     };
   } else {
-    repoId = await resolveRepoIdentity(options.cwd);
+    repoId = await resolveRepoIdentity(cwd);
   }
 
   const blameAuth = await runBlameAndAuth(
     platform.adapter,
-    options,
+    { ...options, file, cwd },
     execOptions,
   );
 
@@ -272,7 +296,7 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
 
   let cloneStatus = { partialClone: false, shallow: false };
   try {
-    const result = await checkCloneStatus({ cwd: options.cwd });
+    const result = await checkCloneStatus({ cwd });
     if (result) cloneStatus = result;
   } catch {
     // Ignore — defaults are safe
@@ -292,7 +316,7 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
     blameAuth.analyzed,
     featureFlags,
     platform.adapter,
-    options,
+    { ...options, file, cwd },
     execOptions,
     repoId,
     cloneStatus.partialClone || undefined,
