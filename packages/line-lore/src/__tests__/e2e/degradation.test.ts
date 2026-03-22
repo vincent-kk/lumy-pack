@@ -126,7 +126,7 @@ describe(
       expect(prNode!.prNumber).toBe(55);
       expect(prNode!.prUrl).toBe('https://github.com/test/repo/pull/55');
       expect(prNode!.prTitle).toBe('feat: add newService');
-      expect(prNode!.trackingMethod).toBe('api');
+      expect(prNode!.trackingMethod).toBe('ancestry-path');
       expect(prNode!.confidence).toBe('exact');
     });
 
@@ -156,9 +156,9 @@ describe(
       const prNode = result.nodes.find((n) => n.type === 'pull_request');
       expect(prNode).toBeDefined();
       expect(prNode!.prNumber).toBe(55);
-      expect(prNode!.trackingMethod).toBe('message-parse');
-      expect(prNode!.confidence).toBe('heuristic');
-      // No URL from message-parse
+      expect(prNode!.trackingMethod).toBe('ancestry-path');
+      expect(prNode!.confidence).toBe('exact');
+      // No URL from ancestry-path without API
       expect(prNode!.prUrl).toBeFalsy();
     });
 
@@ -179,7 +179,7 @@ describe(
       const prNode = result.nodes.find((n) => n.type === 'pull_request');
       expect(prNode).toBeDefined();
       expect(prNode!.prNumber).toBe(55);
-      expect(prNode!.trackingMethod).toBe('message-parse');
+      expect(prNode!.trackingMethod).toBe('ancestry-path');
     });
 
     it('Level 2 featureFlags reflect full capabilities', async () => {

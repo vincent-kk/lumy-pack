@@ -117,10 +117,7 @@ describe('False Positive Scenarios', { timeout: 60000 }, () => {
 
     // Merge integration into main (PR#100)
     repo.checkout('main');
-    repo.merge(
-      'integration',
-      'Merge pull request #100 from integration',
-    );
+    repo.merge('integration', 'Merge pull request #100 from integration');
 
     // Level 1 (unauthenticated) — relies on ancestry-path + verification
     const adapter = createUnauthenticatedAdapter();
@@ -197,7 +194,7 @@ describe('False Positive Scenarios', { timeout: 60000 }, () => {
 
     // M1: merge main into feature (base-update merge)
     repo.checkout('feature/update');
-    repo.merge('main', 'Merge branch \'main\' into feature/update');
+    repo.merge('main', "Merge branch 'main' into feature/update");
 
     // F: more feature work
     repo.commit(
@@ -216,10 +213,7 @@ describe('False Positive Scenarios', { timeout: 60000 }, () => {
 
     // M2: merge feature into main (the actual PR merge)
     repo.checkout('main');
-    repo.merge(
-      'feature/update',
-      'Merge pull request #10 from feature/update',
-    );
+    repo.merge('feature/update', 'Merge pull request #10 from feature/update');
 
     // Level 1 (unauthenticated)
     const adapter = createUnauthenticatedAdapter();
@@ -322,10 +316,7 @@ describe('False Positive Scenarios', { timeout: 60000 }, () => {
      */
 
     // A: initial
-    repo.commit(
-      { 'src/app.ts': 'export const base = 1;\n' },
-      'chore: initial',
-    );
+    repo.commit({ 'src/app.ts': 'export const base = 1;\n' }, 'chore: initial');
 
     // B: main work
     repo.commit(
@@ -377,7 +368,9 @@ describe('False Positive Scenarios', { timeout: 60000 }, () => {
       'feat: add feat2 file',
     );
     repo.commit(
-      { 'src/feat2.ts': 'export const feat2 = true;\nexport const more = 2;\n' },
+      {
+        'src/feat2.ts': 'export const feat2 = true;\nexport const more = 2;\n',
+      },
       'feat: extend feat2',
     );
 
@@ -424,10 +417,7 @@ describe('False Positive Scenarios', { timeout: 60000 }, () => {
      */
 
     // A: initial
-    repo.commit(
-      { 'src/lib.ts': 'export const x = 1;\n' },
-      'chore: initial',
-    );
+    repo.commit({ 'src/lib.ts': 'export const x = 1;\n' }, 'chore: initial');
 
     // B: main work
     repo.commit(
@@ -465,10 +455,7 @@ describe('False Positive Scenarios', { timeout: 60000 }, () => {
     repo.merge('feat-a', 'Merge pull request #5 from feat-a');
 
     // C: more main work
-    repo.commit(
-      { 'src/other.ts': 'export const z = 3;\n' },
-      'chore: add z',
-    );
+    repo.commit({ 'src/other.ts': 'export const z = 3;\n' }, 'chore: add z');
 
     // M2: merge feat-b into main (PR#10)
     repo.merge('feat-b', 'Merge pull request #10 from feat-b');
@@ -508,10 +495,7 @@ describe('False Positive Scenarios', { timeout: 60000 }, () => {
      */
 
     // A: initial
-    repo.commit(
-      { 'src/app.ts': 'export const base = 1;\n' },
-      'chore: initial',
-    );
+    repo.commit({ 'src/app.ts': 'export const base = 1;\n' }, 'chore: initial');
 
     // S: squash merge commit (simulate with direct commit containing squash message)
     repo.commit(
@@ -535,7 +519,9 @@ describe('False Positive Scenarios', { timeout: 60000 }, () => {
       'feat: add feat2',
     );
     repo.commit(
-      { 'src/feat2.ts': 'export const feat2 = true;\nexport const more = 2;\n' },
+      {
+        'src/feat2.ts': 'export const feat2 = true;\nexport const more = 2;\n',
+      },
       'feat: extend feat2',
     );
 

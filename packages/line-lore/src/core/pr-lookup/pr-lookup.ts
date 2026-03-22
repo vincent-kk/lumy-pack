@@ -13,6 +13,12 @@ import {
 } from '../ancestry/index.js';
 import { findPatchIdMatch } from '../patch-id/index.js';
 
+export type ResolvedVia = 'api' | 'ancestry' | 'message' | 'patch-id';
+
+export interface PRLookupResult extends PRInfo {
+  resolvedVia: ResolvedVia;
+}
+
 const cacheRegistry = new Map<string, ShardedCache<CachedPRInfo>>();
 
 function repoKey(repoId: RepoIdentity): string {
@@ -37,7 +43,7 @@ function getCache(
   return cache;
 }
 
-function toCachedPR(pr: PRInfo): CachedPRInfo {
+function toCachedPR(pr: PRLookupResult): CachedPRInfo {
   return {
     number: pr.number,
     title: pr.title,
@@ -46,10 +52,11 @@ function toCachedPR(pr: PRInfo): CachedPRInfo {
     mergeCommit: pr.mergeCommit,
     baseBranch: pr.baseBranch,
     mergedAt: pr.mergedAt ? new Date(pr.mergedAt).getTime() : undefined,
+    resolvedVia: pr.resolvedVia,
   };
 }
 
-function fromCachedPR(cached: CachedPRInfo): PRInfo {
+function fromCachedPR(cached: CachedPRInfo): PRLookupResult {
   let mergedAt: string | undefined;
   if (cached.mergedAt != null) {
     // Handle both number (new format) and string (legacy ISO format) for backward compatibility
@@ -66,6 +73,9 @@ function fromCachedPR(cached: CachedPRInfo): PRInfo {
     mergeCommit: cached.mergeCommit,
     baseBranch: cached.baseBranch,
     mergedAt,
+    // Preserve original resolvedVia; fallback to url heuristic for legacy cache entries
+    resolvedVia:
+      (cached.resolvedVia as ResolvedVia) ?? (cached.url ? 'api' : 'message'),
   };
 }
 
@@ -75,22 +85,32 @@ export interface PRLookupOptions extends GitExecOptions {
   cacheOnly?: boolean;
   deep?: boolean;
   repoId?: RepoIdentity;
-  /** Skip Strategy 4 (patch-id scan) — set automatically for partial clone environments */
+  /** Skip Strategy 5 (patch-id scan) — set automatically for partial clone environments */
   skipPatchIdScan?: boolean;
   /** Preferred base branch for PR selection — when multiple PRs match, prefer the one targeting this branch */
   preferredBase?: string;
+  /** Platform type for platform-aware merge message parsing */
+  platform?: string;
 }
 
 const DEEP_SCAN_DEPTH = 2000;
 const MAX_RECURSION_DEPTH = 2;
 
+/**
+ * Multi-strategy PR lookup pipeline:
+ *   Strategy 1: Cache
+ *   Strategy 2: API direct (ground truth — Level 2)
+ *   Strategy 3: Ancestry-path + merge commit verification (structural proof)
+ *   Strategy 4: Blame commit message parsing (heuristic — squash merge detection)
+ *   Strategy 5: Patch-ID matching + recursion (last resort)
+ */
 export async function lookupPR(
   commitSha: string,
   adapter: PlatformAdapter | null,
   options?: PRLookupOptions,
   /** @internal recursion depth tracker — do not set from external callers */
   _recursionDepth = 0,
-): Promise<PRInfo | null> {
+): Promise<PRLookupResult | null> {
   const cache = getCache(
     options?.repoId,
     options?.cacheOnly ? false : options?.noCache,
@@ -106,36 +126,22 @@ export async function lookupPR(
   if (adapter) {
     const directPR = await adapter.getPRForCommit(commitSha, prSelectOptions);
     if (directPR?.mergedAt) {
-      await cache.set(commitSha, toCachedPR(directPR));
-      return directPR;
+      const result: PRLookupResult = { ...directPR, resolvedVia: 'api' };
+      await cache.set(commitSha, toCachedPR(result));
+      return result;
     }
   }
 
-  // Strategy 3a: Blame commit message pre-check (handles squash merges invisible to --merges)
-  // Strategy 2 already attempted getPRForCommit with the same SHA and options.
-  // If it had returned mergedAt, we'd have exited above — no need to retry the API here.
-  const commitSubject = await getCommitSubject(commitSha, options);
-  if (commitSubject) {
-    const directPrNumber = extractPRFromMergeMessage(commitSubject);
-    if (directPrNumber) {
-      const subjectPR: PRInfo = {
-        number: directPrNumber,
-        title: commitSubject,
-        author: '',
-        url: '',
-        mergeCommit: commitSha,
-        baseBranch: '',
-      };
-      await cache.set(commitSha, toCachedPR(subjectPR));
-      return subjectPR;
-    }
-  }
-
-  // Strategy 3b: Ancestry-path + merge message parsing (fallback for Level 0/1 or API miss)
-  let mergeBasedPR: PRInfo | null = null;
+  // Strategy 3: Ancestry-path + merge message parsing (structural proof)
+  // Runs before commit message parsing — ancestry provides structural verification
+  // while message parsing is heuristic (could match issue numbers as PR numbers).
+  let mergeBasedPR: PRLookupResult | null = null;
   const mergeResult = await findMergeCommit(commitSha, options);
   if (mergeResult) {
-    const prNumber = extractPRFromMergeMessage(mergeResult.subject);
+    const prNumber = extractPRFromMergeMessage(
+      mergeResult.subject,
+      options?.platform,
+    );
     if (prNumber) {
       if (adapter) {
         const prInfo = await adapter.getPRForCommit(
@@ -143,7 +149,7 @@ export async function lookupPR(
           prSelectOptions,
         );
         if (prInfo?.mergedAt) {
-          mergeBasedPR = prInfo;
+          mergeBasedPR = { ...prInfo, resolvedVia: 'ancestry' };
         }
       }
 
@@ -155,6 +161,7 @@ export async function lookupPR(
           url: '',
           mergeCommit: mergeResult.mergeCommitSha,
           baseBranch: '',
+          resolvedVia: 'ancestry',
         };
       }
 
@@ -170,7 +177,31 @@ export async function lookupPR(
     return mergeBasedPR;
   }
 
-  // Strategy 4: Patch-ID matching (expensive — streams full log through patch-id)
+  // Strategy 4: Blame commit message parsing (heuristic — squash merge detection)
+  // Handles squash merges invisible to --merges (single parent, no merge commit).
+  // Runs after ancestry to ensure structural proof is preferred over heuristic.
+  const commitSubject = await getCommitSubject(commitSha, options);
+  if (commitSubject) {
+    const directPrNumber = extractPRFromMergeMessage(
+      commitSubject,
+      options?.platform,
+    );
+    if (directPrNumber) {
+      const subjectPR: PRLookupResult = {
+        number: directPrNumber,
+        title: commitSubject,
+        author: '',
+        url: '',
+        mergeCommit: commitSha,
+        baseBranch: '',
+        resolvedVia: 'message',
+      };
+      await cache.set(commitSha, toCachedPR(subjectPR));
+      return subjectPR;
+    }
+  }
+
+  // Strategy 5: Patch-ID matching (expensive — streams full log through patch-id)
   // Skip on partial clone environments (blob download risk) or max recursion depth reached
   if (!options?.skipPatchIdScan && _recursionDepth < MAX_RECURSION_DEPTH) {
     const patchIdMatch = await findPatchIdMatch(commitSha, {

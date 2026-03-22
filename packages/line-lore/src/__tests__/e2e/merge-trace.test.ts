@@ -148,8 +148,8 @@ describe('E1: Merge Commit trace', { timeout: 30000 }, () => {
     const prNode = result.nodes.find((n) => n.type === 'pull_request');
     expect(prNode).toBeDefined();
     expect(prNode!.prNumber).toBe(42);
-    expect(prNode!.trackingMethod).toBe('message-parse');
-    expect(prNode!.confidence).toBe('heuristic');
+    expect(prNode!.trackingMethod).toBe('ancestry-path');
+    expect(prNode!.confidence).toBe('exact');
   });
 
   it('finds PR via API with full details (Level 2)', async () => {
@@ -204,7 +204,7 @@ describe('E1: Merge Commit trace', { timeout: 30000 }, () => {
     expect(prNode!.prNumber).toBe(42);
     expect(prNode!.prUrl).toBe('https://github.com/test/repo/pull/42');
     expect(prNode!.prTitle).toBe('feat: add b function');
-    expect(prNode!.trackingMethod).toBe('api');
+    expect(prNode!.trackingMethod).toBe('ancestry-path');
     expect(prNode!.confidence).toBe('exact');
     expect(prNode!.sha).toBe(mergeCommit);
   });

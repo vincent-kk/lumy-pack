@@ -23,11 +23,13 @@ import type {
   TraceNode,
   TraceOptions,
 } from '../types/index.js';
+import type { Confidence, TrackingMethod } from '../types/index.js';
 import { parseLineRange } from '../utils/line-range.js';
 
 import { traceByAst } from './ast-diff/index.js';
 import { analyzeBlameResults, executeBlame } from './blame/index.js';
 import { traverseIssueGraph } from './issue-graph/index.js';
+import type { ResolvedVia } from './pr-lookup/index.js';
 import { lookupPR } from './pr-lookup/index.js';
 
 export interface TraceFullResult {
@@ -48,6 +50,30 @@ interface BlameAndAuthResult {
   analyzed: Awaited<ReturnType<typeof analyzeBlameResults>>;
   operatingLevel: OperatingLevel;
   warnings: string[];
+}
+
+function resolvedViaToTrackingMethod(resolvedVia: ResolvedVia): TrackingMethod {
+  switch (resolvedVia) {
+    case 'api':
+      return 'api';
+    case 'ancestry':
+      return 'ancestry-path';
+    case 'message':
+      return 'message-parse';
+    case 'patch-id':
+      return 'patch-id';
+  }
+}
+
+function resolvedViaToConfidence(resolvedVia: ResolvedVia): Confidence {
+  switch (resolvedVia) {
+    case 'api':
+    case 'ancestry':
+      return 'exact';
+    case 'message':
+    case 'patch-id':
+      return 'heuristic';
+  }
 }
 
 function computeFeatureFlags(
@@ -212,13 +238,14 @@ async function processEntry(
       repoId,
       skipPatchIdScan,
       preferredBase,
+      platform: adapter?.platform,
     });
     if (prInfo) {
       nodes.push({
         type: 'pull_request',
         sha: prInfo.mergeCommit,
-        trackingMethod: prInfo.url ? 'api' : 'message-parse',
-        confidence: prInfo.url ? 'exact' : 'heuristic',
+        trackingMethod: resolvedViaToTrackingMethod(prInfo.resolvedVia),
+        confidence: resolvedViaToConfidence(prInfo.resolvedVia),
         prNumber: prInfo.number,
         prUrl: prInfo.url || undefined,
         prTitle: prInfo.title || undefined,
@@ -262,7 +289,8 @@ let legacyCacheCleaned = false;
 
 export async function trace(options: TraceOptions): Promise<TraceFullResult> {
   const { file, cwd } = await resolveFileContext(options.file, options.cwd);
-  const execOptions: GitExecOptions = { cwd };
+  const warnings: string[] = [];
+  const execOptions: GitExecOptions = { cwd, warnings };
 
   if (!legacyCacheCleaned) {
     legacyCacheCleaned = true;
@@ -289,7 +317,7 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
   );
 
   const operatingLevel = blameAuth.operatingLevel || platform.operatingLevel;
-  const warnings = [...platform.warnings, ...blameAuth.warnings];
+  warnings.push(...platform.warnings, ...blameAuth.warnings);
 
   if (options.cacheOnly && options.noCache) {
     warnings.push(
@@ -307,7 +335,7 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
   }
   if (cloneStatus.partialClone) {
     warnings.push(
-      'Partial clone detected. Patch-ID scan (Strategy 4) will be skipped to avoid blob downloads.',
+      'Partial clone detected. Patch-ID scan (Strategy 5) will be skipped to avoid blob downloads.',
     );
   }
   if (cloneStatus.shallow) {

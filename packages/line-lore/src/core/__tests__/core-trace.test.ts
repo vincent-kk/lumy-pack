@@ -174,6 +174,14 @@ describe('trace() — pipeline orchestrator integration', () => {
         `${MERGE_SHA} ${PARENT1} ${PARENT2} Merge pull request #42 from feature/my-feature\n`,
       ),
     );
+    // Call 5: isAncestor(target, firstParent) → not ancestor (exit code 1)
+    mockGitExec.mockResolvedValueOnce(
+      Promise.resolve({ stdout: '', stderr: '', exitCode: 1 }),
+    );
+    // Call 6: isAncestor(target, secondParent) → is ancestor (exit code 0)
+    mockGitExec.mockResolvedValueOnce(
+      Promise.resolve({ stdout: '', stderr: '', exitCode: 0 }),
+    );
 
     const result = await trace({ file: 'src/foo.ts', line: 1 });
 
@@ -188,7 +196,7 @@ describe('trace() — pipeline orchestrator integration', () => {
     const prNode = result.nodes.find((n) => n.type === 'pull_request');
     expect(prNode).toBeDefined();
     expect(prNode!.prNumber).toBe(42);
-    expect(prNode!.trackingMethod).toBe('message-parse');
+    expect(prNode!.trackingMethod).toBe('ancestry-path');
   });
 
   // -------------------------------------------------------------------------

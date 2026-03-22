@@ -89,7 +89,7 @@ export async function checkGitHealth(options?: {
 
   if (cloneStatus.partialClone) {
     hints.push(
-      'Partial clone detected. Patch-ID scan (Strategy 4) will be skipped to avoid blob downloads.',
+      'Partial clone detected. Patch-ID scan (Strategy 5) will be skipped to avoid blob downloads.',
     );
   }
   if (cloneStatus.shallow) {

@@ -10,6 +10,8 @@ export interface GitExecOptions {
   cwd?: string;
   timeout?: number;
   allowExitCodes?: number[];
+  /** Mutable array for collecting diagnostic warnings throughout the pipeline */
+  warnings?: string[];
 }
 
 export interface RemoteInfo {

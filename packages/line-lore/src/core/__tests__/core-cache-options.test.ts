@@ -183,10 +183,19 @@ describe('trace() — noCache option', () => {
     );
     // branch detection (rev-parse --abbrev-ref HEAD)
     mockGitExec.mockResolvedValueOnce(gitOk('main'));
+    // findMergeCommit (first-parent) — finds merge commit
     mockGitExec.mockResolvedValueOnce(
       gitOk(
         `${MERGE_SHA} ${PARENT1} ${PARENT2} Merge pull request #42 from feature/branch\n`,
       ),
+    );
+    // isAncestor(target, firstParent) → not ancestor
+    mockGitExec.mockResolvedValueOnce(
+      Promise.resolve({ stdout: '', stderr: '', exitCode: 1 }),
+    );
+    // isAncestor(target, secondParent) → is ancestor
+    mockGitExec.mockResolvedValueOnce(
+      Promise.resolve({ stdout: '', stderr: '', exitCode: 0 }),
     );
 
     const result = await trace({ file: 'src/foo.ts', line: 1, noCache: true });

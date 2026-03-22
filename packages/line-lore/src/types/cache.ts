@@ -14,4 +14,6 @@ export interface CachedPRInfo {
   baseBranch: string;
   /** Unix timestamp in milliseconds, NOT ISO 8601 string */
   mergedAt?: number;
+  /** Which strategy resolved this PR — absent in legacy cache entries */
+  resolvedVia?: string;
 }

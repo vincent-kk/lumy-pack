@@ -49,7 +49,7 @@ export async function findMergeCommit(
  * 1. Target IS an ancestor of at least one non-first parent (branch side)
  * 2. Target is NOT an ancestor of the first parent (mainline side)
  *
- * Returns true on git command failure (fail-open policy).
+ * Returns false on git command failure (fail-skip policy).
  */
 export async function verifyMergeIntroducesCommit(
   targetSha: string,
@@ -64,13 +64,13 @@ export async function verifyMergeIntroducesCommit(
   // Check if target is ancestor of first parent (mainline)
   // If yes, the merge did NOT introduce the target — it was already on mainline
   const onMainline = await isAncestor(targetSha, firstParent, options);
-  if (onMainline === null) return true; // fail-open
+  if (onMainline === null) return false; // fail-skip: git failure → skip candidate
   if (onMainline) return false;
 
   // Check if target is ancestor of any non-first parent (branch side)
   for (const branchParent of branchParents) {
     const onBranch = await isAncestor(targetSha, branchParent, options);
-    if (onBranch === null) return true; // fail-open
+    if (onBranch === null) return false; // fail-skip: git failure → skip candidate
     if (onBranch) return true;
   }
 
@@ -95,7 +95,7 @@ async function isAncestor(
     // exit code 0 = is ancestor, exit code 1 = not ancestor
     return result.exitCode === 0;
   } catch {
-    return null; // git failure — fail-open
+    return null; // git failure — fail-skip
   }
 }
 
@@ -125,9 +125,11 @@ async function findMergeCommitWithArgs(
 
     // Iterate candidates and verify each one introduces the target commit
     const candidateCount = Math.min(lines.length, MAX_CANDIDATES);
+    let verifiedCount = 0;
     for (let i = 0; i < candidateCount; i++) {
       const candidate = parseMergeLogLine(lines[i]);
       if (!candidate) continue;
+      verifiedCount++;
 
       const verified = await verifyMergeIntroducesCommit(
         commitSha,
@@ -135,6 +137,12 @@ async function findMergeCommitWithArgs(
         options,
       );
       if (verified) return candidate;
+    }
+
+    if (verifiedCount > 0 && options?.warnings) {
+      options.warnings.push(
+        `ancestry: all ${verifiedCount} merge candidate(s) failed verification for ${commitSha.slice(0, 8)}`,
+      );
     }
 
     return null;
@@ -181,18 +189,25 @@ export async function getCommitSubject(
   }
 }
 
-export function extractPRFromMergeMessage(subject: string): number | null {
+export function extractPRFromMergeMessage(
+  subject: string,
+  platform?: string,
+): number | null {
   // "Merge pull request #123 from ..." (GitHub merge commit)
   const ghMatch = /Merge pull request #(\d+)/.exec(subject);
   if (ghMatch) return parseInt(ghMatch[1], 10);
 
-  // "feat: something (#123)" (squash merge convention)
+  // "feat: something (#123)" (squash merge convention — universal across platforms)
   const squashMatch = /\(#(\d+)\)\s*$/.exec(subject);
   if (squashMatch) return parseInt(squashMatch[1], 10);
 
   // "See merge request group/project!123" (GitLab merge commit)
-  const glMatch = /!(\d+)\s*$/.exec(subject);
-  if (glMatch) return parseInt(glMatch[1], 10);
+  // Requires full "See merge request" prefix to prevent false positives
+  // on commit messages ending with "!N" (e.g., "breaking change!5")
+  if (!platform || platform === 'gitlab' || platform === 'gitlab-self-hosted') {
+    const glMatch = /See merge request\s+\S*!(\d+)\s*$/.exec(subject);
+    if (glMatch) return parseInt(glMatch[1], 10);
+  }
 
   // "Merged PR 99: Add feature" (Azure DevOps merge commit)
   const adoMatch = /Merged PR (\d+):/.exec(subject);

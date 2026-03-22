@@ -14,9 +14,9 @@
 ## Conventions
 
 - 지정된 ref(기본 HEAD)에서 머지 커밋 검색
-- `verifyMergeIntroducesCommit` dual condition으로 후보 머지 커밋 검증
-- `getCommitSubject`로 개별 커밋의 subject 조회 (squash merge pre-check용)
-- GitHub/GitLab/Azure DevOps 머지 메시지 패턴으로 PR 번호 추출
+- `verifyMergeIntroducesCommit` dual condition + fail-skip 정책으로 후보 머지 커밋 검증
+- `getCommitSubject`로 개별 커밋의 subject 조회 (squash merge 감지용)
+- `extractPRFromMergeMessage(subject, platform?)` — platform-aware 패턴 매칭으로 교차 플랫폼 오탐 방지
 
 ## Boundaries
 

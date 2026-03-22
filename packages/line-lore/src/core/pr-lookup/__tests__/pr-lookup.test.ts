@@ -53,19 +53,16 @@ describe('lookupPR', () => {
     const mergeSha = 'merge'.padEnd(40, '0');
     const commitSha = 'aaa'.padEnd(40, '0');
 
-    // getCommitSubject — no PR pattern in blame commit message
-    mockGitExec.mockResolvedValueOnce({
-      stdout: 'chore: some regular commit\n',
-      stderr: '',
-      exitCode: 0,
-    });
-
-    // findMergeCommit (first-parent)
+    // Strategy 3: findMergeCommit (first-parent) — finds merge commit
     mockGitExec.mockResolvedValueOnce({
       stdout: `${mergeSha} ${'p1'.padEnd(40, '0')} ${'p2'.padEnd(40, '0')} Merge pull request #42 from feature/branch\n`,
       stderr: '',
       exitCode: 0,
     });
+    // isAncestor(target, firstParent) → not ancestor
+    mockGitExec.mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 1 });
+    // isAncestor(target, secondParent) → is ancestor
+    mockGitExec.mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 });
 
     const result = await lookupPR(commitSha, null);
 
@@ -104,16 +101,22 @@ describe('lookupPR', () => {
   it('returns null when no PR found at any level', async () => {
     const commitSha = 'ccc'.padEnd(40, '0');
 
-    // getCommitSubject — no PR pattern
+    // Strategy 3: findMergeCommit (first-parent) → empty
     mockGitExec.mockResolvedValueOnce({
-      stdout: 'chore: nothing here\n',
+      stdout: '',
+      stderr: '',
+      exitCode: 0,
+    });
+    // Strategy 3: findMergeCommit (fallback) → empty
+    mockGitExec.mockResolvedValueOnce({
+      stdout: '',
       stderr: '',
       exitCode: 0,
     });
 
-    // findMergeCommit returns nothing (first-parent)
+    // Strategy 4: getCommitSubject — no PR pattern
     mockGitExec.mockResolvedValueOnce({
-      stdout: '',
+      stdout: 'chore: nothing here\n',
       stderr: '',
       exitCode: 0,
     });
@@ -216,16 +219,21 @@ describe('lookupPR', () => {
       };
       const adapter = createMockAdapter(noMergedAtPR);
 
-      // getCommitSubject — no PR pattern
+      // Strategy 3: findMergeCommit ancestry result (first-parent) — finds merge commit
       mockGitExec.mockResolvedValueOnce({
-        stdout: 'chore: no pattern\n',
+        stdout: `${mergeSha} ${'p1'.padEnd(40, '0')} ${'p2'.padEnd(40, '0')} Merge pull request #55 from feature\n`,
         stderr: '',
         exitCode: 0,
       });
-
-      // findMergeCommit ancestry result (first-parent)
+      // isAncestor(target, firstParent) → not ancestor
       mockGitExec.mockResolvedValueOnce({
-        stdout: `${mergeSha} ${'p1'.padEnd(40, '0')} ${'p2'.padEnd(40, '0')} Merge pull request #55 from feature\n`,
+        stdout: '',
+        stderr: '',
+        exitCode: 1,
+      });
+      // isAncestor(target, secondParent) → is ancestor
+      mockGitExec.mockResolvedValueOnce({
+        stdout: '',
         stderr: '',
         exitCode: 0,
       });
@@ -243,16 +251,21 @@ describe('lookupPR', () => {
       const commitSha = 'api03'.padEnd(40, '0');
       const mergeSha = 'merge03'.padEnd(40, '0');
 
-      // getCommitSubject — no PR pattern
+      // Strategy 3: findMergeCommit (first-parent) — finds merge commit
       mockGitExec.mockResolvedValueOnce({
-        stdout: 'chore: no pattern\n',
+        stdout: `${mergeSha} ${'p1'.padEnd(40, '0')} ${'p2'.padEnd(40, '0')} Merge pull request #33 from feature\n`,
         stderr: '',
         exitCode: 0,
       });
-
-      // findMergeCommit ancestry result
+      // isAncestor(target, firstParent) → not ancestor
       mockGitExec.mockResolvedValueOnce({
-        stdout: `${mergeSha} ${'p1'.padEnd(40, '0')} ${'p2'.padEnd(40, '0')} Merge pull request #33 from feature\n`,
+        stdout: '',
+        stderr: '',
+        exitCode: 1,
+      });
+      // isAncestor(target, secondParent) → is ancestor
+      mockGitExec.mockResolvedValueOnce({
+        stdout: '',
         stderr: '',
         exitCode: 0,
       });
@@ -322,24 +335,25 @@ describe('lookupPR', () => {
   });
 
   describe('skipPatchIdScan and recursion depth', () => {
-    it('skips Strategy 4 when skipPatchIdScan is true', async () => {
+    it('skips Strategy 5 when skipPatchIdScan is true', async () => {
       const commitSha = 'skip01'.padEnd(40, '0');
 
-      // getCommitSubject — no PR pattern
+      // Strategy 3: findMergeCommit first-parent returns nothing
       mockGitExec.mockResolvedValueOnce({
-        stdout: 'chore: nothing\n',
+        stdout: '',
+        stderr: '',
+        exitCode: 0,
+      });
+      // Strategy 3: findMergeCommit fallback returns nothing
+      mockGitExec.mockResolvedValueOnce({
+        stdout: '',
         stderr: '',
         exitCode: 0,
       });
 
-      // findMergeCommit: first-parent returns nothing, fallback returns nothing
+      // Strategy 4: getCommitSubject — no PR pattern
       mockGitExec.mockResolvedValueOnce({
-        stdout: '',
-        stderr: '',
-        exitCode: 0,
-      });
-      mockGitExec.mockResolvedValueOnce({
-        stdout: '',
+        stdout: 'chore: nothing\n',
         stderr: '',
         exitCode: 0,
       });
@@ -352,23 +366,29 @@ describe('lookupPR', () => {
 
       // Should return null without attempting patch-id scan
       expect(result).toBeNull();
-      // gitExec: getCommitSubject(1) + findMergeCommit(first-parent + fallback = 2) = 3
+      // gitExec: findMergeCommit(2) + getCommitSubject(1) = 3
       expect(mockGitExec).toHaveBeenCalledTimes(3);
     });
 
     it('stops recursion at max depth 2', async () => {
       const commitSha = 'rec01'.padEnd(40, '0');
 
-      // getCommitSubject — no PR pattern
+      // Strategy 3: findMergeCommit first-parent returns nothing
       mockGitExec.mockResolvedValueOnce({
-        stdout: 'chore: nothing\n',
+        stdout: '',
+        stderr: '',
+        exitCode: 0,
+      });
+      // Strategy 3: findMergeCommit fallback returns nothing
+      mockGitExec.mockResolvedValueOnce({
+        stdout: '',
         stderr: '',
         exitCode: 0,
       });
 
-      // findMergeCommit returns nothing
+      // Strategy 4: getCommitSubject — no PR pattern
       mockGitExec.mockResolvedValueOnce({
-        stdout: '',
+        stdout: 'chore: nothing\n',
         stderr: '',
         exitCode: 0,
       });
@@ -385,16 +405,22 @@ describe('lookupPR', () => {
     it('allows patch-id scan at depth < max when skipPatchIdScan is false', async () => {
       const commitSha = 'rec02'.padEnd(40, '0');
 
-      // getCommitSubject — no PR pattern
+      // Strategy 3: findMergeCommit first-parent returns nothing
       mockGitExec.mockResolvedValueOnce({
-        stdout: 'chore: nothing\n',
+        stdout: '',
+        stderr: '',
+        exitCode: 0,
+      });
+      // Strategy 3: findMergeCommit fallback returns nothing
+      mockGitExec.mockResolvedValueOnce({
+        stdout: '',
         stderr: '',
         exitCode: 0,
       });
 
-      // findMergeCommit returns nothing (first-parent + fallback)
+      // Strategy 4: getCommitSubject — no PR pattern
       mockGitExec.mockResolvedValueOnce({
-        stdout: '',
+        stdout: 'chore: nothing\n',
         stderr: '',
         exitCode: 0,
       });
@@ -502,7 +528,20 @@ describe('lookupPR', () => {
     it('Level 0/1: extracts PR from blame commit message with (#N) pattern', async () => {
       const commitSha = 'sqsh01'.padEnd(40, '0');
 
-      // getCommitSubject returns squash merge message with PR number
+      // Strategy 3: findMergeCommit first-parent returns nothing (empty)
+      mockGitExec.mockResolvedValueOnce({
+        stdout: '',
+        stderr: '',
+        exitCode: 0,
+      });
+      // Strategy 3: findMergeCommit fallback returns nothing (empty)
+      mockGitExec.mockResolvedValueOnce({
+        stdout: '',
+        stderr: '',
+        exitCode: 0,
+      });
+
+      // Strategy 4: getCommitSubject returns squash merge message with PR number
       mockGitExec.mockResolvedValueOnce({
         stdout: 'feat: add new feature (#55)\n',
         stderr: '',
@@ -516,8 +555,8 @@ describe('lookupPR', () => {
       expect(result!.title).toBe('feat: add new feature (#55)');
       expect(result!.url).toBe('');
       expect(result!.mergeCommit).toBe(commitSha);
-      // findMergeCommit should NOT have been called (only getCommitSubject)
-      expect(mockGitExec).toHaveBeenCalledTimes(1);
+      // findMergeCommit called first (empty x2), then getCommitSubject
+      expect(mockGitExec).toHaveBeenCalledTimes(3);
     });
 
     it('Level 2: API direct resolves squash merge before pre-check runs', async () => {
@@ -549,7 +588,20 @@ describe('lookupPR', () => {
       // Adapter exists but returns null for this SHA
       const adapter = createMockAdapter(null);
 
-      // getCommitSubject returns squash merge message with PR number
+      // Strategy 3: findMergeCommit first-parent returns nothing (empty)
+      mockGitExec.mockResolvedValueOnce({
+        stdout: '',
+        stderr: '',
+        exitCode: 0,
+      });
+      // Strategy 3: findMergeCommit fallback returns nothing (empty)
+      mockGitExec.mockResolvedValueOnce({
+        stdout: '',
+        stderr: '',
+        exitCode: 0,
+      });
+
+      // Strategy 4: getCommitSubject returns squash merge message with PR number
       mockGitExec.mockResolvedValueOnce({
         stdout: 'feat: add new feature (#42)\n',
         stderr: '',
@@ -563,25 +615,32 @@ describe('lookupPR', () => {
       expect(result!.title).toBe('feat: add new feature (#42)');
       expect(result!.url).toBe('');
       expect(result!.mergeCommit).toBe(commitSha);
-      // getPRForCommit called exactly once (Strategy 2 only), not duplicated in Strategy 3a
+      // getPRForCommit called exactly once (Strategy 2 only), not duplicated in Strategy 4
       expect(adapter.getPRForCommit).toHaveBeenCalledTimes(1);
       expect(adapter.getPRForCommit).toHaveBeenCalledWith(commitSha, undefined);
     });
 
-    it('falls through to ancestry when commit message has no PR pattern', async () => {
-      const commitSha = 'sqsh03'.padEnd(40, '0');
-      const mergeSha = 'merge03'.padEnd(40, '0');
+    it('ancestry finds merge commit directly without needing commit message', async () => {
+      const commitSha = 'a'.repeat(40);
+      const mergeSha = 'b'.repeat(40);
+      const parent1 = 'c'.repeat(40);
+      const parent2 = 'd'.repeat(40);
 
-      // getCommitSubject — no PR pattern (custom message)
+      // Strategy 3: findMergeCommit (first-parent) — finds a merge commit with valid hex SHAs
       mockGitExec.mockResolvedValueOnce({
-        stdout: 'v3.0.0 Release: Major rewrite\n',
+        stdout: `${mergeSha} ${parent1} ${parent2} Merge pull request #64 from feature\n`,
         stderr: '',
         exitCode: 0,
       });
-
-      // findMergeCommit (first-parent) — finds a merge commit
+      // isAncestor(target, firstParent) → not ancestor (exit code 1)
       mockGitExec.mockResolvedValueOnce({
-        stdout: `${mergeSha} ${'p1'.padEnd(40, '0')} ${'p2'.padEnd(40, '0')} Merge pull request #64 from feature\n`,
+        stdout: '',
+        stderr: '',
+        exitCode: 1,
+      });
+      // isAncestor(target, secondParent) → is ancestor (exit code 0)
+      mockGitExec.mockResolvedValueOnce({
+        stdout: '',
         stderr: '',
         exitCode: 0,
       });
@@ -590,8 +649,8 @@ describe('lookupPR', () => {
 
       expect(result).not.toBeNull();
       expect(result!.number).toBe(64);
-      // Both getCommitSubject and findMergeCommit were called
-      expect(mockGitExec).toHaveBeenCalledTimes(2);
+      // findMergeCommit(1) + isAncestor(firstParent)(1) + isAncestor(secondParent)(1) = 3
+      expect(mockGitExec).toHaveBeenCalledTimes(3);
     });
   });
 });
