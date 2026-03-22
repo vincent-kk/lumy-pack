@@ -23,7 +23,7 @@ Low threshold with animation-aware settings for visual bug detection. Intent ove
 ## Command
 
 ```bash
-npx @lumy-pack/scene-sieve "<input>" --json \
+npx -y @lumy-pack/scene-sieve "<input>" --json \
   -n 20 -t 0.15 -it 0.7 -at 3 \
   -o "<output-dir>" 2>/dev/null
 ```

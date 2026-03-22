@@ -22,7 +22,7 @@ Videos > 30min. Aggressive performance caps to prevent timeout/OOM.
 ## Command
 
 ```bash
-npx @lumy-pack/scene-sieve "<input>" --json \
+npx -y @lumy-pack/scene-sieve "<input>" --json \
   -n 20 --fps 1 --max-frames 150 -s 480 --concurrency 1 \
   -o "<output-dir>" 2>/dev/null
 ```

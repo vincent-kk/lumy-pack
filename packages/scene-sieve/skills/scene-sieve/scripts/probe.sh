@@ -131,7 +131,7 @@ case "$PRESET" in
 esac
 
 # --- Build command ---
-CMD="npx @lumy-pack/scene-sieve \"$INPUT\" --json -n $COUNT -t $THRESHOLD --fps $FPS --max-frames $MAX_FRAMES -s $SCALE -q $QUALITY"
+CMD="npx -y @lumy-pack/scene-sieve \"$INPUT\" --json -n $COUNT -t $THRESHOLD --fps $FPS --max-frames $MAX_FRAMES -s $SCALE -q $QUALITY"
 if [[ -n "$EXTRA" ]]; then
   CMD="$CMD $EXTRA"
 fi

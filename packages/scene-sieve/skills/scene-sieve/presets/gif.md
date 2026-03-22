@@ -21,7 +21,7 @@ GIF animations. Always uses FPS-based extraction (no I-frame detection).
 ## Command
 
 ```bash
-npx @lumy-pack/scene-sieve "<input>" --json \
+npx -y @lumy-pack/scene-sieve "<input>" --json \
   -n 10 -t 0.3 --max-frames 50 \
   -o "<output-dir>" 2>/dev/null
 ```

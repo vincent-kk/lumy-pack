@@ -14,17 +14,17 @@ Trace any code line back to the Pull Request that introduced it, and explore PR-
 
 ```bash
 # Trace a line to its PR
-npx @lumy-pack/line-lore trace <file> -L <line> [--deep] [--output json|llm|human] [-q]
+npx -y @lumy-pack/line-lore trace <file> -L <line> [--deep] [--output json|llm|human] [-q]
 
 # Explore PR/issue relationship graph
-npx @lumy-pack/line-lore graph pr <number> [--depth <n>] [--json]
-npx @lumy-pack/line-lore graph issue <number> [--depth <n>] [--json]
+npx -y @lumy-pack/line-lore graph pr <number> [--depth <n>] [--json]
+npx -y @lumy-pack/line-lore graph issue <number> [--depth <n>] [--json]
 
 # System health check
-npx @lumy-pack/line-lore health [--json]
+npx -y @lumy-pack/line-lore health [--json]
 
 # Cache management
-npx @lumy-pack/line-lore cache stats|clear
+npx -y @lumy-pack/line-lore cache stats|clear
 ```
 
 File paths must be relative to the git repository root.
@@ -48,11 +48,11 @@ line-lore degrades gracefully depending on available tools:
 | **1** | `gh`/`glab` CLI installed | + PR lookup via message parsing |
 | **2** | CLI authenticated | + Full API access, issue graph |
 
-Run `npx @lumy-pack/line-lore health` to check. If the level is below 2, see `references/troubleshooting.md` for setup instructions to guide the user.
+Run `npx -y @lumy-pack/line-lore health` to check. If the level is below 2, see `references/troubleshooting.md` for setup instructions to guide the user.
 
 ## When something goes wrong
 
-Always start with `npx @lumy-pack/line-lore health --json` to diagnose. Then consult `references/troubleshooting.md` for the specific error pattern and guide the user through resolution steps. Do not attempt to fix environment issues silently — inform the user what is missing and how to install or authenticate.
+Always start with `npx -y @lumy-pack/line-lore health --json` to diagnose. Then consult `references/troubleshooting.md` for the specific error pattern and guide the user through resolution steps. Do not attempt to fix environment issues silently — inform the user what is missing and how to install or authenticate.
 
 ## Resources
 

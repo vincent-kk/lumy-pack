@@ -21,7 +21,7 @@ Maximum coverage for thorough frame-by-frame analysis. Intent override.
 ## Command
 
 ```bash
-npx @lumy-pack/scene-sieve "<input>" --json \
+npx -y @lumy-pack/scene-sieve "<input>" --json \
   -n 30 -t 0.2 --fps 10 \
   -o "<output-dir>" 2>/dev/null
 ```

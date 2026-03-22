@@ -21,7 +21,7 @@ High-fidelity frame extraction for documentation screenshots. Intent override.
 ## Command
 
 ```bash
-npx @lumy-pack/scene-sieve "<input>" --json \
+npx -y @lumy-pack/scene-sieve "<input>" --json \
   -n 8 -q 95 -s 1080 \
   -o "<output-dir>" 2>/dev/null
 ```

@@ -3,7 +3,7 @@
 ## Synopsis
 
 ```bash
-npx @lumy-pack/line-lore trace <file> -L <line-or-range> [options]
+npx -y @lumy-pack/line-lore trace <file> -L <line-or-range> [options]
 ```
 
 ## Options
@@ -66,11 +66,11 @@ Setting `--graph-depth` above 0 combines trace + graph in one call:
 
 ```bash
 # Trace line AND fetch linked issues (depth 1)
-npx @lumy-pack/line-lore trace src/auth.ts -L 42 --graph-depth 1
+npx -y @lumy-pack/line-lore trace src/auth.ts -L 42 --graph-depth 1
 
 # Equivalent to running trace then graph separately
-npx @lumy-pack/line-lore trace src/auth.ts -L 42
-npx @lumy-pack/line-lore graph pr <result-pr-number> --depth 1
+npx -y @lumy-pack/line-lore trace src/auth.ts -L 42
+npx -y @lumy-pack/line-lore graph pr <result-pr-number> --depth 1
 ```
 
 This is convenient for one-shot investigations where you want both the PR and its linked issues.
@@ -80,9 +80,9 @@ This is convenient for one-shot investigations where you want both the PR and it
 line-lore caches git operations (blame, ancestry path) and API responses. When tracing multiple lines in the same file or repo, subsequent calls are significantly faster:
 
 ```bash
-npx @lumy-pack/line-lore trace src/auth.ts -L 10 --output json
-npx @lumy-pack/line-lore trace src/auth.ts -L 25 --output json
-npx @lumy-pack/line-lore trace src/auth.ts -L 47 --output json
+npx -y @lumy-pack/line-lore trace src/auth.ts -L 10 --output json
+npx -y @lumy-pack/line-lore trace src/auth.ts -L 25 --output json
+npx -y @lumy-pack/line-lore trace src/auth.ts -L 47 --output json
 ```
 
 For cache-only lookups (instant, no API), use `--cache-only` — useful for IDE integrations or repeated queries.

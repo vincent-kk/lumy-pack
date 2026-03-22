@@ -9,7 +9,7 @@ The most common pattern — user provides a video and wants a summary.
 mkdir -p "$(dirname '/path/to/video.mp4')/frames"
 
 # 2. Extract 10 representative frames
-npx @lumy-pack/scene-sieve "/path/to/video.mp4" --json -n 10 -o "$(dirname '/path/to/video.mp4')/frames" 2>/dev/null
+npx -y @lumy-pack/scene-sieve "/path/to/video.mp4" --json -n 10 -o "$(dirname '/path/to/video.mp4')/frames" 2>/dev/null
 
 # 3. Parse JSON → read each frame_*.jpg → describe chronologically
 ```
@@ -24,7 +24,7 @@ Optimized for UI walkthroughs where changes are sparse.
 
 ```bash
 mkdir -p /tmp/recording-frames
-npx @lumy-pack/scene-sieve "/path/to/recording.mp4" --json -n 12 --fps 2 -o /tmp/recording-frames 2>/dev/null
+npx -y @lumy-pack/scene-sieve "/path/to/recording.mp4" --json -n 12 --fps 2 -o /tmp/recording-frames 2>/dev/null
 ```
 
 **Key flags:** `--fps 2` because screen recordings have long static periods. `-n 12` captures enough UI state transitions.
@@ -39,7 +39,7 @@ For checking GIF animations for visual bugs or understanding animation sequences
 
 ```bash
 mkdir -p /tmp/gif-frames
-npx @lumy-pack/scene-sieve "/path/to/animation.gif" --json -n 15 -t 0.2 -o /tmp/gif-frames 2>/dev/null
+npx -y @lumy-pack/scene-sieve "/path/to/animation.gif" --json -n 15 -t 0.2 -o /tmp/gif-frames 2>/dev/null
 ```
 
 **Key flags:** `-t 0.2` (low threshold) captures subtle frame differences that would be pruned at the default 0.5.
@@ -54,7 +54,7 @@ Optimized extraction for meetings, lectures, or lengthy recordings.
 
 ```bash
 mkdir -p /tmp/meeting-frames
-npx @lumy-pack/scene-sieve "/path/to/meeting.mp4" \
+npx -y @lumy-pack/scene-sieve "/path/to/meeting.mp4" \
   --json -n 20 --fps 1 --max-frames 200 -s 480 \
   -o /tmp/meeting-frames 2>/dev/null
 ```
@@ -74,7 +74,7 @@ When the user needs detailed, high-quality frames (e.g., for documentation scree
 
 ```bash
 mkdir -p /tmp/hq-frames
-npx @lumy-pack/scene-sieve "/path/to/demo.mp4" --json -n 5 -q 95 -s 1080 -o /tmp/hq-frames 2>/dev/null
+npx -y @lumy-pack/scene-sieve "/path/to/demo.mp4" --json -n 5 -q 95 -s 1080 -o /tmp/hq-frames 2>/dev/null
 ```
 
 **Key flags:** `-q 95` for near-lossless JPEG. `-s 1080` for higher analysis resolution (preserves detail).
@@ -87,7 +87,7 @@ When you need to capture every meaningful change (e.g., debugging frame-by-frame
 
 ```bash
 mkdir -p /tmp/full-analysis
-npx @lumy-pack/scene-sieve "/path/to/clip.mp4" \
+npx -y @lumy-pack/scene-sieve "/path/to/clip.mp4" \
   --json -n 50 -t 0.2 --fps 10 \
   -o /tmp/full-analysis 2>/dev/null
 ```
@@ -103,7 +103,7 @@ npx @lumy-pack/scene-sieve "/path/to/clip.mp4" \
 Videos with repeating animations (loading spinners, carousels) that should be de-emphasized.
 
 ```bash
-npx @lumy-pack/scene-sieve "/path/to/ui-demo.mp4" \
+npx -y @lumy-pack/scene-sieve "/path/to/ui-demo.mp4" \
   --json -n 10 -it 0.7 -at 3 \
   -o /tmp/ui-frames 2>/dev/null
 ```

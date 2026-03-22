@@ -5,7 +5,7 @@ When line-lore fails or returns incomplete results, follow this diagnostic seque
 ## Step 1: Run health check
 
 ```bash
-npx @lumy-pack/line-lore health --json
+npx -y @lumy-pack/line-lore health --json
 ```
 
 This returns the operating level, git version, and optimization status. Use this output to determine which category the problem falls into.
@@ -20,11 +20,11 @@ This returns the operating level, git version, and optimization status. Use this
 
 ```bash
 # Wrong
-npx @lumy-pack/line-lore trace /Users/me/project/src/auth.ts -L 42
+npx -y @lumy-pack/line-lore trace /Users/me/project/src/auth.ts -L 42
 
 # Correct
 cd /Users/me/project
-npx @lumy-pack/line-lore trace src/auth.ts -L 42
+npx -y @lumy-pack/line-lore trace src/auth.ts -L 42
 ```
 
 ### Operating level 0 (no PR lookup)
@@ -62,7 +62,7 @@ After authenticating, re-run `health` to confirm level 2.
 4. The PR was created on a different remote or fork
 
 **Remediation**:
-1. Try `--deep` flag: `npx @lumy-pack/line-lore trace <file> -L <line> --deep`
+1. Try `--deep` flag: `npx -y @lumy-pack/line-lore trace <file> -L <line> --deep`
 2. If still not found, the line was likely committed without a PR. Inform the user — this is not an error.
 
 ### Slow execution
@@ -92,7 +92,7 @@ npm install -g @ast-grep/cli       # cross-platform
 **Cause**: Operating level below 2, or the PR/issue has no linked items.
 
 **Diagnostic**:
-1. Verify operating level: `npx @lumy-pack/line-lore health --json`
+1. Verify operating level: `npx -y @lumy-pack/line-lore health --json`
 2. If level 2, the PR/issue genuinely has no linked items — this is not an error
 
 ### Permission / rate limit errors

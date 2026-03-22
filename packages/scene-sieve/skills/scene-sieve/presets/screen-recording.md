@@ -21,7 +21,7 @@ Optimized for UI walkthroughs with sparse, discrete state changes. Intent overri
 ## Command
 
 ```bash
-npx @lumy-pack/scene-sieve "<input>" --json \
+npx -y @lumy-pack/scene-sieve "<input>" --json \
   -n 12 --fps 2 -t 0.3 \
   -o "<output-dir>" 2>/dev/null
 ```

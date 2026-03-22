@@ -21,7 +21,7 @@ Videos 5–30min. Lower FPS and scale for speed.
 ## Command
 
 ```bash
-npx @lumy-pack/scene-sieve "<input>" --json \
+npx -y @lumy-pack/scene-sieve "<input>" --json \
   -n 15 --fps 2 --max-frames 200 -s 480 \
   -o "<output-dir>" 2>/dev/null
 ```

@@ -21,7 +21,7 @@ Minimal frames for a fast summary. Intent override — ignores duration.
 ## Command
 
 ```bash
-npx @lumy-pack/scene-sieve "<input>" --json \
+npx -y @lumy-pack/scene-sieve "<input>" --json \
   -n 5 --fps 2 -s 480 \
   -o "<output-dir>" 2>/dev/null
 ```

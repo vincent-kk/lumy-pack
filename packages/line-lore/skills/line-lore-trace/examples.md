@@ -9,7 +9,7 @@ Concrete workflow recipes for common scenarios. Each example shows the command, 
 **Scenario**: You encounter a suspicious line during code review and want to know which PR introduced it.
 
 ```bash
-npx @lumy-pack/line-lore trace src/auth/middleware.ts -L 42
+npx -y @lumy-pack/line-lore trace src/auth/middleware.ts -L 42
 ```
 
 **Expected output** (human format):
@@ -29,7 +29,7 @@ npx @lumy-pack/line-lore trace src/auth/middleware.ts -L 42
 **Scenario**: A block of code (lines 15-30) looks like it was added together. Trace the whole range to confirm.
 
 ```bash
-npx @lumy-pack/line-lore trace src/config/database.ts -L 15,30 --output json
+npx -y @lumy-pack/line-lore trace src/config/database.ts -L 15,30 --output json
 ```
 
 **What to look for in the result**: If all lines map to the same PR, they were indeed added together. If multiple PRs appear, the block was built up incrementally across several changes.
@@ -42,11 +42,11 @@ npx @lumy-pack/line-lore trace src/config/database.ts -L 15,30 --output json
 
 ```bash
 # First attempt (no PR found)
-npx @lumy-pack/line-lore trace src/utils/parser.ts -L 88 -q
+npx -y @lumy-pack/line-lore trace src/utils/parser.ts -L 88 -q
 # → (empty)
 
 # Retry with deep tracing
-npx @lumy-pack/line-lore trace src/utils/parser.ts -L 88 --deep -q
+npx -y @lumy-pack/line-lore trace src/utils/parser.ts -L 88 --deep -q
 # → 156
 ```
 
@@ -60,16 +60,16 @@ npx @lumy-pack/line-lore trace src/utils/parser.ts -L 88 --deep -q
 
 ```bash
 # Step 1: Find the PR
-npx @lumy-pack/line-lore trace src/api/handler.ts -L 127 --output json
+npx -y @lumy-pack/line-lore trace src/api/handler.ts -L 127 --output json
 # → PR #42
 
 # Step 2: Explore linked issues
-npx @lumy-pack/line-lore graph pr 42 --depth 1 --json
+npx -y @lumy-pack/line-lore graph pr 42 --depth 1 --json
 ```
 
 **Or combine in one call**:
 ```bash
-npx @lumy-pack/line-lore trace src/api/handler.ts -L 127 --graph-depth 1 --output json
+npx -y @lumy-pack/line-lore trace src/api/handler.ts -L 127 --graph-depth 1 --output json
 ```
 
 **What to look for**: The `nodes` array will contain both `pull_request` and `issue` entries. Issues with state `closed` were resolved by this PR; `open` issues may indicate incomplete work.
@@ -82,7 +82,7 @@ npx @lumy-pack/line-lore trace src/api/handler.ts -L 127 --graph-depth 1 --outpu
 
 ```bash
 # Find PRs linked to issue #200
-npx @lumy-pack/line-lore graph issue 200 --depth 1 --json
+npx -y @lumy-pack/line-lore graph issue 200 --depth 1 --json
 ```
 
 **Expected output**:
@@ -110,10 +110,10 @@ npx @lumy-pack/line-lore graph issue 200 --depth 1 --json
 
 ```bash
 # Trace multiple lines — caching makes subsequent calls fast
-npx @lumy-pack/line-lore trace src/core/engine.ts -L 10 --output json
-npx @lumy-pack/line-lore trace src/core/engine.ts -L 45 --output json
-npx @lumy-pack/line-lore trace src/core/engine.ts -L 112 --output json
-npx @lumy-pack/line-lore trace src/core/engine.ts -L 200 --output json
+npx -y @lumy-pack/line-lore trace src/core/engine.ts -L 10 --output json
+npx -y @lumy-pack/line-lore trace src/core/engine.ts -L 45 --output json
+npx -y @lumy-pack/line-lore trace src/core/engine.ts -L 112 --output json
+npx -y @lumy-pack/line-lore trace src/core/engine.ts -L 200 --output json
 ```
 
 **Tip**: Parse the JSON output and group lines by `prNumber` to see which PRs contributed to the current state of the file.
@@ -126,7 +126,7 @@ npx @lumy-pack/line-lore trace src/core/engine.ts -L 200 --output json
 
 ```bash
 # Only returns cached results (no network, no git operations)
-npx @lumy-pack/line-lore trace src/auth.ts -L 42 --cache-only --output json
+npx -y @lumy-pack/line-lore trace src/auth.ts -L 42 --cache-only --output json
 ```
 
 **Behavior**: Returns the cached trace result if available, or an empty result if not cached. Use this for real-time IDE hover information where latency matters.
@@ -138,7 +138,7 @@ npx @lumy-pack/line-lore trace src/auth.ts -L 42 --cache-only --output json
 **Scenario**: Before using line-lore in a new repository, verify the environment is ready.
 
 ```bash
-npx @lumy-pack/line-lore health --json
+npx -y @lumy-pack/line-lore health --json
 ```
 
 **Expected output** (optimal setup):
@@ -164,7 +164,7 @@ npx @lumy-pack/line-lore health --json
 
 ```bash
 # Depth 2: PR → issues → other PRs that reference those issues
-npx @lumy-pack/line-lore graph pr 42 --depth 2 --json
+npx -y @lumy-pack/line-lore graph pr 42 --depth 2 --json
 ```
 
 **Use case**: Building a comprehensive picture for release notes, impact analysis, or understanding feature scope across multiple PRs.
@@ -176,7 +176,7 @@ npx @lumy-pack/line-lore graph pr 42 --depth 2 --json
 **Scenario**: Trace returns a commit but no PR — how to respond.
 
 ```bash
-npx @lumy-pack/line-lore trace src/legacy/old-module.ts -L 5 --output json
+npx -y @lumy-pack/line-lore trace src/legacy/old-module.ts -L 5 --output json
 ```
 
 **If the result has no `pull_request` node**:

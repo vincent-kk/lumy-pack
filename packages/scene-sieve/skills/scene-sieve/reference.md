@@ -121,7 +121,7 @@ First and last frames are always protected (boundary protection) and never prune
 ### "command not found" or npx fails
 
 ```bash
-npx @lumy-pack/scene-sieve@latest --version
+npx -y @lumy-pack/scene-sieve --version
 ```
 
 If this fails, install globally: `npm install -g @lumy-pack/scene-sieve`
@@ -131,7 +131,7 @@ If this fails, install globally: `npm install -g @lumy-pack/scene-sieve`
 For long videos (>5 min), reduce workload:
 
 ```bash
-npx @lumy-pack/scene-sieve "<input>" --json -n 10 --fps 2 --max-frames 100 -s 480 -o "<output>" 2>/dev/null
+npx -y @lumy-pack/scene-sieve "<input>" --json -n 10 --fps 2 --max-frames 100 -s 480 -o "<output>" 2>/dev/null
 ```
 
 ### Out of memory
@@ -139,7 +139,7 @@ npx @lumy-pack/scene-sieve "<input>" --json -n 10 --fps 2 --max-frames 100 -s 48
 Lower concurrency and scale:
 
 ```bash
-npx @lumy-pack/scene-sieve "<input>" --json -n 10 --concurrency 1 -s 480 -o "<output>" 2>/dev/null
+npx -y @lumy-pack/scene-sieve "<input>" --json -n 10 --concurrency 1 -s 480 -o "<output>" 2>/dev/null
 ```
 
 ### GIF-specific notes
@@ -151,7 +151,7 @@ GIFs always use FPS-based extraction (no I-frame detection). For large GIFs, use
 Use `--describe` to get the JSON schema of all available options:
 
 ```bash
-npx @lumy-pack/scene-sieve --describe
+npx -y @lumy-pack/scene-sieve --describe
 ```
 
 Useful for programmatic integration or verifying available flags.

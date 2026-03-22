@@ -21,7 +21,7 @@ Videos 30s–5min. Balanced defaults work well.
 ## Command
 
 ```bash
-npx @lumy-pack/scene-sieve "<input>" --json \
+npx -y @lumy-pack/scene-sieve "<input>" --json \
   -n 12 \
   -o "<output-dir>" 2>/dev/null
 ```

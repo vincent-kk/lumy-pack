@@ -3,11 +3,11 @@
 ## Synopsis
 
 ```bash
-npx @lumy-pack/line-lore graph pr <number> [--depth <n>] [--json]
-npx @lumy-pack/line-lore graph issue <number> [--depth <n>] [--json]
+npx -y @lumy-pack/line-lore graph pr <number> [--depth <n>] [--json]
+npx -y @lumy-pack/line-lore graph issue <number> [--depth <n>] [--json]
 ```
 
-**Requires operating level 2** (authenticated `gh` or `glab` CLI). Run `npx @lumy-pack/line-lore health` to verify.
+**Requires operating level 2** (authenticated `gh` or `glab` CLI). Run `npx -y @lumy-pack/line-lore health` to verify.
 
 ## Subcommands
 
@@ -17,10 +17,10 @@ Explore issues linked to a Pull Request.
 
 ```bash
 # Show issues linked to PR #42
-npx @lumy-pack/line-lore graph pr 42
+npx -y @lumy-pack/line-lore graph pr 42
 
 # Deeper traversal — follow issue links to other PRs, then to their issues
-npx @lumy-pack/line-lore graph pr 42 --depth 2 --json
+npx -y @lumy-pack/line-lore graph pr 42 --depth 2 --json
 ```
 
 ### graph issue
@@ -29,10 +29,10 @@ Explore PRs linked to an Issue.
 
 ```bash
 # Show PRs that reference issue #100
-npx @lumy-pack/line-lore graph issue 100
+npx -y @lumy-pack/line-lore graph issue 100
 
 # With deeper traversal
-npx @lumy-pack/line-lore graph issue 100 --depth 2 --json
+npx -y @lumy-pack/line-lore graph issue 100 --depth 2 --json
 ```
 
 ## Options

@@ -21,7 +21,7 @@ Clips ≤ 30 seconds. Full resolution, moderate frame count.
 ## Command
 
 ```bash
-npx @lumy-pack/scene-sieve "<input>" --json \
+npx -y @lumy-pack/scene-sieve "<input>" --json \
   -n 8 -q 85 \
   -o "<output-dir>" 2>/dev/null
 ```

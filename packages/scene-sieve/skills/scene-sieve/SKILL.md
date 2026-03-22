@@ -24,7 +24,7 @@ letting you "see" motion media as a sequence of representative still images.
 ## Quick reference
 
 ```bash
-npx @lumy-pack/scene-sieve "<input>" --json -n <count> -o "<output-dir>" 2>/dev/null
+npx -y @lumy-pack/scene-sieve "<input>" --json -n <count> -o "<output-dir>" 2>/dev/null
 ```
 
 Always use `--json` for structured output. Add `2>/dev/null` to suppress stderr progress.
@@ -73,7 +73,7 @@ mkdir -p "$(dirname '<input-file>')/frames"
 Use the `command` field from probe output directly, appending `-o`:
 
 ```bash
-# probe output → "command": "npx @lumy-pack/scene-sieve ... -n 12 -t 0.5 ..."
+# probe output → "command": "npx -y @lumy-pack/scene-sieve ... -n 12 -t 0.5 ..."
 # Append -o and run:
 <probe.command> -o "<output-dir>" 2>/dev/null
 ```
