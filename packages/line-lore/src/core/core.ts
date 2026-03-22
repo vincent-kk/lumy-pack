@@ -7,7 +7,7 @@ import type { RepoIdentity } from '../cache/index.js';
 import { cleanupLegacyCache } from '../cache/index.js';
 import { LineLoreError, LineLoreErrorCode } from '../errors.js';
 import { gitExec } from '../git/executor.js';
-import { checkGitHealth } from '../git/health.js';
+import { checkCloneStatus, checkGitHealth } from '../git/health.js';
 import { detectPlatformAdapter } from '../platform/index.js';
 import type {
   AuthStatus,
@@ -145,6 +145,7 @@ async function processEntry(
   options: TraceOptions,
   execOptions: GitExecOptions,
   repoId: RepoIdentity,
+  skipPatchIdScan?: boolean,
 ): Promise<TraceNode[]> {
   const nodes: TraceNode[] = [];
 
@@ -185,6 +186,7 @@ async function processEntry(
       cacheOnly: options.cacheOnly,
       deep: featureFlags.deepTrace,
       repoId,
+      skipPatchIdScan,
     });
     if (prInfo) {
       nodes.push({
@@ -210,10 +212,19 @@ async function buildTraceNodes(
   options: TraceOptions,
   execOptions: GitExecOptions,
   repoId: RepoIdentity,
+  skipPatchIdScan?: boolean,
 ): Promise<TraceNode[]> {
   const results = await Promise.allSettled(
     map(analyzed, (entry) =>
-      processEntry(entry, featureFlags, adapter, options, execOptions, repoId),
+      processEntry(
+        entry,
+        featureFlags,
+        adapter,
+        options,
+        execOptions,
+        repoId,
+        skipPatchIdScan,
+      ),
     ),
   );
 
@@ -259,6 +270,24 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
   }
   const featureFlags = computeFeatureFlags(operatingLevel, options);
 
+  let cloneStatus = { partialClone: false, shallow: false };
+  try {
+    const result = await checkCloneStatus({ cwd: options.cwd });
+    if (result) cloneStatus = result;
+  } catch {
+    // Ignore — defaults are safe
+  }
+  if (cloneStatus.partialClone) {
+    warnings.push(
+      'Partial clone detected. Patch-ID scan (Strategy 4) will be skipped to avoid blob downloads.',
+    );
+  }
+  if (cloneStatus.shallow) {
+    warnings.push(
+      'Shallow repository detected. Ancestry-path results may be incomplete.',
+    );
+  }
+
   const nodes = await buildTraceNodes(
     blameAuth.analyzed,
     featureFlags,
@@ -266,6 +295,7 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
     options,
     execOptions,
     repoId,
+    cloneStatus.partialClone || undefined,
   );
 
   return { nodes, operatingLevel, featureFlags, warnings };

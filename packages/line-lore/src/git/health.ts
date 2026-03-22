@@ -1,6 +1,6 @@
 import { map } from '@winglet/common-utils';
 
-import type { HealthReport } from '../types/index.js';
+import type { CloneStatus, HealthReport } from '../types/index.js';
 
 import { gitExec } from './executor.js';
 
@@ -22,6 +22,35 @@ function isVersionAtLeast(
     if ((parts[i] ?? 0) < minVersion[i]) return false;
   }
   return true;
+}
+
+export async function checkCloneStatus(options?: {
+  cwd?: string;
+}): Promise<CloneStatus> {
+  let partialClone = false;
+  let shallow = false;
+
+  try {
+    const shallowResult = await gitExec(
+      ['rev-parse', '--is-shallow-repository'],
+      { cwd: options?.cwd },
+    );
+    shallow = shallowResult.stdout.trim() === 'true';
+  } catch {
+    // Older git versions may not support --is-shallow-repository
+  }
+
+  try {
+    const partialResult = await gitExec(
+      ['config', '--get', 'extensions.partialclone'],
+      { cwd: options?.cwd },
+    );
+    partialClone = partialResult.stdout.trim().length > 0;
+  } catch {
+    // Config key not found (exit 1) or git error — not a partial clone
+  }
+
+  return { partialClone, shallow };
 }
 
 export async function checkGitHealth(options?: {
@@ -56,5 +85,18 @@ export async function checkGitHealth(options?: {
     );
   }
 
-  return { commitGraph, bloomFilter, gitVersion, hints };
+  const cloneStatus = await checkCloneStatus({ cwd: options?.cwd });
+
+  if (cloneStatus.partialClone) {
+    hints.push(
+      'Partial clone detected. Patch-ID scan (Strategy 4) will be skipped to avoid blob downloads.',
+    );
+  }
+  if (cloneStatus.shallow) {
+    hints.push(
+      'Shallow repository detected. Ancestry-path results may be incomplete.',
+    );
+  }
+
+  return { commitGraph, bloomFilter, gitVersion, hints, ...cloneStatus };
 }

@@ -9,23 +9,35 @@ export interface AncestryResult {
   subject: string;
 }
 
+export const DEFAULT_ANCESTRY_TIMEOUT = 30_000;
+
 export async function findMergeCommit(
   commitSha: string,
   options?: GitExecOptions & { ref?: string },
 ): Promise<AncestryResult | null> {
   const ref = options?.ref ?? 'HEAD';
+  const budget = options?.timeout ?? DEFAULT_ANCESTRY_TIMEOUT;
+  const startTime = Date.now();
 
   // Try first-parent first — avoids base-update merges (main→feature direction)
   const firstParentResult = await findMergeCommitWithArgs(
     commitSha,
     ref,
     ['--first-parent'],
-    options,
+    { ...options, timeout: budget },
   );
   if (firstParentResult) return firstParentResult;
 
+  // Calculate remaining budget for fallback
+  const elapsed = Date.now() - startTime;
+  const remaining = budget - elapsed;
+  if (remaining <= 0) return null;
+
   // Fallback: full ancestry-path without first-parent restriction
-  return findMergeCommitWithArgs(commitSha, ref, [], options);
+  return findMergeCommitWithArgs(commitSha, ref, [], {
+    ...options,
+    timeout: remaining,
+  });
 }
 
 async function findMergeCommitWithArgs(
@@ -91,6 +103,10 @@ export function extractPRFromMergeMessage(subject: string): number | null {
   // "See merge request group/project!123" (GitLab merge commit)
   const glMatch = /!(\d+)\s*$/.exec(subject);
   if (glMatch) return parseInt(glMatch[1], 10);
+
+  // "Merged PR 99: Add feature" (Azure DevOps merge commit)
+  const adoMatch = /Merged PR (\d+):/.exec(subject);
+  if (adoMatch) return parseInt(adoMatch[1], 10);
 
   return null;
 }

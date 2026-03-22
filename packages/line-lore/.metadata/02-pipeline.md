@@ -1,6 +1,7 @@
 # 02. 파이프라인 단계별 상세 설계
 
 > 원본: [architecture.md](./architecture.md) 3장
+> 알려진 제한사항: [06-limitations.md](./06-limitations.md)
 
 ## 1단계: 라인 → 커밋
 

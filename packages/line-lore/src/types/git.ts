@@ -19,9 +19,16 @@ export interface RemoteInfo {
   platform: PlatformType | 'unknown';
 }
 
+export interface CloneStatus {
+  partialClone: boolean;
+  shallow: boolean;
+}
+
 export interface HealthReport {
   commitGraph: boolean;
   bloomFilter: boolean;
   gitVersion: string;
   hints: string[];
+  partialClone: boolean;
+  shallow: boolean;
 }

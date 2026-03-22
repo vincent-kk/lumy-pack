@@ -20,6 +20,13 @@ vi.mock('@/git/executor.js', () => ({
   gitExec: vi.fn(),
 }));
 
+vi.mock('@/git/health.js', () => ({
+  checkCloneStatus: vi
+    .fn()
+    .mockResolvedValue({ partialClone: false, shallow: false }),
+  checkGitHealth: vi.fn(),
+}));
+
 vi.mock('@/platform/index.js', () => ({
   detectPlatformAdapter: vi.fn(),
 }));

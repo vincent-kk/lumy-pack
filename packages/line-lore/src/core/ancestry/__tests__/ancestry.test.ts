@@ -3,7 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LineLoreError, LineLoreErrorCode } from '@/errors.js';
 import { gitExec } from '@/git/executor.js';
 
-import { extractPRFromMergeMessage, findMergeCommit } from '../ancestry.js';
+import {
+  DEFAULT_ANCESTRY_TIMEOUT,
+  extractPRFromMergeMessage,
+  findMergeCommit,
+} from '../ancestry.js';
 
 vi.mock('@/git/executor.js', () => ({
   gitExec: vi.fn(),
@@ -53,6 +57,38 @@ describe('findMergeCommit', () => {
     const result = await findMergeCommit('abc123'.padEnd(40, '0'));
     expect(result).toBeNull();
   });
+
+  it('applies default 30s timeout budget when no timeout specified', async () => {
+    mockGitExec.mockRejectedValue(new Error('timeout'));
+    await findMergeCommit('abc123');
+    // First call (first-parent) should have timeout=30000
+    expect(vi.mocked(gitExec).mock.calls[0][1]).toEqual(
+      expect.objectContaining({ timeout: DEFAULT_ANCESTRY_TIMEOUT }),
+    );
+  });
+
+  it('allocates remaining time to fallback after first-parent', async () => {
+    // First-parent returns null (no result), takes ~0ms in test
+    mockGitExec
+      .mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 }) // first-parent: empty
+      .mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 }); // fallback: empty
+
+    await findMergeCommit('abc123');
+
+    // Second call should have a timeout <= 30000 (remaining budget)
+    const secondCallTimeout = vi.mocked(gitExec).mock.calls[1]?.[1]?.timeout;
+    expect(secondCallTimeout).toBeDefined();
+    expect(secondCallTimeout).toBeLessThanOrEqual(DEFAULT_ANCESTRY_TIMEOUT);
+    expect(secondCallTimeout).toBeGreaterThan(0);
+  });
+
+  it('uses user-provided timeout as budget', async () => {
+    mockGitExec.mockRejectedValue(new Error('timeout'));
+    await findMergeCommit('abc123', { timeout: 10_000 });
+    expect(vi.mocked(gitExec).mock.calls[0][1]).toEqual(
+      expect.objectContaining({ timeout: 10_000 }),
+    );
+  });
 });
 
 describe('extractPRFromMergeMessage', () => {
@@ -69,6 +105,18 @@ describe('extractPRFromMergeMessage', () => {
   it('extracts MR from GitLab merge commit message', () => {
     expect(
       extractPRFromMergeMessage('See merge request group/project!123'),
+    ).toBe(123);
+  });
+
+  it('extracts PR number from Azure DevOps merge message', () => {
+    expect(extractPRFromMergeMessage('Merged PR 99: Add feature')).toBe(99);
+  });
+
+  it('extracts PR number from Azure DevOps merge message with longer title', () => {
+    expect(
+      extractPRFromMergeMessage(
+        'Merged PR 123: Fix bug in authentication module',
+      ),
     ).toBe(123);
   });
 

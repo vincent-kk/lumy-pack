@@ -7,12 +7,13 @@ export type {
   AstTraceResult,
 } from './ast.js';
 export type { BlameResult, CommitInfo } from './blame.js';
-export type { CacheEntry } from './cache.js';
+export type { CacheEntry, CachedPRInfo } from './cache.js';
 export type {
   GitExecResult,
   GitExecOptions,
   RemoteInfo,
   HealthReport,
+  CloneStatus,
 } from './git.js';
 export type { GraphOptions, GraphResult } from './graph.js';
 export type { NormalizedResponse } from './output.js';
