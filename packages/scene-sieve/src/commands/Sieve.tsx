@@ -20,6 +20,7 @@ import { cleanupStaleWorkspaces } from '../core/workspace.js';
 import { classifyError, SieveErrorCode } from '../errors.js';
 import type { ProgressPhase, SieveResult } from '../types/index.js';
 import { SIEVE_COMMAND } from '../utils/command-registry.js';
+import { setJsonMode } from '../utils/logger.js';
 import { parsePipelineOptions } from '../utils/parse-options.js';
 import type { RawCliOptions } from '../utils/parse-options.js';
 
@@ -110,6 +111,7 @@ export function registerSieveCommand(program: Command, version: string): void {
       const parsed = parsePipelineOptions(opts);
 
       if (opts.json) {
+        setJsonMode(true);
         const startTime = Date.now();
 
         if (!existsSync(input)) {

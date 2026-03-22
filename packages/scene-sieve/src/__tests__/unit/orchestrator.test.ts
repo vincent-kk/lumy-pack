@@ -47,6 +47,7 @@ vi.mock('../../core/pruner.js', () => ({
 vi.mock('../../utils/logger.js', () => ({
   logger: { debug: vi.fn(), info: vi.fn(), error: vi.fn(), success: vi.fn() },
   setDebugMode: mockSetDebugMode,
+  setJsonMode: vi.fn(),
 }));
 
 const defaultResolvedOptions = {
