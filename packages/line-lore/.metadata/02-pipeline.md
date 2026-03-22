@@ -62,8 +62,13 @@
 
 ## 2단계: 커밋 → 병합 커밋
 
+2단계 탐색 전략 (first-parent 우선):
+
 ```
-git log --merges --ancestry-path <sha>..HEAD --topo-order --reverse --format="%H %P %s"
+1차: git log --merges --ancestry-path --first-parent <sha>..HEAD --topo-order --reverse
+  → feature→main 방향 병합만 선택, base-update merge 제외
+
+2차 (1차 실패 시): --first-parent 없이 전체 ancestry-path 탐색
 ```
 
 > **학술적 근거** (발췌: raw/line-to-pr-trace-design-review.md 3장):
@@ -78,9 +83,11 @@ git log --merges --ancestry-path <sha>..HEAD --topo-order --reverse --format="%H
 ## 3단계: 단절 해소 (Patch-ID)
 
 ```
-1. git diff <sha>^..<sha> | git patch-id --stable → 콘텐츠 기반 해시
-2. 메인 브랜치 최근 500개 커밋 순회하며 patch-id 비교
-3. 일치 발견 → 4단계 진행 / 일치 없음 → API 폴백
+1. git diff <sha>^..<sha> | git patch-id --stable → 대상 커밋의 콘텐츠 기반 해시
+2. git log -500 -p HEAD | git patch-id --stable → 단일 스트리밍 파이프로 일괄 계산
+   (--deep 모드 시 2000개, DEEP_SCAN_DEPTH = 2000)
+3. candidateSha ≠ 대상 SHA이면서 patchId 동일한 커밋 탐색
+4. 일치 발견 → lookupPR(matchedSha) 재귀 호출 / 일치 없음 → null
 ```
 
 > **학술적 근거** (발췌: raw/line-to-pr-trace-design-review.md 6.4절):
@@ -88,13 +95,22 @@ git log --merges --ancestry-path <sha>..HEAD --topo-order --reverse --format="%H
 > 자체만으로 SHA-1 해시를 생성. 리베이스되어 해시가 바뀌었더라도 변경
 > 내용물이 동일한 커밋을 100% 결정론적으로 매핑.
 
-**최적화**: patch-id 캐시 저장 (불변). `--scan-depth`로 스캔 범위 조절.
+**최적화**: 스트리밍 중 모든 후보 커밋의 patch-id를 ShardedCache에 저장 (불변).
 
 ## 4단계: PR 매핑
 
-Level 2 (API) → Level 1 (메시지 파싱) → Level 0 (Git 전용 + 설치 안내)
+비용 오름차순 4단계 순차 폴백 체인으로 동작:
 
-**심층 추적 (`--deep`)**: squash PR 내부를 API로 재귀 탐색 → 중첩 PR 트리 구축.
+```
+Strategy 1: ShardedCache 조회              → 비용 0
+Strategy 2: Merge commit + 메시지 파싱     → git log 1회 + 정규식
+  └─ PR 번호 확보 시 API 보강 시도 (선택적)
+Strategy 3: API 직접 조회                  → HTTP 1회 (adapter 필요)
+Strategy 4: Patch-ID 매칭 + 재귀           → git log -p 스트림 (가장 비쌈)
+```
+
+**심층 추적 (`--deep`)**: mergedAt 없는 merge 기반 PR 발견 시에도 탐색 계속.
+squash PR 내부를 API로 재귀 탐색 → 중첩 PR 트리 구축.
 
 ## 최종 출력: TraceNode 배열
 

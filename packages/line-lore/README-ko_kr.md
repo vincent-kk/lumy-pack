@@ -95,6 +95,47 @@ console.log(`Git 버전: ${report.gitVersion}`);
 
 ML이나 휴리스틱을 사용하지 않으므로 결과는 항상 재현 가능합니다.
 
+### PR 탐색 알고리즘
+
+커밋이 식별되면, line-lore는 **비용 오름차순 순차 폴백 체인**으로 해당 커밋의 PR을 찾습니다. 각 전략을 순서대로 시도하며, 첫 번째 성공 시 즉시 반환합니다.
+
+```
+lookupPR(commitSha)
+  │
+  ▼
+Strategy 1 — 캐시 ──────────────────── 비용: O(1), 즉시
+  │ ShardedCache<PRInfo>에서 SHA로 조회
+  │ 히트? → 캐시된 PRInfo 반환
+  ▼
+Strategy 2 — Ancestry-path + 메시지 ── 비용: git log 1회
+  │ 1차: git log --merges --ancestry-path --first-parent sha..HEAD
+  │ 2차: (폴백) --first-parent 없이 전체 ancestry-path
+  │ 병합 커밋 제목을 3가지 정규식으로 파싱:
+  │   • /Merge pull request #(\d+)/  — GitHub 병합 커밋
+  │   • /\(#(\d+)\)\s*$/             — Squash 병합 관례
+  │   • /!(\d+)\s*$/                 — GitLab 병합 커밋
+  │ PR 번호 확보 + adapter 존재 시 → API로 상세 정보 보강
+  │ 성공? → PRInfo 반환
+  ▼
+Strategy 3 — 플랫폼 API ────────────── 비용: HTTP 요청 1회
+  │ gh api repos/{owner}/{repo}/commits/{sha}/pulls
+  │ 필터: 병합된 PR만 (mergedAt != null)
+  │ 성공? → PRInfo 반환
+  ▼
+Strategy 4 — Patch-ID 매칭 ─────────── 비용: 500개+ 커밋 스트리밍
+  │ 대상 계산: git diff sha^..sha | git patch-id --stable
+  │ 일괄 스캔: git log -500 -p HEAD | git patch-id --stable
+  │            (--deep 모드: 2000개 커밋)
+  │ 동일 patch-id + 다른 SHA인 후보 탐색
+  │ 매칭? → lookupPR(matchedSha) 재귀 호출
+  ▼
+모두 실패 → null
+```
+
+**왜 이 순서인가?** 비용 기준으로 정렬되어 있습니다. 대부분의 저장소는 merge 또는 squash 워크플로를 사용하므로, Strategy 2가 API 호출 없이 90% 이상의 조회를 해결합니다. Strategy 3(HTTP 1회)은 Strategy 4(수백 커밋의 diff 스트리밍)보다 저렴하므로, patch-id 스캔 전에 API를 먼저 시도합니다.
+
+**Patch-ID란?** `git patch-id --stable`은 커밋의 diff에서 모든 메타데이터(작성자, 날짜, 메시지)를 제외하고 콘텐츠 기반 해시를 생성합니다. 커밋이 rebase되면 SHA는 변경되지만 patch-id는 동일하게 유지되므로, rebase된 커밋을 결정론적으로 매칭할 수 있습니다.
+
 ## 출력 이해하기
 
 ### TraceNode — 출력의 핵심 단위

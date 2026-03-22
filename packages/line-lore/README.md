@@ -95,6 +95,47 @@ console.log(`Git version: ${report.gitVersion}`);
 
 No ML or heuristics — results are always reproducible.
 
+### PR Lookup Algorithm
+
+Once a commit is identified, line-lore resolves it to a PR using a **cost-ascending sequential fallback chain**. Each strategy is tried in order; the first success returns immediately.
+
+```
+lookupPR(commitSha)
+  │
+  ▼
+Strategy 1 — Cache ─────────────────── cost: O(1), instant
+  │ ShardedCache<PRInfo> lookup by SHA
+  │ hit? → return cached PRInfo
+  ▼
+Strategy 2 — Ancestry-path + Message ─ cost: 1 git-log
+  │ 1st: git log --merges --ancestry-path --first-parent sha..HEAD
+  │ 2nd: (fallback) full ancestry-path without --first-parent
+  │ Parse merge subject with 3 regex patterns:
+  │   • /Merge pull request #(\d+)/  — GitHub merge commit
+  │   • /\(#(\d+)\)\s*$/             — Squash merge convention
+  │   • /!(\d+)\s*$/                 — GitLab merge commit
+  │ If PR# found + adapter available → enrich via API
+  │ found? → return PRInfo
+  ▼
+Strategy 3 — Platform API ──────────── cost: 1 HTTP request
+  │ gh api repos/{owner}/{repo}/commits/{sha}/pulls
+  │ Filter: merged PRs only (mergedAt != null)
+  │ found? → return PRInfo
+  ▼
+Strategy 4 — Patch-ID matching ─────── cost: streaming 500+ commits
+  │ Compute target: git diff sha^..sha | git patch-id --stable
+  │ Batch scan:     git log -500 -p HEAD | git patch-id --stable
+  │                 (--deep mode: 2000 commits)
+  │ Find candidate with same patch-id but different SHA
+  │ match? → lookupPR(matchedSha) recursively
+  ▼
+All failed → null
+```
+
+**Why this order?** The chain is sorted by cost. Most repositories use merge or squash workflows, so Strategy 2 resolves >90% of lookups with zero API calls. Strategy 3 (single HTTP) is cheaper than Strategy 4 (streaming hundreds of commit diffs), so API is tried before patch-id scanning.
+
+**Patch-ID explained**: `git patch-id --stable` generates a content-based hash from a commit's diff, ignoring all metadata (author, date, message). When a commit is rebased, its SHA changes but the patch-id stays the same — enabling deterministic matching of rebased commits.
+
 ## Understanding the Output
 
 ### TraceNode — the core unit of output

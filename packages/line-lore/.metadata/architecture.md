@@ -339,14 +339,27 @@ pattern: |
 ### 3.2 2단계: 커밋 → 병합 커밋
 
 1단계에서 얻은 커밋 SHA로부터 메인 브랜치에 병합된 병합 커밋을 찾는다.
+**2단계 탐색 전략** (first-parent 우선):
 
 ```
-기본 탐색:
+1차 시도 (first-parent 제한):
+  git log --merges --ancestry-path --first-parent <sha>..HEAD --topo-order --reverse --format="%H %P %s"
+
+  → --first-parent: feature→main 방향 병합만 선택
+  → main→feature 역방향 병합(base-update merge) 자동 제외
+  → 위상학적으로 가장 가까운 병합 커밋 반환
+
+2차 시도 (first-parent 없이 전체 ancestry-path):
   git log --merges --ancestry-path <sha>..HEAD --topo-order --reverse --format="%H %P %s"
 
-  → 위상학적으로 가장 가까운(최초의) 병합 커밋 반환
-  → 제목에서 PR 참조 파싱: /Merge pull request #(\d+)/
-  → 동일 위상 레벨의 병합 커밋이 더 있는지 검사 (병렬 병합 수집)
+  → first-parent로 찾지 못한 경우에만 실행
+  → 모든 경로를 탐색하여 병합 커밋 검색
+
+병합 커밋 발견 시:
+  → 제목에서 PR 참조 파싱 (3가지 정규식):
+    /Merge pull request #(\d+)/     → GitHub 병합 커밋
+    /\(#(\d+)\)\s*$/                → Squash 병합 관례
+    /!(\d+)\s*$/                    → GitLab 병합 커밋
 
 폴백 (병합 커밋 없음 — squash/rebase 가능성):
   → 3단계로 전달
@@ -370,28 +383,70 @@ squash 병합과 rebase로 인해 DAG 연결이 끊어진 시나리오를 처리
    git diff <sha>^..<sha> | git patch-id --stable
    → 커밋 메타데이터와 무관한 콘텐츠 기반 해시 생성
 
-2. 메인 브랜치에서 일치하는 patch-id 스캔:
-   git log main --format="%H" -n 500 | 각 커밋별로
-     git diff $commit^..$commit | git patch-id --stable
-   → patch-id 충돌(일치) 비교
+2. 단일 스트리밍 파이프로 최근 커밋의 patch-id 일괄 계산:
+   git log -500 -p HEAD | git patch-id --stable
+   → 500개 커밋의 patch-id를 한 번의 파이프라인으로 일괄 생성
+   → 커밋별 개별 호출 대비 극적인 성능 향상
+   → --deep 모드 시 스캔 범위 2000개로 확대 (DEEP_SCAN_DEPTH = 2000)
 
-3. 일치 발견 시:
-   → 해당 메인 브랜치 커밋이 squash/rebase된 버전
-   → 이 커밋으로 4단계 진행
+3. 일치 검색:
+   → 스트리밍 결과의 각 줄에서 [patchId, candidateSha] 파싱
+   → candidateSha ≠ 대상 SHA이면서 patchId가 동일한 커밋 탐색
+   → 발견된 모든 patch-id는 캐시에 저장 (부수 효과로 이후 조회 가속)
 
-4. 일치 없음 (다중 커밋 squash, 부분 cherry-pick):
-   → 4단계의 API 기반 해석으로 전달
+4. 일치 발견 시:
+   → matchedSha로 lookupPR() 재귀 호출
+   → 해당 커밋의 PR을 찾아 원본 커밋에도 캐시 매핑
+
+5. 일치 없음 (다중 커밋 squash, 부분 cherry-pick):
+   → null 반환 (PR 탐색 실패)
 ```
 
-**최적화**: 메인 브랜치 커밋의 patch-id를 캐시에 저장.
+**최적화**: 스트리밍 중 만나는 모든 커밋의 patch-id를 ShardedCache에 저장.
 커밋은 불변이므로 한번 계산된 patch-id는 영원히 유효하다.
 
-**스캔 범위**: 메인 브랜치 최근 500개 커밋 (기본값).
-`--scan-depth`로 조절 가능. 커밋 빈도가 높은 모노레포는 1000+ 권장.
+**스캔 범위**: 기본 500개 커밋, `--deep` 플래그 시 2000개.
+`--scan-depth`로 직접 조절도 가능.
 
 ### 3.4 4단계: PR 매핑 + 노드 배열 조립
 
-3단계 우아한 성능 저하(Graceful Degradation):
+실제 구현은 운영 레벨별 분기가 아닌, **비용 오름차순 4단계 순차 폴백 체인**으로 동작한다.
+각 단계가 성공하면 즉시 반환하고, 실패 시에만 다음 단계로 진행한다.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    lookupPR() 폴백 체인                           │
+│                                                                   │
+│  Strategy 1: 캐시 조회                                            │
+│    → ShardedCache<PRInfo>에서 commitSha로 조회                    │
+│    → 히트 시 즉시 반환 (비용 0)                                    │
+│                                                                   │
+│  Strategy 2: Merge Commit + 메시지 파싱 (+ API 보강)              │
+│    → findMergeCommit(): ancestry-path로 병합 커밋 탐색             │
+│    → extractPRFromMergeMessage(): 제목에서 PR 번호 추출            │
+│    → PR 번호 확보 시:                                              │
+│      └─ adapter 있으면: API로 병합 커밋 SHA의 PR 상세 보강 시도    │
+│         └─ mergedAt 있으면 → 완전한 PRInfo 반환                   │
+│         └─ 실패 시 → 최소 PRInfo(번호+제목만) 생성                │
+│      └─ adapter 없으면: 최소 PRInfo(번호+제목만) 생성              │
+│    → --deep 모드이고 mergedAt 없으면 → 다음 단계로 계속            │
+│                                                                   │
+│  Strategy 3: API 직접 조회 (adapter 필요)                          │
+│    → adapter.getPRForCommit(commitSha)                            │
+│    → GitHub: gh api repos/{owner}/{repo}/commits/{sha}/pulls      │
+│    → merged PR만 필터 (mergedAt != null)                          │
+│    → 성공 시 캐시 저장 후 반환                                     │
+│                                                                   │
+│  Strategy 4: Patch-ID 매칭 (가장 비싼 연산)                       │
+│    → findPatchIdMatch(): 단일 스트리밍 파이프로 patch-id 비교      │
+│    → 일치 발견 시: lookupPR(matchedSha) 재귀 호출                 │
+│    → 재귀 결과를 원본 SHA에도 캐시 매핑                            │
+│                                                                   │
+│  모두 실패 → null 반환                                            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+운영 레벨별 우아한 성능 저하(Graceful Degradation):
 
 ```
 Level 2 (완전 — API 사용 가능):
@@ -622,11 +677,17 @@ URL 패턴 매칭:
 ```
 핵심 원칙: 가장 비싼 연산(API 호출)을 가장 마지막에, 가장 적게 수행한다.
 
-탐색 우선순위 (비용 오름차순):
-  1. 로컬 캐시 조회             → 비용 0, 즉시
-  2. git 로컬 명령어            → 비용 0, 밀리초
-  3. 커밋 메시지 정규식 파싱     → 비용 0, 마이크로초
-  4. 플랫폼 API 호출            → 비용 1 토큰, 네트워크 지연
+lookupPR() 실제 실행 순서 (비용 오름차순):
+  1. ShardedCache 조회           → 비용 0, 즉시 (메모리/파일 I/O)
+  2. ancestry-path + 메시지 파싱 → git log 1회, 밀리초 + 정규식 마이크로초
+     └─ PR 번호 확보 시 API 보강 시도 (선택적, adapter 있을 때만)
+  3. 플랫폼 API 직접 조회        → HTTP 1회, 네트워크 지연 (adapter 필요)
+  4. Patch-ID 스트리밍 스캔      → git log -p 파이프, 수 초 (500~2000 커밋)
+     └─ 일치 시 lookupPR() 재귀 → 위 1~3단계 재실행
+
+설계 결정: API 직접 조회(Strategy 3)를 Patch-ID 스캔(Strategy 4)보다 앞에 배치.
+이유: API는 HTTP 1회로 즉시 확정 가능하지만, Patch-ID는 수백 커밋의 diff를
+스트리밍해야 하므로 I/O 비용이 더 높다.
 ```
 
 ### 5.2 요청 회피 전략 (API 호출 전 단계)
@@ -1270,23 +1331,43 @@ GraphQL 가용성은 Level 2 내에서 별도 감지:
 
 ## 11. 캐싱 아키텍처
 
+### 11.1 ShardedCache 구현
+
+실제 구현은 `ShardedCache<T>` 제네릭 클래스를 사용하며, 저장소별로 독립된 캐시 인스턴스를 관리한다.
+
+```typescript
+// 캐시 인스턴스 생성 — repo identity 기반 샤딩
+const cache = new ShardedCache<PRInfo>('pr', { repoId });
+const patchIdCache = new ShardedCache<string>('patch-id', { repoId });
+
+// repoId 구조: { host, owner, repo }
+// → 캐시 키: "github.com/org/repo" 형태로 레지스트리에 저장
 ```
+
+**인메모리 레지스트리**: 각 캐시 타입(pr, patch-id)별로 `Map<string, ShardedCache>`를 유지.
+동일 저장소에 대한 반복 조회 시 인스턴스를 재사용한다.
+
+```
+캐시 구조:
 ~/.line-lore/
 ├── cache/
-│   ├── sha-to-pr.json          # { [커밋SHA]: PRInfo }         — 불변
-│   ├── sha-to-patch-id.json    # { [커밋SHA]: patchId 해시 }   — 불변
-│   ├── pr-to-issues.json       # { [prNumber]: IssueInfo[] }   — 준불변 (이슈 상태 변경 가능)
+│   ├── pr/                     # ShardedCache<PRInfo> — 커밋SHA → PRInfo
+│   │   └── {host}/{owner}/{repo}/
+│   ├── patch-id/               # ShardedCache<string> — 커밋SHA → patchId 해시
+│   │   └── {host}/{owner}/{repo}/
 │   ├── etags.json              # { [endpoint]: etag }          — API 조건부 요청용
 │   └── platform-meta.json      # { [remote]: { platform, hostname, owner, repo } }
 └── config.json                 # 사용자 설정 (선택)
 ```
 
-**캐시 특성:**
+### 11.2 캐시 특성
+
 - 커밋→PR 매핑: 완전 불변 (SHA → 데이터 절대 불변)
+- 커밋→Patch-ID 매핑: 완전 불변 (diff 내용 기반 해시)
 - PR→이슈 매핑: 준불변 (이슈 state/labels가 변경될 수 있으므로 ETag 검증)
 - TTL 정책: SHA 기반 캐시는 만료 없음, 이슈 캐시는 ETag 기반 조건부 갱신
-- 단순 JSON 읽기/쓰기 + 원자적 파일 교체 (임시파일 쓰기 → rename)
-- 파일당 최대 10,000 항목 (초과 시 가장 오래된 것부터 제거 — FIFO)
+- `noCache` 옵션: `enabled: false`로 ShardedCache를 생성하여 읽기/쓰기 모두 비활성화
+- Patch-ID 스트리밍 중 부수 효과로 모든 후보 커밋의 patch-id도 캐시에 저장 (이후 조회 가속)
 
 ## 12. 에러 코드 확장
 
