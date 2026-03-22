@@ -169,6 +169,7 @@ async function processEntry(
   execOptions: GitExecOptions,
   repoId: RepoIdentity,
   skipPatchIdScan?: boolean,
+  preferredBase?: string,
 ): Promise<TraceNode[]> {
   const nodes: TraceNode[] = [];
 
@@ -210,6 +211,7 @@ async function processEntry(
       deep: featureFlags.deepTrace,
       repoId,
       skipPatchIdScan,
+      preferredBase,
     });
     if (prInfo) {
       nodes.push({
@@ -236,6 +238,7 @@ async function buildTraceNodes(
   execOptions: GitExecOptions,
   repoId: RepoIdentity,
   skipPatchIdScan?: boolean,
+  preferredBase?: string,
 ): Promise<TraceNode[]> {
   const results = await Promise.allSettled(
     map(analyzed, (entry) =>
@@ -247,6 +250,7 @@ async function buildTraceNodes(
         execOptions,
         repoId,
         skipPatchIdScan,
+        preferredBase,
       ),
     ),
   );
@@ -312,6 +316,21 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
     );
   }
 
+  // Detect current branch for PR selection context (once per trace call)
+  let preferredBase: string | undefined;
+  try {
+    const branchResult = await gitExec(
+      ['rev-parse', '--abbrev-ref', 'HEAD'],
+      execOptions,
+    );
+    const branch = branchResult.stdout.trim();
+    if (branch && branch !== 'HEAD') {
+      preferredBase = branch;
+    }
+  } catch {
+    // Detached HEAD or git failure — preferredBase stays undefined (oldest PR fallback)
+  }
+
   const nodes = await buildTraceNodes(
     blameAuth.analyzed,
     featureFlags,
@@ -320,6 +339,7 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
     execOptions,
     repoId,
     cloneStatus.partialClone || undefined,
+    preferredBase,
   );
 
   return { nodes, operatingLevel, featureFlags, warnings };

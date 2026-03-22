@@ -9,12 +9,14 @@
 | 경로 | 역할 |
 |------|------|
 | `index.ts` | 배럴 익스포트 |
-| `ancestry.ts` | `findMergeCommit()` 및 `extractPRFromMergeMessage()` |
+| `ancestry.ts` | `findMergeCommit()`, `verifyMergeIntroducesCommit()`, `getCommitSubject()`, `extractPRFromMergeMessage()` |
 
 ## Conventions
 
 - 지정된 ref(기본 HEAD)에서 머지 커밋 검색
-- GitHub/GitLab 머지 메시지 패턴으로 PR 번호 추출
+- `verifyMergeIntroducesCommit` dual condition으로 후보 머지 커밋 검증
+- `getCommitSubject`로 개별 커밋의 subject 조회 (squash merge pre-check용)
+- GitHub/GitLab/Azure DevOps 머지 메시지 패턴으로 PR 번호 추출
 
 ## Boundaries
 

@@ -9,6 +9,7 @@ import type {
 import {
   extractPRFromMergeMessage,
   findMergeCommit,
+  getCommitSubject,
 } from '../ancestry/index.js';
 import { findPatchIdMatch } from '../patch-id/index.js';
 
@@ -76,6 +77,8 @@ export interface PRLookupOptions extends GitExecOptions {
   repoId?: RepoIdentity;
   /** Skip Strategy 4 (patch-id scan) — set automatically for partial clone environments */
   skipPatchIdScan?: boolean;
+  /** Preferred base branch for PR selection — when multiple PRs match, prefer the one targeting this branch */
+  preferredBase?: string;
 }
 
 const DEEP_SCAN_DEPTH = 2000;
@@ -96,13 +99,49 @@ export async function lookupPR(
   if (cached) return fromCachedPR(cached);
   if (options?.cacheOnly) return null;
 
+  // Strategy 2: API direct lookup (ground truth — try first at Level 2)
+  const prSelectOptions = options?.preferredBase
+    ? { preferredBase: options.preferredBase }
+    : undefined;
+  if (adapter) {
+    const directPR = await adapter.getPRForCommit(commitSha, prSelectOptions);
+    if (directPR?.mergedAt) {
+      await cache.set(commitSha, toCachedPR(directPR));
+      return directPR;
+    }
+  }
+
+  // Strategy 3a: Blame commit message pre-check (handles squash merges invisible to --merges)
+  // Strategy 2 already attempted getPRForCommit with the same SHA and options.
+  // If it had returned mergedAt, we'd have exited above — no need to retry the API here.
+  const commitSubject = await getCommitSubject(commitSha, options);
+  if (commitSubject) {
+    const directPrNumber = extractPRFromMergeMessage(commitSubject);
+    if (directPrNumber) {
+      const subjectPR: PRInfo = {
+        number: directPrNumber,
+        title: commitSubject,
+        author: '',
+        url: '',
+        mergeCommit: commitSha,
+        baseBranch: '',
+      };
+      await cache.set(commitSha, toCachedPR(subjectPR));
+      return subjectPR;
+    }
+  }
+
+  // Strategy 3b: Ancestry-path + merge message parsing (fallback for Level 0/1 or API miss)
   let mergeBasedPR: PRInfo | null = null;
   const mergeResult = await findMergeCommit(commitSha, options);
   if (mergeResult) {
     const prNumber = extractPRFromMergeMessage(mergeResult.subject);
     if (prNumber) {
       if (adapter) {
-        const prInfo = await adapter.getPRForCommit(mergeResult.mergeCommitSha);
+        const prInfo = await adapter.getPRForCommit(
+          mergeResult.mergeCommitSha,
+          prSelectOptions,
+        );
         if (prInfo?.mergedAt) {
           mergeBasedPR = prInfo;
         }
@@ -129,15 +168,6 @@ export async function lookupPR(
   if (mergeBasedPR) {
     await cache.set(commitSha, toCachedPR(mergeBasedPR));
     return mergeBasedPR;
-  }
-
-  // Strategy 3: API direct lookup (fast single request, try before expensive patch-id scan)
-  if (adapter) {
-    const prInfo = await adapter.getPRForCommit(commitSha);
-    if (prInfo?.mergedAt) {
-      await cache.set(commitSha, toCachedPR(prInfo));
-      return prInfo;
-    }
   }
 
   // Strategy 4: Patch-ID matching (expensive — streams full log through patch-id)

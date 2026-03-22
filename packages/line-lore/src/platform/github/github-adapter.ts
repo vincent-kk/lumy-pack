@@ -55,7 +55,10 @@ export class GitHubAdapter implements PlatformAdapter {
     }
   }
 
-  async getPRForCommit(sha: string): Promise<PRInfo | null> {
+  async getPRForCommit(
+    sha: string,
+    options?: { preferredBase?: string },
+  ): Promise<PRInfo | null> {
     if (this.scheduler.isRateLimited()) return null;
 
     try {
@@ -76,12 +79,14 @@ export class GitHubAdapter implements PlatformAdapter {
       const prs = JSON.parse(result.stdout);
       if (!isArray(prs) || prs.length === 0) return null;
 
-      // Pick the best PR: prefer the one targeting the default branch
-      const defaultBranch = await this.detectDefaultBranch();
-      const defaultBranchPR = prs.find(
-        (pr: Record<string, unknown>) => pr.base === defaultBranch,
-      );
-      const data = defaultBranchPR ?? prs[0];
+      // Pick the best PR: prefer preferredBase match, then oldest (most direct)
+      let data = prs[0];
+      if (options?.preferredBase) {
+        const preferred = prs.find(
+          (pr: Record<string, unknown>) => pr.base === options.preferredBase,
+        );
+        if (preferred) data = preferred;
+      }
 
       return {
         number: data.number,
@@ -89,7 +94,7 @@ export class GitHubAdapter implements PlatformAdapter {
         author: data.user ?? '',
         url: data.html_url ?? '',
         mergeCommit: data.merge_commit_sha ?? sha,
-        baseBranch: (data.base as string) ?? defaultBranch,
+        baseBranch: (data.base as string) ?? '',
         mergedAt: data.merged_at,
       };
     } catch {

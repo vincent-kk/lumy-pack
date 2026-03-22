@@ -10,6 +10,7 @@ export interface AncestryResult {
 }
 
 export const DEFAULT_ANCESTRY_TIMEOUT = 30_000;
+const MAX_CANDIDATES = 10;
 
 export async function findMergeCommit(
   commitSha: string,
@@ -40,6 +41,64 @@ export async function findMergeCommit(
   });
 }
 
+/**
+ * Verify that a merge commit actually introduced the target commit
+ * through its branch side (non-first parent), not from the mainline.
+ *
+ * Dual condition:
+ * 1. Target IS an ancestor of at least one non-first parent (branch side)
+ * 2. Target is NOT an ancestor of the first parent (mainline side)
+ *
+ * Returns true on git command failure (fail-open policy).
+ */
+export async function verifyMergeIntroducesCommit(
+  targetSha: string,
+  mergeResult: AncestryResult,
+  options?: GitExecOptions,
+): Promise<boolean> {
+  if (mergeResult.parentShas.length < 2) return true;
+
+  const firstParent = mergeResult.parentShas[0];
+  const branchParents = mergeResult.parentShas.slice(1);
+
+  // Check if target is ancestor of first parent (mainline)
+  // If yes, the merge did NOT introduce the target — it was already on mainline
+  const onMainline = await isAncestor(targetSha, firstParent, options);
+  if (onMainline === null) return true; // fail-open
+  if (onMainline) return false;
+
+  // Check if target is ancestor of any non-first parent (branch side)
+  for (const branchParent of branchParents) {
+    const onBranch = await isAncestor(targetSha, branchParent, options);
+    if (onBranch === null) return true; // fail-open
+    if (onBranch) return true;
+  }
+
+  return false;
+}
+
+/** Returns true/false for ancestry check, null on git failure. */
+async function isAncestor(
+  commitA: string,
+  commitB: string,
+  options?: GitExecOptions,
+): Promise<boolean | null> {
+  try {
+    const result = await gitExec(
+      ['merge-base', '--is-ancestor', commitA, commitB],
+      {
+        cwd: options?.cwd,
+        timeout: options?.timeout ?? 5_000,
+        allowExitCodes: [1],
+      },
+    );
+    // exit code 0 = is ancestor, exit code 1 = not ancestor
+    return result.exitCode === 0;
+  } catch {
+    return null; // git failure — fail-open
+  }
+}
+
 async function findMergeCommitWithArgs(
   commitSha: string,
   ref: string,
@@ -64,7 +123,21 @@ async function findMergeCommitWithArgs(
     const lines = filter(result.stdout.trim().split('\n'), isTruthy);
     if (lines.length === 0) return null;
 
-    return parseMergeLogLine(lines[0]);
+    // Iterate candidates and verify each one introduces the target commit
+    const candidateCount = Math.min(lines.length, MAX_CANDIDATES);
+    for (let i = 0; i < candidateCount; i++) {
+      const candidate = parseMergeLogLine(lines[i]);
+      if (!candidate) continue;
+
+      const verified = await verifyMergeIntroducesCommit(
+        commitSha,
+        candidate,
+        options,
+      );
+      if (verified) return candidate;
+    }
+
+    return null;
   } catch {
     return null;
   }
@@ -89,6 +162,23 @@ function parseMergeLogLine(line: string): AncestryResult | null {
 
   const subject = parts.slice(subjectStart).join(' ');
   return { mergeCommitSha, parentShas, subject };
+}
+
+/** Retrieve the subject line of a single commit. Returns null on git failure. */
+export async function getCommitSubject(
+  sha: string,
+  options?: GitExecOptions,
+): Promise<string | null> {
+  try {
+    const result = await gitExec(['log', '-1', '--format=%s', sha], {
+      cwd: options?.cwd,
+      timeout: options?.timeout ?? 5_000,
+    });
+    const subject = result.stdout.trim();
+    return subject || null;
+  } catch {
+    return null;
+  }
 }
 
 export function extractPRFromMergeMessage(subject: string): number | null {

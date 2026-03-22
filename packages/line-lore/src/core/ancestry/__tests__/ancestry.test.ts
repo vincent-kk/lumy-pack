@@ -7,7 +7,9 @@ import {
   DEFAULT_ANCESTRY_TIMEOUT,
   extractPRFromMergeMessage,
   findMergeCommit,
+  verifyMergeIntroducesCommit,
 } from '../ancestry.js';
+import type { AncestryResult } from '../ancestry.js';
 
 vi.mock('@/git/executor.js', () => ({
   gitExec: vi.fn(),
@@ -88,6 +90,86 @@ describe('findMergeCommit', () => {
     expect(vi.mocked(gitExec).mock.calls[0][1]).toEqual(
       expect.objectContaining({ timeout: 10_000 }),
     );
+  });
+});
+
+describe('verifyMergeIntroducesCommit', () => {
+  beforeEach(() => {
+    mockGitExec.mockReset();
+  });
+
+  const targetSha = 'target'.padEnd(40, '0');
+  const firstParent = 'first_parent'.padEnd(40, '0');
+  const secondParent = 'second_parent'.padEnd(40, '0');
+
+  function makeMerge(parents: string[]): AncestryResult {
+    return {
+      mergeCommitSha: 'merge'.padEnd(40, '0'),
+      parentShas: parents,
+      subject: 'Merge pull request #1',
+    };
+  }
+
+  it('returns true when target is ancestor of second parent only', async () => {
+    // isAncestor(target, firstParent) → exit code 1 (not ancestor)
+    mockGitExec.mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 1 });
+    // isAncestor(target, secondParent) → exit code 0 (is ancestor)
+    mockGitExec.mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 });
+
+    const result = await verifyMergeIntroducesCommit(
+      targetSha,
+      makeMerge([firstParent, secondParent]),
+    );
+
+    expect(result).toBe(true);
+  });
+
+  it('returns false when target is ancestor of BOTH parents', async () => {
+    // isAncestor(target, firstParent) → exit code 0 (is ancestor — already on mainline)
+    mockGitExec.mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 });
+
+    const result = await verifyMergeIntroducesCommit(
+      targetSha,
+      makeMerge([firstParent, secondParent]),
+    );
+
+    expect(result).toBe(false);
+  });
+
+  it('returns false when target is not ancestor of any non-first parent', async () => {
+    // isAncestor(target, firstParent) → exit code 1 (not on mainline)
+    mockGitExec.mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 1 });
+    // isAncestor(target, secondParent) → exit code 1 (not on branch either)
+    mockGitExec.mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 1 });
+
+    const result = await verifyMergeIntroducesCommit(
+      targetSha,
+      makeMerge([firstParent, secondParent]),
+    );
+
+    expect(result).toBe(false);
+  });
+
+  it('returns true on git command failure (fail-open)', async () => {
+    // isAncestor throws error
+    mockGitExec.mockRejectedValueOnce(new Error('git failed'));
+
+    const result = await verifyMergeIntroducesCommit(
+      targetSha,
+      makeMerge([firstParent, secondParent]),
+    );
+
+    expect(result).toBe(true);
+  });
+
+  it('returns true when merge has fewer than 2 parents (degenerate)', async () => {
+    const result = await verifyMergeIntroducesCommit(
+      targetSha,
+      makeMerge([firstParent]),
+    );
+
+    expect(result).toBe(true);
+    expect(mockGitExec).not.toHaveBeenCalled();
   });
 });
 

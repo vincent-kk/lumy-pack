@@ -229,10 +229,9 @@ describe('E2: Squash Merge trace', { timeout: 30000 }, () => {
     expect(prNode!.sha).toBe(squashCommit);
   });
 
-  it('without adapter: squash commit is not a merge commit — findMergeCommit returns null — no PR node', async () => {
-    // Squash commit subject has "(#55)" pattern BUT findMergeCommit uses --merges --ancestry-path.
-    // A squash commit has only one parent → git log --merges does NOT include it.
-    // Therefore lookupPR cannot parse the message, and without an adapter returns null.
+  it('without adapter: squash commit message pre-check extracts PR from (#N) pattern', async () => {
+    // Squash commit subject has "(#55)" pattern. Strategy 3a (pre-check) extracts PR
+    // from the blame commit's own message before findMergeCommit runs.
     repo.commit(
       { 'src/auth.ts': 'export function a(): void {}\n' },
       'chore: initial',
@@ -267,13 +266,15 @@ describe('E2: Squash Merge trace', { timeout: 30000 }, () => {
 
     expect(result.operatingLevel).toBe(1);
 
-    // squash commit has one parent → not a merge commit → findMergeCommit returns null
-    // → no message-parse → no pull_request node
+    // Strategy 3a pre-check extracts PR#55 from commit message
     const prNode = result.nodes.find((n) => n.type === 'pull_request');
-    expect(prNode).toBeUndefined();
+    expect(prNode).toBeDefined();
+    expect(prNode!.prNumber).toBe(55);
+    expect(prNode!.trackingMethod).toBe('message-parse');
+    expect(prNode!.confidence).toBe('heuristic');
   });
 
-  it('result nodes: only original_commit present when adapter returns null', async () => {
+  it('result nodes: original_commit + PR node when adapter returns null but message has (#N)', async () => {
     repo.commit({ 'src/auth.ts': 'line1\n' }, 'chore: init');
 
     repo.branch('feature/x');
@@ -283,7 +284,7 @@ describe('E2: Squash Merge trace', { timeout: 30000 }, () => {
     enableFFMerge(repo.path);
     const squashCommit = repo.squashMerge('feature/x', 'feat: line2 (#77)');
 
-    // adapter returns null for the squash commit
+    // adapter returns null for the squash commit — Strategy 2 fails
     const adapter = createMockPlatformAdapter({ prMap: new Map() });
     mockDetectPlatform.mockResolvedValue({
       adapter,
@@ -297,8 +298,13 @@ describe('E2: Squash Merge trace', { timeout: 30000 }, () => {
 
     const result = await trace({ file: 'src/auth.ts', line: 2 });
 
-    expect(result.nodes).toHaveLength(1);
+    // Strategy 3a pre-check extracts PR#77 from commit message
+    expect(result.nodes).toHaveLength(2);
     expect(result.nodes[0].type).toBe('original_commit');
     expect(result.nodes[0].sha).toBe(squashCommit);
+
+    const prNode = result.nodes.find((n) => n.type === 'pull_request');
+    expect(prNode).toBeDefined();
+    expect(prNode!.prNumber).toBe(77);
   });
 });

@@ -181,6 +181,8 @@ describe('trace() — noCache option', () => {
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
     );
+    // branch detection (rev-parse --abbrev-ref HEAD)
+    mockGitExec.mockResolvedValueOnce(gitOk('main'));
     mockGitExec.mockResolvedValueOnce(
       gitOk(
         `${MERGE_SHA} ${PARENT1} ${PARENT2} Merge pull request #42 from feature/branch\n`,
@@ -204,6 +206,8 @@ describe('trace() — noCache option', () => {
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
     );
+    // branch detection (rev-parse --abbrev-ref HEAD)
+    mockGitExec.mockResolvedValueOnce(gitOk('main'));
     mockGitExec.mockResolvedValueOnce(gitEmpty());
 
     await trace({ file: 'src/foo.ts', line: 1, noCache: true });

@@ -45,7 +45,10 @@ export interface RateLimitInfo {
 export interface PlatformAdapter {
   readonly platform: PlatformType;
   checkAuth(): Promise<AuthStatus>;
-  getPRForCommit(sha: string): Promise<PRInfo | null>;
+  getPRForCommit(
+    sha: string,
+    options?: { preferredBase?: string },
+  ): Promise<PRInfo | null>;
   getPRCommits(prNumber: number): Promise<string[]>;
   getLinkedIssues(prNumber: number): Promise<IssueInfo[]>;
   getLinkedPRs(issueNumber: number): Promise<PRInfo[]>;

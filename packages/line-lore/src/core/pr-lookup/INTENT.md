@@ -2,7 +2,7 @@
 
 ## Purpose
 
-다중 전략 접근으로 커밋 SHA를 원본 PR로 해석한다: 캐시 확인 → 머지 메시지 추출 → 플랫폼 API 쿼리.
+다중 전략 접근으로 커밋 SHA를 원본 PR로 해석한다: 캐시 → API direct → blame commit message pre-check → ancestry-path → patch-id.
 
 ## Structure
 
@@ -13,8 +13,9 @@
 
 ## Conventions
 
-- `FileCache`를 통해 결과 캐싱 (`sha-to-pr.json`)
+- `ShardedCache`를 통해 결과 캐싱
 - Level 0(캐시만) ~ Level 2(전체 API)에서 동작
+- Strategy 3a: blame commit message에서 직접 PR 번호 추출 (squash merge 대응)
 
 ## Boundaries
 

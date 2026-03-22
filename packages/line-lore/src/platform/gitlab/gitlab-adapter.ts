@@ -53,7 +53,10 @@ export class GitLabAdapter implements PlatformAdapter {
     }
   }
 
-  async getPRForCommit(sha: string): Promise<PRInfo | null> {
+  async getPRForCommit(
+    sha: string,
+    options?: { preferredBase?: string },
+  ): Promise<PRInfo | null> {
     if (this.scheduler.isRateLimited()) return null;
 
     try {
@@ -83,12 +86,14 @@ export class GitLabAdapter implements PlatformAdapter {
 
       if (mergedMRs.length === 0) return null;
 
-      // Prefer MR targeting the default branch (detected locally)
-      const defaultBranch = await this.detectDefaultBranch();
-      const defaultBranchMR = mergedMRs.find(
-        (mr) => mr.target_branch === defaultBranch,
-      );
-      const mr = defaultBranchMR ?? mergedMRs[0];
+      // Pick the best MR: prefer preferredBase match, then oldest (most direct)
+      let mr = mergedMRs[0];
+      if (options?.preferredBase) {
+        const preferred = mergedMRs.find(
+          (m) => m.target_branch === options.preferredBase,
+        );
+        if (preferred) mr = preferred;
+      }
 
       return {
         number: mr.iid as number,
@@ -97,7 +102,7 @@ export class GitLabAdapter implements PlatformAdapter {
           ((mr.author as Record<string, unknown>)?.username as string) ?? '',
         url: (mr.web_url as string) ?? '',
         mergeCommit: (mr.merge_commit_sha as string) ?? sha,
-        baseBranch: (mr.target_branch as string) ?? defaultBranch,
+        baseBranch: (mr.target_branch as string) ?? '',
         mergedAt: mr.merged_at as string | undefined,
       };
     } catch {

@@ -166,7 +166,9 @@ describe('trace() — pipeline orchestrator integration', () => {
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
     );
-    // Call 3: git log --merges --ancestry-path (findMergeCommit)
+    // Call 3: branch detection (rev-parse --abbrev-ref HEAD)
+    mockGitExec.mockResolvedValueOnce(gitOk('main'));
+    // Call 4: git log --merges --ancestry-path (findMergeCommit)
     mockGitExec.mockResolvedValueOnce(
       gitOk(
         `${MERGE_SHA} ${PARENT1} ${PARENT2} Merge pull request #42 from feature/my-feature\n`,
