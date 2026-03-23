@@ -25,8 +25,11 @@ yarn add @lumy-pack/line-lore
 ### CLI Usage
 
 ```bash
-# Trace a single line to its PR
+# Trace a single line to its originating PR
 npx @lumy-pack/line-lore trace src/auth.ts -L 42
+
+# Trace the last meaningful change to a line
+npx @lumy-pack/line-lore trace src/auth.ts -L 42 --mode change
 
 # Trace a line range
 npx @lumy-pack/line-lore trace src/config.ts -L 10,50
@@ -61,14 +64,21 @@ npx @lumy-pack/line-lore trace src/auth.ts -L 42 --quiet
 ```typescript
 import { trace, graph, health, clearCache } from '@lumy-pack/line-lore';
 
-// Trace a line to its PR
-const result = await trace({
+// Trace a line to its originating PR (default mode)
+const originResult = await trace({
   file: 'src/auth.ts',
   line: 42,
 });
 
+// Trace the last meaningful change to a line
+const changeResult = await trace({
+  file: 'src/auth.ts',
+  line: 42,
+  mode: 'change',
+});
+
 // Find the PR node
-const prNode = result.nodes.find(n => n.type === 'pull_request');
+const prNode = originResult.nodes.find(n => n.type === 'pull_request');
 if (prNode) {
   console.log(`PR #${prNode.prNumber}: ${prNode.prTitle}`);
 }
@@ -89,9 +99,11 @@ console.log(`Git version: ${report.gitVersion}`);
 
 ## How It Works
 
-@lumy-pack/line-lore executes a 4-stage deterministic pipeline:
+@lumy-pack/line-lore executes a deterministic pipeline with two trace modes:
 
-1. **Line → Commit (Blame)**: Git blame with `-C -C -M` flags to detect renames and copies
+1. **Line → Commit (Blame)**:
+   - `origin`: `git blame -w -C -C -M` — follows copy/move history across renames; whitespace-only changes ignored
+   - `change`: `git blame -w` — finds the last meaningful local change; ignores whitespace but does **not** track renames/copies, so a rename commit itself is attributed as the change
 2. **Cosmetic Detection**: AST structural comparison to skip formatting-only changes
 3. **Commit → Merge Commit**: Ancestry-path traversal + patch-id matching to resolve merge commits
 4. **Merge Commit → PR**: Commit message parsing + platform API lookup (filters unmerged PRs)
@@ -111,19 +123,21 @@ Strategy 1 — Cache ─────────────────── c
   │ hit? → return cached PRInfo
   │ miss + --cache-only? → return null (skip all fallbacks)
   ▼
-Strategy 2 — Ancestry-path + Message ─ cost: 1 git-log
-  │ 1st: git log --merges --ancestry-path --first-parent sha..HEAD
-  │ 2nd: (fallback) full ancestry-path without --first-parent
+Strategy 2 — Platform API ──────────── cost: 1 HTTP request
+  │ gh api repos/{owner}/{repo}/commits/{sha}/pulls
+  │ Filter: merged PRs only (mergedAt != null)
+  │ found? → return PRInfo
+  ▼
+Strategy 3 — Ancestry-path + Message ─ cost: 1-2 git-log traversals
+  │ Search verified merge candidates:
+  │   • first-parent ancestry path first
+  │   • full ancestry path second
   │ Parse merge subject with 3 regex patterns:
   │   • /Merge pull request #(\d+)/  — GitHub merge commit
   │   • /\(#(\d+)\)\s*$/             — Squash merge convention
-  │   • /!(\d+)\s*$/                 — GitLab merge commit
-  │ If PR# found + adapter available → enrich via API
-  │ found? → return PRInfo
-  ▼
-Strategy 3 — Platform API ──────────── cost: 1 HTTP request
-  │ gh api repos/{owner}/{repo}/commits/{sha}/pulls
-  │ Filter: merged PRs only (mergedAt != null)
+  │   • /See merge request ...!(\d+)$/ — GitLab merge commit
+  │ If message has no PR number and API is available:
+  │   query the merge commit SHA directly
   │ found? → return PRInfo
   ▼
 Strategy 4 — Patch-ID matching ─────── cost: streaming 500+ commits
@@ -136,7 +150,7 @@ Strategy 4 — Patch-ID matching ─────── cost: streaming 500+ comm
 All failed → null
 ```
 
-**Why this order?** The chain is sorted by cost. Most repositories use merge or squash workflows, so Strategy 2 resolves >90% of lookups with zero API calls. Strategy 3 (single HTTP) is cheaper than Strategy 4 (streaming hundreds of commit diffs), so API is tried before patch-id scanning.
+**Why this order?** Direct API lookup is the strongest Level 2 signal, so it runs before local ancestry heuristics. Verified ancestry is still cheaper than patch-id scanning and resolves most merge-based workflows without diff streaming.
 
 **Patch-ID explained**: `git patch-id --stable` generates a content-based hash from a commit's diff, ignoring all metadata (author, date, message). When a commit is rebased, its SHA changes but the patch-id stays the same — enabling deterministic matching of rebased commits.
 
@@ -170,7 +184,7 @@ interface TraceNode {
 
 | Type | Symbol | Meaning | When it appears |
 |------|--------|---------|-----------------|
-| `original_commit` | `●` | The commit that introduced or last modified this line | Always (at least one) |
+| `original_commit` | `●` | The commit selected by the active trace mode | Always (at least one) |
 | `cosmetic_commit` | `○` | A formatting-only change (whitespace, imports) | When AST detects no logic change |
 | `merge_commit` | `◆` | The merge commit on the base branch | Merge-based workflows |
 | `rebased_commit` | `◇` | A rebased version of the original commit | Rebase workflows with patch-id match |
@@ -204,6 +218,13 @@ interface TraceNode {
 ● Commit a1b2c3d [exact] via blame-CMw
 ▸ PR #42 feat: add authentication
   └─ https://github.com/org/repo/pull/42
+```
+
+**Last meaningful change mode (`--mode change`):**
+```
+● Commit e4f5a6b [exact] via blame
+▸ PR #55 refactor: update validation logic
+  └─ https://github.com/org/repo/pull/55
 ```
 
 **Squash merge (Level 2):**
@@ -334,7 +355,7 @@ import { trace, graph, health, clearCache, LineLoreError } from '@lumy-pack/line
 
 ### `trace(options): Promise<TraceFullResult>`
 
-Trace a code line to its originating PR.
+Trace a code line to its originating or last-change PR, depending on the selected mode.
 
 **Options (`TraceOptions`):**
 
@@ -344,6 +365,7 @@ Trace a code line to its originating PR.
 | `line` | `number` | yes | — | Starting line number (1-indexed) |
 | `endLine` | `number` | no | — | Ending line for range queries |
 | `remote` | `string` | no | `'origin'` | Git remote name |
+| `mode` | `'origin' \| 'change'` | no | `'origin'` | `origin` uses `git blame -w -C -C -M` (follows copy/move history across renames), `change` uses `git blame -w` (finds the last meaningful local change, ignoring whitespace but not copy/move) |
 | `deep` | `boolean` | no | `false` | Expand patch-id scan range (500→2000), continue search after merge commit match |
 | `noAst` | `boolean` | no | `false` | Disable AST analysis |
 | `noCache` | `boolean` | no | `false` | Disable cache reads and writes |
@@ -389,6 +411,7 @@ const result = await trace({
   file: 'src/config.ts',
   line: 10,
   endLine: 50,
+  mode: 'origin',
   deep: true,    // search harder for squash merges
   noCache: true, // skip cache for fresh results
 });
@@ -631,8 +654,9 @@ import type {
 
 | Command | Purpose |
 |---------|---------|
-| `npx @lumy-pack/line-lore trace <file>` | Trace a line to its PR |
+| `npx @lumy-pack/line-lore trace <file>` | Trace a line to its origin or last-change PR |
 | `-L, --line <num>` | Starting line (required) |
+| `--mode <origin\|change>` | Choose between content origin and last meaningful change |
 | `--end-line <num>` | Ending line for range |
 | `--deep` | Deep trace (squash merges) |
 | `--output <format>` | Output as json, llm, or human |

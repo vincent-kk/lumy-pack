@@ -25,8 +25,11 @@ yarn add @lumy-pack/line-lore
 ### CLI 사용법
 
 ```bash
-# 단일 라인을 PR로 역추적
+# 단일 라인을 원본 PR로 역추적
 npx @lumy-pack/line-lore trace src/auth.ts -L 42
+
+# 라인의 마지막 meaningful change를 역추적
+npx @lumy-pack/line-lore trace src/auth.ts -L 42 --mode change
 
 # 라인 범위 역추적
 npx @lumy-pack/line-lore trace src/config.ts -L 10,50
@@ -61,14 +64,21 @@ npx @lumy-pack/line-lore trace src/auth.ts -L 42 --quiet
 ```typescript
 import { trace, graph, health, clearCache } from '@lumy-pack/line-lore';
 
-// 라인을 PR로 역추적
-const result = await trace({
+// 라인을 원본 PR로 역추적 (기본 모드)
+const originResult = await trace({
   file: 'src/auth.ts',
   line: 42,
 });
 
+// 라인의 마지막 meaningful change를 역추적
+const changeResult = await trace({
+  file: 'src/auth.ts',
+  line: 42,
+  mode: 'change',
+});
+
 // PR 노드 찾기
-const prNode = result.nodes.find(n => n.type === 'pull_request');
+const prNode = originResult.nodes.find(n => n.type === 'pull_request');
 if (prNode) {
   console.log(`PR #${prNode.prNumber}: ${prNode.prTitle}`);
 }
@@ -89,9 +99,11 @@ console.log(`Git 버전: ${report.gitVersion}`);
 
 ## 작동 원리
 
-@lumy-pack/line-lore는 결정론적 4단계 파이프라인을 실행합니다:
+@lumy-pack/line-lore는 두 가지 trace mode를 갖는 결정론적 파이프라인을 실행합니다:
 
-1. **라인 → 커밋 (Blame)**: `-C -C -M` 플래그로 파일 이름 변경과 복사본 감지
+1. **라인 → 커밋 (Blame)**:
+   - `origin`: `git blame -w -C -C -M` — rename/copy 이력을 따라감; 공백 변경은 무시
+   - `change`: `git blame -w` — 마지막 meaningful local change를 찾음; 공백은 무시하지만 rename/copy를 추적하지 **않으므로**, rename 커밋 자체가 변경으로 귀속됨
 2. **외관상 변경 감지**: AST 구조 비교로 포맷 전용 변경 건너뛰기
 3. **커밋 → 병합 커밋**: ancestry-path 순회 + patch-id 매칭으로 병합 커밋 해결
 4. **병합 커밋 → PR**: 커밋 메시지 파싱 + 플랫폼 API 검색 (미병합 PR 필터링)
@@ -111,19 +123,21 @@ Strategy 1 — 캐시 ───────────────────�
   │ 히트? → 캐시된 PRInfo 반환
   │ 미스 + --cache-only? → null 반환 (모든 폴백 건너뛰기)
   ▼
-Strategy 2 — Ancestry-path + 메시지 ── 비용: git log 1회
-  │ 1차: git log --merges --ancestry-path --first-parent sha..HEAD
-  │ 2차: (폴백) --first-parent 없이 전체 ancestry-path
+Strategy 2 — 플랫폼 API ────────────── 비용: HTTP 요청 1회
+  │ gh api repos/{owner}/{repo}/commits/{sha}/pulls
+  │ 필터: 병합된 PR만 (mergedAt != null)
+  │ 성공? → PRInfo 반환
+  ▼
+Strategy 3 — Ancestry-path + 메시지 ── 비용: git log 1~2회
+  │ 검증된 merge candidate 검색:
+  │   • first-parent ancestry path 우선
+  │   • full ancestry path 보조
   │ 병합 커밋 제목을 3가지 정규식으로 파싱:
   │   • /Merge pull request #(\d+)/  — GitHub 병합 커밋
   │   • /\(#(\d+)\)\s*$/             — Squash 병합 관례
-  │   • /!(\d+)\s*$/                 — GitLab 병합 커밋
-  │ PR 번호 확보 + adapter 존재 시 → API로 상세 정보 보강
-  │ 성공? → PRInfo 반환
-  ▼
-Strategy 3 — 플랫폼 API ────────────── 비용: HTTP 요청 1회
-  │ gh api repos/{owner}/{repo}/commits/{sha}/pulls
-  │ 필터: 병합된 PR만 (mergedAt != null)
+  │   • /See merge request ...!(\d+)$/ — GitLab 병합 커밋
+  │ 메시지에 PR 번호가 없고 adapter가 있으면:
+  │   merge commit SHA를 API로 직접 조회
   │ 성공? → PRInfo 반환
   ▼
 Strategy 4 — Patch-ID 매칭 ─────────── 비용: 500개+ 커밋 스트리밍
@@ -136,7 +150,7 @@ Strategy 4 — Patch-ID 매칭 ─────────── 비용: 500개+
 모두 실패 → null
 ```
 
-**왜 이 순서인가?** 비용 기준으로 정렬되어 있습니다. 대부분의 저장소는 merge 또는 squash 워크플로를 사용하므로, Strategy 2가 API 호출 없이 90% 이상의 조회를 해결합니다. Strategy 3(HTTP 1회)은 Strategy 4(수백 커밋의 diff 스트리밍)보다 저렴하므로, patch-id 스캔 전에 API를 먼저 시도합니다.
+**왜 이 순서인가?** 직접 API 조회는 Level 2에서 가장 강한 신호이므로 로컬 ancestry 휴리스틱보다 먼저 실행합니다. 검증된 ancestry 탐색은 여전히 patch-id 스캔보다 저렴하며, 대부분의 merge 기반 워크플로를 diff 스트리밍 없이 해결합니다.
 
 **Patch-ID란?** `git patch-id --stable`은 커밋의 diff에서 모든 메타데이터(작성자, 날짜, 메시지)를 제외하고 콘텐츠 기반 해시를 생성합니다. 커밋이 rebase되면 SHA는 변경되지만 patch-id는 동일하게 유지되므로, rebase된 커밋을 결정론적으로 매칭할 수 있습니다.
 
@@ -170,7 +184,7 @@ interface TraceNode {
 
 | 유형 | 기호 | 의미 | 나타나는 조건 |
 |------|------|------|-------------|
-| `original_commit` | `●` | 이 라인을 도입하거나 마지막으로 수정한 커밋 | 항상 (최소 1개) |
+| `original_commit` | `●` | 현재 trace mode가 선택한 커밋 | 항상 (최소 1개) |
 | `cosmetic_commit` | `○` | 포맷만 변경한 커밋 (공백, import 정렬) | AST가 로직 변경 없음을 감지할 때 |
 | `merge_commit` | `◆` | 베이스 브랜치의 병합 커밋 | 병합 기반 워크플로 |
 | `rebased_commit` | `◇` | 원본 커밋의 리베이스된 버전 | 리베이스 워크플로에서 patch-id 매칭 시 |
@@ -204,6 +218,13 @@ interface TraceNode {
 ● Commit a1b2c3d [exact] via blame-CMw
 ▸ PR #42 feat: add authentication
   └─ https://github.com/org/repo/pull/42
+```
+
+**마지막 meaningful change 모드 (`--mode change`):**
+```
+● Commit e4f5a6b [exact] via blame
+▸ PR #55 refactor: update validation logic
+  └─ https://github.com/org/repo/pull/55
 ```
 
 **Squash merge (Level 2):**
@@ -334,7 +355,7 @@ import { trace, graph, health, clearCache, LineLoreError } from '@lumy-pack/line
 
 ### `trace(options): Promise<TraceFullResult>`
 
-코드 라인을 원본 PR로 역추적합니다.
+선택한 mode에 따라 코드 라인을 원본 PR 또는 마지막 변경 PR로 역추적합니다.
 
 **옵션 (`TraceOptions`):**
 
@@ -344,6 +365,7 @@ import { trace, graph, health, clearCache, LineLoreError } from '@lumy-pack/line
 | `line` | `number` | 예 | — | 시작 라인 번호 (1-indexed) |
 | `endLine` | `number` | 아니오 | — | 범위 쿼리의 종료 라인 |
 | `remote` | `string` | 아니오 | `'origin'` | Git 원격 이름 |
+| `mode` | `'origin' \| 'change'` | 아니오 | `'origin'` | `origin`은 `git blame -w -C -C -M` (rename/copy 이력 추적), `change`는 `git blame -w` (공백 무시, copy/move 미추적으로 마지막 meaningful local change를 찾음) |
 | `deep` | `boolean` | 아니오 | `false` | patch-id 스캔 범위 확대(500→2000), merge commit 매칭 후에도 추가 탐색 |
 | `noAst` | `boolean` | 아니오 | `false` | AST 분석 비활성화 |
 | `noCache` | `boolean` | 아니오 | `false` | 캐시 읽기/쓰기 비활성화 |
@@ -389,6 +411,7 @@ const result = await trace({
   file: 'src/config.ts',
   line: 10,
   endLine: 50,
+  mode: 'origin',
   deep: true,    // squash merge를 더 열심히 탐색
   noCache: true, // 신선한 결과를 위해 캐시 건너뛰기
 });
@@ -630,8 +653,9 @@ import type {
 
 | 명령어 | 용도 |
 |--------|------|
-| `npx @lumy-pack/line-lore trace <file>` | 라인을 PR로 역추적 |
+| `npx @lumy-pack/line-lore trace <file>` | 라인을 원본 PR 또는 마지막 변경 PR로 역추적 |
 | `-L, --line <num>` | 시작 라인 (필수) |
+| `--mode <origin\|change>` | content origin과 last meaningful change 중 선택 |
 | `--end-line <num>` | 범위의 종료 라인 |
 | `--deep` | 깊은 역추적 (squash merge) |
 | `--output <format>` | json, llm 또는 human으로 출력 |
