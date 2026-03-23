@@ -23,6 +23,7 @@ export function parsePorcelainOutput(output: string): BlameResult[] {
 
     let commitHash = headerMatch[1];
     const originalLine = parseInt(headerMatch[2], 10);
+    const finalLine = parseInt(headerMatch[3], 10) || 0;
     const isBoundary = commitHash.startsWith('^');
     if (isBoundary) {
       commitHash = commitHash.slice(1).padStart(40, '0');
@@ -75,6 +76,7 @@ export function parsePorcelainOutput(output: string): BlameResult[] {
       authorEmail: cleanEmail,
       date,
       lineContent,
+      finalLine,
       originalFile,
       originalLine: originalFile ? originalLine : undefined,
     });

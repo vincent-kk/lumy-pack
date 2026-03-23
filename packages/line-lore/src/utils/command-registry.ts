@@ -28,7 +28,7 @@ export interface CommandInfo {
 
 export const TRACE_COMMAND: CommandInfo = {
   name: 'trace',
-  description: 'Trace a file line to its originating PR',
+  description: 'Trace a file line to its originating or last-change PR',
   usage: 'line-lore trace <file> [options]',
   arguments: [
     {
@@ -42,6 +42,12 @@ export const TRACE_COMMAND: CommandInfo = {
       flag: '-L, --line <range>',
       description: 'Line number or range (e.g., "42" or "10,50")',
       type: 'string',
+    },
+    {
+      flag: '--mode <mode>',
+      description: 'Trace mode: origin or change',
+      type: 'string',
+      default: 'origin',
     },
     {
       flag: '--deep',

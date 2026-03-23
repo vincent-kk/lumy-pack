@@ -16,8 +16,9 @@ interface CliOutputOptions {
 export function registerTraceCommand(program: Command): void {
   program
     .command('trace <file>')
-    .description('Trace a file line to its originating PR')
+    .description('Trace a file line to its originating or last-change PR')
     .requiredOption('-L, --line <range>', 'Line number or range (e.g., "42" or "10,50")')
+    .option('--mode <mode>', 'Trace mode: change (default) or origin (includes copy/move source)', 'change')
     .option('--deep', 'Enable deep trace for squash PRs')
     .option('--no-ast', 'Disable AST diff analysis')
     .option('--no-cache', 'Disable cache')
@@ -27,6 +28,11 @@ export function registerTraceCommand(program: Command): void {
     .option('--output <format>', 'Output format: human, json, llm', 'human')
     .option('--no-color', 'Disable colored output')
     .action(async (file: string, opts: Record<string, string | boolean>) => {
+      const mode = opts.mode;
+      if (mode !== 'origin' && mode !== 'change') {
+        throw new Error(`Invalid trace mode: ${String(mode)}`);
+      }
+
       const lineStr = opts.line as string;
       const parts = lineStr.split(',');
       const line = parseInt(parts[0], 10);
@@ -36,6 +42,7 @@ export function registerTraceCommand(program: Command): void {
         file,
         line,
         endLine,
+        mode,
         deep: opts.deep as boolean | undefined,
         noAst: opts.ast === false,
         noCache: opts.cache === false,

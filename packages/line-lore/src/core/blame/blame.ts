@@ -2,6 +2,7 @@ import { forEach, map } from '@winglet/common-utils';
 
 import { gitExec } from '../../git/executor.js';
 import type {
+  BlameExecOptions,
   BlameResult,
   BlameStageResult,
   GitExecOptions,
@@ -14,14 +15,16 @@ import { parsePorcelainOutput } from './parsing/index.js';
 export async function executeBlame(
   file: string,
   lineRange: LineRange,
-  options?: GitExecOptions,
+  options?: BlameExecOptions,
 ): Promise<BlameResult[]> {
   const lineSpec = `${lineRange.start},${lineRange.end}`;
 
-  const result = await gitExec(
-    ['blame', '-w', '-C', '-C', '-M', '--porcelain', '-L', lineSpec, file],
-    options,
-  );
+  const args =
+    options?.mode === 'change'
+      ? ['blame', '-w', '--porcelain', '-L', lineSpec, file]
+      : ['blame', '-w', '-C', '-C', '-M', '--porcelain', '-L', lineSpec, file];
+
+  const result = await gitExec(args, options);
 
   return parsePorcelainOutput(result.stdout);
 }

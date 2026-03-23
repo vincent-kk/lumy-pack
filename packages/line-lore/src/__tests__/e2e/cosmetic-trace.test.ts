@@ -133,6 +133,31 @@ describe('E4: Cosmetic commit pass-through', { timeout: 30000 }, () => {
     expect(result.featureFlags.astDiff).toBe(true);
   });
 
+  it('change mode rolls back cosmetic-only blame to the last meaningful change', async () => {
+    repo.commit(
+      { 'src/app.ts': APP_ORIGINAL },
+      'feat: add request handler',
+    );
+    const cosmeticSha = repo.commit(
+      { 'src/app.ts': APP_REFORMATTED },
+      'style: reformat process call',
+    );
+
+    const result = await trace({
+      file: 'src/app.ts',
+      line: 5,
+      mode: 'change',
+    });
+
+    expect(result.nodes.length).toBeGreaterThanOrEqual(2);
+    expect(result.nodes[0].type).toBe('cosmetic_commit');
+    expect(result.nodes[0].trackingMethod).toBe('blame');
+    expect(result.nodes[0].sha).toBe(cosmeticSha);
+    expect(result.nodes.some((n) => n.trackingMethod === 'ast-signature')).toBe(
+      true,
+    );
+  });
+
   it('blame attributes the correct commit SHA to the changed line', async () => {
     const sha1 = repo.commit(
       { 'src/app.ts': APP_ORIGINAL },

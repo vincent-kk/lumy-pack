@@ -1,4 +1,5 @@
 import type { PlatformType } from './platform.js';
+import type { TraceMode } from './trace.js';
 
 export interface GitExecResult {
   stdout: string;
@@ -12,6 +13,11 @@ export interface GitExecOptions {
   allowExitCodes?: number[];
   /** Mutable array for collecting diagnostic warnings throughout the pipeline */
   warnings?: string[];
+}
+
+export interface BlameExecOptions extends GitExecOptions {
+  /** Blame semantics used by trace mode selection */
+  mode?: TraceMode;
 }
 
 export interface RemoteInfo {

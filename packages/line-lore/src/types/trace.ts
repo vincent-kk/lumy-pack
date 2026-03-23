@@ -11,6 +11,8 @@ export interface TraceResult {
   pr: PRInfo | null;
 }
 
+export type TraceMode = 'origin' | 'change';
+
 /**
  * Options for the trace operation (library API).
  */
@@ -33,4 +35,6 @@ export interface TraceOptions {
   noCache?: boolean;
   /** Return cached results only — skip API calls, ancestry traversal, and patch-id scan */
   cacheOnly?: boolean;
+  /** Trace mode. `origin` follows copy/move history, `change` finds the last meaningful local change. */
+  mode?: TraceMode;
 }

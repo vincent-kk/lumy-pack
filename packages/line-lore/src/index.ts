@@ -29,6 +29,7 @@ export type {
   SymbolKind,
   TraceNode,
   TraceNodeType,
+  TraceMode,
   TraceOptions,
   TraceResult,
   TrackingMethod,

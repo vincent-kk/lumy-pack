@@ -12,6 +12,8 @@ export interface BlameResult {
   date: string;
   /** The actual content of the blamed line */
   lineContent: string;
+  /** Final line number in the current file */
+  finalLine: number;
   /** Original filename if the line was moved/renamed */
   originalFile?: string;
   /** Original line number before any moves/renames */

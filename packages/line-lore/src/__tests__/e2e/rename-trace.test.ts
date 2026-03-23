@@ -152,6 +152,63 @@ describe('E5: Function rename detection', { timeout: 30000 }, () => {
     expect([originalSha, renameSha]).toContain(commitNodes[0].sha);
   });
 
+  it('change mode sets trackingMethod to blame (not blame-CMw)', async () => {
+    repo.commit(
+      { 'src/utils.ts': UTILS_ORIGINAL },
+      'feat: add calcTotal',
+    );
+    const renameSha = repo.commit(
+      { 'src/utils.ts': UTILS_RENAMED },
+      'refactor: rename calcTotal to calculateTotal',
+    );
+
+    const result = await trace({
+      file: 'src/utils.ts',
+      line: 1,
+      mode: 'change',
+    });
+
+    expect(result.nodes.length).toBeGreaterThanOrEqual(1);
+    const firstNode = result.nodes[0];
+    expect(firstNode.type).toBe('original_commit');
+    expect(firstNode.trackingMethod).toBe('blame');
+    expect(firstNode.sha).toBe(renameSha);
+  });
+
+  it('change and origin modes use different blame strategies on the same line', async () => {
+    repo.commit(
+      { 'src/utils.ts': UTILS_ORIGINAL },
+      'feat: add calcTotal',
+    );
+    repo.commit(
+      { 'src/utils.ts': UTILS_RENAMED },
+      'refactor: rename calcTotal to calculateTotal',
+    );
+
+    // line 2 (function body) is unchanged across both commits
+    const changeResult = await trace({
+      file: 'src/utils.ts',
+      line: 2,
+      mode: 'change',
+    });
+    const originResult = await trace({
+      file: 'src/utils.ts',
+      line: 2,
+      mode: 'origin',
+    });
+
+    // Both modes return valid results
+    expect(changeResult.nodes.length).toBeGreaterThanOrEqual(1);
+    expect(originResult.nodes.length).toBeGreaterThanOrEqual(1);
+
+    // Key contract: different tracking methods reflect different blame flags
+    expect(changeResult.nodes[0].trackingMethod).toBe('blame');
+    expect(originResult.nodes[0].trackingMethod).toBe('blame-CMw');
+
+    // Both attribute unchanged body to the original commit (no divergence for same-file edits)
+    expect(changeResult.nodes[0].sha).toBe(originResult.nodes[0].sha);
+  });
+
   it('tracing function declaration line (line 1) also returns a commit node', async () => {
     repo.commit({ 'src/utils.ts': UTILS_ORIGINAL }, 'feat: add calcTotal');
     repo.commit(

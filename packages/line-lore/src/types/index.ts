@@ -11,6 +11,7 @@ export type { CacheEntry, CachedPRInfo } from './cache.js';
 export type {
   GitExecResult,
   GitExecOptions,
+  BlameExecOptions,
   RemoteInfo,
   HealthReport,
   CloneStatus,
@@ -38,5 +39,5 @@ export type {
   BlameStageResult,
   AstDiffStageResult,
 } from './stage.js';
-export type { TraceResult, TraceOptions } from './trace.js';
+export type { TraceMode, TraceResult, TraceOptions } from './trace.js';
 export type { LineRange } from './util.js';

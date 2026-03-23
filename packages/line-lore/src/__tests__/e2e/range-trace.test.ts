@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import * as ancestryModule from '@/core/ancestry/index.js';
 import { trace } from '@/core/core.js';
 import { detectPlatformAdapter } from '@/platform/index.js';
 
@@ -44,6 +45,8 @@ function makeConfig(lines: string[]): string {
 describe('E9: Range trace deduplication', { timeout: 30000 }, () => {
   let repo: RepoBuilder;
   let originalCwd: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let findMergeCommitsSpy: any;
 
   beforeEach(async () => {
     repo = await RepoBuilder.create();
@@ -51,6 +54,7 @@ describe('E9: Range trace deduplication', { timeout: 30000 }, () => {
     originalCwd = process.cwd();
     process.chdir(repo.path);
     vi.clearAllMocks();
+    findMergeCommitsSpy = vi.spyOn(ancestryModule, 'findMergeCommits');
   });
 
   afterEach(async () => {
@@ -161,6 +165,10 @@ describe('E9: Range trace deduplication', { timeout: 30000 }, () => {
     // Unique commit SHAs — deduplication removes duplicate blame entries
     const uniqueShas = new Set(commitNodes.map((n) => n.sha));
     expect(uniqueShas.size).toBeGreaterThanOrEqual(2);
+
+    // Verify inflight dedup: findMergeCommits should be called at most once
+    // per unique SHA (2 SHAs), not once per blame line (20 lines).
+    expect(findMergeCommitsSpy).toHaveBeenCalledTimes(uniqueShas.size);
   });
 
   it('range within a single commit produces only one commit node', async () => {

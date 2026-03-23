@@ -21,6 +21,7 @@ import type {
   PlatformAdapter,
   RemoteInfo,
   TraceNode,
+  TraceMode,
   TraceOptions,
 } from '../types/index.js';
 import type { Confidence, TrackingMethod } from '../types/index.js';
@@ -29,7 +30,7 @@ import { parseLineRange } from '../utils/line-range.js';
 import { traceByAst } from './ast-diff/index.js';
 import { analyzeBlameResults, executeBlame } from './blame/index.js';
 import { traverseIssueGraph } from './issue-graph/index.js';
-import type { ResolvedVia } from './pr-lookup/index.js';
+import type { PRLookupResult, ResolvedVia } from './pr-lookup/index.js';
 import { lookupPR } from './pr-lookup/index.js';
 
 export interface TraceFullResult {
@@ -157,9 +158,10 @@ async function runBlameAndAuth(
     options.endLine ? `${options.line},${options.endLine}` : `${options.line}`,
   );
 
-  const blameChain = executeBlame(options.file, lineRange, execOptions).then(
-    (results) => analyzeBlameResults(results, options.file, execOptions),
-  );
+  const blameChain = executeBlame(options.file, lineRange, {
+    ...execOptions,
+    mode: options.mode,
+  }).then((results) => analyzeBlameResults(results, options.file, execOptions));
 
   const [authResult, blameResult] = await Promise.allSettled([
     adapter
@@ -187,6 +189,26 @@ async function runBlameAndAuth(
   return { analyzed: blameResult.value, operatingLevel, warnings };
 }
 
+type InflightPRMap = Map<string, Promise<PRLookupResult | null>>;
+
+function resolveTraceMode(mode?: TraceMode): TraceMode {
+  return mode ?? 'origin';
+}
+
+function deduplicatedLookupPR(
+  sha: string,
+  adapter: PlatformAdapter | null,
+  options: Parameters<typeof lookupPR>[2],
+  inflight: InflightPRMap,
+): Promise<PRLookupResult | null> {
+  const existing = inflight.get(sha);
+  if (existing) return existing;
+  const promise = lookupPR(sha, adapter, options);
+  inflight.set(sha, promise);
+  promise.finally(() => inflight.delete(sha));
+  return promise;
+}
+
 async function processEntry(
   entry: Awaited<ReturnType<typeof analyzeBlameResults>>[number],
   featureFlags: FeatureFlags,
@@ -194,15 +216,17 @@ async function processEntry(
   options: TraceOptions,
   execOptions: GitExecOptions,
   repoId: RepoIdentity,
+  inflightPR: InflightPRMap,
   skipPatchIdScan?: boolean,
   preferredBase?: string,
 ): Promise<TraceNode[]> {
   const nodes: TraceNode[] = [];
+  const traceMode = resolveTraceMode(options.mode);
 
   const commitNode: TraceNode = {
     type: entry.isCosmetic ? 'cosmetic_commit' : 'original_commit',
     sha: entry.blame.commitHash,
-    trackingMethod: 'blame-CMw',
+    trackingMethod: traceMode === 'change' ? 'blame' : 'blame-CMw',
     confidence: 'exact',
     note: entry.cosmeticReason
       ? `Cosmetic change: ${entry.cosmeticReason}`
@@ -229,17 +253,19 @@ async function processEntry(
   }
 
   const targetSha = nodes[nodes.length - 1].sha;
+  const prLookupOptions = {
+    ...execOptions,
+    noCache: options.noCache,
+    cacheOnly: options.cacheOnly,
+    deep: featureFlags.deepTrace,
+    repoId,
+    skipPatchIdScan,
+    preferredBase,
+    platform: adapter?.platform,
+  };
+
   if (targetSha) {
-    const prInfo = await lookupPR(targetSha, adapter, {
-      ...execOptions,
-      noCache: options.noCache,
-      cacheOnly: options.cacheOnly,
-      deep: featureFlags.deepTrace,
-      repoId,
-      skipPatchIdScan,
-      preferredBase,
-      platform: adapter?.platform,
-    });
+    const prInfo = await deduplicatedLookupPR(targetSha, adapter, prLookupOptions, inflightPR);
     if (prInfo) {
       nodes.push({
         type: 'pull_request',
@@ -252,6 +278,7 @@ async function processEntry(
         mergedAt: prInfo.mergedAt,
       });
     }
+
   }
 
   return nodes;
@@ -267,6 +294,10 @@ async function buildTraceNodes(
   skipPatchIdScan?: boolean,
   preferredBase?: string,
 ): Promise<TraceNode[]> {
+  // Inflight dedup: coalesce concurrent lookupPR calls for the same SHA.
+  // If lookupPR dedup is needed elsewhere, lift this pattern into lookupPR itself (see Option C in ADR).
+  const inflightPR: InflightPRMap = new Map();
+
   const results = await Promise.allSettled(
     map(analyzed, (entry) =>
       processEntry(
@@ -276,6 +307,7 @@ async function buildTraceNodes(
         options,
         execOptions,
         repoId,
+        inflightPR,
         skipPatchIdScan,
         preferredBase,
       ),
@@ -288,6 +320,7 @@ async function buildTraceNodes(
 let legacyCacheCleaned = false;
 
 export async function trace(options: TraceOptions): Promise<TraceFullResult> {
+  const mode = resolveTraceMode(options.mode);
   const { file, cwd } = await resolveFileContext(options.file, options.cwd);
   const warnings: string[] = [];
   const execOptions: GitExecOptions = { cwd, warnings };
@@ -312,7 +345,7 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
 
   const blameAuth = await runBlameAndAuth(
     platform.adapter,
-    { ...options, file, cwd },
+    { ...options, mode, file, cwd },
     execOptions,
   );
 
@@ -363,7 +396,7 @@ export async function trace(options: TraceOptions): Promise<TraceFullResult> {
     blameAuth.analyzed,
     featureFlags,
     platform.adapter,
-    { ...options, file, cwd },
+    { ...options, mode, file, cwd },
     execOptions,
     repoId,
     cloneStatus.partialClone || undefined,
