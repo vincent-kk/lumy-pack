@@ -7,6 +7,7 @@ import {
   DEFAULT_ANCESTRY_TIMEOUT,
   extractPRFromMergeMessage,
   findMergeCommit,
+  findMergeCommits,
   verifyMergeIntroducesCommit,
 } from '../ancestry.js';
 import type { AncestryResult } from '../ancestry.js';
@@ -95,6 +96,44 @@ describe('findMergeCommit', () => {
     expect(vi.mocked(gitExec).mock.calls[0][1]).toEqual(
       expect.objectContaining({ timeout: 10_000 }),
     );
+  });
+});
+
+describe('findMergeCommits', () => {
+  beforeEach(() => {
+    mockGitExec.mockReset();
+  });
+
+  it('returns multiple verified candidates with first-parent results ordered first', async () => {
+    const commitSha = 'a'.repeat(40);
+    const fpMerge = 'b'.repeat(40);
+    const fullMerge = 'c'.repeat(40);
+    const parent1 = 'd'.repeat(40);
+    const parent2 = 'e'.repeat(40);
+
+    mockGitExec.mockResolvedValueOnce({
+      stdout: `${fpMerge} ${parent1} ${parent2} Merge pull request #10 from feature\n`,
+      stderr: '',
+      exitCode: 0,
+    });
+    mockGitExec.mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 1 });
+    mockGitExec.mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 });
+
+    mockGitExec.mockResolvedValueOnce({
+      stdout: `${fpMerge} ${parent1} ${parent2} Merge pull request #10 from feature\n${fullMerge} ${parent1} ${parent2} Merge pull request #20 from branch\n`,
+      stderr: '',
+      exitCode: 0,
+    });
+    mockGitExec.mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 1 });
+    mockGitExec.mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 });
+    mockGitExec.mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 1 });
+    mockGitExec.mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 });
+
+    const result = await findMergeCommits(commitSha);
+
+    expect(result).toHaveLength(2);
+    expect(result[0].mergeCommitSha).toBe(fpMerge);
+    expect(result[1].mergeCommitSha).toBe(fullMerge);
   });
 });
 
@@ -213,16 +252,12 @@ describe('extractPRFromMergeMessage', () => {
 
   it('extracts MR from GitLab with nested namespace', () => {
     expect(
-      extractPRFromMergeMessage(
-        'See merge request group/subgroup/project!789',
-      ),
+      extractPRFromMergeMessage('See merge request group/subgroup/project!789'),
     ).toBe(789);
   });
 
   it('extracts MR from GitLab without project path', () => {
-    expect(
-      extractPRFromMergeMessage('See merge request !123'),
-    ).toBe(123);
+    expect(extractPRFromMergeMessage('See merge request !123')).toBe(123);
   });
 
   it('returns null for bare !N on any platform (false positive prevention)', () => {
@@ -232,9 +267,7 @@ describe('extractPRFromMergeMessage', () => {
   });
 
   it('returns null for bare !N even with explicit gitlab platform', () => {
-    expect(
-      extractPRFromMergeMessage('breaking change!5', 'gitlab'),
-    ).toBeNull();
+    expect(extractPRFromMergeMessage('breaking change!5', 'gitlab')).toBeNull();
   });
 });
 
@@ -354,9 +387,7 @@ describe('findMergeCommit — chained failure and warnings', () => {
 
     expect(result).toBeNull();
     expect(warnings).toHaveLength(1);
-    expect(warnings[0]).toMatch(
-      /all 3 merge candidate.*failed verification/,
-    );
+    expect(warnings[0]).toMatch(/all 3 merge candidate.*failed verification/);
   });
 
   it('returns second candidate and emits no warning when first fails but second passes', async () => {

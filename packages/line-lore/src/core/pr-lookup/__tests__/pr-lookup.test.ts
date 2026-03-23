@@ -620,13 +620,60 @@ describe('lookupPR', () => {
       expect(adapter.getPRForCommit).toHaveBeenCalledWith(commitSha, undefined);
     });
 
+    it('deep mode falls through to Strategy 4 when mergeBasedPR has no mergedAt', async () => {
+      const commitSha = 'a'.repeat(40);
+      const mergeSha = 'b'.repeat(40);
+      const parent1 = 'c'.repeat(40);
+      const parent2 = 'd'.repeat(40);
+
+      // Strategy 3: findMergeCommits — first-parent finds merge with PR#99
+      mockGitExec.mockResolvedValueOnce({
+        stdout: `${mergeSha} ${parent1} ${parent2} Merge pull request #99 from feature\n`,
+        stderr: '',
+        exitCode: 0,
+      });
+      // isAncestor(target, firstParent) → not ancestor
+      mockGitExec.mockResolvedValueOnce({
+        stdout: '',
+        stderr: '',
+        exitCode: 1,
+      });
+      // isAncestor(target, secondParent) → is ancestor
+      mockGitExec.mockResolvedValueOnce({
+        stdout: '',
+        stderr: '',
+        exitCode: 0,
+      });
+      // Strategy 3: findMergeCommits — full ancestry path
+      mockGitExec.mockResolvedValueOnce({
+        stdout: '',
+        stderr: '',
+        exitCode: 0,
+      });
+      // Strategy 4: getCommitSubject (deep mode falls through because no mergedAt)
+      mockGitExec.mockResolvedValueOnce({
+        stdout: 'feat: some feature\n',
+        stderr: '',
+        exitCode: 0,
+      });
+
+      // No adapter → mergeBasedPR will lack mergedAt → deep mode should fall through
+      const result = await lookupPR(commitSha, null, { deep: true });
+
+      // Should still resolve to PR#99 from ancestry (returned after Strategy 4 finds nothing better)
+      expect(result).not.toBeNull();
+      expect(result!.number).toBe(99);
+      // Verify Strategy 4 was reached (getCommitSubject called)
+      expect(mockGitExec).toHaveBeenCalledTimes(5);
+    });
+
     it('ancestry finds merge commit directly without needing commit message', async () => {
       const commitSha = 'a'.repeat(40);
       const mergeSha = 'b'.repeat(40);
       const parent1 = 'c'.repeat(40);
       const parent2 = 'd'.repeat(40);
 
-      // Strategy 3: findMergeCommit (first-parent) — finds a merge commit with valid hex SHAs
+      // Strategy 3: findMergeCommits — first-parent path finds a merge commit
       mockGitExec.mockResolvedValueOnce({
         stdout: `${mergeSha} ${parent1} ${parent2} Merge pull request #64 from feature\n`,
         stderr: '',
@@ -644,13 +691,50 @@ describe('lookupPR', () => {
         stderr: '',
         exitCode: 0,
       });
+      // Strategy 3: findMergeCommits — full ancestry path (also searched)
+      mockGitExec.mockResolvedValueOnce({
+        stdout: '',
+        stderr: '',
+        exitCode: 0,
+      });
 
       const result = await lookupPR(commitSha, null);
 
       expect(result).not.toBeNull();
       expect(result!.number).toBe(64);
-      // findMergeCommit(1) + isAncestor(firstParent)(1) + isAncestor(secondParent)(1) = 3
-      expect(mockGitExec).toHaveBeenCalledTimes(3);
+      // findMergeCommits: first-parent(1) + isAncestor(2) + full-ancestry(1) = 4
+      expect(mockGitExec).toHaveBeenCalledTimes(4);
+    });
+
+    it('tries later ancestry candidates when the first merge candidate has no PR', async () => {
+      const commitSha = 'a'.repeat(40);
+      const mergeWithoutPr = 'b'.repeat(40);
+      const mergeWithPr = 'c'.repeat(40);
+      const parent1 = 'd'.repeat(40);
+      const parent2 = 'e'.repeat(40);
+
+      mockGitExec.mockResolvedValueOnce({
+        stdout: `${mergeWithoutPr} ${parent1} ${parent2} Merge dev into main\n`,
+        stderr: '',
+        exitCode: 0,
+      });
+      mockGitExec.mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 1 });
+      mockGitExec.mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 });
+
+      mockGitExec.mockResolvedValueOnce({
+        stdout: `${mergeWithoutPr} ${parent1} ${parent2} Merge dev into main\n${mergeWithPr} ${parent1} ${parent2} Merge pull request #64 from feature\n`,
+        stderr: '',
+        exitCode: 0,
+      });
+      mockGitExec.mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 1 });
+      mockGitExec.mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 });
+      mockGitExec.mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 1 });
+      mockGitExec.mockResolvedValueOnce({ stdout: '', stderr: '', exitCode: 0 });
+
+      const result = await lookupPR(commitSha, null);
+
+      expect(result).not.toBeNull();
+      expect(result!.number).toBe(64);
     });
   });
 });

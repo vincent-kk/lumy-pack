@@ -9,11 +9,12 @@
 | 경로 | 역할 |
 |------|------|
 | `index.ts` | 배럴 익스포트 |
-| `ancestry.ts` | `findMergeCommit()`, `verifyMergeIntroducesCommit()`, `getCommitSubject()`, `extractPRFromMergeMessage()` |
+| `ancestry.ts` | `findMergeCommits()` (bounded multi-candidate), `findMergeCommit()` (**deprecated**), `verifyMergeIntroducesCommit()`, `getCommitSubject()`, `extractPRFromMergeMessage()` |
 
 ## Conventions
 
 - 지정된 ref(기본 HEAD)에서 머지 커밋 검색
+- `findMergeCommits()`는 first-parent 우선, full ancestry 보조 순서로 검증된 후보를 제한 개수만큼 반환
 - `verifyMergeIntroducesCommit` dual condition + fail-skip 정책으로 후보 머지 커밋 검증
 - `getCommitSubject`로 개별 커밋의 subject 조회 (squash merge 감지용)
 - `extractPRFromMergeMessage(subject, platform?)` — platform-aware 패턴 매칭으로 교차 플랫폼 오탐 방지

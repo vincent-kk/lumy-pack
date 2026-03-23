@@ -8,7 +8,7 @@ import type {
 } from '../../types/index.js';
 import {
   extractPRFromMergeMessage,
-  findMergeCommit,
+  findMergeCommits,
   getCommitSubject,
 } from '../ancestry/index.js';
 import { findPatchIdMatch } from '../patch-id/index.js';
@@ -132,20 +132,29 @@ export async function lookupPR(
     }
   }
 
-  // Strategy 3: Ancestry-path + merge message parsing (structural proof)
-  // Runs before commit message parsing — ancestry provides structural verification
-  // while message parsing is heuristic (could match issue numbers as PR numbers).
+  // Strategy 3: Ancestry-path + multi-candidate search with API fallback
+  // Searches both first-parent and full ancestry paths for merge commits.
+  // For each candidate: try message extraction first, then API fallback.
+  // This handles bulk merges (non-standard messages) and nested merges (feature→dev→main).
   let mergeBasedPR: PRLookupResult | null = null;
-  const mergeResult = await findMergeCommit(commitSha, options);
-  if (mergeResult) {
+  const mergeCandidates = await findMergeCommits(commitSha, options);
+  // Track whether ancestry found merge commits (regardless of PR result).
+  // When true, skip expensive Strategy 5 (patch-id scan) — the commit
+  // reached HEAD through a verified merge path, so patch-id is unlikely
+  // to discover anything new.
+  const hasAncestryMerges = mergeCandidates.length > 0;
+
+  for (const candidate of mergeCandidates) {
+    // 3a: Extract PR number from merge commit message
     const prNumber = extractPRFromMergeMessage(
-      mergeResult.subject,
+      candidate.subject,
       options?.platform,
     );
+
     if (prNumber) {
       if (adapter) {
         const prInfo = await adapter.getPRForCommit(
-          mergeResult.mergeCommitSha,
+          candidate.mergeCommitSha,
           prSelectOptions,
         );
         if (prInfo?.mergedAt) {
@@ -156,25 +165,36 @@ export async function lookupPR(
       if (!mergeBasedPR) {
         mergeBasedPR = {
           number: prNumber,
-          title: mergeResult.subject,
+          title: candidate.subject,
           author: '',
           url: '',
-          mergeCommit: mergeResult.mergeCommitSha,
+          mergeCommit: candidate.mergeCommitSha,
           baseBranch: '',
           resolvedVia: 'ancestry',
         };
       }
+      break; // PR number found in message — use this candidate
+    }
 
-      if (!options?.deep || mergeBasedPR.mergedAt) {
-        await cache.set(commitSha, toCachedPR(mergeBasedPR));
-        return mergeBasedPR;
+    // 3b: API fallback — merge commit found but message has no PR number
+    // Handles bulk merges created via PR but with non-standard messages
+    if (adapter) {
+      const mergeCommitPR = await adapter.getPRForCommit(
+        candidate.mergeCommitSha,
+        prSelectOptions,
+      );
+      if (mergeCommitPR?.mergedAt) {
+        mergeBasedPR = { ...mergeCommitPR, resolvedVia: 'ancestry' };
+        break;
       }
     }
   }
 
   if (mergeBasedPR) {
-    await cache.set(commitSha, toCachedPR(mergeBasedPR));
-    return mergeBasedPR;
+    if (!options?.deep || mergeBasedPR.mergedAt) {
+      await cache.set(commitSha, toCachedPR(mergeBasedPR));
+      return mergeBasedPR;
+    }
   }
 
   // Strategy 4: Blame commit message parsing (heuristic — squash merge detection)
@@ -202,8 +222,15 @@ export async function lookupPR(
   }
 
   // Strategy 5: Patch-ID matching (expensive — streams full log through patch-id)
-  // Skip on partial clone environments (blob download risk) or max recursion depth reached
-  if (!options?.skipPatchIdScan && _recursionDepth < MAX_RECURSION_DEPTH) {
+  // Skip when: partial clone, max recursion depth, or ancestry found merge commits
+  // but none had PRs (the commit reached HEAD through a verified no-PR merge path,
+  // so patch-id scanning is unlikely to discover anything new).
+  // In deep mode, always attempt patch-id for maximum coverage.
+  if (
+    !options?.skipPatchIdScan &&
+    _recursionDepth < MAX_RECURSION_DEPTH &&
+    (!hasAncestryMerges || options?.deep)
+  ) {
     const patchIdMatch = await findPatchIdMatch(commitSha, {
       ...options,
       scanDepth: options?.deep ? DEEP_SCAN_DEPTH : undefined,
@@ -220,6 +247,13 @@ export async function lookupPR(
         return result;
       }
     }
+  }
+
+  // Deep mode fallback: if ancestry found a PR but we fell through to
+  // search for a better result (with mergedAt), return the ancestry result.
+  if (mergeBasedPR) {
+    await cache.set(commitSha, toCachedPR(mergeBasedPR));
+    return mergeBasedPR;
   }
 
   return null;

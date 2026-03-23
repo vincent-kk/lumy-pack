@@ -551,6 +551,345 @@ describe('False Positive Scenarios', { timeout: 60000 }, () => {
     expect(prNode!.confidence).toBe('heuristic');
   });
 
+  it('FP-15: bulk merge API fallback — merge commit with no PR number in message but PR via API', async () => {
+    /**
+     * Git graph:
+     *
+     * main:     A---B-----------M(bulk merge "Merge dev into main for v1.0")
+     *                \         /
+     * dev:            C---D---E
+     *
+     * M is a bulk merge of dev into main. Its message does NOT contain a PR number.
+     * However, the merge commit M itself is associated with a PR via GitHub API.
+     * Blame target: content from D (line 2 of src/app.ts).
+     * Expected: PR#30 (found via API fallback on merge commit SHA).
+     */
+
+    // A: initial commit on main
+    repo.commit(
+      { 'src/app.ts': 'export const base = 1;\n' },
+      'chore: initial commit',
+    );
+
+    // B: another commit on main
+    repo.commit(
+      { 'src/config.ts': 'export const config = {};\n' },
+      'chore: add config',
+    );
+
+    // Create dev branch
+    repo.branch('dev');
+
+    // C: dev commit
+    repo.commit(
+      { 'src/utils.ts': 'export function util() { return 1; }\n' },
+      'feat: add util',
+    );
+
+    // D: dev commit (blame target — adds line 2)
+    repo.commit(
+      {
+        'src/app.ts':
+          'export const base = 1;\nexport function devWork() { return true; }\n',
+      },
+      'feat: add devWork',
+    );
+
+    // E: more dev work
+    repo.commit(
+      { 'src/utils.ts': 'export function util() { return 2; }\n' },
+      'feat: update util',
+    );
+
+    // M: merge dev into main (bulk merge — no PR number in message)
+    repo.checkout('main');
+    const mergeCommit = repo.merge(
+      'dev',
+      'Merge dev into main for v1.0 release',
+    );
+
+    // Level 2 adapter: API associates the merge commit with PR#30
+    const prInfo = createPRInfo({
+      number: 30,
+      mergeCommit,
+      title: 'Merge dev into main for v1.0 release',
+      baseBranch: 'main',
+    });
+    const prMap = new Map<string, ReturnType<typeof createPRInfo>>();
+    prMap.set(mergeCommit, prInfo);
+    const adapter = createMockPlatformAdapter({ prMap });
+
+    mockDetectPlatform.mockResolvedValue({
+      adapter,
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
+    });
+
+    const result = await trace({ file: 'src/app.ts', line: 2 });
+
+    expect(result.operatingLevel).toBe(2);
+    const prNode = result.nodes.find((n) => n.type === 'pull_request');
+    expect(prNode).toBeDefined();
+    // Found via API fallback on the merge commit SHA (message had no PR number)
+    expect(prNode!.prNumber).toBe(30);
+  });
+
+  it('FP-16: nested merge — full ancestry finds feature→dev PR behind bulk merge', async () => {
+    /**
+     * Git graph:
+     *
+     * main:          A---B-----------M_bulk(Merge dev into main)
+     *                     \         /
+     * dev:                 C---M_feat(PR#50)---D
+     *                           /
+     * feature:          E---F--/
+     *
+     * M_bulk is a bulk merge (no PR number in message).
+     * M_feat is a feature→dev merge (with PR#50 in message).
+     * Blame target: content from F (line 2 of src/lib.ts).
+     * Expected: PR#50 (found via full ancestry — feature→dev merge message).
+     */
+
+    // A: initial on main
+    repo.commit(
+      { 'src/lib.ts': 'export const x = 1;\n' },
+      'chore: initial commit',
+    );
+
+    // B: more main work
+    repo.commit(
+      { 'src/other.ts': 'export const other = 1;\n' },
+      'chore: add other',
+    );
+
+    // Create dev branch from main
+    repo.branch('dev');
+
+    // C: dev commit
+    repo.commit(
+      { 'src/dev-stuff.ts': 'export const dev = true;\n' },
+      'chore: dev work',
+    );
+
+    // Create feature branch from dev
+    repo.branch('feature/add-lib');
+
+    // E: feature commit
+    repo.commit(
+      { 'src/helper.ts': 'export function helper() { return 1; }\n' },
+      'feat: add helper',
+    );
+
+    // F: feature commit (blame target — adds line 2)
+    repo.commit(
+      {
+        'src/lib.ts':
+          'export const x = 1;\nexport function featureLib() { return true; }\n',
+      },
+      'feat: add featureLib',
+    );
+
+    // Merge feature into dev (PR#50)
+    repo.checkout('dev');
+    repo.merge(
+      'feature/add-lib',
+      'Merge pull request #50 from feature/add-lib',
+    );
+
+    // D: more dev work after feature merge
+    repo.commit(
+      { 'src/dev-stuff.ts': 'export const dev = 2;\n' },
+      'chore: update dev stuff',
+    );
+
+    // Bulk merge dev into main (no PR number in message)
+    repo.checkout('main');
+    repo.merge('dev', 'Merge dev into main for release');
+
+    // Level 1 (unauthenticated) — relies on ancestry-path + message parsing
+    const adapter = createUnauthenticatedAdapter();
+    mockDetectPlatform.mockResolvedValue({
+      adapter,
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
+    });
+
+    const result = await trace({ file: 'src/lib.ts', line: 2 });
+
+    const prNode = result.nodes.find((n) => n.type === 'pull_request');
+    expect(prNode).toBeDefined();
+    // Found via full ancestry: feature→dev merge has "Merge pull request #50"
+    expect(prNode!.prNumber).toBe(50);
+  });
+
+  it('FP-17: custom merge message — API fallback resolves PR for non-standard message', async () => {
+    /**
+     * Git graph:
+     *
+     * main:     A---M("Release v2.0 — merge feature-x")
+     *                \  /
+     * feature-x:      B---C
+     *
+     * M has a non-standard merge message without PR number.
+     * API links M's SHA to PR#42.
+     * Blame target: content from B (line 2 of src/app.ts).
+     * Expected: PR#42 via API fallback.
+     */
+
+    // A: initial
+    repo.commit(
+      { 'src/app.ts': 'export const base = 1;\n' },
+      'chore: initial commit',
+    );
+
+    // feature-x branch
+    repo.branch('feature-x');
+
+    // B: feature commit (blame target — adds line 2)
+    repo.commit(
+      {
+        'src/app.ts':
+          'export const base = 1;\nexport function featureX() { return true; }\n',
+      },
+      'feat: add featureX',
+    );
+
+    // C: more feature work
+    repo.commit(
+      { 'src/fx-util.ts': 'export const fxUtil = 1;\n' },
+      'feat: add fx util',
+    );
+
+    // M: merge with non-standard message (no PR number)
+    repo.checkout('main');
+    const mergeCommit = repo.merge(
+      'feature-x',
+      'Release v2.0 — merge feature-x',
+    );
+
+    // Level 2 adapter: API links merge commit to PR#42
+    const prInfo = createPRInfo({
+      number: 42,
+      mergeCommit,
+      title: 'feat: feature-x implementation',
+      baseBranch: 'main',
+    });
+    const prMap = new Map<string, ReturnType<typeof createPRInfo>>();
+    prMap.set(mergeCommit, prInfo);
+    const adapter = createMockPlatformAdapter({ prMap });
+
+    mockDetectPlatform.mockResolvedValue({
+      adapter,
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
+    });
+
+    const result = await trace({ file: 'src/app.ts', line: 2 });
+
+    expect(result.operatingLevel).toBe(2);
+    const prNode = result.nodes.find((n) => n.type === 'pull_request');
+    expect(prNode).toBeDefined();
+    // Found via API fallback on merge commit (message had no PR number)
+    expect(prNode!.prNumber).toBe(42);
+  });
+
+  it('FP-18: multi-hop merge — feature→staging→main finds most direct PR', async () => {
+    /**
+     * Git graph:
+     *
+     * main:          A-----------M_main(Merge staging into main)
+     *                 \         /
+     * staging:         B---M_stg(PR#20)---C
+     *                       /
+     * feature:         D---E
+     *
+     * M_main has no PR number in message. M_stg merges feature into staging (PR#20).
+     * Blame target: content from E (line 2 of src/app.ts).
+     * Expected: PR#20 (the most direct PR that introduced this code).
+     */
+
+    // A: initial on main
+    repo.commit(
+      { 'src/app.ts': 'export const base = 1;\n' },
+      'chore: initial commit',
+    );
+
+    // Create staging branch
+    repo.branch('staging');
+
+    // B: staging work
+    repo.commit(
+      { 'src/staging.ts': 'export const staging = true;\n' },
+      'chore: staging setup',
+    );
+
+    // Create feature branch from staging
+    repo.branch('feature/multi-hop');
+
+    // D: feature commit
+    repo.commit(
+      { 'src/helper.ts': 'export function mhHelper() { return 1; }\n' },
+      'feat: add multi-hop helper',
+    );
+
+    // E: feature commit (blame target — adds line 2)
+    repo.commit(
+      {
+        'src/app.ts':
+          'export const base = 1;\nexport function multiHop() { return true; }\n',
+      },
+      'feat: add multiHop',
+    );
+
+    // Merge feature into staging (PR#20)
+    repo.checkout('staging');
+    repo.merge(
+      'feature/multi-hop',
+      'Merge pull request #20 from feature/multi-hop',
+    );
+
+    // C: more staging work
+    repo.commit(
+      { 'src/staging.ts': 'export const staging = 2;\n' },
+      'chore: update staging',
+    );
+
+    // Merge staging into main (no PR number)
+    repo.checkout('main');
+    repo.merge('staging', 'Merge staging into main for release');
+
+    // Level 1 (unauthenticated)
+    const adapter = createUnauthenticatedAdapter();
+    mockDetectPlatform.mockResolvedValue({
+      adapter,
+      remote: {
+        platform: 'github',
+        host: 'github.com',
+        owner: 'test',
+        repo: 'repo',
+      },
+    });
+
+    const result = await trace({ file: 'src/app.ts', line: 2 });
+
+    const prNode = result.nodes.find((n) => n.type === 'pull_request');
+    expect(prNode).toBeDefined();
+    // Found via full ancestry: feature→staging merge has PR#20
+    expect(prNode!.prNumber).toBe(20);
+  });
+
   it('FP-6: API umbrella PR — oldest PR selected, not default branch PR', async () => {
     /**
      * When API returns multiple PRs for a commit:

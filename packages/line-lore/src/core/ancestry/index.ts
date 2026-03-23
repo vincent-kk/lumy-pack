@@ -1,6 +1,7 @@
 export {
   extractPRFromMergeMessage,
   findMergeCommit,
+  findMergeCommits,
   getCommitSubject,
   verifyMergeIntroducesCommit,
 } from './ancestry.js';

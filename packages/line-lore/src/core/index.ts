@@ -19,6 +19,7 @@ export {
 export {
   extractPRFromMergeMessage,
   findMergeCommit,
+  findMergeCommits,
 } from './ancestry/index.js';
 export type { AncestryResult } from './ancestry/index.js';
 

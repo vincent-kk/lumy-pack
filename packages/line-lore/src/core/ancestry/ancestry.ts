@@ -12,6 +12,11 @@ export interface AncestryResult {
 export const DEFAULT_ANCESTRY_TIMEOUT = 30_000;
 const MAX_CANDIDATES = 10;
 
+/**
+ * @deprecated Use {@link findMergeCommits} (plural) instead.
+ * Returns only the first verified merge commit. The plural version returns
+ * multiple candidates from both first-parent and full ancestry paths.
+ */
 export async function findMergeCommit(
   commitSha: string,
   options?: GitExecOptions & { ref?: string },
@@ -21,13 +26,13 @@ export async function findMergeCommit(
   const startTime = Date.now();
 
   // Try first-parent first — avoids base-update merges (main→feature direction)
-  const firstParentResult = await findMergeCommitWithArgs(
+  const firstParentResults = await findMergeCommitsWithArgs(
     commitSha,
     ref,
     ['--first-parent'],
     { ...options, timeout: budget },
   );
-  if (firstParentResult) return firstParentResult;
+  if (firstParentResults.length > 0) return firstParentResults[0];
 
   // Calculate remaining budget for fallback
   const elapsed = Date.now() - startTime;
@@ -35,10 +40,11 @@ export async function findMergeCommit(
   if (remaining <= 0) return null;
 
   // Fallback: full ancestry-path without first-parent restriction
-  return findMergeCommitWithArgs(commitSha, ref, [], {
+  const fallbackResults = await findMergeCommitsWithArgs(commitSha, ref, [], {
     ...options,
     timeout: remaining,
   });
+  return fallbackResults[0] ?? null;
 }
 
 /**
@@ -99,12 +105,12 @@ async function isAncestor(
   }
 }
 
-async function findMergeCommitWithArgs(
+async function findMergeCommitsWithArgs(
   commitSha: string,
   ref: string,
   extraArgs: string[],
   options?: GitExecOptions,
-): Promise<AncestryResult | null> {
+): Promise<AncestryResult[]> {
   try {
     const result = await gitExec(
       [
@@ -121,33 +127,33 @@ async function findMergeCommitWithArgs(
     );
 
     const lines = filter(result.stdout.trim().split('\n'), isTruthy);
-    if (lines.length === 0) return null;
+    if (lines.length === 0) return [];
 
-    // Iterate candidates and verify each one introduces the target commit
+    const verifiedCandidates: AncestryResult[] = [];
     const candidateCount = Math.min(lines.length, MAX_CANDIDATES);
-    let verifiedCount = 0;
+    let attemptedCount = 0;
     for (let i = 0; i < candidateCount; i++) {
       const candidate = parseMergeLogLine(lines[i]);
       if (!candidate) continue;
-      verifiedCount++;
+      attemptedCount++;
 
       const verified = await verifyMergeIntroducesCommit(
         commitSha,
         candidate,
         options,
       );
-      if (verified) return candidate;
+      if (verified) verifiedCandidates.push(candidate);
     }
 
-    if (verifiedCount > 0 && options?.warnings) {
+    if (attemptedCount > 0 && verifiedCandidates.length === 0 && options?.warnings) {
       options.warnings.push(
-        `ancestry: all ${verifiedCount} merge candidate(s) failed verification for ${commitSha.slice(0, 8)}`,
+        `ancestry: all ${attemptedCount} merge candidate(s) failed verification for ${commitSha.slice(0, 8)}`,
       );
     }
 
-    return null;
+    return verifiedCandidates;
   } catch {
-    return null;
+    return [];
   }
 }
 
@@ -170,6 +176,59 @@ function parseMergeLogLine(line: string): AncestryResult | null {
 
   const subject = parts.slice(subjectStart).join(' ');
   return { mergeCommitSha, parentShas, subject };
+}
+
+/**
+ * Multi-candidate merge commit search.
+ * Returns up to MAX_CANDIDATES verified merge commits from both first-parent
+ * and full ancestry paths, deduplicated by mergeCommitSha and ordered with
+ * first-parent results first.
+ *
+ * Unlike `findMergeCommit` (singular) which returns only the first verified candidate,
+ * this function enables callers to iterate through multiple candidates when the
+ * first one doesn't yield a PR (e.g., bulk merge with non-standard message).
+ */
+export async function findMergeCommits(
+  commitSha: string,
+  options?: GitExecOptions & { ref?: string },
+): Promise<AncestryResult[]> {
+  const ref = options?.ref ?? 'HEAD';
+  const budget = options?.timeout ?? DEFAULT_ANCESTRY_TIMEOUT;
+  const startTime = Date.now();
+
+  const results: AncestryResult[] = [];
+  const seen = new Set<string>();
+
+  const pushUnique = (candidates: AncestryResult[]) => {
+    for (const candidate of candidates) {
+      if (seen.has(candidate.mergeCommitSha)) continue;
+      seen.add(candidate.mergeCommitSha);
+      results.push(candidate);
+      if (results.length >= MAX_CANDIDATES) break;
+    }
+  };
+
+  // Phase 1: first-parent merge commits (main-line merges)
+  const firstParent = await findMergeCommitsWithArgs(
+    commitSha,
+    ref,
+    ['--first-parent'],
+    { ...options, timeout: budget },
+  );
+  pushUnique(firstParent);
+
+  // Phase 2: full ancestry merge commits (may find feature→dev merges)
+  const elapsed = Date.now() - startTime;
+  const remaining = budget - elapsed;
+  if (remaining > 0 && results.length < MAX_CANDIDATES) {
+    const full = await findMergeCommitsWithArgs(commitSha, ref, [], {
+      ...options,
+      timeout: remaining,
+    });
+    pushUnique(full);
+  }
+
+  return results;
 }
 
 /** Retrieve the subject line of a single commit. Returns null on git failure. */
