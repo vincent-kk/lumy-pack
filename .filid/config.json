@@ -1,5 +1,6 @@
 {
   "version": "1.0",
+  "language": "ko",
   "rules": {
     "naming-convention": {
       "enabled": true,
