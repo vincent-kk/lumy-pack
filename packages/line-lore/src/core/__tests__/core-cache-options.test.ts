@@ -177,6 +177,9 @@ describe('trace() — noCache option', () => {
 
     // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
     mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
+    // Call 1: git blame (origin)
+    mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
+    // Call 2: git blame (change: dual-blame cross-validation)
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
@@ -211,6 +214,9 @@ describe('trace() — noCache option', () => {
 
     // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
     mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
+    // Call 1: git blame (origin)
+    mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
+    // Call 2: git blame (change: dual-blame cross-validation)
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),

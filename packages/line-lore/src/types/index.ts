@@ -6,7 +6,7 @@ export type {
   ComparisonResult,
   AstTraceResult,
 } from './ast.js';
-export type { BlameResult, CommitInfo } from './blame.js';
+export type { BlameResult, CommitInfo, DualBlameResult } from './blame.js';
 export type { CacheEntry, CachedPRInfo } from './cache.js';
 export type {
   GitExecResult,

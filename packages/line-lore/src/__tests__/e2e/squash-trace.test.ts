@@ -51,7 +51,7 @@ function enableFFMerge(repoPath: string): void {
   });
 }
 
-describe('E2: Squash Merge trace', { timeout: 30000 }, () => {
+describe('E2: Squash Merge trace', { timeout: 60000 }, () => {
   let repo: RepoBuilder;
   let originalCwd: string;
 

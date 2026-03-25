@@ -21,6 +21,17 @@ export interface BlameResult {
 }
 
 /**
+ * Result of running dual blame (origin + change) in parallel.
+ * Used by origin mode to cross-validate blame results.
+ */
+export interface DualBlameResult {
+  /** Primary blame results for the requested mode */
+  blame: BlameResult[];
+  /** Change-mode blame for cross-validation (populated only in origin mode) */
+  changeBlame: BlameResult[];
+}
+
+/**
  * Basic commit information from git log.
  */
 export interface CommitInfo {

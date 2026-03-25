@@ -160,25 +160,27 @@ describe('trace() — pipeline orchestrator integration', () => {
 
     // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
     mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
-    // Call 1: git blame
+    // Call 1: git blame (origin: -C -C -M)
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
-    // Call 2: getCosmeticDiff — non-cosmetic diff
+    // Call 2: git blame (change: dual-blame cross-validation)
+    mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
+    // Call 3: getCosmeticDiff — non-cosmetic diff
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 2;\n`),
     );
-    // Call 3: branch detection (rev-parse --abbrev-ref HEAD)
+    // Call 4: branch detection (rev-parse --abbrev-ref HEAD)
     mockGitExec.mockResolvedValueOnce(gitOk('main'));
-    // Call 4: git log --merges --ancestry-path (findMergeCommit)
+    // Call 5: git log --merges --ancestry-path (findMergeCommit)
     mockGitExec.mockResolvedValueOnce(
       gitOk(
         `${MERGE_SHA} ${PARENT1} ${PARENT2} Merge pull request #42 from feature/my-feature\n`,
       ),
     );
-    // Call 5: isAncestor(target, firstParent) → not ancestor (exit code 1)
+    // Call 6: isAncestor(target, firstParent) → not ancestor (exit code 1)
     mockGitExec.mockResolvedValueOnce(
       Promise.resolve({ stdout: '', stderr: '', exitCode: 1 }),
     );
-    // Call 6: isAncestor(target, secondParent) → is ancestor (exit code 0)
+    // Call 7: isAncestor(target, secondParent) → is ancestor (exit code 0)
     mockGitExec.mockResolvedValueOnce(
       Promise.resolve({ stdout: '', stderr: '', exitCode: 0 }),
     );
@@ -209,15 +211,19 @@ describe('trace() — pipeline orchestrator integration', () => {
 
     // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
     mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
-    // Call 1: git blame
+    // Call 1: git blame (origin: -C -C -M)
     mockGitExec.mockResolvedValueOnce(
       gitOk(buildBlamePorcelain(COMMIT_SHA, '  const x = 1;  ')),
     );
-    // Call 2: getCosmeticDiff — whitespace-only diff (same tokens, different spacing)
+    // Call 2: git blame (change: dual-blame cross-validation)
+    mockGitExec.mockResolvedValueOnce(
+      gitOk(buildBlamePorcelain(COMMIT_SHA, '  const x = 1;  ')),
+    );
+    // Call 3: getCosmeticDiff — whitespace-only diff (same tokens, different spacing)
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+  const x = 1;  \n`),
     );
-    // Call 3: findMergeCommit → no merge
+    // Call 4: findMergeCommit → no merge
     mockGitExec.mockResolvedValueOnce(gitEmpty());
 
     const result = await trace({ file: 'src/foo.ts', line: 1 });
@@ -251,13 +257,15 @@ describe('trace() — pipeline orchestrator integration', () => {
 
     // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
     mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
-    // Call 1: git blame
+    // Call 1: git blame (origin: -C -C -M)
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
-    // Call 2: getCosmeticDiff — non-cosmetic
+    // Call 2: git blame (change: dual-blame cross-validation)
+    mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
+    // Call 3: getCosmeticDiff — non-cosmetic
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const x = 42;\n`),
     );
-    // Call 3: findMergeCommit → empty (no ancestry path)
+    // Call 4: findMergeCommit → empty (no ancestry path)
     mockGitExec.mockResolvedValueOnce(gitEmpty());
     // execa mock already rejects (patch-id fails) — adapter.getPRForCommit will be used
 
@@ -278,13 +286,15 @@ describe('trace() — pipeline orchestrator integration', () => {
       new Error('No GitHub CLI found'),
     );
 
-    // Call 1: git blame
+    // Call 1: git blame (origin: -C -C -M)
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
-    // Call 2: getCosmeticDiff
+    // Call 2: git blame (change: dual-blame cross-validation)
+    mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
+    // Call 3: getCosmeticDiff
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+const y = 1;\n`),
     );
-    // Call 3: findMergeCommit → empty
+    // Call 4: findMergeCommit → empty
     mockGitExec.mockResolvedValueOnce(gitEmpty());
 
     const result = await trace({ file: 'src/foo.ts', line: 1 });
@@ -313,9 +323,11 @@ describe('trace() — pipeline orchestrator integration', () => {
       buildBlamePorcelain(SHA_B, 'line three'),
     ].join('\n');
 
-    // Call 1: git blame
+    // Call 1: git blame (origin: -C -C -M)
     mockGitExec.mockResolvedValueOnce(gitOk(blameOutput));
-    // Call 2+3: getCosmeticDiff for SHA_A and SHA_B (unique only)
+    // Call 2: git blame (change: dual-blame cross-validation)
+    mockGitExec.mockResolvedValueOnce(gitOk(blameOutput));
+    // Call 3+: getCosmeticDiff for SHA_A and SHA_B, branch detection, findMergeCommit, etc.
     mockGitExec.mockResolvedValue(gitEmpty());
 
     const result = await trace({ file: 'src/foo.ts', line: 1, endLine: 3 });
@@ -344,15 +356,19 @@ describe('trace() — pipeline orchestrator integration', () => {
 
     // Call 0: resolveRepoIdentity (rev-parse --show-toplevel)
     mockGitExec.mockResolvedValueOnce(gitOk('/repo'));
-    // Call 1: git blame
+    // Call 1: git blame (origin: -C -C -M)
     mockGitExec.mockResolvedValueOnce(
       gitOk(buildBlamePorcelain(COMMIT_SHA, '  const x = 1;  ')),
     );
-    // Call 2: getCosmeticDiff — whitespace only
+    // Call 2: git blame (change: dual-blame cross-validation)
+    mockGitExec.mockResolvedValueOnce(
+      gitOk(buildBlamePorcelain(COMMIT_SHA, '  const x = 1;  ')),
+    );
+    // Call 3: getCosmeticDiff — whitespace only
     mockGitExec.mockResolvedValueOnce(
       gitOk(`@@ -1,1 +1,1 @@\n-const x = 1;\n+  const x = 1;  \n`),
     );
-    // Call 3: findMergeCommit → empty
+    // Call 4: findMergeCommit → empty
     mockGitExec.mockResolvedValueOnce(gitEmpty());
 
     const result = await trace({ file: 'src/foo.ts', line: 1, noAst: true });
@@ -376,6 +392,7 @@ describe('trace() — pipeline orchestrator integration', () => {
     mockDetectPlatformAdapter.mockResolvedValue({ adapter });
 
     mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA)));
+    mockGitExec.mockResolvedValueOnce(gitOk(buildBlamePorcelain(COMMIT_SHA))); // change blame
     mockGitExec.mockResolvedValueOnce(gitEmpty()); // getCosmeticDiff
     mockGitExec.mockResolvedValueOnce(gitEmpty()); // findMergeCommit
 

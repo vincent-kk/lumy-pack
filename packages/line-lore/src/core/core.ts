@@ -28,7 +28,7 @@ import type { Confidence, TrackingMethod } from '../types/index.js';
 import { parseLineRange } from '../utils/line-range.js';
 
 import { traceByAst } from './ast-diff/index.js';
-import { analyzeBlameResults, executeBlame } from './blame/index.js';
+import { analyzeBlameResults, executeDualBlame } from './blame/index.js';
 import { traverseIssueGraph } from './issue-graph/index.js';
 import type { PRLookupResult, ResolvedVia } from './pr-lookup/index.js';
 import { lookupPR } from './pr-lookup/index.js';
@@ -158,10 +158,12 @@ async function runBlameAndAuth(
     options.endLine ? `${options.line},${options.endLine}` : `${options.line}`,
   );
 
-  const blameChain = executeBlame(options.file, lineRange, {
+  const blameChain = executeDualBlame(options.file, lineRange, {
     ...execOptions,
     mode: options.mode,
-  }).then((results) => analyzeBlameResults(results, options.file, execOptions));
+  }).then(({ blame, changeBlame }) =>
+    analyzeBlameResults(blame, options.file, execOptions, changeBlame.length > 0 ? changeBlame : undefined),
+  );
 
   const [authResult, blameResult] = await Promise.allSettled([
     adapter
@@ -226,7 +228,10 @@ async function processEntry(
   const commitNode: TraceNode = {
     type: entry.isCosmetic ? 'cosmetic_commit' : 'original_commit',
     sha: entry.blame.commitHash,
-    trackingMethod: traceMode === 'change' ? 'blame' : 'blame-CMw',
+    trackingMethod:
+      traceMode === 'change' || entry.usedChangeFallback
+        ? 'blame'
+        : 'blame-CMw',
     confidence: 'exact',
     note: entry.cosmeticReason
       ? `Cosmetic change: ${entry.cosmeticReason}`

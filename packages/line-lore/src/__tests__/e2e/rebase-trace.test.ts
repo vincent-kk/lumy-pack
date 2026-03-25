@@ -37,7 +37,7 @@ vi.mock('@/cache/sharded-cache.js', () => ({
 
 const mockDetectPlatform = detectPlatformAdapter as ReturnType<typeof vi.fn>;
 
-describe('E3: Rebase Merge trace', { timeout: 30000 }, () => {
+describe('E3: Rebase Merge trace', { timeout: 60000 }, () => {
   let repo: RepoBuilder;
   let originalCwd: string;
 

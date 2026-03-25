@@ -8,6 +8,10 @@ export interface BlameStageResult {
   blame: BlameResult;
   isCosmetic: boolean;
   cosmeticReason?: CosmeticReason;
+  /** Whether this result was cross-validated against change blame (origin mode only) */
+  crossValidated?: boolean;
+  /** Whether the change blame result was used instead of origin (false positive filtered) */
+  usedChangeFallback?: boolean;
 }
 
 export interface AstDiffStageResult {
