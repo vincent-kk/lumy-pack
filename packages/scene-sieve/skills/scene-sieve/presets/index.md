@@ -3,10 +3,11 @@
 ## Auto-selection via script
 
 ```bash
-scripts/probe.sh "<input-file>" [intent]
+node scripts/probe.mjs "<input-file>" [intent]
 ```
 
 The script probes the video and returns the matched preset + ready-to-run command as JSON.
+Cross-platform (macOS, Linux, Windows) — requires only Node.js.
 
 ## Duration-based selection
 

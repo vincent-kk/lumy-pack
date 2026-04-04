@@ -49,7 +49,7 @@ See [reference.md](./reference.md) for all 14 flags including advanced options.
 Run the probe script from this skill's directory (`<skill-dir>` = directory containing this SKILL.md):
 
 ```bash
-"<skill-dir>/scripts/probe.sh" "<input-file>" [intent]
+node "<skill-dir>/scripts/probe.mjs" "<input-file>" [intent]
 ```
 
 The script auto-detects bundled ffprobe, probes duration/resolution, and returns JSON with:
@@ -114,7 +114,7 @@ See [reference.md § Troubleshooting](./reference.md) for detailed recovery step
 
 ## Resources
 
-- [scripts/probe.sh](./scripts/probe.sh) — Video probe + preset auto-selection script (run before extraction)
+- [scripts/probe.mjs](./scripts/probe.mjs) — Video probe + preset auto-selection script (run before extraction, cross-platform)
 - [presets/index.md](./presets/index.md) — Decision matrix and summary table for preset selection
   - [short-clip.md](./presets/short-clip.md) — ≤ 30s clips
   - [medium-video.md](./presets/medium-video.md) — 30s–5min videos
