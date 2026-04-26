@@ -1209,7 +1209,7 @@ __metadata:
     "@types/node": "npm:^20.11.0"
     "@types/papaparse": "npm:^5.3.14"
     "@vitest/coverage-v8": "npm:^3.2.4"
-    "@winglet/common-utils": "npm:^0.11.2"
+    "@winglet/common-utils": "npm:^0.12.2"
     ajv: "npm:^8.17.0"
     chardet: "npm:^2.0.0"
     commander: "npm:^12.1.0"
@@ -1235,7 +1235,7 @@ __metadata:
     "@types/node": "npm:^20.11.0"
     "@types/react": "npm:^18.0.0"
     "@vitest/coverage-v8": "npm:^3.2.4"
-    "@winglet/common-utils": "npm:^0.11.2"
+    "@winglet/common-utils": "npm:^0.12.2"
     commander: "npm:^12.1.0"
     execa: "npm:^9.5.0"
     ink: "npm:^5.0.0"
@@ -1258,7 +1258,7 @@ __metadata:
     "@types/node": "npm:^20.11.0"
     "@types/react": "npm:^18.0.0"
     "@vitest/coverage-v8": "npm:^3.2.4"
-    "@winglet/common-utils": "npm:^0.11.2"
+    "@winglet/common-utils": "npm:^0.12.2"
     commander: "npm:^12.1.0"
     execa: "npm:^9.5.0"
     ffmpeg-static: "npm:^5.2.0"
@@ -1287,7 +1287,7 @@ __metadata:
     "@types/node": "npm:^20.11.0"
     "@types/react": "npm:^18.0.0"
     "@vitest/coverage-v8": "npm:^3.2.4"
-    "@winglet/common-utils": "npm:^0.11.2"
+    "@winglet/common-utils": "npm:^0.12.2"
     ajv: "npm:^8.0.0"
     ajv-formats: "npm:^3.0.0"
     commander: "npm:^12.1.0"
@@ -2155,10 +2155,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@winglet/common-utils@npm:^0.11.2":
-  version: 0.11.2
-  resolution: "@winglet/common-utils@npm:0.11.2"
-  checksum: 10c0/0d0bac48a5ae7f7ac609c803c9da7cd6013ae83f52d362145423d44859126d05170c7494373e650c404bba85fe4c045768d3007d4d902eaa223ad72d16a85d28
+"@winglet/common-utils@npm:^0.12.2":
+  version: 0.12.2
+  resolution: "@winglet/common-utils@npm:0.12.2"
+  checksum: 10c0/ab47d89c08c375f94832a38e43bb860191ed537061fa27b79d98dc963d90f355e3bc5949aedfbec2156ae0b2e401e4947cb5633f12a84ad4c7a52e43d13f9e11
   languageName: node
   linkType: hard
 

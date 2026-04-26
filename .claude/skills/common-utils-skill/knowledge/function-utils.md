@@ -150,27 +150,42 @@ const clickProtected = throttle(submitForm, 2000, { leading: true, trailing: fal
 ## getTrackableHandler
 
 ```typescript
-getTrackableHandler<Args extends any[], State>(
-  fn: (...args: Args) => Promise<any>,
-  options: {
-    preventConcurrent?: boolean;
-    initialState?: State;
-    beforeExecute?: (args: Args, stateManager: StateManager<State>) => void;
-    afterExecute?: (args: Args, stateManager: StateManager<State>) => void;
-    onError?: (error: unknown, args: Args, stateManager: StateManager<State>) => void;
-  }
-): TrackableHandler<Args, State>
+getTrackableHandler<Args extends any[] = [], Result = void, State extends Dictionary = {}>(
+  origin: (...args: Args) => Promise<Result>,
+  options?: TrackableHandlerOptions<Args, State>
+): TrackableHandlerFunction<Args, Result, State>
 ```
 
-Creates a wrapper function that tracks execution state of async functions with subscription support.
+Wraps an async function with state tracking, lifecycle hooks, and subscription-based change notifications.
 
-### TrackableHandler interface
+### TrackableHandlerOptions
+
+```typescript
+type TrackableHandlerOptions<Args, State> = {
+  preventConcurrent?: boolean; // default: true
+  initialState?: State;
+  beforeExecute?: (args: Args, stateManager: StateManager<State>) => void;
+  afterExecute?: (args: Args, stateManager: StateManager<State>) => void;
+};
+
+type StateManager<State> = {
+  readonly state: State; // read-only current state
+  update(updater: Partial<State> | ((prev: State) => Partial<State>)): void;
+};
+```
+
+Note: there is **no** `onError` option. Errors thrown by `origin` propagate to the caller; `afterExecute` still runs inside a `finally` block so cleanup always happens.
+
+### TrackableHandlerFunction interface
 
 The returned handler is callable as the original function, plus:
-- `.state` — current state object
-- `.loading` — boolean, true while executing
-- `.subscribe(callback)` — subscribe to state changes, returns unsubscribe function
-- `.execute(...args)` — alias for calling the handler directly
+
+- `(...args) => Promise<Result>` — calls `origin` (or resolves `undefined` when `preventConcurrent` blocks the call)
+- `.state` — current state object (read-only, non-enumerable)
+- `.pending` — `boolean`, true while `origin` is executing (read-only, non-enumerable)
+- `.subscribe(listener)` — register a change listener; returns an unsubscribe function
+
+There is **no** `.loading` property (use `.pending`) and **no** `.execute()` / `.clear()` methods.
 
 ### Usage
 
@@ -183,33 +198,45 @@ const fetchUser = async (userId: string) => {
 };
 
 const trackableFetch = getTrackableHandler(fetchUser, {
-  preventConcurrent: true,   // ignore calls while a call is in progress
-  initialState: { loading: false, user: null },
-  beforeExecute: (args, state) => state.update({ loading: true }),
-  afterExecute: (args, state) => state.update({ loading: false }),
+  preventConcurrent: true,  // default — ignore calls while one is in flight
+  initialState: { data: null as User | null, error: null as string | null },
+  beforeExecute: (args, sm) => sm.update({ error: null }),
+  afterExecute:  (args, sm) => sm.update(prev => ({ ...prev })), // always runs
 });
 
-// Subscribe to state changes
+// Subscribe to state / pending changes
 const unsubscribe = trackableFetch.subscribe(() => {
-  console.log('State changed:', trackableFetch.state);
-  console.log('Loading:', trackableFetch.loading);
+  console.log('pending:', trackableFetch.pending);
+  console.log('state:',   trackableFetch.state);
 });
 
-// Execute
+// Call the handler like the original function
 await trackableFetch('user-123');
 
-// Cleanup
 unsubscribe();
 ```
 
 ### preventConcurrent
 
-When `true`, calls while the function is executing are silently ignored. Useful for preventing duplicate API calls.
+When `true` (default), calls made while a previous invocation is pending return a Promise resolving to `undefined` (cast as `Result`) without invoking `origin`. Useful for preventing duplicate submits / double-clicks.
 
 ```typescript
-const button = document.getElementById('submit');
-const trackableSubmit = getTrackableHandler(submitForm, { preventConcurrent: true });
-
+const trackableSubmit = getTrackableHandler(submitForm); // preventConcurrent defaults to true
 button.addEventListener('click', () => trackableSubmit(formData));
-// Rapid clicks during submission are safely ignored
+// Rapid clicks during submission are silently skipped.
 ```
+
+### Execution flow
+
+1. If `preventConcurrent && pending` → resolve `undefined` immediately.
+2. Call `beforeExecute(args, stateManager)` — if it throws, the original function is not invoked.
+3. Set `pending = true` and notify subscribers.
+4. `await origin(...args)` (propagates errors as-is).
+5. In `finally`: call `afterExecute(args, stateManager)`, set `pending = false`, notify subscribers.
+
+### Source layout
+
+- `debounce`, `throttle` → `src/utils/function/rateLimit/`
+- `getTrackableHandler` → `src/utils/function/enhance/getTrackableHandler/`
+
+All three are re-exported from `@winglet/common-utils/function`.

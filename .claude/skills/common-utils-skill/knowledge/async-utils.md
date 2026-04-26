@@ -204,20 +204,44 @@ cancel();
 
 ---
 
+### scheduleMacrotaskSafe / cancelMacrotaskSafe / scheduleCancelableMacrotaskSafe
+
+```typescript
+scheduleMacrotaskSafe(callback: () => void): number
+cancelMacrotaskSafe(id: number): void
+scheduleCancelableMacrotaskSafe(callback: () => void): () => void
+```
+
+"Safe" variants that **always** yield to the browser's rendering pipeline before running the callback.
+
+- **Node.js**: delegates to native `setImmediate` / `clearImmediate`.
+- **Browsers**: delegates to `setTimeout` / `clearTimeout` (guarantees a rendering window, subject to the 4ms minimum delay).
+
+**Difference from the non-Safe variants:**
+- `scheduleMacrotask` (browsers) uses `MessageChannelScheduler` — ~0.01ms scheduling overhead, no 4ms floor, but no guaranteed rendering frame between tasks.
+- `scheduleMacrotaskSafe` (browsers) uses `setTimeout` — slower and floored at ~4ms, but the browser is guaranteed to paint / process user input between tasks.
+
+Choose `*Safe` when the work may run long and responsiveness matters more than latency (batch processing, off-thread-style chunking). Choose the non-Safe variant when you need minimum-overhead scheduling (framework internals, batched state updates).
+
+---
+
 ### MessageChannelScheduler
 
-The `MessageChannelScheduler` class powers browser macrotask scheduling. It uses `MessageChannel` for immediate macrotask execution without the 4ms minimum delay of `setTimeout`.
+The `MessageChannelScheduler` class powers browser macrotask scheduling for `scheduleMacrotask`. It uses `MessageChannel` for immediate macrotask execution without the 4ms minimum delay of `setTimeout`.
 
 **Key features:**
 - Automatic batching of synchronously scheduled tasks
 - Individual task cancellation from batches
 - ~0.01ms scheduling overhead
 
-**Handler functions (exported from `@winglet/common-utils/scheduler`):**
-- `setImmediate(callback)` — schedule via MessageChannelScheduler
-- `clearImmediate(id)` — cancel
+**Exports from `@winglet/common-utils/scheduler`:**
+- `MessageChannelScheduler` — the scheduler class
+- `setImmediate(callback)` — schedule via the global MessageChannelScheduler instance
+- `clearImmediate(id)` — cancel a scheduled task
 - `getPendingCount()` — number of pending tasks
-- `destroyGlobalScheduler()` — cleanup
+- `destroyGlobalScheduler()` — dispose the global instance (tests / teardown)
+- `isMessageChannelSchedulerError(value)` — type guard for scheduler errors
+- type `SchedulerOptions`
 
 ---
 

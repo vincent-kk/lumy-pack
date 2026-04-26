@@ -114,13 +114,15 @@ convertMsFromDuration('');      // 0
 import { printError } from '@winglet/common-utils/console';
 ```
 
+Dedicated sub-path: `@winglet/common-utils/console` (not `/lib` and not `/error`).
+
 ### printError
 
 ```typescript
 printError(error: unknown): void
 ```
 
-Prints an error to the console in a formatted way, handling various error types gracefully.
+Prints an error to the console in a formatted way, handling various error types gracefully. Safe for `BaseError` subclasses (prints `code`, `details`) and falls back to plain formatting for unknown values.
 
 ---
 

@@ -175,9 +175,37 @@ intersection([1,2,3,4], [2,4,6]); // [2,4]
 - Duplicates in `source` that exist in `target` are preserved.
 - O(n + m) time complexity.
 
-## intersectionBy / intersectionWith / intersectionLite
+## intersectionBy
 
-Same variants as `difference*` — by key function, custom comparator, or lightweight linear scan.
+```typescript
+intersectionBy<Type>(source: Type[], target: Type[], iteratee: (item: Type) => unknown): Type[]
+```
+
+Like `intersection` but compares elements by a key function. Useful for intersecting arrays of objects by an identifier.
+
+```typescript
+intersectionBy(
+  [{id:1},{id:2},{id:3}],
+  [{id:2},{id:4}],
+  item => item.id
+); // [{id:2}]
+```
+
+## intersectionWith
+
+```typescript
+intersectionWith<Type>(source: Type[], target: Type[], comparator: (a: Type, b: Type) => boolean): Type[]
+```
+
+Like `intersection` but uses a custom equality comparator (O(n × m) worst case).
+
+## intersectionLite
+
+```typescript
+intersectionLite<Type>(source: Type[], target: Type[]): Type[]
+```
+
+Lightweight linear-scan version optimized for small arrays (< ~100 elements). No `Set` allocation overhead.
 
 ---
 
