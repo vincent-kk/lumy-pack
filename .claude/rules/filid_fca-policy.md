@@ -1,5 +1,11 @@
 # FCA-AI Rules
 
+**Every module is a fractal. Every boundary is enforced. The graph is a DAG.**
+
+- Modules document themselves (`INTENT.md`) and define contracts (`DETAIL.md`).
+- Imports go through entry points, never internal files.
+- Documentation precedes code. `INTENT.md` ≤ 50 lines. Test files ≤ 15 cases.
+
 Fractal Context Architecture (FCA-AI) is a recursive module organization system for AI-operated codebases.
 Every independent module is a "fractal node" with documentation, entry point, and boundary rules.
 The dependency graph MUST be a DAG. Consumers MUST import only from entry points, never internal files.
@@ -29,10 +35,16 @@ Classification is determined by directory inspection in this strict priority ord
 6. **No observable side effects, stateless** → `pure-function`
 7. **Default** → `fractal` (generate INTENT.md)
 
-**Known organ names**: `components`, `utils`, `types`, `hooks`, `helpers`, `lib`, `styles`, `assets`, `constants`, `__tests__`, `__mocks__`, `__fixtures__`, `test`, `tests`, `spec`, `specs`, `fixtures`, `e2e`
+**Known organ names** (priority 2):
+- **Base** (shared/UI): `components`, `utils`, `types`, `hooks`, `helpers`, `lib`, `styles`, `assets`, `constants`
+- **Test/infra**: `test`, `tests`, `spec`, `specs`, `fixtures`, `e2e`
+- **Docs**: `references`
 
-Fractal nodes CAN exist inside organ directories. The scanner MUST traverse into organs and
-re-classify any subdirectory that does not match organ rules.
+**Pattern-matched organs** (priorities 3–4, not listed by name):
+- `__name__` (double-underscore wrapped): e.g. `__tests__`, `__mocks__`, `__fixtures__`.
+- `.name` (dot-prefixed): e.g. `.config`, `.hidden`.
+
+Fractal nodes MAY exist inside organ directories; traversal MUST re-classify subdirectories that don't match organ rules.
 
 ---
 
@@ -45,10 +57,11 @@ re-classify any subdirectory that does not match organ rules.
 
 **Severity**: warning | **Applies to**: all nodes
 
-- Names MUST follow kebab-case (`/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/`, preferred) or camelCase (`/^[a-z][a-zA-Z0-9]*$/`).
-- PascalCase, SCREAMING_SNAKE_CASE, and spaces are violations.
+- camelCase is the default (`/^[a-z][a-zA-Z0-9]*$/`).
+- Per domain, kebab-case (`/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/`) or PascalCase (`/^[A-Z][a-zA-Z0-9]*$/`, typical for React and other UI-component files) MAY be used.
+- snake_case, SCREAMING_SNAKE_CASE, and names containing spaces are violations.
+- When choosing a name, first mirror the naming style of sibling fractals or files. If no sibling reference exists, infer the industry-standard form for the language, framework, or library.
 - Exempt: `INTENT.md`, `DETAIL.md`, `README.md`.
-- Disable in `.filid/config.json` if your project requires PascalCase (e.g., React components).
 
 ### organ-no-intentmd
 
@@ -91,14 +104,13 @@ export const MY_CONSTANT = 'value';
 
 - Fractal tree depth MUST NOT exceed `maxDepth`.
 - Fix: flatten structure, extract deeply nested modules to top-level, or increase `maxDepth` in
-  `.filid/config.json` only when genuinely justified.
+  `.filid/config.json` (`scan.maxDepth`) only when genuinely justified.
 
 ### circular-dependency
 
 **Severity**: error | **Applies to**: all modules
 
 - The dependency graph MUST be a DAG. Circular dependencies are prohibited.
-- Detected at project-analyzer level (`detectCycles()`), not per-node evaluation.
 - Fix: extract shared logic to a new node, invert dependency via interface/event, or merge tightly coupled modules.
 
 ### pure-function-isolation
@@ -133,10 +145,8 @@ export const MY_CONSTANT = 'value';
 - Approaching 50 lines signals the module MUST be decomposed into smaller fractal nodes.
 - MUST NOT increase the limit; restructure the module instead.
 - Section headings (`## Purpose`, `## Structure`, `## Conventions`, `## Boundaries`,
-  `### Always do`, `### Ask first`, `### Never do`, `## Dependencies`) MUST remain in English
-  — they are machine-readable anchors for the validator.
-  All descriptive content MUST follow the language specified by the `[filid:lang]` tag
-  (configured in `.filid/config.json`). If no tag is present, follow the system's language setting; default to English.
+  `### Always do`, `### Ask first`, `### Never do`, `## Dependencies`) MUST remain in English — machine-readable anchors for the validator.
+- Descriptive content MUST follow the language specified by `[filid:lang]`; default to English if absent.
 
 ### DETAIL.md
 
@@ -144,9 +154,8 @@ export const MY_CONSTANT = 'value';
 - Defines public API contract, acceptance criteria, and scope boundaries.
 - MUST reflect current intended behavior, not historical evolution.
 - Update DETAIL.md **before** code changes. Update INTENT.md when boundaries change.
-- Section headings (`## Requirements`, `## API Contracts`, `## Last Updated`) MUST remain in English.
-  All descriptive content MUST follow the language specified by the `[filid:lang]` tag
-  (configured in `.filid/config.json`). If no tag is present, follow the system's language setting; default to English.
+- Section headings (`## Requirements`, `## API Contracts`, `## Last Updated`) MUST remain in English — machine-readable anchors for the validator.
+- Descriptive content MUST follow the language specified by `[filid:lang]`; default to English if absent.
 
 ---
 
@@ -156,7 +165,7 @@ export const MY_CONSTANT = 'value';
 |---|---|---|
 | LCOM4 (Lack of Cohesion) | >= 2 | Split into separate modules |
 | Cyclomatic Complexity | > 15 | Compress or abstract |
-| File size | > 500 lines | Consider splitting |
+| File size | > 500 lines (advisory; no code constant) | Consider splitting |
 
 **Test file conventions (3+12 rule)**: max **3 basic** (happy path) + **12 complex** (edge cases) = **15 total** per spec file. Exceeding 15 signals the module should be split.
 
@@ -181,5 +190,3 @@ Before any implementation that touches a fractal module:
 3. Update INTENT.md if the module's public interface or boundaries change.
 4. Implement the change.
 5. Run `/filid:filid-scan` to confirm no new violations.
-
-Use `/filid:filid-sync` for structural drift, `/filid:filid-setup` for project initialization, `/filid:filid-review` for architectural review.
