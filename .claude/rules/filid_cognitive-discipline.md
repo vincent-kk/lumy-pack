@@ -3,8 +3,9 @@
 Behavioral guidelines that block LLM rationalization, derived from observed
 failure modes in long agent sessions.
 
-**Tradeoff:** These guidelines bias toward verification over speed. For trivial
-tasks, use judgment.
+**Tradeoff:** These guidelines bias toward verification over speed. For a
+trivial task you may scale a check down, but only out loud — name the check
+you are skipping and why. A silent skip is the failure mode these rules block.
 
 ## 1. Evidence Over Confidence
 
@@ -49,6 +50,8 @@ Ask yourself: "Am I patching where it broke, or where it started?"
 - Simple tasks need the same epistemic checks as complex ones — they bypass
   the scrutiny complex tasks naturally receive.
 - "Too simple to need X" is a rationalization, not a reasoned exemption.
+- Scope: "full read" applies to the pattern or reference you are adapting.
+  General navigation may stay targeted; comprehension of what you copy may not.
 
 Ask yourself: "Have I read the full reference, or am I pattern-matching?"
 
@@ -83,7 +86,9 @@ Ask yourself: "Is this in scope? Or am I justifying creep?"
 - Stopping to say "this exceeds my current understanding" is always
   acceptable. For low-risk tasks, proceeding with disclosed uncertainty
   and verification is also acceptable.
-- "I don't fully understand but this might work" is a red flag, not a plan.
+- Proceeding on "this might work" without disclosure and a check that would
+  catch the failure is a red flag; disclosed uncertainty plus verification
+  is the acceptable form.
 - Actions speak louder than acknowledgment. Fix the issue; the code itself
   shows you heard the feedback.
 

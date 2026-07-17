@@ -4,7 +4,8 @@ Behavioral guidelines for what to write, when to extend, and when to reuse.
 Standalone document — does not depend on other rule files.
 
 **Tradeoff:** These guidelines bias toward existing code over fresh code.
-For prototypes or exploratory spikes, use judgment.
+Exemption: only code that will never be committed (throwaway spikes).
+Anything that lands in a commit follows these rules.
 
 ## 1. Reuse Before You Write
 
@@ -35,7 +36,10 @@ Ask yourself: "Does this already exist somewhere I haven't searched?"
 - No features beyond what was asked.
 - No abstractions for single-use code.
 - No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
+- No error handling for scenarios the module's own contract already excludes.
+  Input validation at trust boundaries (public APIs, user input, external
+  data) is never "impossible-scenario" handling — exported symbols cannot
+  enumerate their callers.
 - If you write 200 lines and it could be 50, rewrite it.
 
 Ask yourself: "Would a senior engineer say this is overcomplicated?"
@@ -96,7 +100,9 @@ Ask yourself: "If this file grows another export, should it split?"
   (e.g., `auth.ts` → `auth.spec.ts` or `auth.test.ts`).
 - Collection-style directories use plural names (`components/`, `utils/`,
   `helpers/`, `types/`, `hooks/`, `constants/`). Don't force plural onto
-  domain directories where singular is clearer.
+  domain directories where singular is clearer. These plural names are FCA
+  organ names — a directory so named cannot carry its own INTENT.md, so name
+  an independent module by its domain instead.
 - A small set of closely related types may live in a single `type.ts`.
   Split when the type surface grows or mixes unrelated concerns.
 
