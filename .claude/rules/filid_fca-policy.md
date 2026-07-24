@@ -14,12 +14,12 @@ The dependency graph MUST be a DAG. External consumers MUST import only from a m
 
 ## Node Types
 
-| Type            | INTENT.md | Children | Entry point  | Description                                |
-| --------------- | --------- | -------- | ------------ | ------------------------------------------ |
-| `fractal`       | required  | allowed  | required     | Independent module with public API         |
-| `organ`         | forbidden | files only | not required | Leaf compartment (single concern)        |
-| `pure-function` | optional  | none     | not required | Stateless functions, no side effects       |
-| `hybrid`        | optional  | allowed  | required     | Transitional node (fractal + organ traits) |
+| Type            | INTENT.md | Children   | Entry point  | Description                                |
+| --------------- | --------- | ---------- | ------------ | ------------------------------------------ |
+| `fractal`       | required  | allowed    | required     | Independent module with public API         |
+| `organ`         | forbidden | files only | not required | Leaf compartment (single concern)          |
+| `pure-function` | optional  | none       | not required | Stateless functions, no side effects       |
+| `hybrid`        | optional  | allowed    | required     | Transitional node (fractal + organ traits) |
 
 ---
 
@@ -53,19 +53,12 @@ Fractal nodes MAY appear inside organ directories; traversal MUST re-classify su
 
 ## Structural Rules
 
-8 built-in rules evaluated against every node. Configure in `.filid/config.json`:
+Structural rules the scanner evaluates against every node — enable/disable and
+set severity in `.filid/config.json`:
 `{ "rules": { "<rule-id>": { "enabled": true|false } } }`
-
-### naming-convention
-
-**Severity**: warning | **Applies to**: all nodes
-
-- camelCase is the default (`/^[a-z][a-zA-Z0-9]*$/`).
-- Per domain, kebab-case (`/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/`) or PascalCase (`/^[A-Z][a-zA-Z0-9]*$/`, typical for React and other UI-component files) MAY be used.
-- snake_case, SCREAMING_SNAKE_CASE, and names containing spaces are violations.
-- When choosing a name, first mirror the naming style of sibling fractals or files. If no sibling reference exists, infer the industry-standard form for the language, framework, or library.
-- Framework route-segment directory names (Next.js route groups `(app)`, dynamic `[id]`, catch-all `[...slug]`, parallel slots `@modal`, intercepts `(.)photo`, private `_components`) are exempt when a framework is detected. Projects MAY register more via `.filid/config.json` `additional-route-patterns`.
-- Exempt: `INTENT.md`, `DETAIL.md`, `README.md`.
+Naming and depth checks are configured the same way as the rules below;
+acyclicity (the DAG requirement above) is a discipline the scan does not yet
+verify — trace the edges you touch rather than trusting a green run.
 
 ### organ-no-intentmd
 
@@ -78,28 +71,10 @@ Fractal nodes MAY appear inside organ directories; traversal MUST re-classify su
 
 **Severity**: warning | **Applies to**: fractal and hybrid nodes with index.ts
 
-- `index.ts` in fractal/hybrid nodes MUST be a pure barrel — re-export statements only.
-- MUST NOT contain direct function, class, constant, or type declarations.
-- Re-exports MUST be named. `export *` is a violation — the entry point stops listing
-  the public API (any new export added to an internal file silently widens the module's
-  contract with no visible change to the barrel), duplicate names across re-exported
-  files are dropped silently, and text-based tools lose the symbol list at the boundary.
-
-```typescript
-// ALLOWED (pure barrel):
-export { myFunction } from './my-function.js';
-export type { MyType } from './types.js';
-
-// VIOLATION (direct declaration):
-export function myFunction() {
-  return 42;
-}
-export const MY_CONSTANT = 'value';
-
-// VIOLATION (wildcard re-export — contract hidden):
-export * from './my-function.js';
-```
-
+- `index.ts` in fractal/hybrid nodes MUST be a pure barrel — named re-export
+  statements only, with no direct function, class, constant, or type
+  declarations. The scan checks this shape; which symbols belong in the public
+  surface is a separate concern.
 - Does NOT apply to organ or pure-function nodes.
 
 ### module-entry-point
@@ -108,29 +83,12 @@ export * from './my-function.js';
 
 - Every fractal/hybrid node MUST have an entry point: `index.ts` (barrel) or `main.ts` (executable/CLI).
 - A framework-invoked entry file (e.g. Next.js `page.*`/`route.*`) also satisfies the requirement when a framework is detected. Projects MAY register more via `.filid/config.json` `additional-entry-points`.
-- Only symbols exported from the entry point are the module's public contract.
 - External consumers MUST import from the entry point, never from internal files.
   Files inside the module import their peers directly — the local barrel serves
-  outside consumers, not internal routing.
+  outside consumers, not internal routing. Internal implementation files import
+  concrete internal files directly, not through the local `index.ts`; the local
+  `index.ts` is an external boundary, not a default indirection layer.
 - organ and pure-function nodes do NOT require an entry point.
-
-### max-depth
-
-**Severity**: error | **Default maxDepth**: 10
-
-- Fractal tree depth MUST NOT exceed `maxDepth`.
-- Fix: flatten structure, extract deeply nested modules to top-level, or increase `maxDepth` in
-  `.filid/config.json` (`scan.maxDepth`) only when genuinely justified.
-
-### circular-dependency
-
-**Severity**: error | **Applies to**: all modules
-
-- The dependency graph MUST be a DAG. Circular dependencies are prohibited.
-- Fix: extract shared logic to a new node, invert dependency via interface/event, or merge tightly coupled modules.
-- NOTE: the built-in scan check for this rule is currently a placeholder and reports
-  nothing. Do not cite a green `/filid:scan` as proof of acyclicity — DAG discipline
-  is reviewer-enforced until the check lands.
 
 ### pure-function-isolation
 
