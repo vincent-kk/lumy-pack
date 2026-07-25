@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Build
-yarn build                   # inject version + tsup + tsc declarations
+yarn build                   # inject version + rolldown + tsc declarations
 yarn dev                     # run CLI in dev mode via tsx (no build needed)
 
 # Test
@@ -35,9 +35,11 @@ cli.ts  →  commands/*.tsx  →  core/*.ts  →  utils/
 ```
 
 ### Layer 1 — CLI (`src/cli.ts`)
+
 Commander.js entry point. Calls `registerXxxCommand(program)` for each command and runs `program.parseAsync`. No logic here.
 
 ### Layer 2 — Commands (`src/commands/*.tsx`)
+
 Each command is an **Ink React component** rendered with `ink`'s `render()`. Pattern:
 
 - `register<Name>Command(program)` function exported from each file wires up Commander options → renders the component.
@@ -47,17 +49,18 @@ Each command is an **Ink React component** rendered with `ink`'s `render()`. Pat
 Command metadata (description, flags, examples) lives in `src/utils/command-registry.ts` (`COMMANDS` map) — this is the single source of truth used by both `Help.tsx` and each `registerXxxCommand`.
 
 ### Layer 3 — Core (`src/core/*.ts`)
+
 Pure async functions, no UI imports.
 
-| File | Responsibility |
-|------|----------------|
-| `config.ts` | Load/save/init `~/.syncpoint/config.yml`. Always validates with AJV before returning. |
-| `backup.ts` | `scanTargets()` (resolves literal/glob/regex targets), `createBackup()` (scan → metadata → tar.gz). |
-| `restore.ts` | `getRestorePlan()` (hash comparison), `restoreBackup()` (extract to tmpdir → copy → cleanup). Auto-creates a safety backup before overwriting. |
+| File           | Responsibility                                                                                                                                     |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `config.ts`    | Load/save/init `~/.syncpoint/config.yml`. Always validates with AJV before returning.                                                              |
+| `backup.ts`    | `scanTargets()` (resolves literal/glob/regex targets), `createBackup()` (scan → metadata → tar.gz).                                                |
+| `restore.ts`   | `getRestorePlan()` (hash comparison), `restoreBackup()` (extract to tmpdir → copy → cleanup). Auto-creates a safety backup before overwriting.     |
 | `provision.ts` | `runProvision()` is an **async generator** (`AsyncGenerator<StepResult>`) — yields per-step status for real-time UI. Blocks `curl \| sh` patterns. |
-| `metadata.ts` | `collectFileInfo()` (stat + SHA-256 hash), `createMetadata()`, `parseMetadata()`. |
-| `storage.ts` | `createArchive()`, `extractArchive()`, `readFileFromArchive()` via the `tar` package. Archives always stage through a tmpdir. |
-| `migrate.ts` | Schema-driven diff of user config vs current template. Preserves user values, comments out deprecated keys, validates output before writing. |
+| `metadata.ts`  | `collectFileInfo()` (stat + SHA-256 hash), `createMetadata()`, `parseMetadata()`.                                                                  |
+| `storage.ts`   | `createArchive()`, `extractArchive()`, `readFileFromArchive()` via the `tar` package. Archives always stage through a tmpdir.                      |
+| `migrate.ts`   | Schema-driven diff of user config vs current template. Preserves user values, comments out deprecated keys, validates output before writing.       |
 
 ### Layer 4 — Supporting modules
 
@@ -66,6 +69,7 @@ Pure async functions, no UI imports.
 **`src/components/`** — Reusable Ink terminal UI: `ProgressBar`, `StepRunner` (splits completed/active with `<Static>`), `Table`, `Confirm`, `Viewer`.
 
 **`src/utils/`** — No cross-layer business logic:
+
 - `types.ts` — all TypeScript interfaces
 - `pattern.ts` — detects `literal` / `glob` (`*?{`) / `regex` (`/…/`) patterns; `createExcludeMatcher()` pre-compiles for efficient repeated matching
 - `paths.ts` — tilde expansion, `resolveTargetPath`, `ensureDir`, `fileExists`

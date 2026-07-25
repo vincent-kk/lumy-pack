@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Build
-yarn build                   # inject version + tsup + tsc declarations
+yarn build                   # inject version + rolldown + tsc declarations
 yarn dev                     # run CLI in dev mode via tsx (no build needed)
 
 # Test
@@ -26,17 +26,21 @@ cli.ts  →  commands/*.tsx  →  core/*.ts  →  utils/
 ```
 
 ### Layer 1 — CLI (`src/cli.ts`)
+
 Commander.js entry point. Registers `trace` command.
 
 ### Layer 2 — Commands (`src/commands/*.tsx`)
+
 Ink React components for CLI interaction.
 
 ### Layer 3 — Core (`src/core/*.ts`)
+
 - `blame.ts` — git blame porcelain parsing
 - `pr-lookup.ts` — PR number extraction from merge commits
 - `trace.ts` — orchestrator combining blame → PR lookup
 
 ### Layer 4 — Utils (`src/utils/`)
+
 Git utilities and helpers.
 
 ## Key Types

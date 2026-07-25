@@ -12,7 +12,7 @@ Personal Environment Manager monorepo. Configuration backup/restore and machine 
 
 ## Tech Stack
 
-- TypeScript 5.7.2, Node.js >=20, Build: tsup, Test: Vitest 3.2
+- TypeScript 5.7.2, Node.js >=20, Build: rolldown, Test: Vitest 3.2
 
 ## Commands
 

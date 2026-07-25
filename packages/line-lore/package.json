@@ -41,7 +41,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "node scripts/inject-version.js && tsup && yarn build:types",
+    "build": "node scripts/inject-version.js && rolldown -c rolldown.config.ts && yarn build:types",
     "build:types": "tsc -p ./tsconfig.declarations.json",
     "dev": "node scripts/inject-version.js && tsx src/cli.ts",
     "format": "prettier --write \"src/**/*.ts\"",
@@ -67,6 +67,7 @@
     "@types/node": "^20.11.0",
     "@types/react": "^18.0.0",
     "@vitest/coverage-v8": "^3.2.4",
-    "ink-testing-library": "^4.0.0"
+    "ink-testing-library": "^4.0.0",
+    "rolldown": "^1.2.0"
   }
 }

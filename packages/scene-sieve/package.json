@@ -39,7 +39,7 @@
     "!dist/tsconfig.tsbuildinfo"
   ],
   "scripts": {
-    "build": "tsup && yarn build:types",
+    "build": "rolldown -c rolldown.config.ts && yarn build:types",
     "build:types": "tsc -p ./tsconfig.declarations.json",
     "dev": "tsx src/cli.ts",
     "format": "prettier --write \"src/**/*.ts\"",
@@ -70,6 +70,7 @@
     "@lumy-pack/shared": "workspace:*",
     "@types/node": "^20.11.0",
     "@types/react": "^18.0.0",
-    "@vitest/coverage-v8": "^3.2.4"
+    "@vitest/coverage-v8": "^3.2.4",
+    "rolldown": "^1.2.0"
   }
 }

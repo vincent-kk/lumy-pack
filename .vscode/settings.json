@@ -1,5 +1,5 @@
 {
-  "cSpell.words": ["lumy", "syncpoint", "tsup", "picocolors"],
+  "cSpell.words": ["lumy", "syncpoint", "rolldown", "picocolors"],
   "typescript.tsdk": "node_modules/typescript/lib",
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode"

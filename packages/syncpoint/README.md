@@ -929,7 +929,7 @@ yarn format
 - **Configuration:** YAML parsing
 - **Validation:** AJV (JSON Schema)
 - **File Operations:** fast-glob, tar
-- **Build:** tsup, TypeScript
+- **Build:** rolldown, TypeScript
 - **Testing:** Vitest
 
 ### Project Structure

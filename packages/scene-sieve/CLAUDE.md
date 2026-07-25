@@ -9,7 +9,7 @@ Video/GIF 핵심 프레임 추출 및 가지치기 CLI 도구. 동영상에서 �
 ## Commands
 
 ```bash
-yarn build              # tsup + tsc declarations
+yarn build              # rolldown + tsc declarations
 yarn dev <input>        # run CLI in dev mode via tsx
 yarn test               # vitest watch mode (unit only)
 yarn test:run           # vitest run (unit only)
@@ -43,26 +43,26 @@ cli.ts → index.ts → core/orchestrator.ts → core/{input-resolver,workspace,
 
 `SieveOptions = SieveOptionsBase & SieveInput` (types/index.ts)
 
-| Mode | Input | Output | FFmpeg |
-|------|-------|--------|--------|
-| `file` | 파일 경로 | 디스크에 JPG 출력 | O |
-| `buffer` | `Buffer` (동영상) | `Buffer[]` 반환 | O (temp file 경유) |
-| `frames` | `Buffer[]` (프레임 이미지) | `Buffer[]` 반환 | X (직접 분석) |
+| Mode     | Input                      | Output            | FFmpeg             |
+| -------- | -------------------------- | ----------------- | ------------------ |
+| `file`   | 파일 경로                  | 디스크에 JPG 출력 | O                  |
+| `buffer` | `Buffer` (동영상)          | `Buffer[]` 반환   | O (temp file 경유) |
+| `frames` | `Buffer[]` (프레임 이미지) | `Buffer[]` 반환   | X (직접 분석)      |
 
 ### pruneMode 전략 (`input-resolver.ts`가 자동 결정)
 
-| Condition | pruneMode | Algorithm |
-|-----------|-----------|-----------|
-| count만 지정 | `count` | `pruneTo` — greedy merge, min-heap O(N log N) |
-| threshold만 지정 | `threshold` | `pruneByThreshold` — max-normalized 점수 필터 O(N) |
-| 둘 다 지정 | `threshold-with-cap` | threshold 필터 → subgraph 재구축 → pruneTo |
+| Condition        | pruneMode            | Algorithm                                          |
+| ---------------- | -------------------- | -------------------------------------------------- |
+| count만 지정     | `count`              | `pruneTo` — greedy merge, min-heap O(N log N)      |
+| threshold만 지정 | `threshold`          | `pruneByThreshold` — max-normalized 점수 필터 O(N) |
+| 둘 다 지정       | `threshold-with-cap` | threshold 필터 → subgraph 재구축 → pruneTo         |
 
 ### 비전 분석 파이프라인 (analyzer.ts)
 
 인접 프레임 쌍별로 4단계 처리:
 
 1. **AKAZE Feature Diff** — 두 프레임 간 특징점 매칭 후 새로 등장/소실된 특징점(sNew/sLoss) 추출
-2. **DBSCAN Clustering** — sNew 점들을 공간 클러스터링, eps = alpha * sqrt(W² + H²)
+2. **DBSCAN Clustering** — sNew 점들을 공간 클러스터링, eps = alpha \* sqrt(W² + H²)
 3. **IoU Tracking** — 클러스터 bounding box의 시공간 추적, 반복 애니메이션 영역 감쇠
 4. **G(t) Scoring** — 클러스터 면적 비율 x 특징점 밀도, 애니메이션 가중치 차감
 
@@ -79,18 +79,18 @@ cli.ts → index.ts → core/orchestrator.ts → core/{input-resolver,workspace,
 
 3개의 vitest config 파일로 분리. 모두 `pool: 'forks'` + `singleFork: true` (OpenCV WASM 때문).
 
-| Config | Include Pattern | Timeout |
-|--------|----------------|---------|
-| `vitest.config.ts` | `src/__tests__/**/*.test.ts` (e2e, integration 제외) | 60s |
-| `vitest.integration.config.ts` | `src/__tests__/integration/**/*.test.ts` | 120s |
-| `vitest.e2e.config.ts` | `src/__tests__/e2e/**/*.test.ts` | 120s |
+| Config                         | Include Pattern                                      | Timeout |
+| ------------------------------ | ---------------------------------------------------- | ------- |
+| `vitest.config.ts`             | `src/__tests__/**/*.test.ts` (e2e, integration 제외) | 60s     |
+| `vitest.integration.config.ts` | `src/__tests__/integration/**/*.test.ts`             | 120s    |
+| `vitest.e2e.config.ts`         | `src/__tests__/e2e/**/*.test.ts`                     | 120s    |
 
 Unit test setup file: `src/__tests__/helpers/setup.ts`
 
 ## Tech Stack
 
 - TypeScript 5.7, Node.js >=20, ESM
-- Build: tsup (ESM `.mjs` + CJS `.cjs` dual), tsc declarations
+- Build: rolldown (ESM `.mjs` + CJS `.cjs` dual), tsc declarations
 - Test: Vitest 3.2
 - CLI: Commander.js 12, ora, cli-progress
 - Media: fluent-ffmpeg, ffmpeg-static, sharp, @techstark/opencv-js
