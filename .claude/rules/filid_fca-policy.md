@@ -6,9 +6,7 @@
 - Consumers import through entry points; files inside a module import each other directly.
 - Documentation precedes code. `INTENT.md` ≤ 50 lines. Spec files ≤ 15 cases.
 
-Fractal Context Architecture (FCA-AI) is a recursive module organization system for AI-operated codebases.
-Every independent module is a "fractal node" with documentation, entry point, and boundary rules.
-The dependency graph MUST be a DAG. External consumers MUST import only from a module's entry point, never its internal files; files within the same module import each other directly.
+Fractal Context Architecture (FCA-AI) is a recursive module organization system for AI-operated codebases. Every independent module is a "fractal node" with documentation, entry point, and boundary rules. The dependency graph MUST be a DAG. External consumers MUST import only from a module's entry point, never its internal files; files within the same module import each other directly.
 
 ---
 
@@ -53,12 +51,7 @@ Fractal nodes MAY appear inside organ directories; traversal MUST re-classify su
 
 ## Structural Rules
 
-Structural rules the scanner evaluates against every node — enable/disable and
-set severity in `.filid/config.json`:
-`{ "rules": { "<rule-id>": { "enabled": true|false } } }`
-Naming and depth checks are configured the same way as the rules below;
-acyclicity (the DAG requirement above) is a discipline the scan does not yet
-verify — trace the edges you touch rather than trusting a green run.
+Structural rules the scanner evaluates against every node — enable/disable and set severity in `.filid/config.json`: `{ "rules": { "<rule-id>": { "enabled": true|false } } }` Naming and depth checks are configured the same way as the rules below; acyclicity (the DAG requirement above) is a discipline the scan does not yet verify — trace the edges you touch rather than trusting a green run.
 
 ### organ-no-intentmd
 
@@ -71,10 +64,7 @@ verify — trace the edges you touch rather than trusting a green run.
 
 **Severity**: warning | **Applies to**: fractal and hybrid nodes with index.ts
 
-- `index.ts` in fractal/hybrid nodes MUST be a pure barrel — named re-export
-  statements only, with no direct function, class, constant, or type
-  declarations. The scan checks this shape; which symbols belong in the public
-  surface is a separate concern.
+- `index.ts` in fractal/hybrid nodes MUST be a pure barrel — named re-export statements only, with no direct function, class, constant, or type declarations. The scan checks this shape; which symbols belong in the public surface is a separate concern.
 - Does NOT apply to organ or pure-function nodes.
 
 ### module-entry-point
@@ -83,11 +73,7 @@ verify — trace the edges you touch rather than trusting a green run.
 
 - Every fractal/hybrid node MUST have an entry point: `index.ts` (barrel) or `main.ts` (executable/CLI).
 - A framework-invoked entry file (e.g. Next.js `page.*`/`route.*`) also satisfies the requirement when a framework is detected. Projects MAY register more via `.filid/config.json` `additional-entry-points`.
-- External consumers MUST import from the entry point, never from internal files.
-  Files inside the module import their peers directly — the local barrel serves
-  outside consumers, not internal routing. Internal implementation files import
-  concrete internal files directly, not through the local `index.ts`; the local
-  `index.ts` is an external boundary, not a default indirection layer.
+- External consumers MUST import from the entry point, never from internal files. Files inside the module import their peers directly — the local barrel serves outside consumers, not internal routing. Internal implementation files import concrete internal files directly, not through the local `index.ts`; the local `index.ts` is an external boundary, not a default indirection layer.
 - organ and pure-function nodes do NOT require an entry point.
 
 ### pure-function-isolation
@@ -121,13 +107,9 @@ verify — trace the edges you touch rather than trusting a green run.
   - `### Never do` — actions strictly prohibited in this module
 - Approaching 50 lines signals the module MUST be decomposed into smaller fractal nodes.
 - MUST NOT increase the limit; restructure the module instead.
-- `## Structure` SHOULD call out name traps when present (e.g., "entry point is
-  `cli.ts`, NOT `index.ts`") — one line that pre-empts the most expensive misread.
-- `## Conventions` SHOULD rank the module's tradeoff priorities when they exist
-  (e.g., "when making tradeoffs, in order: 1. correctness 2. throughput") —
-  a decision rule guides an agent further than any list of actions.
-- Section headings (`## Purpose`, `## Structure`, `## Conventions`, `## Boundaries`,
-  `### Always do`, `### Ask first`, `### Never do`, `## Dependencies`) MUST remain in English — machine-readable anchors for the validator.
+- `## Structure` SHOULD call out name traps when present (e.g., "entry point is `cli.ts`, NOT `index.ts`") — one line that pre-empts the most expensive misread.
+- `## Conventions` SHOULD rank the module's tradeoff priorities when they exist (e.g., "when making tradeoffs, in order: 1. correctness 2. throughput") — a decision rule guides an agent further than any list of actions.
+- Section headings (`## Purpose`, `## Structure`, `## Conventions`, `## Boundaries`, `### Always do`, `### Ask first`, `### Never do`, `## Dependencies`) MUST remain in English — machine-readable anchors for the validator.
 - Descriptive content MUST follow the language specified by `[filid:lang]`; default to English if absent.
 
 ### DETAIL.md
@@ -151,11 +133,7 @@ verify — trace the edges you touch rather than trusting a green run.
 
 Metrics are computed by `/filid:scan` — do not estimate them by inspection.
 
-**Test file conventions (15-case rule)**: at most **15 cases** per spec file — the scan
-gate checks the total only; "~3 basic + ~12 complex" is the recommended shape, not a
-separately enforced pair. Exceeding 15 signals the spec (or module) should be split.
-Never delete or omit a needed test to satisfy the cap — coverage outranks the cap;
-split the spec file instead.
+**Test file conventions (15-case rule)**: at most **15 cases** per spec file — the scan gate checks the total only; "~3 basic + ~12 complex" is the recommended shape, not a separately enforced pair. Exceeding 15 signals the spec (or module) should be split. Never delete or omit a needed test to satisfy the cap — coverage outranks the cap; split the spec file instead.
 
 ---
 
@@ -164,9 +142,7 @@ split the spec file instead.
 - **New module** → MUST create INTENT.md (3-tier boundaries) + index.ts (barrel export).
 - **Leaf utility dirs** (`components/`, `utils/`, `types/`) → organ: no INTENT.md, keep flat.
 - **Shared code** → MUST be placed at the nearest common ancestor (LCA) of its consumers.
-- **Sibling imports** → import the sibling's own entry point (`../sibling`), never its
-  internals — and never route through the shared parent's entry point (the parent barrel
-  re-exports you; that path is a cycle).
+- **Sibling imports** → import the sibling's own entry point (`../sibling`), never its internals — and never route through the shared parent's entry point (the parent barrel re-exports you; that path is a cycle).
 - **New file in fractal root** → MUST go into an existing organ or new sub-fractal; MUST NOT leave as peer file unless in an allowed category.
 
 ---
@@ -179,5 +155,4 @@ Before any implementation that touches a fractal module:
 2. Update DETAIL.md with new or changed requirements.
 3. Update INTENT.md if the module's public interface or boundaries change.
 4. Implement the change.
-5. Run `/filid:scan` and clear new findings — `warning` findings count as findings;
-   do not declare compliance while they remain.
+5. Run `/filid:scan` and clear new findings — `warning` findings count as findings; do not declare compliance while they remain.
