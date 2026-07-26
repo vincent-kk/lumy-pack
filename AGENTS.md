@@ -532,7 +532,7 @@ Ask yourself: "If this ran twice, what would differ the second time — and does
 **The file name is the export list.**
 
 - Name a function file for the function it exports, and export that one only (seiri_naming §4). A second export earns its place only when the two cannot be read apart.
-- At most two unexported helpers may share the file, and only ones a reader takes in at a glance; past that, the helper is its own file (seiri_structure §3).
+- At most two unexported helpers may share the file, and each helper's implementation body must be 8 lines or fewer; its declaration or signature and enclosing braces do not count. A longer helper is its own file (seiri_structure §3).
 - At most three types, newly defined here. Derived types — aliases, narrowings, unions over what already exists — stay with their source. Type-only files (`types.ts`, `types/`) are outside this budget.
 - These counts are defaults; a budget this repository declares wins.
 
