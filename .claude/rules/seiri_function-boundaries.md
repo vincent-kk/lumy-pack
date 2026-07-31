@@ -11,7 +11,7 @@ A function is the smallest unit a reader can hold whole — and the cheapest one
 **The signature is the full list of what a function can see.**
 
 - Compute from arguments. Module state read at call time, ambient config, the clock, the environment: passed in, not reached for.
-- When a dependency genuinely cannot be passed — a framework injects it, a runtime owns it — say so at the function or its file head (seiri_agent-legible §1) instead of reaching through it silently.
+- When a dependency genuinely cannot be passed — a framework injects it, a runtime owns it — say so at the function or its file head (`seiri_agent-legible` §1) instead of reaching through it silently.
 
 Ask yourself: "Given the same arguments, does this return the same thing?"
 
@@ -29,8 +29,8 @@ Ask yourself: "If this ran twice, what would differ the second time — and does
 
 **The file name is the export list.**
 
-- Name a function file for the function it exports, and export that one only (seiri_naming §4). A second export earns its place only when the two cannot be read apart.
-- At most two unexported helpers may share the file, and each helper's implementation body must be 8 lines or fewer; its declaration or signature and enclosing braces do not count. A longer helper is its own file (seiri_structure §3).
+- Name a function file for the function it exports, and export that one only (`seiri_naming` §4). A second export earns its place only when the two cannot be read apart.
+- At most two unexported helpers may share the file, and each helper's implementation body must be 8 lines or fewer; its declaration or signature and enclosing braces do not count. A longer helper is its own file (`seiri_structure` §3).
 - At most three types, newly defined here. Derived types — aliases, narrowings, unions over what already exists — stay with their source. Type-only files (`types.ts`, `types/`) are outside this budget.
 - These counts are defaults; a budget this repository declares wins.
 
@@ -40,8 +40,8 @@ Ask yourself: "Can I name what this file exports without opening it — and can 
 
 **Extraction is not relocation to the same shelf.**
 
-- Helpers pulled out of a function do not become its flat neighbors: give the function a directory and file them one level under it, in a satellite called `utils/` or `helpers/` while its only claim is "these serve the function above" — named for the topic once the set has one (seiri_naming §3).
-- The path states which function is served and which serves. A row of peers states nothing (seiri_structure §2).
+- Helpers pulled out of a function do not become its flat neighbors: give the function a directory and file them one level under it — `utils/` or `helpers/` while their only claim is "these serve the function above", renamed for the topic once the set has one (`seiri_naming` §3).
+- The path states which function is served and which serves. A row of peers states nothing (`seiri_structure` §2).
 
 Ask yourself: "From the path alone, can I tell the entry point from its helpers?"
 

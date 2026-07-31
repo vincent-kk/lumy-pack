@@ -74,7 +74,7 @@ Ask yourself: "Which test breaks if I remove this line?"
 
 **A suite that only ever grows is drifting toward noise.**
 
-- If this repository declares a per-file or per-suite limit, follow that limit. Otherwise apply the direction only: a test file that keeps growing is a signal to split by behavior or to merge duplicates into a parameterized form.
+- A per-file or per-suite limit this repository declares wins. The direction otherwise: a test file that keeps growing is a signal to split by behavior or to merge duplicates into a parameterized form.
 - Never delete or omit a needed test to satisfy tidiness — coverage outranks curation. Curate by merging and splitting, not by discarding.
 
 Ask yourself: "Is this file accumulating cases, or organizing them?"

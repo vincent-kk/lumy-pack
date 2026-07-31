@@ -18,7 +18,7 @@ Ask yourself: "What style do my neighbors already use?"
 
 **A reader should predict the content from the name alone.**
 
-- Name by what the unit does or holds, not when it was added or who owns it. An honest name that needs "and" is two units (seiri_reuse-first §5); a vague honest name means a vague responsibility — fix the unit.
+- Name by what the unit does or holds, not when it was added or who owns it. An honest name that needs "and" is two units (`seiri_reuse-first` §5); a vague honest name means a vague responsibility — fix the unit.
 
 Ask yourself: "Reading only this name, what would I expect inside — and is that what's inside?"
 
@@ -34,7 +34,7 @@ Ask yourself: "Could a stranger guess what does NOT belong in this file?"
 
 **A file that exists because of another carries that other's base name.**
 
-- Tests, specs, fixtures, and generated companions are named for what they verify or accompany, and rename with their source — a base name that matches nothing is a name trap (seiri_agent-legible §3).
+- Tests, specs, fixtures, and generated companions are named for what they verify or accompany, and rename with their source — a base name that matches nothing is a name trap (`seiri_agent-legible` §3).
 
 Ask yourself: "From this file's name, can I find the file it serves?"
 

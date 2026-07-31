@@ -10,7 +10,7 @@ What a module exports is a promise to every present and future consumer. This ru
 
 **An export with no consumer carries a stated intent — or gets removed.**
 
-- Remove leftover your change added or orphaned; leave a pre-existing one for a deliberate cleanup (seiri_reuse-first §3). Usage is tool-checkable; intent you must write.
+- Remove leftover your change added or orphaned; leave a pre-existing one for a deliberate cleanup (`seiri_reuse-first` §3). Usage is tool-checkable; intent you must write.
 
 Ask yourself: "Who consumes this — and if no one yet, where did I say so?"
 
@@ -34,7 +34,7 @@ Ask yourself: "If I renamed every internal file, would any consumer break?"
 
 **A file the framework calls by convention is public surface, even though no import names it.**
 
-- Routes, pages, handlers, plugin manifests: treat changes to their exported shape as contract changes, and label the convention that invokes them (seiri_agent-legible §1).
+- Routes, pages, handlers, plugin manifests: treat changes to their exported shape as contract changes, and label the convention that invokes them (`seiri_agent-legible` §1).
 
 Ask yourself: "What breaks at runtime if I change this export's shape — and would any import have warned me?"
 

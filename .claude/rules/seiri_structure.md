@@ -19,7 +19,7 @@ Ask yourself: "Can I order these units so every reference points one way?"
 
 **Nest to expose structure, not to file things away.**
 
-- Every directory level is a hop a reader pays on every visit. If this repository declares a depth limit, follow it; otherwise apply the direction: when following one call chain means descending many levels, flatten.
+- Every directory level is a hop a reader pays on every visit. When following one call chain means descending many levels, flatten.
 - A directory with one child is a corridor, not a room — collapse it.
 
 Ask yourself: "Does each level of this path tell the reader something?"
@@ -28,8 +28,8 @@ Ask yourself: "Does each level of this path tell the reader something?"
 
 **Two different smells, two different moves.**
 
-- When parts of a unit do not share state or purpose, the unit is several units: split it. If this repository (or its architecture tooling) declares a cohesion measure and threshold, follow those; otherwise split where the seams already show.
-- When one unit branches beyond what a reader can simulate, compress: extract steps, replace condition ladders with tables or dispatch, name the phases. If a complexity threshold is declared, follow it; otherwise let "can I simulate this in my head?" be the trigger.
+- When parts of a unit do not share state or purpose, the unit is several units: split it where the seams already show.
+- When one unit branches beyond what a reader can simulate, compress: extract steps, replace condition ladders with tables or dispatch, name the phases. The trigger is "can I simulate this in my head?"
 
 Ask yourself: "Am I looking at two things glued, or one thing tangled?"
 
@@ -37,10 +37,10 @@ Ask yourself: "Am I looking at two things glued, or one thing tangled?"
 
 **A file that keeps growing is announcing a boundary.**
 
-- If this repository declares a file-size limit, follow it. Otherwise apply the direction: recurring growth in one file means a responsibility wants out — split along the responsibility seam, not at an arbitrary line count.
+- Recurring growth in one file means a responsibility wants out — split along the responsibility seam, not at an arbitrary line count.
 
 Ask yourself: "What part of this file keeps attracting changes — and is it the same part I opened it for?"
 
 ---
 
-**This rule is working if:** following a call chain rarely reverses direction; finding code takes few hops; splits land at seams reviewers recognize without explanation. **This rule is wrong for you if:** the tree is vendored or generated — a generator owns that structure; change the generator or leave it be (see seiri_context-efficiency §1).
+**This rule is working if:** following a call chain rarely reverses direction; finding code takes few hops; splits land at seams reviewers recognize without explanation. **This rule is wrong for you if:** the tree is vendored or generated — a generator owns that structure; change the generator or leave it be (see `seiri_context-efficiency` §1).

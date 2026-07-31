@@ -34,7 +34,7 @@ Ask yourself: "What would someone reasonably assume from this name — and is th
 
 **When a direct call and an indirect mechanism are equally capable, choose direct.**
 
-- Indirection the architecture or framework demands is not yours to remove — label it (rule 1) and move on.
+- Indirection the architecture or framework demands is not yours to remove — label it (§1) and move on.
 
 Ask yourself: "Can a reader follow this reference with plain text search?"
 
