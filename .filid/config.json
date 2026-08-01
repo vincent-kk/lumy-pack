@@ -1,18 +1,16 @@
 {
-  "version": "1.0",
+  "version": "2.0",
   "language": "ko",
+  "adapters": {
+    "mode": "auto",
+    "enabled": [
+      "ecmascript"
+    ]
+  },
   "rules": {
-    "naming-convention": {
-      "enabled": true,
-      "severity": "warning"
-    },
     "organ-no-intentmd": {
       "enabled": true,
       "severity": "error"
-    },
-    "index-barrel-pattern": {
-      "enabled": true,
-      "severity": "warning"
     },
     "module-entry-point": {
       "enabled": true,
