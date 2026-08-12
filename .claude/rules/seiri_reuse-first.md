@@ -12,8 +12,6 @@ Evaluate solutions in this strict order:
 4. **Adopt the ecosystem-standard approach** — official documentation and maintainer guidance over ad-hoc examples.
 5. **Write new code** — when the problem is genuinely novel here.
 
-Ask yourself: "Does this already exist somewhere I haven't searched?"
-
 ## 2. The smallest code that answers the request
 
 Nothing speculative. Validation at trust boundaries (public APIs, user input, external data) is never speculative — exported symbols cannot enumerate their callers.
