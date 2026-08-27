@@ -1,130 +1,42 @@
 ---
 name: scene-sieve
-version: 0.0.13
-complexity: simple
-tags: [video, frames, cv, gif, extraction, llm-vision]
-description: >
-  Extract key frames from video and GIF files using computer vision (AKAZE + DBSCAN).
-  Trigger on: "look at a video", "check this recording", "extract frames", "get frames from a GIF",
-  "what's in this video/gif", scene detection, video-to-image conversion, screen recording review.
+description: Extract representative frames from local video and animated GIF files for visual inspection, screenshot capture, and screen-recording review. Use when motion media must be understood as still images; do not use for audio transcription or general video editing.
 ---
 
-# Scene Sieve — Video Frame Extraction for LLMs
+# Scene Sieve
 
-CLI tool that extracts visually meaningful key frames from video/GIF using computer vision,
-letting you "see" motion media as a sequence of representative still images.
-
-## When to use
-
-- User provides a video or GIF and wants you to understand its contents
-- Inspecting screen recordings, demos, or animations
-- Extracting screenshots, thumbnails, or key frames
-- Any visual comprehension of motion media (.mp4, .mov, .avi, .mkv, .webm, .gif)
-
-## Quick reference
-
-```bash
-npx -y @lumy-pack/scene-sieve "<input>" --json -n <count> -o "<output-dir>" 2>/dev/null
-```
-
-Always use `--json` for structured output. Add `2>/dev/null` to suppress stderr progress.
-
-### Essential flags
-
-| Flag | Purpose | Default |
-|------|---------|---------|
-| `-n, --count <N>` | Max frames to keep | 20 |
-| `-t, --threshold <0-1>` | Score cutoff | 0.5 |
-| `-o, --output <path>` | Output directory | same as input |
-| `--fps <N>` | Extraction FPS | 5 |
-| `-q, --quality <1-100>` | JPEG quality | 80 |
-| `--json` | Structured JSON output | false |
-
-See [reference.md](./reference.md) for all 14 flags including advanced options.
+Turn a local video or animated GIF into a small, timestamped set of frames, then use those frames to answer the user's visual question.
 
 ## Workflow
 
-### 1. Probe and select preset
+1. Resolve the input path and the user's goal. Ask only when the path or requested result cannot be inferred safely.
+2. Run the bundled probe from this skill's directory:
 
-Run the probe script from this skill's directory (`<skill-dir>` = directory containing this SKILL.md):
+   ```bash
+   node "<skill-dir>/scripts/probe.mjs" "<input-file>" [intent]
+   ```
 
-```bash
-node "<skill-dir>/scripts/probe.mjs" "<input-file>" [intent]
-```
+   Use an optional intent only when it matches the request:
+   `quick-glance`, `detailed`, `hq-capture`, `inspection`, or `screen-recording`.
 
-The script auto-detects bundled ffprobe, probes duration/resolution, and returns JSON with:
-- `probe` — video metadata (duration, resolution, format)
-- `preset.name` — matched preset (`short-clip`, `medium-video`, `long-video`, etc.)
-- `command` — ready-to-run scene-sieve command with optimal flags
+3. Read the probe JSON. Continue only when `ok` is true. Treat `preset` and `command` as the source of truth; do not reproduce preset thresholds in the prompt.
+4. Choose the output directory:
+   - Use the user's requested location when provided.
+   - Otherwise create a task-scoped temporary directory outside the source-media directory.
+5. Run the returned `command` with `-o "<output-dir>"`. Keep `--json` enabled and parse the structured result before inspecting files.
+6. On success, inspect the image paths in `data.outputFiles` in timestamp order. Read `.metadata.json` when timestamps or UI-state transitions matter. Gaps in frame numbering are expected after pruning.
+7. Answer the user's question from the visual evidence. Mention timestamps when useful; do not narrate every frame unless requested.
 
-Optional `intent` argument overrides duration-based selection:
-`quick-glance` | `detailed` | `hq-capture` | `inspection` | `screen-recording`
+## Failure and stopping rules
 
-See [presets/index.md](./presets/index.md) for the full decision matrix and all 10 preset definitions.
+- Inspect the structured error before retrying. If the installed CLI rejects a flag, run `npx -y @lumy-pack/scene-sieve --describe` and adapt to the reported interface.
+- For timeout or memory pressure, retry at most once with a smaller count, lower FPS and scale, `--max-frames 100`, and `--concurrency 1`.
+- If the file has no usable video stream, report that fact and use a different skill only when the user's request also covers audio or file repair.
+- Stop when the selected frames provide enough evidence for the requested answer. Do not extract more frames merely for completeness.
 
-### 2. Prepare workspace
+## Boundaries
 
-```bash
-mkdir -p "$(dirname '<input-file>')/frames"
-```
-
-### 3. Run extraction
-
-Use the `command` field from probe output directly, appending `-o`:
-
-```bash
-# probe output → "command": "npx -y @lumy-pack/scene-sieve ... -n 12 -t 0.5 ..."
-# Append -o and run:
-<probe.command> -o "<output-dir>" 2>/dev/null
-```
-
-If probe was skipped, fall back to the matching preset file in [presets/](./presets/index.md) for flags.
-
-### 4. Parse output
-
-Check `ok` field first. On success, `data.outputFiles` lists extracted frame paths.
-On failure, `error.code` indicates the issue.
-
-See [reference.md § JSON Output Format](./reference.md) for full schema.
-
-### 5. Read frames
-
-Read output images sequentially (`frame_0001.jpg`, `frame_0003.jpg`, ...).
-Gaps in numbering are normal — they indicate pruned frames.
-
-Read `.metadata.json` for timestamp mapping (`timestampMs` per frame).
-
-### 6. Analyze and respond
-
-- Describe the frame sequence chronologically
-- Note transitions and scene changes between frames
-- Reference timestamps when describing events
-- Answer the user's specific question based on visual evidence
-
-## Error recovery
-
-| Error code | Action |
-|------------|--------|
-| `FILE_NOT_FOUND` | Verify file path with user |
-| `INVALID_FORMAT` | Check extension; file may be corrupted or audio-only |
-| `PIPELINE_ERROR` | Retry with `--debug`; inspect temp files |
-| `WORKER_ERROR` | Retry once, or reduce load with `--max-frames 100` |
-
-See [reference.md § Troubleshooting](./reference.md) for detailed recovery steps.
-
-## Resources
-
-- [scripts/probe.mjs](./scripts/probe.mjs) — Video probe + preset auto-selection script (run before extraction, cross-platform)
-- [presets/index.md](./presets/index.md) — Decision matrix and summary table for preset selection
-  - [short-clip.md](./presets/short-clip.md) — ≤ 30s clips
-  - [medium-video.md](./presets/medium-video.md) — 30s–5min videos
-  - [long-video.md](./presets/long-video.md) — 5–30min videos
-  - [very-long.md](./presets/very-long.md) — > 30min videos
-  - [gif.md](./presets/gif.md) — GIF animations
-  - [quick-glance.md](./presets/quick-glance.md) — Fast summary ("대충 봐줘")
-  - [detailed.md](./presets/detailed.md) — Thorough analysis ("자세히 분석해줘")
-  - [hq-capture.md](./presets/hq-capture.md) — High-quality screenshots ("선명하게 추출")
-  - [inspection.md](./presets/inspection.md) — Visual bug detection ("버그 있는지 봐")
-  - [screen-recording.md](./presets/screen-recording.md) — UI walkthroughs ("화면 녹화")
-- [reference.md](./reference.md) — Complete flag reference (14 flags), JSON output schema, pruning modes, troubleshooting
-- [examples.md](./examples.md) — End-to-end workflow recipes and programmatic API usage
+- Never modify the source media.
+- The probe-generated command uses `npx -y`; follow the host's approval policy if this would download the package. Do not install it globally unless the user explicitly asks.
+- Delete only task-owned temporary output after it is no longer needed. Preserve user-requested screenshots or frame directories.
+- Do not infer dialogue, sound, or narration from frames alone.
