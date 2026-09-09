@@ -90,6 +90,8 @@ interface CvMat {
   rows: number;
   cols: number;
   delete(): void;
+  /** Whether this Embind handle has been released. */
+  isDeleted(): boolean;
 }
 
 interface CvMatVector {
@@ -304,27 +306,45 @@ export interface AKAZEResult {
   sLoss: Point2D[];
 }
 
+/**
+ * Compare AKAZE features while releasing all owned native handles on exit.
+ * @param cvLib - Initialized OpenCV runtime shared by the analyzer.
+ * @param frame1 - Previous frame's grayscale bytes and matching dimensions.
+ * @param frame2 - Next frame's grayscale bytes and matching dimensions.
+ * @returns Newly appearing and disappearing keypoint coordinates as value objects.
+ * @throws Propagates allocation or OpenCV errors after releasing acquired handles.
+ */
 async function computeAKAZEDiff(
   cvLib: CvLib,
   frame1: { data: Uint8Array; width: number; height: number },
   frame2: { data: Uint8Array; width: number; height: number },
 ): Promise<AKAZEResult> {
   const cv = cvLib as unknown as CvImgProc;
-  const mat1 = new cv.Mat(frame1.height, frame1.width, cv.CV_8UC1);
-  mat1.data.set(frame1.data);
-  const mat2 = new cv.Mat(frame2.height, frame2.width, cv.CV_8UC1);
-  mat2.data.set(frame2.data);
-
-  const kp1 = new cvLib.KeyPointVector();
-  const kp2 = new cvLib.KeyPointVector();
-  const desc1 = new cvLib.Mat();
-  const desc2 = new cvLib.Mat();
-  const mask1 = new cvLib.Mat();
-  const mask2 = new cvLib.Mat();
-  const akaze = new cvLib.AKAZE();
+  let mat1: CvMat | null = null;
+  let mat2: CvMat | null = null;
+  let kp1: InstanceType<typeof cvLib.KeyPointVector> | null = null;
+  let kp2: InstanceType<typeof cvLib.KeyPointVector> | null = null;
+  let desc1: InstanceType<typeof cvLib.Mat> | null = null;
+  let desc2: InstanceType<typeof cvLib.Mat> | null = null;
+  let mask1: InstanceType<typeof cvLib.Mat> | null = null;
+  let mask2: InstanceType<typeof cvLib.Mat> | null = null;
+  let akaze: InstanceType<typeof cvLib.AKAZE> | null = null;
+  let matcher: InstanceType<typeof cvLib.BFMatcher> | null = null;
   let matches: InstanceType<typeof cvLib.DMatchVectorVector> | null = null;
 
   try {
+    mat1 = new cv.Mat(frame1.height, frame1.width, cv.CV_8UC1);
+    mat1.data.set(frame1.data);
+    mat2 = new cv.Mat(frame2.height, frame2.width, cv.CV_8UC1);
+    mat2.data.set(frame2.data);
+    kp1 = new cvLib.KeyPointVector();
+    kp2 = new cvLib.KeyPointVector();
+    desc1 = new cvLib.Mat();
+    desc2 = new cvLib.Mat();
+    mask1 = new cvLib.Mat();
+    mask2 = new cvLib.Mat();
+    akaze = new cvLib.AKAZE();
+
     akaze.detectAndCompute(mat1, mask1, kp1, desc1);
     akaze.detectAndCompute(mat2, mask2, kp2, desc2);
 
@@ -332,23 +352,27 @@ async function computeAKAZEDiff(
     const matchedKp2Indices = new Set<number>();
 
     if (desc1.rows > 0 && desc2.rows > 0) {
-      const matcher = new cvLib.BFMatcher(cvLib.NORM_HAMMING, false);
       try {
+        matcher = new cvLib.BFMatcher(cvLib.NORM_HAMMING, false);
         matches = new cvLib.DMatchVectorVector();
         matcher.knnMatch(desc1, desc2, matches, 2);
 
         for (let i = 0; i < matches.size(); i++) {
           const pair = matches.get(i);
-          if (pair.size() < 2) continue;
-          const m0 = pair.get(0);
-          const m1 = pair.get(1);
-          if (m0.distance < MATCH_DISTANCE_THRESHOLD * m1.distance) {
-            matchedKp1Indices.add(m0.queryIdx);
-            matchedKp2Indices.add(m0.trainIdx);
+          try {
+            if (pair.size() < 2) continue;
+            const m0 = pair.get(0);
+            const m1 = pair.get(1);
+            if (m0.distance < MATCH_DISTANCE_THRESHOLD * m1.distance) {
+              matchedKp1Indices.add(m0.queryIdx);
+              matchedKp2Indices.add(m0.trainIdx);
+            }
+          } finally {
+            pair.delete();
           }
         }
       } finally {
-        matcher.delete();
+        matcher?.delete();
       }
     }
 
@@ -370,16 +394,16 @@ async function computeAKAZEDiff(
 
     return { sNew, sLoss };
   } finally {
-    mat1.delete();
-    mat2.delete();
-    kp1.delete();
-    kp2.delete();
-    desc1.delete();
-    desc2.delete();
-    mask1.delete();
-    mask2.delete();
-    akaze.delete();
-    if (matches) matches.delete();
+    mat1?.delete();
+    mat2?.delete();
+    kp1?.delete();
+    kp2?.delete();
+    desc1?.delete();
+    desc2?.delete();
+    mask1?.delete();
+    mask2?.delete();
+    akaze?.delete();
+    matches?.delete();
   }
 }
 
@@ -399,6 +423,12 @@ async function computeAKAZEDiff(
  * 3. threshold → binary mask of significant changes
  * 4. findContours → bounding rects of changed regions
  * 5. Grid sampling within each bounding rect → Point2D[]
+ *
+ * @param cvLib - Initialized OpenCV runtime shared by the analyzer.
+ * @param frame1 - Previous grayscale frame, with the same dimensions as frame2.
+ * @param frame2 - Next grayscale frame, with the same dimensions as frame1.
+ * @returns Grid-sampled points from changed regions.
+ * @throws Propagates allocation or OpenCV errors after releasing acquired handles.
  */
 export function computePixelDiff(
   cvLib: CvLib,
@@ -407,15 +437,23 @@ export function computePixelDiff(
 ): Point2D[] {
   const cv = cvLib as unknown as CvImgProc;
 
-  const mat1 = new cv.Mat(frame1.height, frame1.width, cv.CV_8UC1);
-  const mat2 = new cv.Mat(frame2.height, frame2.width, cv.CV_8UC1);
-  const diff = new cv.Mat();
-  const blurred = new cv.Mat();
-  const binary = new cv.Mat();
-  const contours = new cv.MatVector();
-  const hierarchy = new cv.Mat();
+  let mat1: CvMat | null = null;
+  let mat2: CvMat | null = null;
+  let diff: CvMat | null = null;
+  let blurred: CvMat | null = null;
+  let binary: CvMat | null = null;
+  let contours: CvMatVector | null = null;
+  let hierarchy: CvMat | null = null;
 
   try {
+    mat1 = new cv.Mat(frame1.height, frame1.width, cv.CV_8UC1);
+    mat2 = new cv.Mat(frame2.height, frame2.width, cv.CV_8UC1);
+    diff = new cv.Mat();
+    blurred = new cv.Mat();
+    binary = new cv.Mat();
+    contours = new cv.MatVector();
+    hierarchy = new cv.Mat();
+
     mat1.data.set(frame1.data);
     mat2.data.set(frame2.data);
 
@@ -446,34 +484,38 @@ export function computePixelDiff(
     const points: Point2D[] = [];
     for (let c = 0; c < contours.size(); c++) {
       const contour = contours.get(c);
-      const rect = cv.boundingRect(contour);
+      try {
+        const rect = cv.boundingRect(contour);
 
-      if (rect.width * rect.height < PIXELDIFF_CONTOUR_MIN_AREA) continue;
+        if (rect.width * rect.height < PIXELDIFF_CONTOUR_MIN_AREA) continue;
 
-      for (
-        let y = rect.y;
-        y < rect.y + rect.height;
-        y += PIXELDIFF_SAMPLE_SPACING
-      ) {
         for (
-          let x = rect.x;
-          x < rect.x + rect.width;
-          x += PIXELDIFF_SAMPLE_SPACING
+          let y = rect.y;
+          y < rect.y + rect.height;
+          y += PIXELDIFF_SAMPLE_SPACING
         ) {
-          points.push({ x, y });
+          for (
+            let x = rect.x;
+            x < rect.x + rect.width;
+            x += PIXELDIFF_SAMPLE_SPACING
+          ) {
+            points.push({ x, y });
+          }
         }
+      } finally {
+        contour.delete();
       }
     }
 
     return points;
   } finally {
-    mat1.delete();
-    mat2.delete();
-    diff.delete();
-    blurred.delete();
-    binary.delete();
-    contours.delete();
-    hierarchy.delete();
+    mat1?.delete();
+    mat2?.delete();
+    diff?.delete();
+    blurred?.delete();
+    binary?.delete();
+    contours?.delete();
+    hierarchy?.delete();
   }
 }
 

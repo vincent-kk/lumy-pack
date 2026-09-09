@@ -12,6 +12,8 @@ scene-sieve 핵심 파이프라인. 프레임 추출, 비전 분석, 가지치�
 
 ### analyzer
 
+- `DMatchVectorVector.get()`·`MatVector.get()`으로 얻은 핸들도 호출자가 해제한다. `KeyPointVector.get()`·`DMatchVector.get()`은 값 객체라 해제 대상이 아니다.
+- AKAZE 및 픽셀 차이 분석의 네이티브 객체는 `try` 안에서 할당하고 `finally`에서 해제하여, 할당 중 예외에도 이미 생성된 객체를 정리한다.
 - `analyzeFrames(ctx: ProcessContext): Promise<ScoreEdge[]>` — 프레임 쌍 분석
 - `computeIoU(a: BoundingBox, b: BoundingBox): number` — IoU 계산
 - `computeInformationGain(...)` — 정보 이득 점수 산출
