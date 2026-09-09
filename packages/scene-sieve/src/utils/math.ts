@@ -15,6 +15,23 @@ export interface ScoredItem {
 }
 
 /**
+ * Find the first position whose score is at least the requested value.
+ * @param sorted - Finite positive scores sorted in ascending order.
+ * @param value - A finite positive score present in sorted.
+ * @returns The first matching rank, including the first position of any tie.
+ */
+function lowerBound(sorted: number[], value: number): number {
+  let low = 0;
+  let high = sorted.length;
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2);
+    if (sorted[mid]! < value) low = mid + 1;
+    else high = mid;
+  }
+  return low;
+}
+
+/**
  * Normalize raw scores to [0, 1] range via Robust Hybrid Normalization.
  *
  * This model combines two mathematical approaches to provide a stable "relative" threshold:
@@ -78,7 +95,7 @@ export function normalizeScores<T extends ScoredItem>(items: T[]): number[] {
   // 2. CDF (Percentile Rank)
   const cdf = map(safeScores, (s) => {
     if (s <= 0) return 0;
-    const rank = sorted.findIndex((v) => v >= s);
+    const rank = lowerBound(sorted, s);
     return rank / sorted.length;
   });
 

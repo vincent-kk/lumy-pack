@@ -186,7 +186,7 @@ export function suppressConsecutiveRuns(
 }
 
 /**
- * Threshold-based pruning with NMS -- O(N).
+ * Threshold-based pruning with NMS -- including normalization, O(N log N).
  *
  * 1. Scores are normalized to [0, 1] via percentile normalization.
  * 2. Edges with normalized score >= threshold are collected.
