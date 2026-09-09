@@ -1,30 +1,4 @@
 {
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "FILE=$(jq -r '.tool_input.file_path // .tool_input.notebook_path // empty'); [ -n \"$FILE\" ] && echo \"$FILE\" >> \"$CLAUDE_PROJECT_DIR/.claude/.pending-format\" || true"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "PENDING=\"$CLAUDE_PROJECT_DIR/.claude/.pending-format\"; [ -f \"$PENDING\" ] && { sort -u \"$PENDING\" | while IFS= read -r f; do [ -f \"$f\" ] && \"$CLAUDE_PROJECT_DIR/node_modules/.bin/prettier\" --write --ignore-unknown --log-level=warn \"$f\" >&2; done; rm -f \"$PENDING\"; } || true"
-          }
-        ]
-      }
-    ]
-  },
-  "permissions": {
-    "allow": [
-      "Bash(yarn prettier *)"
-    ]
-  }
+  "hooks": {},
+  "permissions": {}
 }

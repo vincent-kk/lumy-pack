@@ -405,9 +405,9 @@ Tests, specs, fixtures, and generated companions are named for what they verify 
 
 A cycle is two units pretending to be one — no reading order exists. Extract the shared piece into a third unit, invert one edge behind an interface or event, or merge the two honestly. Trace the edges you touched; do not certify acyclicity by tooling you have not run.
 
-## 2. Depth is a toll
+## 2. Group by purpose before minimizing depth
 
-Nest to expose structure, not to file things away; when following one call chain means descending many levels, flatten. A directory with one child is a corridor, not a room — collapse it.
+Group related files in subdirectories named for their topic or responsibility, including inside directories such as `utils/` and `helpers/`. When adding a file, reuse its topic's directory or create one for a distinct responsibility. Flatten only levels that add no topic or ownership boundary; a single child alone is not a reason to collapse a directory.
 
 ## 3. Cohesion splits, complexity compresses
 
@@ -415,7 +415,7 @@ Parts of a unit that share no state or purpose are several units — split where
 
 ---
 
-**This rule is working if:** following a call chain rarely reverses direction, and splits land at seams reviewers recognize without explanation. **This rule is wrong for you if:** the tree is vendored or generated — a generator owns that structure; change the generator or leave it be (`seiri_context-efficiency` §1).
+**This rule is working if:** directory names reveal responsibilities, call chains rarely reverse direction, and splits land at recognizable seams. **This rule is wrong for you if:** the tree is vendored or generated — a generator owns that structure; change the generator or leave it be (`seiri_context-efficiency` §1).
 <!-- SEIRI:END:seiri_structure.md -->
 
 <!-- SEIRI:START:seiri_function-boundaries.md -->
