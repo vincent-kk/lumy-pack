@@ -281,28 +281,29 @@ describe('mergeSegmentFrames', () => {
     ];
     const edges0: ScoreEdge[] = [{ sourceId: 0, targetId: 1, score: 0.3 }];
 
-    const plan1same = makeSegmentPlan({
-      index: 0, // same segment index → globalIdMap collision
-      extractStartTime: 10,
+    const plan1 = makeSegmentPlan({
+      index: 1,
+      extractStartTime: 0,
       effectiveFps: 1,
     });
-    const frames1far: FrameNode[] = [
-      { id: 0, timestamp: 0, extractPath: '/tmp/g0.jpg' }, // global t=10, far from t=0 → survives
-      { id: 1, timestamp: 1, extractPath: '/tmp/g1.jpg' }, // global t=11, far from t=1 → survives
+    const frames1: FrameNode[] = [
+      { id: 0, timestamp: 0, extractPath: '/tmp/g0.jpg' },
+      { id: 1, timestamp: 1, extractPath: '/tmp/g1.jpg' },
     ];
-    const edges1far: ScoreEdge[] = [{ sourceId: 0, targetId: 1, score: 0.9 }];
+    const edges1: ScoreEdge[] = [
+      { sourceId: 0, targetId: 1, score: 0.9 },
+      { sourceId: 0, targetId: 1, score: 0.5 },
+    ];
 
     const merged = mergeSegmentFrames([
       makeSegmentResult(plan, frames, edges0),
-      makeSegmentResult(plan1same, frames1far, edges1far),
+      makeSegmentResult(plan1, frames1, edges1),
     ]);
 
-    expect(merged.edges).toHaveLength(1);
-    expect(merged.edges[0].score).toBe(0.9);
+    expect(merged.edges).toEqual([{ sourceId: 0, targetId: 1, score: 0.9 }]);
   });
 
-  it('edge with unmapped node (filtered duplicate) is dropped', () => {
-    // If a local frame was a duplicate and got deduped, its edge should be dropped
+  it('duplicate frame aliases to survivor for boundary edges', () => {
     const plan0 = makeSegmentPlan({
       index: 0,
       extractStartTime: 0,
@@ -325,7 +326,6 @@ describe('mergeSegmentFrames', () => {
       { id: 0, timestamp: 0, extractPath: '/tmp/s1f0.jpg' }, // global 0.1, dup
       { id: 1, timestamp: 2, extractPath: '/tmp/s1f1.jpg' }, // global 2.1, unique
     ];
-    // Edge references local 0 (deduped) → should be dropped
     const edges1: ScoreEdge[] = [{ sourceId: 0, targetId: 1, score: 0.7 }];
 
     const merged = mergeSegmentFrames([
@@ -333,9 +333,58 @@ describe('mergeSegmentFrames', () => {
       makeSegmentResult(plan1, frames1, edges1),
     ]);
 
-    // local 0 of seg1 was deduped → no globalId → edge dropped
-    const droppedEdge = merged.edges.find((e) => e.score === 0.7);
-    expect(droppedEdge).toBeUndefined();
+    expect(merged.frames[0].extractPath).toBe('/tmp/s0f0.jpg');
+    expect(merged.edges).toEqual([{ sourceId: 0, targetId: 2, score: 0.7 }]);
+  });
+
+  it('F2: 9, 10 and 5 frames merge into 19 frames with all 18 adjacent edges', () => {
+    const results = [
+      { count: 9, start: 0 },
+      { count: 10, start: 6 },
+      { count: 5, start: 14 },
+    ].map(({ count, start }, index) =>
+      makeSegmentResult(
+        makeSegmentPlan({ index, extractStartTime: start, effectiveFps: 1 }),
+        makeFrames(count, index),
+        Array.from({ length: count - 1 }, (_, id) => ({
+          sourceId: id,
+          targetId: id + 1,
+          score: 0.5,
+        })),
+      ),
+    );
+
+    const merged = mergeSegmentFrames(results);
+
+    expect(merged.frames).toHaveLength(19);
+    expect(merged.edges).toHaveLength(18);
+    for (let id = 0; id < 18; id++) {
+      expect(merged.edges).toContainEqual({
+        sourceId: id,
+        targetId: id + 1,
+        score: 0.5,
+      });
+    }
+    expect(
+      merged.edges.every((edge) => edge.sourceId !== edge.targetId),
+    ).toBe(true);
+  });
+
+  it('edges with collapsed aliases, self loops or absent frame IDs are dropped', () => {
+    const frames = makeFrames(3);
+    frames[1].timestamp = 0.1;
+    const edges: ScoreEdge[] = [
+      { sourceId: 0, targetId: 1, score: 0.9 },
+      { sourceId: 2, targetId: 2, score: 0.8 },
+      { sourceId: 0, targetId: 99, score: 0.7 },
+      { sourceId: 99, targetId: 2, score: 0.6 },
+      { sourceId: 1, targetId: 2, score: 0.5 },
+    ];
+    const merged = mergeSegmentFrames([
+      makeSegmentResult(makeSegmentPlan({ effectiveFps: 1 }), frames, edges),
+    ]);
+
+    expect(merged.edges).toEqual([{ sourceId: 0, targetId: 1, score: 0.5 }]);
   });
 
   it('animation remapping: startFrameId/endFrameId updated to global IDs', () => {
@@ -365,7 +414,7 @@ describe('mergeSegmentFrames', () => {
     expect(merged.animations[0].endFrameId).toBe(3);
   });
 
-  it('animation with unmapped frame (deduped) is dropped', () => {
+  it('animation on a duplicate frame aliases to the survivor and retains tracker duration', () => {
     const plan0 = makeSegmentPlan({
       index: 0,
       extractStartTime: 0,
@@ -386,7 +435,6 @@ describe('mergeSegmentFrames', () => {
       { id: 0, timestamp: 0, extractPath: '/tmp/b.jpg' }, // global 0.1, dup
       { id: 1, timestamp: 5, extractPath: '/tmp/c.jpg' },
     ];
-    // Animation references local 0 (deduped) → dropped
     const animations1: AnimationMetadata[] = [
       {
         type: 'fade',
@@ -402,7 +450,67 @@ describe('mergeSegmentFrames', () => {
       makeSegmentResult(plan1, frames1, [], animations1),
     ]);
 
-    // startFrameId=0 (local seg1) maps to no global id (deduped) → animation dropped
-    expect(merged.animations).toHaveLength(0);
+    expect(merged.animations).toEqual([
+      { ...animations1[0], startFrameId: 0, endFrameId: 1 },
+    ]);
+  });
+
+  it('animations with collapsed aliases, self loops or absent frame IDs are dropped', () => {
+    const frames = makeFrames(3);
+    frames[1].timestamp = 0.1;
+    const animations: AnimationMetadata[] = [
+      [0, 1],
+      [2, 2],
+      [0, 99],
+      [99, 2],
+    ].map(([startFrameId, endFrameId]) => ({
+      type: 'fade',
+      boundingBox: { x: 0, y: 0, width: 50, height: 50 },
+      startFrameId,
+      endFrameId,
+      durationMs: 500,
+    }));
+    const merged = mergeSegmentFrames([
+      makeSegmentResult(
+        makeSegmentPlan({ effectiveFps: 1 }),
+        frames,
+        [],
+        animations,
+      ),
+    ]);
+
+    expect(merged.animations).toEqual([]);
+  });
+
+  it('animations with the same aliased pair keep only the first tracker entry', () => {
+    const first: AnimationMetadata = {
+      type: 'fade',
+      boundingBox: { x: 0, y: 0, width: 50, height: 50 },
+      startFrameId: 0,
+      endFrameId: 1,
+      durationMs: 500,
+    };
+    const later: AnimationMetadata = {
+      ...first,
+      type: 'scroll',
+      boundingBox: { x: 10, y: 10, width: 100, height: 100 },
+      durationMs: 900,
+    };
+    const merged = mergeSegmentFrames([
+      makeSegmentResult(
+        makeSegmentPlan({ index: 0, effectiveFps: 1 }),
+        makeFrames(2),
+        [],
+        [first, later],
+      ),
+      makeSegmentResult(
+        makeSegmentPlan({ index: 1, effectiveFps: 1 }),
+        makeFrames(2, 1),
+        [],
+        [later],
+      ),
+    ]);
+
+    expect(merged.animations).toEqual([first]);
   });
 });

@@ -74,6 +74,7 @@ export function computeNewPoints(cvLib: CvLib, prev: FrameFeatures, next: FrameF
 - 내부 경계 양쪽에 이웃 격자점 한 개씩을 overlap으로 포함한다. `allocatedFrames`는 overlap을 포함한 `-frames:v` 값이고, overlap을 뺀 합은 전체 예산 이하이다. 단일 세그먼트의 상한은 전체 `maxFrames`이다.
 - `extractStartTime`은 첫 추출 격자점이다. 추출 종료는 마지막 슬롯을 출력할 수 있도록 한 격자 간격까지 확장하되 원본 길이를 넘지 않는다. 마지막 세그먼트 추출은 원본 끝까지 이어진다.
 - 병합은 로컬 timestamp에 `extractStartTime`을 한 번만 더하고 겹치는 시각에서는 앞 세그먼트 프레임을 유지한다. seek 후 동일 슬롯의 픽셀이 달라질 수 있으므로 픽셀 동일성을 요구하지 않는다.
+- 중복 프레임의 `(segmentIndex, localId)`는 생존 프레임의 globalId로 별칭된다. 별칭 후 `source === target`인 edge는 버리고 같은 쌍의 edge는 높은 점수를 유지한다. animation은 별칭 후 `startFrameId === endFrameId`이면 버리고, 같은 `(startFrameId, endFrameId)` 쌍은 먼저 온 항목 하나만 남기며 `durationMs`는 세그먼트 tracker 값을 유지한다. 세그먼트마다 tracker가 새로 시작하므로 경계를 가로지르는 반복 영역은 두 animation으로 나뉠 수 있다(알려진 한계).
 - 세그먼트 분석 컨텍스트에는 해당 `effectiveFps`, 최종 출력 컨텍스트에는 전역 `effectiveFps`와 원본 `sourceDurationSec`을 보관한다.
 
 ### input-resolver
