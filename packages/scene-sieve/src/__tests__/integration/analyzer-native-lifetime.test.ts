@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { analyzeFrames } from '../../core/analyzer.js';
 import type { ProcessContext } from '../../types/index.js';
+import { createCheckerboardPixels } from '../helpers/checkerboard-pixels.js';
 
 /** Embind handles expose their ownership state independently of their container. */
 interface NativeHandle {
@@ -51,16 +52,10 @@ beforeAll(async () => {
   };
 
   for (let index = 0; index < 6; index++) {
-    const pixels = Buffer.alloc(320 * 240);
-    for (let y = 0; y < 240; y++) {
-      for (let x = 0; x < 320; x++) {
-        pixels[y * 320 + x] =
-          index < 4
-            ? ((Math.floor((x + index * 8) / 32) + Math.floor(y / 32)) % 2) *
-              255
-            : (index - 4) * 255;
-      }
-    }
+    const pixels =
+      index < 4
+        ? createCheckerboardPixels(index)
+        : Buffer.alloc(320 * 240, (index - 4) * 255);
     const extractPath = join(testDir, `frame-${index}.jpg`);
     await sharp(pixels, { raw: { width: 320, height: 240, channels: 1 } })
       .jpeg()

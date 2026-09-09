@@ -8,7 +8,6 @@ import {
   DECAY_LAMBDA,
   DEFAULT_FPS,
   IOU_THRESHOLD,
-  MATCH_DISTANCE_THRESHOLD,
   OPENCV_BATCH_SIZE,
   PIXELDIFF_BINARY_THRESHOLD,
   PIXELDIFF_CONTOUR_MIN_AREA,
@@ -27,6 +26,9 @@ import { logger } from '../utils/logger.js';
 
 import { dbscan } from './dbscan.js';
 import type { Point2D } from './dbscan.js';
+import { computeNewPoints } from './feature-diff.js';
+import { computeFrameFeatures } from './frame-features.js';
+import type { FrameFeatures } from './frame-features.js';
 
 // ── OpenCV WASM Initialization (lazy) ──
 
@@ -299,114 +301,6 @@ export class IoUTracker {
   }
 }
 
-// ── Stage 1: AKAZE Feature Set Difference ──
-
-export interface AKAZEResult {
-  sNew: Point2D[];
-  sLoss: Point2D[];
-}
-
-/**
- * Compare AKAZE features while releasing all owned native handles on exit.
- * @param cvLib - Initialized OpenCV runtime shared by the analyzer.
- * @param frame1 - Previous frame's grayscale bytes and matching dimensions.
- * @param frame2 - Next frame's grayscale bytes and matching dimensions.
- * @returns Newly appearing and disappearing keypoint coordinates as value objects.
- * @throws Propagates allocation or OpenCV errors after releasing acquired handles.
- */
-async function computeAKAZEDiff(
-  cvLib: CvLib,
-  frame1: { data: Uint8Array; width: number; height: number },
-  frame2: { data: Uint8Array; width: number; height: number },
-): Promise<AKAZEResult> {
-  const cv = cvLib as unknown as CvImgProc;
-  let mat1: CvMat | null = null;
-  let mat2: CvMat | null = null;
-  let kp1: InstanceType<typeof cvLib.KeyPointVector> | null = null;
-  let kp2: InstanceType<typeof cvLib.KeyPointVector> | null = null;
-  let desc1: InstanceType<typeof cvLib.Mat> | null = null;
-  let desc2: InstanceType<typeof cvLib.Mat> | null = null;
-  let mask1: InstanceType<typeof cvLib.Mat> | null = null;
-  let mask2: InstanceType<typeof cvLib.Mat> | null = null;
-  let akaze: InstanceType<typeof cvLib.AKAZE> | null = null;
-  let matcher: InstanceType<typeof cvLib.BFMatcher> | null = null;
-  let matches: InstanceType<typeof cvLib.DMatchVectorVector> | null = null;
-
-  try {
-    mat1 = new cv.Mat(frame1.height, frame1.width, cv.CV_8UC1);
-    mat1.data.set(frame1.data);
-    mat2 = new cv.Mat(frame2.height, frame2.width, cv.CV_8UC1);
-    mat2.data.set(frame2.data);
-    kp1 = new cvLib.KeyPointVector();
-    kp2 = new cvLib.KeyPointVector();
-    desc1 = new cvLib.Mat();
-    desc2 = new cvLib.Mat();
-    mask1 = new cvLib.Mat();
-    mask2 = new cvLib.Mat();
-    akaze = new cvLib.AKAZE();
-
-    akaze.detectAndCompute(mat1, mask1, kp1, desc1);
-    akaze.detectAndCompute(mat2, mask2, kp2, desc2);
-
-    const matchedKp1Indices = new Set<number>();
-    const matchedKp2Indices = new Set<number>();
-
-    if (desc1.rows > 0 && desc2.rows > 0) {
-      try {
-        matcher = new cvLib.BFMatcher(cvLib.NORM_HAMMING, false);
-        matches = new cvLib.DMatchVectorVector();
-        matcher.knnMatch(desc1, desc2, matches, 2);
-
-        for (let i = 0; i < matches.size(); i++) {
-          const pair = matches.get(i);
-          try {
-            if (pair.size() < 2) continue;
-            const m0 = pair.get(0);
-            const m1 = pair.get(1);
-            if (m0.distance < MATCH_DISTANCE_THRESHOLD * m1.distance) {
-              matchedKp1Indices.add(m0.queryIdx);
-              matchedKp2Indices.add(m0.trainIdx);
-            }
-          } finally {
-            pair.delete();
-          }
-        }
-      } finally {
-        matcher?.delete();
-      }
-    }
-
-    const sNew: Point2D[] = [];
-    for (let i = 0; i < kp2.size(); i++) {
-      if (!matchedKp2Indices.has(i)) {
-        const pt = kp2.get(i).pt;
-        sNew.push({ x: pt.x, y: pt.y });
-      }
-    }
-
-    const sLoss: Point2D[] = [];
-    for (let i = 0; i < kp1.size(); i++) {
-      if (!matchedKp1Indices.has(i)) {
-        const pt = kp1.get(i).pt;
-        sLoss.push({ x: pt.x, y: pt.y });
-      }
-    }
-
-    return { sNew, sLoss };
-  } finally {
-    mat1?.delete();
-    mat2?.delete();
-    kp1?.delete();
-    kp2?.delete();
-    desc1?.delete();
-    desc2?.delete();
-    mask1?.delete();
-    mask2?.delete();
-    akaze?.delete();
-    matches?.delete();
-  }
-}
-
 // ── Stage 1b: Pixel-Diff Fallback ──
 
 /**
@@ -554,102 +448,151 @@ export function computeInformationGain(
 
 // ── Batch Analysis ──
 
+/** Grayscale bytes and dimensions produced by sharp preprocessing. */
+type PreprocessedFrame = Awaited<ReturnType<typeof preprocessFrame>>;
+
+/** Boundary frame transferred between batches within one analysis. */
+interface FrameCarry {
+  /** Cached grayscale bytes used by pixel fallback. */
+  preprocessed: PreprocessedFrame;
+  /** Live native features owned by the receiving batch or analyzeFrames. */
+  features: FrameFeatures;
+}
+
+/**
+ * Analyze one batch, retaining its boundary frame for the following batch.
+ * @param cvLib - Initialized OpenCV runtime.
+ * @param akaze - Detector owned by analyzeFrames.
+ * @param frames - Boundary frame followed by new adjacent frames.
+ * @param carry - Boundary bytes and live features transferred from the previous batch.
+ * @param scale - Maximum preprocessing width.
+ * @param tracker - Stateful animation tracker shared across batches.
+ * @param pairOffset - Global position of this batch's first pair.
+ * @returns Scores and ownership of the final frame's features, if detection succeeded.
+ */
 async function analyzeBatch(
   cvLib: CvLib,
+  akaze: InstanceType<CvLib['AKAZE']>,
   frames: FrameNode[],
+  carry: FrameCarry | null,
   scale: number,
   tracker: IoUTracker,
   pairOffset: number,
-): Promise<ScoreEdge[]> {
+): Promise<{ edges: ScoreEdge[]; carry: FrameCarry | null }> {
   const edges: ScoreEdge[] = [];
 
-  const preprocessed = await Promise.all(
-    map(frames, (f) => preprocessFrame(f.extractPath, scale)),
-  );
+  let prev: FrameFeatures | null = carry?.features ?? null;
+  let next: FrameFeatures | null = null;
+  try {
+    const preprocessed = await Promise.all(
+      map(frames, (f, index) =>
+        index === 0 && carry
+          ? carry.preprocessed
+          : preprocessFrame(f.extractPath, scale),
+      ),
+    );
 
-  const imageWidth = preprocessed[0]?.width ?? scale;
-  const imageHeight = preprocessed[0]?.height ?? Math.round((scale * 9) / 16);
-  const imageArea = imageWidth * imageHeight;
+    const imageWidth = preprocessed[0]?.width ?? scale;
+    const imageHeight = preprocessed[0]?.height ?? Math.round((scale * 9) / 16);
+    const imageArea = imageWidth * imageHeight;
 
-  for (let i = 0; i < frames.length - 1; i++) {
-    const pairIndex = pairOffset + i;
+    for (let i = 0; i < frames.length - 1; i++) {
+      const pairIndex = pairOffset + i;
 
-    try {
-      const { sNew } = await computeAKAZEDiff(
-        cvLib,
-        preprocessed[i]!,
-        preprocessed[i + 1]!,
-      );
+      try {
+        prev ??= computeFrameFeatures(cvLib, akaze, preprocessed[i]!);
+        next = computeFrameFeatures(cvLib, akaze, preprocessed[i + 1]!);
+        const sNew = computeNewPoints(cvLib, prev, next);
 
-      let dbscanResult = dbscan(sNew, imageWidth, imageHeight);
-      let clusters = dbscanResult.boundingBoxes;
+        let dbscanResult = dbscan(sNew, imageWidth, imageHeight);
+        let clusters = dbscanResult.boundingBoxes;
 
-      // Pixel-diff fallback: when AKAZE → DBSCAN produces no clusters,
-      // try pixel-level difference to catch UI changes AKAZE misses
-      // (dropdowns, form fields, overlays on low-texture backgrounds).
-      if (clusters.length === 0) {
-        const pixelDiffPoints = computePixelDiff(
-          cvLib,
-          preprocessed[i]!,
-          preprocessed[i + 1]!,
+        // Pixel-diff fallback: when AKAZE → DBSCAN produces no clusters,
+        // try pixel-level difference to catch UI changes AKAZE misses
+        // (dropdowns, form fields, overlays on low-texture backgrounds).
+        if (clusters.length === 0) {
+          const pixelDiffPoints = computePixelDiff(
+            cvLib,
+            preprocessed[i]!,
+            preprocessed[i + 1]!,
+          );
+
+          if (pixelDiffPoints.length > 0) {
+            logger.debug(
+              `Edge ${frames[i]!.id}->${frames[i + 1]!.id}: pixel-diff fallback (${pixelDiffPoints.length} points)`,
+            );
+            // minPts=2 for grid-sampled points (default MIN_PTS=4 is too strict for sparse grids)
+            dbscanResult = dbscan(
+              pixelDiffPoints,
+              imageWidth,
+              imageHeight,
+              undefined,
+              2,
+            );
+            clusters = dbscanResult.boundingBoxes;
+          }
+        }
+
+        const clusterPointCounts = new Array<number>(clusters.length).fill(0);
+        for (const label of dbscanResult.labels) {
+          if (label >= 0) {
+            clusterPointCounts[label]++;
+          }
+        }
+
+        const animationIndices = tracker.update(clusters, pairIndex);
+        const animationWeights = map(clusters, (_, ci) =>
+          animationIndices.has(ci)
+            ? tracker.getAnimationWeight(ci, clusters)
+            : 0,
         );
 
-        if (pixelDiffPoints.length > 0) {
-          logger.debug(
-            `Edge ${frames[i]!.id}->${frames[i + 1]!.id}: pixel-diff fallback (${pixelDiffPoints.length} points)`,
-          );
-          // minPts=2 for grid-sampled points (default MIN_PTS=4 is too strict for sparse grids)
-          dbscanResult = dbscan(
-            pixelDiffPoints,
-            imageWidth,
-            imageHeight,
-            undefined,
-            2,
-          );
-          clusters = dbscanResult.boundingBoxes;
-        }
+        const score = computeInformationGain(
+          clusters,
+          clusterPointCounts,
+          imageArea,
+          animationIndices,
+          animationWeights,
+        );
+
+        logger.debug(
+          `Edge ${frames[i]!.id}->${frames[i + 1]!.id} G(t)=${score.toFixed(6)}`,
+        );
+
+        edges.push({
+          sourceId: frames[i]!.id,
+          targetId: frames[i + 1]!.id,
+          score,
+        });
+      } catch (err) {
+        logger.debug(`Frame pair analysis failed: ${String(err)}`);
+        edges.push({
+          sourceId: frames[i]!.id,
+          targetId: frames[i + 1]!.id,
+          score: 0,
+        });
+      } finally {
+        prev?.delete();
+        prev = next;
+        next = null;
       }
-
-      const clusterPointCounts = new Array<number>(clusters.length).fill(0);
-      for (const label of dbscanResult.labels) {
-        if (label >= 0) {
-          clusterPointCounts[label]++;
-        }
-      }
-
-      const animationIndices = tracker.update(clusters, pairIndex);
-      const animationWeights = map(clusters, (_, ci) =>
-        animationIndices.has(ci) ? tracker.getAnimationWeight(ci, clusters) : 0,
-      );
-
-      const score = computeInformationGain(
-        clusters,
-        clusterPointCounts,
-        imageArea,
-        animationIndices,
-        animationWeights,
-      );
-
-      logger.debug(
-        `Edge ${frames[i]!.id}->${frames[i + 1]!.id} G(t)=${score.toFixed(6)}`,
-      );
-
-      edges.push({
-        sourceId: frames[i]!.id,
-        targetId: frames[i + 1]!.id,
-        score,
-      });
-    } catch (err) {
-      logger.debug(`Frame pair analysis failed: ${String(err)}`);
-      edges.push({
-        sourceId: frames[i]!.id,
-        targetId: frames[i + 1]!.id,
-        score: 0,
-      });
     }
-  }
 
-  return edges;
+    const result = {
+      edges,
+      carry: prev
+        ? {
+            preprocessed: preprocessed[preprocessed.length - 1],
+            features: prev,
+          }
+        : null,
+    };
+    prev = null;
+    return result;
+  } finally {
+    prev?.delete();
+    next?.delete();
+  }
 }
 
 // ── Public API ──
@@ -663,6 +606,9 @@ async function analyzeBatch(
  * 2. DBSCAN Spatial Clustering
  * 3. Spatio-temporal IoU Tracking
  * 4. G(t) Information Gain Scoring
+ * @param ctx - Frames, analysis options, and the progress callback for this run.
+ * @returns Adjacent scores and tracked animations in analysis coordinates.
+ * @throws Propagates initialization, preprocessing, or progress errors after cleanup.
  */
 export async function analyzeFrames(
   ctx: ProcessContext,
@@ -683,17 +629,36 @@ export async function analyzeFrames(
   );
   const scale = ctx.options.scale;
 
-  for (let i = 0; i < frames.length - 1; i += OPENCV_BATCH_SIZE) {
-    const batchEnd = Math.min(i + OPENCV_BATCH_SIZE + 1, frames.length);
-    const batch = frames.slice(i, batchEnd);
-    const batchEdges = await analyzeBatch(cvLib, batch, scale, tracker, i);
-    edges.push(...batchEdges);
+  let akaze: InstanceType<CvLib['AKAZE']> | null = null;
+  let carry: FrameCarry | null = null;
+  try {
+    akaze = new cvLib.AKAZE();
+    for (let i = 0; i < frames.length - 1; i += OPENCV_BATCH_SIZE) {
+      const batch = [
+        frames[i],
+        ...frames.slice(i + 1, i + 1 + OPENCV_BATCH_SIZE),
+      ];
+      const result = await analyzeBatch(
+        cvLib,
+        akaze,
+        batch,
+        carry,
+        scale,
+        tracker,
+        i,
+      );
+      carry = result.carry;
+      edges.push(...result.edges);
 
-    const progress = Math.min(
-      100,
-      ((i + OPENCV_BATCH_SIZE) / (frames.length - 1)) * 100,
-    );
-    ctx.emitProgress(progress);
+      const progress = Math.min(
+        100,
+        ((i + OPENCV_BATCH_SIZE) / (frames.length - 1)) * 100,
+      );
+      ctx.emitProgress(progress);
+    }
+  } finally {
+    carry?.features.delete();
+    akaze?.delete();
   }
 
   const animations = tracker.flushAndGetAnimations();

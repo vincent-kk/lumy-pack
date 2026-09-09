@@ -11,6 +11,8 @@ scene-sieve 핵심 비즈니스 로직. 5단계 파이프라인으로 프레임 
 | `workspace.ts` | 임시 디렉토리 관리, 원자적 출력 |
 | `extractor.ts` | FFmpeg 프레임 추출 (I-frame + FPS fallback) |
 | `analyzer.ts` | OpenCV AKAZE, DBSCAN, IoU, G(t) 스코어링 |
+| `frame-features.ts` | `FrameFeatures` 타입과 `computeFrameFeatures` — 호출자 소유 특징점·descriptor 생성 |
+| `feature-diff.ts` | `computeNewPoints` — 이전→다음 프레임의 미매칭 특징점 좌표 계산 |
 | `dbscan.ts` | 공간 클러스터링 알고리즘 |
 | `pruner.ts` | 순수함수 기반 프레임 가지치기 (min-heap) |
 

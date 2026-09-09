@@ -3,6 +3,8 @@ declare module '@techstark/opencv-js' {
 
   export class Mat {
     constructor();
+    /** Allocate an image with the specified dimensions and OpenCV pixel type. */
+    constructor(rows: number, cols: number, type: number);
     rows: number;
     cols: number;
     data: Uint8Array;
@@ -79,6 +81,8 @@ declare module '@techstark/opencv-js' {
   }
 
   export const NORM_HAMMING: number;
+  /** Unsigned eight-bit grayscale image type. */
+  export const CV_8UC1: number;
 
   export function matFromImageData(imageData: {
     data: Uint8Array;
