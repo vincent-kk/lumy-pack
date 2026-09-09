@@ -56,7 +56,7 @@
 ### metadata-transform — 출력 좌표계
 
 - [ ] API와 파일 metadata의 animation bbox는 모두 출력 픽셀 좌표이며 `buildVideoMetadata` 한 곳에서 변환된다.
-- [ ] 0·1프레임 결과에서도 metadata 생성이 성공하고 해상도는 0×0이다.
+- [ ] 0·1프레임 결과에서도 metadata 생성이 성공한다. 후보가 없으면 `video.resolution`은 0×0, 후보가 하나면 실제 이미지 크기다. 분석을 생략한 두 경우의 `analysisResolution`은 모두 0×0이다.
 
 ### resource-safety — 핸들 해제와 순수성
 

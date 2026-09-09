@@ -69,7 +69,7 @@
 ### phase-display — 단계 표시
 
 - [ ] 다섯 단계가 순서대로 표시되고 실패 시 running 단계만 failed가 된다.
-- [ ] 일반 모드는 Worker 스레드에서 파이프라인을 실행한다.
+- [ ] 일반 모드의 번들 `.mjs` 실행은 Worker 스레드에서 파이프라인을 실행한다. tsx 개발 실행은 Worker 번들이 없어 같은 스레드로 fallback하며, CPU 분석 중 스피너 갱신은 보장하지 않는다.
 
 ## Last Updated
 

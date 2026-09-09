@@ -98,6 +98,20 @@ export function computeNewPoints(cvLib: CvLib, prev: FrameFeatures, next: FrameF
 - [ ] `analysisResolution`은 첫 분석 프레임의 크기이고 animation bbox는 그 좌표계다.
 - [ ] tracker FPS는 `effectiveFps`를 우선한다.
 
+## Boundary Exemptions
+
+### `analyzer.ts` — 분석 중간 단계 시각화
+
+- **Consumers**: `packages/scene-sieve/.samples/generate-showcase.ts`
+- **Direct import**: `allowed`
+- **Reason**: 개발용 쇼케이스는 전처리, 픽셀 차분, tracker의 중간 상태를 각각 시각화한다. 최종 분석 결과만 제공하는 entry로는 이 관측을 표현할 수 없으므로 내부 구현을 직접 재사용하며 공개 API에는 추가하지 않는다.
+
+### `constants/vision-tuning.ts` — 시각화와 분석 파라미터 일치
+
+- **Consumers**: `packages/scene-sieve/.samples/generate-showcase.ts`
+- **Direct import**: `allowed`
+- **Reason**: 중간 이미지 생성에 실제 분석과 같은 임계값이 필요하다. 상수를 복제하면 시각화와 구현이 달라지므로 개발용 쇼케이스에만 직접 접근을 허용한다.
+
 ## Last Updated
 
 2026-09-10

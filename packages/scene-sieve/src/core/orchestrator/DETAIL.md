@@ -14,7 +14,7 @@
 - 각 단계 진입·진행 시 `options.onProgress(ctx.status, percent)`를 호출한다. `INIT` 이전이나 종료 상태에서는 호출하지 않는다.
 - 단계 구현은 형제 프랙탈의 entry에서 가져온다: `resolveInput`/`resolveOptions`(input-resolver), `extractFrames`(extractor), `analyzeFrames`(analyzer), `pruneByThresholdWithCap`(pruner), `createWorkspace`/`finalizeOutput`/`readFramesAsBuffers`/`cleanupWorkspace`(workspace). 최종 `video`와 출력 좌표계 `animations`는 core organ `utils/metadata/build-video-metadata.ts`의 `buildVideoMetadata`로 만든다(계약은 `core/DETAIL.md`).
 - `finally`에서 `resolvedOptions.debug`가 거짓이면 `cleanupWorkspace(ctx.workspacePath)`를 실행하고, 참이면 경로를 debug 로그로 남기고 보존한다.
-- `ctx.effectiveFps`·`ctx.sourceDurationSec`·`ctx.analysisResolution`은 단계 함수가 채우며 orchestrator는 읽기만 한다.
+- file/buffer 경로에서 extractor는 전달받은 `extractCtx`에 `effectiveFps`와 `sourceDurationSec`을 기록하고, orchestrator가 이를 원본 `ctx`로 복사한다. frames 경로의 `ctx.effectiveFps`는 orchestrator가 1로 설정한다. analyzer는 `analysisResolution`을 반환하며 orchestrator가 `ctx.analysisResolution`에 저장한다.
 
 ### `runPipelineInWorker(options: SieveWorkerOptions, onProgress: (phase: ProgressPhase, percent: number) => void): Promise<SieveResult>`
 

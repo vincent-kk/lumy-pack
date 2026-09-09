@@ -2,16 +2,17 @@
 
 ## Requirements
 
-`maxSegmentDuration`을 넘는 file/buffer 입력을 전역 FPS 격자에 정렬된 세그먼트로 나누어 `concurrency`만큼 병렬 처리하고, 단일 파이프라인과 같은 형태의 `SieveResult`를 돌려준다. 세그먼트 경계에서 프레임이 중복되거나 유실되지 않아야 하며 edge·animation ID는 전역 ID로 다시 매핑되어야 한다.
+frames 입력과 file 모드의 GIF를 제외한 입력을 받아, 원본 길이와 `maxSegmentDuration`에 따라 전역 FPS 격자에 정렬된 계획을 만들고 `concurrency`만큼 병렬 처리한다. 단일 파이프라인과 같은 형태의 `SieveResult`를 돌려준다. 세그먼트 경계에서 프레임이 중복되거나 유실되지 않아야 하며 edge·animation ID는 전역 ID로 다시 매핑되어야 한다.
 
 ## API Contracts
 
 ### `shouldSegment(resolvedOptions: ResolvedOptions, options: SieveOptions): boolean`
 
-- file/buffer 입력이고 원본 길이가 `maxSegmentDuration`을 넘을 때만 참이다. frames 입력은 분할하지 않는다.
+- frames 모드와 file 모드의 `.gif` 확장자(대소문자 무관) 입력은 거짓이고 나머지는 참이다. 입력 길이는 검사하지 않는 진입 predicate이므로 짧은 MP4와 buffer 모드 GIF도 세그먼트 경로로 진입한다.
 
 ### `computeSegmentPlan(...)` — 세그먼트 계획
 
+- 원본 길이가 `maxSegmentDuration` 이하이면 overlap 없는 계획 하나를 반환한다. 더 길면 해당 길이의 논리 구간으로 나누고 격자와 예산에 따라 실제 계획 수를 결정한다.
 - 논리 구간 `[startTime, endTime)`마다 전역 격자점 `k / effectiveFps`를 소유한다. 격자점이 없는 구간은 제외하며 반환 인덱스는 제외 후 연속이다.
 - 내부 경계 양쪽에 이웃 격자점 한 개씩을 overlap으로 포함한다(`overlapBefore`·`overlapAfter`는 0 또는 1). `allocatedFrames`는 overlap을 포함한 `-frames:v` 값이고, overlap을 뺀 합은 전체 예산 이하다. 단일 세그먼트의 상한은 전체 `maxFrames`다.
 - `extractStartTime`은 첫 추출 격자점(`(firstSlot - overlapBefore) / effectiveFps`)이다. 추출 종료는 마지막 슬롯을 출력할 수 있도록 한 격자 간격까지 확장하되 원본 길이를 넘지 않는다. 마지막 세그먼트는 원본 끝까지 추출한다.

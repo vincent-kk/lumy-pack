@@ -14,7 +14,7 @@
 
 ## Boundaries
 
-- entry가 공개하는 것은 `analyzeFrames`, `computeIoU`, `computeInformationGain`, `dbscan`과 `Point2D`뿐이다. 특징점·픽셀 차분·전처리 함수는 내부 구현이며 검증 파일만 직접 참조한다.
+- entry가 공개하는 것은 `analyzeFrames`, `computeIoU`, `computeInformationGain`, `dbscan`과 `Point2D`뿐이다. 특징점·픽셀 차분·전처리 함수는 내부 구현이며 검증 파일과 DETAIL에 명시한 개발용 시각화 소비자만 직접 참조한다.
 - 소비자는 `orchestrator`와 `segmenter`이고, 입력은 `ProcessContext`(프레임 경로·옵션·진행 콜백)뿐이다.
 - 반환 좌표는 분석 해상도 기준이다. 출력 좌표 변환은 `core/utils/metadata/`가 맡는다.
 

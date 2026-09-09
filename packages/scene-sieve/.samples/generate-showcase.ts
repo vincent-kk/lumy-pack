@@ -5,8 +5,8 @@
  * AKAZE → DBSCAN → IoU Tracking → G(t) Scoring + Pruning
  *
  * Usage:
- *   npx tsx .samples/generate-showcase.ts                     # default samples
- *   npx tsx .samples/generate-showcase.ts path/to/video.mp4   # custom video(s)
+ *   yarn exec tsx .samples/generate-showcase.ts                    # default samples
+ *   yarn exec tsx .samples/generate-showcase.ts path/to/video.mp4  # custom video(s)
  * Output: .samples/algorithm-showcase/
  */
 import { randomUUID } from 'node:crypto';
@@ -27,23 +27,25 @@ import {
   PIXELDIFF_CONTOUR_MIN_AREA,
   PIXELDIFF_GAUSSIAN_KERNEL,
   PIXELDIFF_SAMPLE_SPACING,
-} from '../src/constants.js';
+} from '../src/core/analyzer/constants/vision-tuning.js';
 import {
   IoUTracker,
-  computeInformationGain,
   computePixelDiff,
   preprocessFrame,
-} from '../src/core/analyzer.js';
-import { dbscan } from '../src/core/dbscan.js';
-import type { Point2D } from '../src/core/dbscan.js';
-import { pruneByThresholdWithCap } from '../src/core/pruner.js';
+} from '../src/core/analyzer/analyzer.js';
+import {
+  computeInformationGain,
+  dbscan,
+  pruneByThresholdWithCap,
+} from '../src/core/index.js';
+import type { Point2D } from '../src/core/index.js';
+import { normalizeScores } from '../src/core/pruner/scoring/normalize-scores.js';
 import type {
   BoundingBox,
   DBSCANResult,
   FrameNode,
   ScoreEdge,
 } from '../src/types/index.js';
-import { normalizeScores } from '../src/utils/math.js';
 
 // ── Types ──
 

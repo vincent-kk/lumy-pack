@@ -9,7 +9,7 @@ scene-sieve 명령의 사용자 표면. commander 명령 등록, Ink 진행 표�
 - 명령 메타데이터(이름, 인자, 옵션 설명)는 명령 레지스트리 한 곳이 진실이다. `--help`와 `--describe`는 같은 원천을 읽는다.
 - 옵션 기본값의 표시 문자열은 루트 상수 organ의 기본값에서 만든다. 문자열 상수를 따로 두지 않는다.
 - 숫자 옵션은 문자열 전체를 검사하며 잘못된 입력은 NaN으로 넘겨 파이프라인의 범위 검증이 거부하게 한다. CLI는 범위를 재검증하지 않는다.
-- 일반 모드는 Worker 스레드(`runPipelineInWorker`)로, `--json` 모드는 같은 스레드(`runPipeline`)로 실행한다. 이유: Ink 스피너는 CPU 작업과 스레드를 나눠야 멈추지 않고, JSON 모드는 표시가 없어 Worker가 필요 없다.
+- 일반 모드는 `runPipelineInWorker`를 호출한다. 번들 `.mjs` 실행에서는 Worker로 CPU 작업을 분리해 Ink 스피너를 유지하고, Worker 번들이 없는 tsx 개발 실행에서는 같은 스레드로 fallback한다. `--json`은 표시가 없어 같은 스레드의 `runPipeline`을 사용한다.
 
 ## Boundaries
 

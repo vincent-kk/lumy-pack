@@ -25,7 +25,7 @@
 
 - 출력 교체 절차 변경(원자적 교체 도입 등)
 - 임시 루트·접두사·stale 임계값 변경
-- 파일 metadata 형식(`metadata.json` 필드) 변경
+- 파일 metadata 형식(`.metadata.json` 필드) 변경
 
 ## Never do
 

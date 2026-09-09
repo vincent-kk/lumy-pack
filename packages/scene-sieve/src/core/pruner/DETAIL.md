@@ -11,9 +11,9 @@ G(t) 그래프에서 의미 있는 프레임을 순수 함수로 선별한다. �
 - 프레임의 이중 연결 리스트와 edge 최소 힙을 만들고, 최저 점수 edge의 뒤쪽 프레임(`tgtId`)을 제거한 뒤 이웃을 다시 잇고 `max(left, right)` 점수의 합성 edge를 넣는다. 생존 수가 `targetCount`가 될 때까지 반복한다. O(N log N).
 - `tgtId`가 첫 프레임이나 마지막 프레임이면 건너뛴다. 제거된 프레임을 포함한 stale 힙 항목은 pop 시 무시한다.
 
-### `pruneByThreshold(graph: ScoreEdge[], threshold: number): Set<number>`
+### `pruneByThreshold(graph: ScoreEdge[], frames: FrameNode[], threshold: number): Set<number>`
 
-- `normalizeScores(graph)`로 [0, 1] 점수를 얻고 `>= threshold`인 edge 인덱스를 모은 뒤 `suppressConsecutiveRuns`로 구간별 peak만 남긴다. 첫·마지막 프레임은 항상 포함한다.
+- `normalizeScores(graph)`로 [0, 1] 점수를 얻고 `>= threshold`인 edge 인덱스를 모은 뒤 `suppressConsecutiveRuns`로 구간별 peak만 남긴다. `frames`가 제공하는 첫·마지막 프레임은 항상 포함한다.
 
 ### `suppressConsecutiveRuns(graph, passingIndices, normalizedScores): Set<number>`
 
@@ -58,6 +58,14 @@ G(t) 그래프에서 의미 있는 프레임을 순수 함수로 선별한다. �
 
 - [ ] 생존 수가 `cap`을 넘을 때만 부분 그래프를 재구성하고 `pruneTo`를 적용한다.
 - [ ] 합성 edge 점수는 간격 안 edge 점수의 최소값이다.
+
+## Boundary Exemptions
+
+### `scoring/normalize-scores.ts` — 알고리즘 시각화
+
+- **Consumers**: `packages/scene-sieve/.samples/generate-showcase.ts`
+- **Direct import**: `allowed`
+- **Reason**: 개발용 쇼케이스는 가지치기 전 정규화 점수를 그래프로 그려야 한다. 선택된 ID만 반환하는 공개 API로는 중간 점수를 얻을 수 없으므로 구현을 재사용하되 패키지 공개 계약을 넓히지 않는다.
 
 ## Last Updated
 
