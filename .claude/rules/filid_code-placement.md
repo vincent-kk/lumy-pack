@@ -1,6 +1,6 @@
 # Code Placement
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > filid defaults — the higher source wins. Where a unit sits decides who may reach it: placement is a boundary decision, not a filing decision. This rule rests on properties every codebase has: a unit has a location, and its consumers have locations too. Applies when the repository has adopted FCA and you are adding a unit with more than one consumer, or moving one; prefer the move at a natural seam, not mid-task.
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > filid defaults — the higher source wins. Where a unit sits decides who may reach it: placement is a boundary decision, not a filing decision. Applies when the repository has adopted FCA and you are adding a unit with more than one consumer, or moving one; prefer the move at a natural seam, not mid-task.
 
 ## 1. Shared code sits at the lowest common fractal of its consumers
 
@@ -16,11 +16,11 @@ An organ has no entry point, so it cannot own a shared boundary. When the comput
 
 ## 4. Planning is read-only; the postcondition demands the exact target
 
-A functionally working but different result is a failed restructure. A plan reports normalized absolute source and target paths, basis, consumers, the computed ancestor, required artifacts, import rewrites and decision reasons; it may write only an ephemeral plan artifact. A precondition checks the snapshot hash immediately before execution. A postcondition checks the exact target, the source's absence, the node type, documents, entry point, import boundary, required rewrites and the acyclic graph. The restructure tool plans and validates; an external actor performs the change.
+A functionally working but different result is a failed restructure. The restructure tool plans and validates — a plan reports normalized absolute source and target paths, basis, consumers, the computed ancestor, required artifacts, import rewrites and decision reasons, writing only an ephemeral plan artifact; a precondition checks the snapshot hash immediately before execution; a postcondition checks the exact target, the source's absence, the node type, documents, entry point, import boundary, required rewrites and the acyclic graph — and an external actor performs the change.
 
 ## 5. The document changes before the code does
 
-Contracts lead; implementations follow. Before implementation that touches a fractal: identify every affected fractal; update each affected DETAIL contract, and INTENT when a public interface or boundary changes; implement the minimum change — for new behavior or a fix, first write a check and watch it fail for the intended reason; run scoped verification and the structural scan (warnings count as findings) and record the result and any deviation from the plan before the next review seam.
+Contracts lead; implementations follow: before changing a fractal, update DETAIL, and update INTENT only when its public boundary changes. Run Filid scans and validations once at the pull-request or merge-track seam, after implementation and accepted review fixes — earlier only when explicitly requested; ordinary development checks and edits never trigger them. At the seam, record warnings as findings and note any deviation from the plan.
 
 ---
 

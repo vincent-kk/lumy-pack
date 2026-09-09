@@ -1,7 +1,12 @@
+# Repository Requirements
+
+- For arrays with fewer than 5,000 elements, prefer direct array operations for one-off work. Avoid constructing a `Set` only to inspect its size or perform a single lookup. Use a `Set` when repeated membership operations reuse the index enough to amortize construction. Verify performance-sensitive choices with measurements.
+- Exclude build outputs from commits. Run the designated builds and artifact checks, but stage source changes separately from generated runtime bundles and compiled assets.
+
 <!-- FILID:START:filid_fractal-boundaries.md -->
 # Fractal Boundaries
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > filid defaults — the higher source wins. Fractal Context Architecture organizes a codebase as nested independent modules: a fractal owns a contract and a public boundary; an organ is an internal compartment owned by exactly one fractal. This rule rests on properties every codebase has: directories contain files, and files reference one another. Applies when the repository has adopted FCA — module documents or a filid configuration are present. Companions: `filid_module-documents.md` (INTENT/DETAIL contracts), `filid_verification-records.md` (verification roles and caps), `filid_code-placement.md` (where a unit belongs and how it moves).
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > filid defaults — the higher source wins. Fractal Context Architecture organizes a codebase as nested independent modules: a fractal owns a contract and a public boundary; an organ is an internal compartment owned by exactly one fractal. Applies when the repository has adopted FCA — module documents or a filid configuration are present. Companions: `filid_module-documents.md` (INTENT/DETAIL contracts), `filid_verification-records.md` (verification roles and caps), `filid_code-placement.md` (where a unit belongs and how it moves).
 
 ## 1. Classification comes from files that exist
 
@@ -12,23 +17,17 @@
 | `pure-function` | optional  | none     | not required | Explicitly isolated effect-free unit      |
 | `hybrid`        | optional  | allowed  | required     | Manually assigned transitional node       |
 
-Resolve in this strict order: (1) `INTENT.md` present → fractal; (2) `DETAIL.md` present → fractal — a missing-INTENT signal; (3) double-underscore-wrapped or dot-prefixed infrastructure name → organ; (4) name in the known organ list → organ; (5) a registered adapter reports a **module** index → fractal; (6) a leaf directory with no fractal children → organ; (7) an adapter proves both statelessness and no side effects → pure-function; (8) otherwise → organ.
+Resolve in this strict order: (1) `INTENT.md` present → fractal; (2) `DETAIL.md` present → fractal — a missing-INTENT signal; (3) double-underscore-wrapped or dot-prefixed infrastructure name → organ; (4) name in the known organ list → organ; (5) a registered adapter reports a **module** index → fractal; (6) a leaf directory with no fractal children → organ; (7) an adapter proves both statelessness and no side effects → pure-function; (8) otherwise → organ. Only module entries classify — executable, framework and manifest entries, and any `entryPointOverrides` path, feed the entry-point surface, never classification — and a leaf that never claimed isolation is an organ even when nothing in it has an effect.
 
-- Step 5 reads module entries only. Executable, framework and manifest entries — and any `entryPointOverrides` path — feed the entry-point surface, never classification; otherwise markdown-as-implementation (a skill document) would turn a prose directory into a fractal.
-- Step 6 precedes purity on purpose: a leaf that never claimed isolation is an organ even when nothing in it has an effect. Step 8 defaults to organ on purpose: a directory that declares neither a document nor an index has never claimed an independent contract.
 - Default organ names: `components`, `utils`, `types`, `hooks`, `helpers`, `lib`, `styles`, `assets`, `constants`, `test`, `tests`, `spec`, `specs`, `fixtures`, `e2e`. Docs-as-code names (`references`, `docs`, `plans`) are deliberately absent — adding one would silently reclassify a real code module of that name. Config extends the list via `structure.additionalOrganNames`.
 
 ## 2. Classification describes; it never prescribes
 
-Traversal continues inside organs: a nested directory with its own documents or module index is reclassified as its own fractal. `hybrid` is never auto-assigned, and an unproven purity analysis stays an organ. What a node _should_ be is a rule result, not a classification: an organ consumed from outside its owner's subtree is reported with the consumer paths as evidence, never silently reclassified — which is what lets a non-FCA codebase be adopted.
+Traversal continues inside organs: a nested directory with its own documents or module index is its own fractal. `hybrid` is never auto-assigned, and unproven purity stays an organ. What a node _should_ be is a rule result, not a classification: an organ consumed from outside its owner's subtree is reported with the consumer paths as evidence, never silently reclassified — which is what lets a non-FCA codebase be adopted.
 
 ## 3. A fractal is crossed through its entry point
 
-- Every fractal and hybrid has an adapter-reported module, executable, framework or manifest entry point; organs and pure-function nodes need none.
-- A package manifest is an entry point: where the ecosystem declares the package's public surface in its manifest, that declaration IS the boundary. A manifest entry states a surface; it does not classify.
-- The public surface is adapter-inspectable: an enumerated surface declares its exports by name, and widening it is a contract change. An opaque or unsupported framework surface keeps its uncertainty instead of passing.
-- Sibling fractals import the sibling's entry point — never an internal file, and never a shared parent barrel that re-exports the sibling.
-- Inside one fractal, files import concrete internal peers directly, not their own local entry point.
+Every fractal and hybrid has an adapter-reported module, executable, framework or manifest entry point — a package manifest that declares the public surface IS the boundary; it states a surface, it does not classify — and organs and pure-function nodes need none. An enumerated surface declares its exports by name, and widening it is a contract change; an opaque or unsupported framework surface keeps its uncertainty instead of passing. Sibling fractals import the sibling's entry point — never an internal file, and never a shared parent barrel that re-exports the sibling — while inside one fractal, files import concrete internal peers directly, not their own local entry point.
 
 ## 4. A fractal root holds documents and entry points, not code
 
@@ -45,16 +44,12 @@ An organ has no entry point, so "route through the entry point" cannot apply to 
 | Outside                    | organ file, directly            | violation — unless exempted        |
 
 - Inside the owner's subtree a nested fractal may import an organ's concrete files directly — that is the shape lowest-common-fractal placement produces.
-- A unit with external consumers naturally belongs at _their_ lowest common fractal, so staying put is a deliberate choice that carries a reason. A direct import from outside is sometimes correct — the standing case is a build whose target the entry point cannot represent — but it is declared, not assumed. Both declarations live in the owning fractal's `DETAIL.md` (entry shape in `filid_module-documents.md`). An organ consumed from outside with neither declaration has an external boundary: the finding names both resolutions — promote it to a fractal, or move it to its consumers' lowest common fractal — and cites the consumer paths.
-- The same declaration covers a fractal's internals: a consumer barred from the entry point by something the boundary cannot represent declares the exemption rather than widening the contract. Undeclared, it stays a violation.
+- A unit with external consumers belongs at _their_ lowest common fractal, so staying put is a deliberate choice that carries a reason; a direct import from outside is sometimes correct — the standing case is a build whose target the entry point cannot represent — but it is declared, not assumed. Both declarations live in the owning fractal's `DETAIL.md` (entry shape in `filid_module-documents.md`). An organ consumed from outside with neither declaration is a finding that names both resolutions — promote it to a fractal, or move it to its consumers' lowest common fractal — and cites the consumer paths. The same declaration covers a fractal's internals: a consumer barred from the entry point by something the boundary cannot represent declares the exemption rather than widening the contract; undeclared, it stays a violation.
 - **A verification file is not judged by this rule at all, and its references do not close a cycle.** Checking an internal unit means reaching it; the alternative exports internals for tests alone. Which files are verification comes from the adapter, not from a filename pattern.
 
 ## 6. The graph is acyclic and depth is a toll
 
-- Dependency edges point from consumers to entry points and form a DAG; a reported cycle carries its source files and resolved dependency evidence.
-- A node stays within the configured structural depth, measured from the scanned project root over classified nodes.
-- A pure-function node depends on no fractal or hybrid; where isolation cannot be proven, reclassify the node or pass its dependencies in as inputs.
-- Where evidence is missing the answer is `indeterminate` — and `indeterminate` and `unsupported` are never converted to a pass.
+Dependency edges point from consumers to entry points and form a DAG; a reported cycle carries its source files and resolved dependency evidence. A node stays within the configured structural depth, measured from the scanned project root over classified nodes. A pure-function node depends on no fractal or hybrid — where isolation cannot be proven, reclassify the node or pass its dependencies in as inputs. Where evidence is missing the answer is `indeterminate` — and `indeterminate` and `unsupported` are never converted to a pass.
 
 ---
 
@@ -70,29 +65,33 @@ paths:
 
 # Module Documents
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > filid defaults — the higher source wins. INTENT records the boundary; DETAIL records the current contract and, when a change is worth remembering, the history behind it. This rule rests on a property every FCA project has: a module's contract is written down in a file next to the code it governs. Applies when you are creating or editing an `INTENT.md` or a `DETAIL.md`.
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > filid defaults — the higher source wins. INTENT records the boundary; DETAIL records the current contract and, when a change is worth remembering, the history behind it. Applies when you are creating or editing an `INTENT.md` or a `DETAIL.md`.
 
 ## 1. INTENT records the boundary; DETAIL records the contract
 
-Two documents, two jobs — neither substitutes for the other. The section headings `Purpose`, `Structure`, `Conventions`, `Boundaries`, `Always do`, `Ask first`, `Never do` and `Dependencies` in INTENT, and `Requirements`, `API Contracts`, `Acceptance Criteria` and `Last Updated` in DETAIL, stay in English; descriptive content follows `[filid:lang]`, defaulting to English. INTENT records only this fractal's own purpose, ownership and boundaries — never a copy of an ancestor's — and updates only when the public boundary or contract changes. When a directory's conventional name misleads, say so in `Structure`.
+Two documents, two jobs — neither substitutes for the other. The section headings `Purpose`, `Conventions`, `Boundaries`, `Always do`, `Ask first` and `Never do` in INTENT — plus `Structure` and `Dependencies` only under the conditions §2 sets — and `Requirements`, `API Contracts`, `Acceptance Criteria` and `Last Updated` in DETAIL, stay in English; descriptive content follows `[filid:lang]`, defaulting to English. INTENT records only this fractal's own purpose, ownership and boundaries — never a copy of an ancestor's — and updates only when the public boundary or contract changes.
 
-## 2. INTENT is at most 50 lines and names its three boundaries
+## 2. A document states what tools cannot derive
+
+Anything a reader's tools answer in one command is not content — it is a second copy that drifts. File and directory inventories, export lists, dependency rosters and counts of any of these come from `ls`, a symbol index or the package manifest, and are never written into INTENT or DETAIL; the documents keep what no tool can print — boundary decisions, reasons, invariants, and warnings about what the tree misleads on. `Structure` and `Dependencies` are therefore conditional sections: `Structure` appears only to defuse what the tree cannot say — a name trap, a generated-vs-canonical split, a misleading conventional name; `Dependencies` appears only for a coupling the manifest cannot show. A path reference that must stay carries its reason beside it, the way an exemption does (§7); three or more path tokens in one section read as an inventory, and the scanner flags them.
+
+## 3. INTENT is at most 50 lines and names its three boundaries
 
 A boundary document that needs scrolling is not a boundary document. `INTENT.md` is at most 50 lines and contains `Always do`, `Ask first` and `Never do` sections — a boundary with no "never" has not been decided yet.
 
-## 3. An organ has no INTENT
+## 4. An organ has no INTENT
 
 Independent documentation is a claim to an independent contract. An organ does not contain `INTENT.md`, and does not use INTENT as local documentation. If a directory genuinely needs its own boundary document, that is the signal to reclassify it as a fractal — with an entry point — not to add the file where it stands.
 
-## 4. DETAIL's contract sections are current state, not an append-only ledger
+## 5. DETAIL's contract sections are current state, not an append-only ledger
 
 Restructure the contract sections to the currently intended behavior on every update; a superseded clause is removed, not left standing beside its replacement. Update DETAIL before the code it describes. Acceptance groups carry stable IDs, unique within that document. `DETAIL.md` is the sole acceptance-criteria ledger; a legacy `.filid/criteria.md` is reported as such — never auto-deleted, never silently migrated.
 
-## 5. History has one address, and the contract is not it
+## 6. History has one address, and the contract is not it
 
-INTENT carries no history — no changelog, no dated notes; a retired boundary leaves by deletion, not by annotation. The code carries none either. `## History` in DETAIL is the one place the past is written down: optional, below the contract sections and above `## Last Updated`, entries newest first, recording the decision and the reason it was taken or reversed — the diff itself is version control's job. An entry that no longer informs a present decision is dropped, not archived deeper. A history entry accompanies the contract change that produced it; an edit that only appends an entry is the append-only pattern §4 rejects.
+INTENT carries no history — no changelog, no dated notes; a retired boundary leaves by deletion, not by annotation. The code carries none either. `## History` in DETAIL is the one place the past is written down: optional, below the contract sections and above `## Last Updated`, entries newest first, recording the decision and the reason it was taken or reversed — the diff itself is version control's job. An entry that no longer informs a present decision is dropped, not archived deeper. A history entry accompanies the contract change that produced it; an edit that only appends an entry is the append-only pattern §5 rejects.
 
-## 6. An exemption without a reason is a disabled rule in costume
+## 7. An exemption without a reason is a disabled rule in costume
 
 `Reason` is the load-bearing field. `Boundary Exemptions` is conditional — present only when this fractal actually grants one (`## Organ Exemptions` is the same syntax under this section's former name and is still read); a fractal that needs one and has no `DETAIL.md` adds the document for this purpose. The target is an organ path or a path inside this fractal — a path names itself and everything under it. Write the target path, each consumer and the direct-import verdict inside a code span: a markdown formatter reads a bare `__tests__` as emphasis and silently corrupts the heading; the span survives the formatter, and the parser strips it before comparing. An entry uses the acceptance-group shape, so one parser reads both:
 
@@ -111,7 +110,7 @@ A missing or empty `Reason` is an unmet contract, not a granted exemption.
 
 ---
 
-**This rule is working if:** every fractal's boundary fits on one screen, and the only past tense in the tree sits under a `## History` heading. **This rule is wrong for you if:** the directory is an organ, or a part of the tree that has not adopted FCA — then it has no contract of its own to document, and adding one is the wrong move.
+**This rule is working if:** every fractal's boundary fits on one screen, nothing in it repeats what `ls` can print, and the only past tense in the tree sits under a `## History` heading. **This rule is wrong for you if:** the directory is an organ, or a part of the tree that has not adopted FCA — then it has no contract of its own to document, and adding one is the wrong move.
 <!-- FILID:END:filid_module-documents.md -->
 
 <!-- FILID:START:filid_verification-records.md -->
@@ -136,7 +135,7 @@ paths:
 
 # Verification Records
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > filid defaults — the higher source wins. A verification file serves one of two roles: a spec-document is the current executable contract; a test-record is QA, regression and incident history. This rule rests on a property every codebase has: verification files exist, and their cases can be counted. Applies when you are creating or editing a verification file.
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > filid defaults — the higher source wins. A verification file serves one of two roles: a spec-document is the current executable contract; a test-record is QA, regression and incident history. Applies when you are creating or editing a verification file.
 
 ## 1. Verification files hold roles, not ranks
 
@@ -166,7 +165,7 @@ Splitting a file must not split a contract. Sibling spec-documents must not decl
 <!-- FILID:START:filid_code-placement.md -->
 # Code Placement
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > filid defaults — the higher source wins. Where a unit sits decides who may reach it: placement is a boundary decision, not a filing decision. This rule rests on properties every codebase has: a unit has a location, and its consumers have locations too. Applies when the repository has adopted FCA and you are adding a unit with more than one consumer, or moving one; prefer the move at a natural seam, not mid-task.
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > filid defaults — the higher source wins. Where a unit sits decides who may reach it: placement is a boundary decision, not a filing decision. Applies when the repository has adopted FCA and you are adding a unit with more than one consumer, or moving one; prefer the move at a natural seam, not mid-task.
 
 ## 1. Shared code sits at the lowest common fractal of its consumers
 
@@ -182,11 +181,11 @@ An organ has no entry point, so it cannot own a shared boundary. When the comput
 
 ## 4. Planning is read-only; the postcondition demands the exact target
 
-A functionally working but different result is a failed restructure. A plan reports normalized absolute source and target paths, basis, consumers, the computed ancestor, required artifacts, import rewrites and decision reasons; it may write only an ephemeral plan artifact. A precondition checks the snapshot hash immediately before execution. A postcondition checks the exact target, the source's absence, the node type, documents, entry point, import boundary, required rewrites and the acyclic graph. The restructure tool plans and validates; an external actor performs the change.
+A functionally working but different result is a failed restructure. The restructure tool plans and validates — a plan reports normalized absolute source and target paths, basis, consumers, the computed ancestor, required artifacts, import rewrites and decision reasons, writing only an ephemeral plan artifact; a precondition checks the snapshot hash immediately before execution; a postcondition checks the exact target, the source's absence, the node type, documents, entry point, import boundary, required rewrites and the acyclic graph — and an external actor performs the change.
 
 ## 5. The document changes before the code does
 
-Contracts lead; implementations follow. Before implementation that touches a fractal: identify every affected fractal; update each affected DETAIL contract, and INTENT when a public interface or boundary changes; implement the minimum change — for new behavior or a fix, first write a check and watch it fail for the intended reason; run scoped verification and the structural scan (warnings count as findings) and record the result and any deviation from the plan before the next review seam.
+Contracts lead; implementations follow: before changing a fractal, update DETAIL, and update INTENT only when its public boundary changes. Run Filid scans and validations once at the pull-request or merge-track seam, after implementation and accepted review fixes — earlier only when explicitly requested; ordinary development checks and edits never trigger them. At the seam, record warnings as findings and note any deviation from the plan.
 
 ---
 
@@ -196,7 +195,7 @@ Contracts lead; implementations follow. Before implementation that touches a fra
 <!-- SEIRI:START:seiri_agent-legible.md -->
 # Agent-Legible Code
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. Code is read by agents and newcomers with no tribal memory: what a file does not show, they guess. This rule rests on properties every codebase has: code lives in files with names and paths, and symbols are defined and referenced. Applies when the change will land in version control.
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. Code is read by agents and newcomers with no tribal memory: what a file does not show, they guess. Applies when the change will land in version control.
 
 ## 1. State the invisible wiring
 
@@ -214,10 +213,6 @@ When a name will mislead, rename toward the convention; when that is out of scop
 
 When a direct call and an indirect mechanism are equally capable, choose direct — a reader should be able to follow the reference with plain text search. Indirection the architecture or framework demands is not yours to remove: label it (§1) and move on.
 
-## 5. Keep one unit graspable in one sitting
-
-A unit should be understandable alone: purpose from its name and head, dependencies from its imports, effect from its exports. When one file needs several others open at once, split it or localize what it depends on.
-
 ---
 
 **This rule is working if:** edits land on the intended instance on the first attempt, and plain text search finds a feature's wiring. **This rule is wrong for you if:** the indirection you want to remove IS the framework — label it and leave it standing.
@@ -226,7 +221,7 @@ A unit should be understandable alone: purpose from its name and head, dependenc
 <!-- SEIRI:START:seiri_public-contract.md -->
 # Public Contract
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. What a module exports is a promise to every present and future consumer. This rule rests on a property every codebase with a module system has: a distinction exists between what is public and what is internal. Applies when the language or module system in use has an export or visibility mechanism.
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. What a module exports is a promise to every present and future consumer. Applies when the language or module system in use has an export or visibility mechanism.
 
 ## 1. Export only what has a consumer
 
@@ -271,33 +266,27 @@ paths:
 
 # Test Validity
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. A passing test is evidence only if it could have failed. This rule rests on a property every codebase has: a means of verification exists and can be run. Applies when the change will land in version control.
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. A passing test is evidence only if it could have failed. Applies when the change will land in version control.
 
-## 1. Fail first, then fix
+## 1. A test proves a change only by failing without it
 
-A fix's test is valid only if it fails without the fix — for the bug's reason. Before finishing a bug fix, run its test against the pre-fix code and watch it fail; the failure must be the bug's symptom, not a setup error, a wrong path, or a missing import. Use a scoped mechanism (revert locally, stash only the changed files, or a scratch worktree) — never disturb unrelated work. When the fix introduces a new symbol, the expected pre-fix failure IS that symbol's absence.
+Before finishing a fix, run its test against the pre-fix code and watch it fail for the bug's own reason — not a setup error, a wrong path, or a missing import; when the fix introduces a new symbol, the expected pre-fix failure is that symbol's absence. Use a scoped mechanism (revert locally, stash only the changed files, or a scratch worktree) — never disturb unrelated work. Refactors invert the contract: existing tests pass unmodified before and after; pin current behavior with added characterization tests before moving code — editing existing assertions is not pinning. The step-by-step procedure lives in `/seiri:implement` and `/seiri:trace-cause`.
 
-Refactors invert the contract: existing tests MUST pass unmodified before and after. Pin current behavior with added characterization tests BEFORE moving code — adding tests is fine; editing existing assertions is not.
+## 2. Verify the artifact you changed, with the repository's own command
 
-## 2. Verify the artifact you changed
+A raw-tool pass is diagnostic; the final evidence comes from this repository's designated verification, whose wrappers carry the environment, build steps and flags raw tools lack. If unsure the harness exercises your modified code rather than a stale build or an installed copy, break your change deliberately once in a unit-scoped check, watch the run go red, and revert the probe — a run that stays green is testing some other copy.
 
-Verification against the wrong build always passes. Use this repository's own designated verification command — wrappers carry environment, build steps, and flags that raw tools lack; a raw-tool pass is diagnostic, never the final evidence. Confirm the harness exercises your modified code, not a stale build, an installed copy, or a cached artifact: if unsure, break your change deliberately once in a unit-scoped check and revert the probe — the run must go red. If it stays green, you are testing some other copy.
+## 3. Snapshots and skips are claims you author
 
-## 3. A snapshot is a claim, not a recording
+A snapshot captured from buggy code certifies the bug. A regenerated snapshot is an assertion: read the diff, defend every changed line, and never regenerate to turn a run green without stating why the new output is the correct output. A test that cannot run in this environment skips through the harness's own mechanism with a reason string — a bare early return or a commented-out assertion converts a missing test into a green one.
 
-A snapshot captured from buggy code certifies the bug. A regenerated snapshot is an assertion you are authoring: read the diff and be able to defend every changed line, and never regenerate snapshots to turn a run green without stating why the new output is the correct output.
+## 4. Every clause of a fix is load-bearing
 
-## 4. Skips are loud
+For each clause, some test breaks when it is removed; a clause no test requires is untested or unnecessary. The same check applies to defensive code in module internals — a guard no internal path can reach is scope creep in a safety vest. Trust-boundary validation (public APIs, user input, external data) is exempt: exported symbols cannot enumerate their callers.
 
-A silent skip reports PASSED. A test that cannot run in the current environment is a skip with a reason string, through the harness's own skip mechanism — a bare early return or a commented-out assertion converts a missing test into a green one.
+## 5. Tests are curated, not accumulated
 
-## 5. Every clause of a fix is load-bearing
-
-For each clause of your fix, some test must break when it is removed; a clause no test requires is untested or unnecessary. The same check applies to defensive code in module internals — a guard no internal path can reach is scope creep in a safety vest. Trust-boundary validation (public APIs, user input, external data) is exempt: exported symbols cannot enumerate their callers.
-
-## 6. Tests are curated, not accumulated
-
-A per-file or per-suite limit this repository declares wins. Otherwise: a test file that keeps growing is a signal to split by behavior or to merge duplicates into a parameterized form. Never delete or omit a needed test to satisfy tidiness — coverage outranks curation.
+A per-file or per-suite limit this repository declares wins. Otherwise a growing test file splits by behavior or merges duplicates into a parameterized form — and never drops a needed test for tidiness; coverage outranks curation.
 
 ---
 
@@ -307,7 +296,7 @@ A per-file or per-suite limit this repository declares wins. Otherwise: a test f
 <!-- SEIRI:START:seiri_reuse-first.md -->
 # Reuse First
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. The best code for this repository usually already exists in it. This rule rests on a property every codebase has: a change is a diff, and it answers a request. Applies when the change will land in version control.
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. The best code for this repository usually already exists in it. Applies when the change will land in version control.
 
 ## 1. Search first, compose second, write last
 
@@ -327,31 +316,23 @@ Nothing speculative. Validation at trust boundaries (public APIs, user input, ex
 
 Every changed line traces to the request. Remove what YOUR change orphaned; leave pre-existing dead code in place, mentioned, not buried in an unrelated diff.
 
-## 4. Work toward a verifiable goal
-
-Restate the task as something checkable before you start: "add validation" becomes "these invalid inputs are rejected, shown by a failing-then-passing check"; "fix the bug" becomes "a reproduction exists, then passes".
-
-## 5. One file, one responsibility
-
-A file answers for one thing. If naming it honestly needs "and", it is two files.
-
 ---
 
-**This rule is working if:** diffs read as direct answers to their requests, and the utility you almost wrote turns out to already exist, found. **This rule is wrong for you if:** you are scaffolding a greenfield repository — there is nothing to reuse yet; apply §2 and §4 and return here once the first patterns exist.
+**This rule is working if:** diffs read as direct answers to their requests, and the utility you almost wrote turns out to already exist, found. **This rule is wrong for you if:** you are scaffolding a greenfield repository — there is nothing to reuse yet; apply §2 and return here once the first patterns exist.
 <!-- SEIRI:END:seiri_reuse-first.md -->
 
 <!-- SEIRI:START:seiri_naming.md -->
 # Naming
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. Names are the primary index of a codebase: what search finds, what imports show, what readers guess by. This rule rests on properties every codebase has: files and symbols have names, and an existing style is already present — whatever it is. Applies when the change will land in version control.
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. Names are the primary index of a codebase: what search finds, what imports show, what readers guess by. Applies when the change will land in version control.
 
 ## 1. Mirror the siblings
 
-Before naming anything, read the names around it: match the case, the grammar (verb-first or noun-first), the suffix, and the singular/plural habits of sibling files and symbols of the same kind. No siblings? The idiomatic form of the language or framework. A migration in progress? The declared target style, not the majority.
+Read the names around the new unit first — case, grammar (verb-first or noun-first), suffix, singular/plural — and match them. No siblings? The idiomatic form of the language or framework. A migration in progress? The declared target style, not the majority.
 
 ## 2. A name states one concrete responsibility
 
-A reader should predict the content from the name alone. Name by what the unit does or holds, not when it was added or who owns it. An honest name that needs "and" is two units (`seiri_reuse-first` §5); a vague honest name means a vague responsibility — fix the unit.
+A reader predicts the content from the name alone: what the unit does or holds, never when it was added or who owns it. An honest name that needs "and" is two units; a vague honest name means a vague responsibility — fix the unit.
 
 ## 3. No grab-bags
 
@@ -369,23 +350,19 @@ Tests, specs, fixtures, and generated companions are named for what they verify 
 <!-- SEIRI:START:seiri_structure.md -->
 # Structure
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. Structure is the cost model of reading: every hop, level, and cycle is paid by whoever comes next. Directions only — where this repository or its architecture tooling declares concrete limits, those limits win. This rule rests on properties every codebase has: files have sizes and paths, and symbols reference one another. Applies when the change will land in version control; prefer structural moves at natural seams, not mid-task.
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. Structure is the cost model of reading: every hop, level, and cycle is paid by whoever comes next. Directions only — where this repository or its architecture tooling declares concrete limits, those limits win. Applies when the change will land in version control; prefer structural moves at natural seams, not mid-task.
 
 ## 1. Dependencies form a DAG
 
-A cycle is two units pretending to be one. When A needs B and B needs A, no reading order exists: extract the shared piece into a third unit, invert one edge behind an interface or event, or merge the two honestly. Do not certify acyclicity by tooling you have not run — trace the edges you touched.
+A cycle is two units pretending to be one — no reading order exists. Extract the shared piece into a third unit, invert one edge behind an interface or event, or merge the two honestly. Trace the edges you touched; do not certify acyclicity by tooling you have not run.
 
 ## 2. Depth is a toll
 
-Nest to expose structure, not to file things away. When following one call chain means descending many levels, flatten. A directory with one child is a corridor, not a room — collapse it.
+Nest to expose structure, not to file things away; when following one call chain means descending many levels, flatten. A directory with one child is a corridor, not a room — collapse it.
 
 ## 3. Cohesion splits, complexity compresses
 
-Two different smells, two different moves. When parts of a unit do not share state or purpose, the unit is several units — split where the seams already show. When one unit branches beyond what a reader can simulate in their head, compress: extract steps, replace condition ladders with tables or dispatch, name the phases.
-
-## 4. Growth is a signal
-
-Recurring growth in one file means a responsibility wants out — split along the responsibility seam, not at an arbitrary line count.
+Parts of a unit that share no state or purpose are several units — split where the seams already show. A unit that branches beyond what a reader can simulate is compressed: extract steps, replace condition ladders with tables or dispatch, name the phases. Recurring growth in one file is a responsibility wanting out — split along that seam, never at an arbitrary line count.
 
 ---
 
@@ -395,7 +372,7 @@ Recurring growth in one file means a responsibility wants out — split along th
 <!-- SEIRI:START:seiri_function-boundaries.md -->
 # Function Boundaries
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. A function is the smallest unit a reader can hold whole — and the cheapest one to get wrong, because the cost lands on its callers. This rule rests on properties every codebase has: functions take inputs and produce outputs, and they live in files with names. Applies when you are writing or moving a function. Purity moves effects, it does not remove them: push effects outward until they sit in one named place, not until every layer needs a wrapper.
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. A function is the smallest unit a reader can hold whole — and the cheapest one to get wrong, because the cost lands on its callers. Applies when you are writing or moving a function. Purity moves effects, it does not remove them: push effects outward until they sit in one named place, not until every layer needs a wrapper.
 
 ## 1. Inputs arrive as parameters
 
@@ -421,94 +398,45 @@ Extraction is not relocation to the same shelf. Helpers pulled out of a function
 <!-- SEIRI:START:seiri_context-efficiency.md -->
 # Context Efficiency
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. Context is the scarcest resource in an agent session: performance degrades as it fills, and every wasted read crowds out instructions already given. This rule rests on a property of every session, not of any codebase: context is finite, and reading spends it. These rules bias toward fewer, deliberate reads — when genuinely disoriented, one broad read beats three wrong guesses.
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. Context is the scarcest resource in an agent session: performance degrades as it fills, and every wasted read crowds out instructions already given. These rules bias toward fewer, deliberate reads — when genuinely disoriented, one broad read beats three wrong guesses.
 
 ## 1. Generated artifacts are search-only
 
-Build output is not source: search it to trace a symbol, do not read it wholesale, never edit it — an edit there disappears on the next build, and a bug found there may already be fixed in its source. When a generated file is wrong, the deliverable is a change to its generator or template. Installed dependencies and lockfiles are a different class: dependency sources and type definitions are canonical references; never hand-edit a lockfile — change the manifest and regenerate through the package manager.
+Build output is not source: search it to trace a symbol, never read it wholesale, never edit it — an edit there disappears on the next build, and the deliverable for a wrong generated file is a change to its generator or template. Dependency sources and type definitions are canonical references; a lockfile is never hand-edited — change the manifest and regenerate through the package manager.
 
-## 2. Capture once, read from the file
+## 2. Capture once, re-read with a reason
 
-Re-running a command to re-read its output pays twice. Capture long output once to a scratch file outside the repository tree, then search and re-read from that file — repo-root log files pollute status and reviews. A capture goes stale the moment relevant code changes: re-run after edits; judging a post-fix state from a pre-fix capture is self-deception. Investigating flaky behavior is the legitimate reason for repeated runs.
-
-## 3. Re-reads need a reason
-
-Change, external modification, or genuine doubt — not habit. Read the range the task needs; a targeted read plus a follow-up beats loading whole files by default. Before broad exploration, state what you are looking for; stop when you find it — after confirming it is the only candidate, since a first match is not proof of uniqueness.
+Re-running a command to re-read its output pays twice: capture long output once to a scratch file outside the repository tree and search that file — then re-run after edits, because judging a post-fix state from a pre-fix capture is self-deception. A re-read of source needs a reason (change, external modification, genuine doubt) and a targeted range; before broad exploration, state what you are looking for, and stop once the match is confirmed to be the only candidate. Investigating flaky behavior is the legitimate reason for repeated runs.
 
 ---
 
 **This rule is working if:** generated directories never appear in your edits, and every re-read can name its reason. **This rule is wrong for you if:** you have lost orientation — take the one broad read, reorient, and return to targeted reads.
 <!-- SEIRI:END:seiri_context-efficiency.md -->
 
-<!-- SEIRI:START:seiri_cognitive-discipline.md -->
-# Cognitive Discipline
-
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. Behavioral guardrails against rationalization in long agent sessions. This rule rests on a property of every session, not of any codebase: a claim about code can be checked against the code and its oracles — text you generate is not evidence. Verification outranks speed: for a trivial task a check may scale down, but only out loud — name the check you are skipping and why. A silent skip is the failure mode this rule exists to block.
-
-## 1. Evidence over confidence
-
-Don't claim. Verify — with this repository's own oracles — then cite. A claim without observable evidence (tool output, test results, file contents — not your reasoning about them) is a prediction. Each quality attribute needs its own evidence: a linter pass is not a build; one test is not the suite; a path recalled from memory is a guess until a tool confirms it exists.
-
-## 2. Causes, not symptoms
-
-Fix where it started, not where it surfaced — the two are usually different places, and "I see the problem, let me fix it" almost always means you see the symptom. Repeated failure of the same approach indicts the approach: when each fix reveals a new problem elsewhere, stop patching and question the underlying assumption.
-
-## 3. Read before you adapt
-
-Fully read what you copy or adapt — skimming a pattern produces a misapplied pattern. Navigation may stay targeted; comprehension of what you reuse may not. "Too simple to check" is a rationalization, not an assessment — simple tasks bypass scrutiny, which is exactly how simple tasks break things.
-
-## 4. The letter is the spirit
-
-When a rule or request names a concrete action, the concrete action is required — "I followed the spirit" is how the letter gets skipped. The requested scope is the entire scope; propose extras separately. Work already done has no claim on being kept: when the approach is wrong, discard it — adaptation inherits the defect.
-
-## 5. Honest over agreeable
-
-Disagree with reasoning; say "I don't know" instead of guessing. Reflexive agreement is not analysis. Shipping work you are unsure of without disclosure is deception by omission — disclosed uncertainty plus a check that would catch the failure is the acceptable form of proceeding.
-
-## Rationalizations
-
-| Excuse                            | Reality                                                  |
-| --------------------------------- | -------------------------------------------------------- |
-| "Should work now"                 | Run the verification.                                    |
-| "I'm confident"                   | Confidence is not evidence.                              |
-| "Too simple to test"              | Simple changes break builds too.                         |
-| "The linter passed"               | The linter is not the build, the build is not the suite. |
-| "I already did this manually"     | Unrecorded checks cannot be re-run or cited.             |
-| "Just this once"                  | This once is every time under pressure.                  |
-| "I followed the spirit"           | The letter IS the spirit.                                |
-| "Deleting X hours feels wasteful" | Keeping unverified work is the waste.                    |
-
-**Red flags — stop and verify:** "probably / should / seems to" about your own change · declaring success without fresh output · a fix touching the same symptom a second time · wanting the task to be over.
-
----
-
-**This rule is working if:** claims cite tool output, and fixes do not reappear in new places. **This rule is wrong for you if:** never — but its checks scale down out loud for trivial work; what never scales down is saying so.
-<!-- SEIRI:END:seiri_cognitive-discipline.md -->
-
 <!-- SEIRI:START:seiri_code-comments.md -->
 # Code Comments
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. A comment is the one thing in a file nothing checks: no compiler reads it, no test goes red when it lies — and it is believed anyway. This rule rests on properties every codebase has: the language provides a form for comments, and a comment sits beside the code it describes. Applies when the change will land in version control.
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. A comment is the one thing in a file nothing checks: no compiler reads it, no test goes red when it lies — and it is believed anyway. Applies when the change will land in version control.
 
 ## 1. A comment states the current spec, never its history
 
-When the code changes, its comment changes in the same edit. No changelog lines, no dated notes, no "previously" or "used to", no commented-out predecessor kept for reference — nothing verifies any of it, so it rots silently and then misleads with the authority of a comment. History that must be kept goes where this repository keeps it (the version-control trail, a changelog, a decision record, a module document) — never the source. Delete the code, delete its comment with it: a comment left behind is a published false statement.
+When the code changes, its comment changes in the same edit. No changelog lines, no dated notes, no "previously" or "used to", no commented-out predecessor kept for reference — nothing verifies any of it, so it rots silently and then misleads with the authority of a comment. History that must be kept goes where this repository keeps it (the version-control trail, a changelog, a decision record, a module document) — never the source. Delete the code, delete its comment with it.
 
 ## 2. An inline comment is a last resort — three lines at most, for what the code cannot say
 
-Write code that needs no comment first: a truer name, a smaller function, an extracted constant each beat an explanation (`seiri_naming` §2, `seiri_structure` §3), and what a declaration needs said belongs in its documentation comment (§3), not between the statements. A comment that must sit on the code states only what the code itself cannot — the invariant no type can express, the workaround and its external trigger, the effect that lands elsewhere — and it stays within 3 lines. What the code already shows, no comment repeats: a paraphrase of the next line is a second copy that nothing checks and the next edit orphans (§1). The one summary worth keeping is orientation — a single line framing a block's big picture before the reader descends — never a running commentary on statements they can read themselves.
+A truer name, a smaller function, or an extracted constant beats an explanation (`seiri_naming` §2, `seiri_structure` §3), and what a declaration needs said belongs in its documentation comment (§3). A comment that must sit on the code states only what the code itself cannot — the invariant no type can express, the workaround and its external trigger, the effect that lands elsewhere — and it stays within 3 lines. What the code already shows, no comment repeats: a paraphrase of the next line is a second copy that nothing checks and the next edit orphans (§1). There is no orientation exception: a line summarizing the block below it restates what reading the block shows, and it goes.
 
 ## 3. A function's documentation comment names its parameters, its result, and its purpose
 
-Write it in the documentation-comment form the language provides — JSDoc, TSDoc, a docstring, rustdoc, Javadoc — and fill every slot that form defines: each parameter, what comes back, and what the function is for. Say what the caller cannot see from the signature — what makes an argument valid, the conditions under which the call fails, the effect it has beyond its return value. Do not restate the signature in prose: a parameter documented as "the id" earned nothing.
+Write it in the form the language provides — JSDoc, TSDoc, a docstring, rustdoc, Javadoc — and fill every slot: what makes an argument valid, the conditions under which the call fails, the effect beyond the return value. Do not restate the signature in prose: a parameter documented as "the id" earned nothing.
 
 ## 4. Every declaration the form reaches carries one
 
-Types, enums, fields, members, constants, modules — wherever the language's documentation form applies and its tooling would render the result, the declaration carries a comment that says what it is for and how it is meant to be used. A local inside a body is not one of them: when it needs explaining, a truer name or a split is the fix, not a comment (§2).
+Types, enums, fields, members, constants, modules — wherever the language's documentation form applies and its tooling would render the result, the declaration says what it is for and how it is meant to be used. A local inside a body is not one of them: when it needs explaining, a truer name or a split is the fix (§2).
 
 ## 5. Follow the language's own comment convention; do not invent one
 
-Take the form from the language and the siblings around the file — its documentation comment, its inline comment, its placement relative to the declaration. An inline comment sits at the code it explains, not in a banner that drifts away from it. A note some other convention asks you to leave — invisible wiring, a name-trap warning, an unpassable dependency — is a comment like any other: it takes this form, §2 caps it, and §1 keeps it current.
+Take the form from the language and the siblings around the file; an inline comment sits at the code it explains, not in a banner that drifts away from it. A note some other convention asks you to leave — invisible wiring, a name-trap warning, an unpassable dependency — is a comment like any other: §2 caps it and §1 keeps it current.
 
 ---
 

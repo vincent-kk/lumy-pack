@@ -19,7 +19,7 @@ paths:
 
 # Verification Records
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > filid defaults — the higher source wins. A verification file serves one of two roles: a spec-document is the current executable contract; a test-record is QA, regression and incident history. This rule rests on a property every codebase has: verification files exist, and their cases can be counted. Applies when you are creating or editing a verification file.
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > filid defaults — the higher source wins. A verification file serves one of two roles: a spec-document is the current executable contract; a test-record is QA, regression and incident history. Applies when you are creating or editing a verification file.
 
 ## 1. Verification files hold roles, not ranks
 

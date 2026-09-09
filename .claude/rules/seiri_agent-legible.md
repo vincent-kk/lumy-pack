@@ -1,6 +1,6 @@
 # Agent-Legible Code
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. Code is read by agents and newcomers with no tribal memory: what a file does not show, they guess. This rule rests on properties every codebase has: code lives in files with names and paths, and symbols are defined and referenced. Applies when the change will land in version control.
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. Code is read by agents and newcomers with no tribal memory: what a file does not show, they guess. Applies when the change will land in version control.
 
 ## 1. State the invisible wiring
 
@@ -17,10 +17,6 @@ When a name will mislead, rename toward the convention; when that is out of scop
 ## 4. Prefer the direct reference
 
 When a direct call and an indirect mechanism are equally capable, choose direct — a reader should be able to follow the reference with plain text search. Indirection the architecture or framework demands is not yours to remove: label it (§1) and move on.
-
-## 5. Keep one unit graspable in one sitting
-
-A unit should be understandable alone: purpose from its name and head, dependencies from its imports, effect from its exports. When one file needs several others open at once, split it or localize what it depends on.
 
 ---
 

@@ -1,6 +1,6 @@
 # Public Contract
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. What a module exports is a promise to every present and future consumer. This rule rests on a property every codebase with a module system has: a distinction exists between what is public and what is internal. Applies when the language or module system in use has an export or visibility mechanism.
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. What a module exports is a promise to every present and future consumer. Applies when the language or module system in use has an export or visibility mechanism.
 
 ## 1. Export only what has a consumer
 

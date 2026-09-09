@@ -1,14 +1,14 @@
 # Naming
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. Names are the primary index of a codebase: what search finds, what imports show, what readers guess by. This rule rests on properties every codebase has: files and symbols have names, and an existing style is already present — whatever it is. Applies when the change will land in version control.
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. Names are the primary index of a codebase: what search finds, what imports show, what readers guess by. Applies when the change will land in version control.
 
 ## 1. Mirror the siblings
 
-Before naming anything, read the names around it: match the case, the grammar (verb-first or noun-first), the suffix, and the singular/plural habits of sibling files and symbols of the same kind. No siblings? The idiomatic form of the language or framework. A migration in progress? The declared target style, not the majority.
+Read the names around the new unit first — case, grammar (verb-first or noun-first), suffix, singular/plural — and match them. No siblings? The idiomatic form of the language or framework. A migration in progress? The declared target style, not the majority.
 
 ## 2. A name states one concrete responsibility
 
-A reader should predict the content from the name alone. Name by what the unit does or holds, not when it was added or who owns it. An honest name that needs "and" is two units (`seiri_reuse-first` §5); a vague honest name means a vague responsibility — fix the unit.
+A reader predicts the content from the name alone: what the unit does or holds, never when it was added or who owns it. An honest name that needs "and" is two units; a vague honest name means a vague responsibility — fix the unit.
 
 ## 3. No grab-bags
 

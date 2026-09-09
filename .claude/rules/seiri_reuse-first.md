@@ -1,6 +1,6 @@
 # Reuse First
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. The best code for this repository usually already exists in it. This rule rests on a property every codebase has: a change is a diff, and it answers a request. Applies when the change will land in version control.
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. The best code for this repository usually already exists in it. Applies when the change will land in version control.
 
 ## 1. Search first, compose second, write last
 
@@ -20,14 +20,6 @@ Nothing speculative. Validation at trust boundaries (public APIs, user input, ex
 
 Every changed line traces to the request. Remove what YOUR change orphaned; leave pre-existing dead code in place, mentioned, not buried in an unrelated diff.
 
-## 4. Work toward a verifiable goal
-
-Restate the task as something checkable before you start: "add validation" becomes "these invalid inputs are rejected, shown by a failing-then-passing check"; "fix the bug" becomes "a reproduction exists, then passes".
-
-## 5. One file, one responsibility
-
-A file answers for one thing. If naming it honestly needs "and", it is two files.
-
 ---
 
-**This rule is working if:** diffs read as direct answers to their requests, and the utility you almost wrote turns out to already exist, found. **This rule is wrong for you if:** you are scaffolding a greenfield repository — there is nothing to reuse yet; apply §2 and §4 and return here once the first patterns exist.
+**This rule is working if:** diffs read as direct answers to their requests, and the utility you almost wrote turns out to already exist, found. **This rule is wrong for you if:** you are scaffolding a greenfield repository — there is nothing to reuse yet; apply §2 and return here once the first patterns exist.

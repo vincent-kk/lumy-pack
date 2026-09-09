@@ -1,6 +1,6 @@
 # Function Boundaries
 
-> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. A function is the smallest unit a reader can hold whole — and the cheapest one to get wrong, because the cost lands on its callers. This rule rests on properties every codebase has: functions take inputs and produce outputs, and they live in files with names. Applies when you are writing or moving a function. Purity moves effects, it does not remove them: push effects outward until they sit in one named place, not until every layer needs a wrapper.
+> **Precedence**: repository instructions (CLAUDE.md, project rules) > repository conventions > this rule > seiri defaults — the higher source wins. A function is the smallest unit a reader can hold whole — and the cheapest one to get wrong, because the cost lands on its callers. Applies when you are writing or moving a function. Purity moves effects, it does not remove them: push effects outward until they sit in one named place, not until every layer needs a wrapper.
 
 ## 1. Inputs arrive as parameters
 
