@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { pruneByThreshold } from '../../core/pruner.js';
+import { pruneByThreshold } from '../../core/pruner/pruner.js';
 import type { FrameNode, ScoreEdge } from '../../types/index.js';
 
 function makeFrames(count: number): FrameNode[] {
@@ -148,6 +148,12 @@ describe('pruneByThreshold (normalized 0~1)', () => {
 });
 
 describe('pruneByThreshold (robust distribution behavior)', () => {
+  it('threshold 1 preserves only boundaries for twelve positive scores', () => {
+    const frames = makeFrames(13);
+    const edges = makeChainEdges(13, Array.from({ length: 12 }, (_, i) => i + 1));
+    expect([...pruneByThreshold(edges, frames, 1)]).toStrictEqual([0, 12]);
+  });
+
   it('adapts to high noise floor (high baseline, narrow range)', () => {
     const frames = makeFrames(8);
     // All changes are between 90 and 100. Noise floor is ~90.

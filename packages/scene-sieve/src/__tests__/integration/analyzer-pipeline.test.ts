@@ -13,8 +13,8 @@ import {
   DEFAULT_QUALITY,
   DEFAULT_SCALE,
   IOU_THRESHOLD,
-} from '../../constants.js';
-import { analyzeFrames } from '../../core/analyzer.js';
+} from '../../constants/pipeline-defaults.js';
+import { analyzeFrames } from '../../core/analyzer/analyzer.js';
 import type { FrameNode, ProcessContext } from '../../types/index.js';
 
 // Integration test: uses real sharp + OpenCV WASM

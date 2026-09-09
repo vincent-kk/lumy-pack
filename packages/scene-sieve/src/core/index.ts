@@ -1,32 +1,33 @@
-export { runPipeline } from './orchestrator.js';
+export { runPipeline, runPipelineInWorker } from './orchestrator/index.js';
 export {
   analyzeFrames,
   computeIoU,
   computeInformationGain,
-} from './analyzer.js';
-export { extractFrames } from './extractor.js';
+  dbscan,
+} from './analyzer/index.js';
+export type { Point2D } from './analyzer/index.js';
+export { extractFrames } from './extractor/index.js';
 export {
   pruneTo,
   pruneByThreshold,
   pruneByThresholdWithCap,
   suppressConsecutiveRuns,
-} from './pruner.js';
-export { dbscan } from './dbscan.js';
-export type { Point2D } from './dbscan.js';
-export { resolveInput, resolveOptions } from './input-resolver.js';
+} from './pruner/index.js';
+export { resolveInput, resolveOptions } from './input-resolver/index.js';
 export {
   shouldSegment,
   computeSegmentPlan,
   processSegment,
   mergeSegmentFrames,
   runSegmentedPipeline,
-} from './segmenter.js';
+} from './segmenter/index.js';
 export {
   createWorkspace,
   createSegmentWorkspace,
   cleanupWorkspace,
+  cleanupStaleWorkspaces,
   finalizeOutput,
   readFramesAsBuffers,
   writeInputBuffer,
   writeInputFrames,
-} from './workspace.js';
+} from './workspace/index.js';

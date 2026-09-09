@@ -20,15 +20,16 @@ export interface SieveOptionsBase {
   threshold?: number; // default: 0.5. G(t) score threshold. Keeps frames with score >= threshold, capped by count.
   outputPath?: string; // default: derived from inputPath (file mode only)
   fps?: number; // default: 5
-  maxFrames?: number; // default: 300. Caps extracted frames; FPS is auto-reduced for long videos.
+  /** Strict file/buffer candidate frame limit (default: 300); ignored in frames mode. */
+  maxFrames?: number;
   scale?: number; // default: 720
   quality?: number; // JPEG output quality 1-100 (default: 80)
   iouThreshold?: number; // default: 0.9. IoU threshold for animation tracking.
   animationThreshold?: number; // default: 5. Minimum consecutive frames to be considered an animation.
   debug?: boolean; // default: false
   onProgress?: (phase: ProgressPhase, percent: number) => void;
-  maxSegmentDuration?: number; // 초 단위, default: 300 (5분)
-  concurrency?: number; // 세그먼트 병렬 처리 수, default: 2
+  maxSegmentDuration?: number; // in seconds, default: 300 (5 minutes)
+  concurrency?: number; // number of segments processed in parallel, default: 2
 }
 
 // ── Public API Type ──
@@ -79,8 +80,11 @@ export interface AnimationMetadata {
 }
 
 export interface VideoMetadata {
+  /** Source duration from ffprobe, or the final candidate timestamp in frames mode. */
   originalDurationMs: number;
+  /** Effective sampling frequency; frames mode uses one frame per second. */
   fps: number;
+  /** Actual output JPEG dimensions; zero when no candidate exists. */
   resolution: {
     width: number;
     height: number;
@@ -129,6 +133,12 @@ export interface DBSCANResult {
 
 export interface ProcessContext {
   options: ResolvedOptions;
+  /** Actual extraction grid frequency; frames mode uses one-second intervals. */
+  effectiveFps?: number;
+  /** Original video duration reported by ffprobe, in seconds. */
+  sourceDurationSec?: number;
+  /** Dimensions of analysis-space boxes; absent or zero if no pair was analyzed. */
+  analysisResolution?: { width: number; height: number };
   workspacePath: string;
   frames: FrameNode[];
   graph: ScoreEdge[];
@@ -141,21 +151,25 @@ export interface ProcessContext {
 export interface AnalysisResult {
   edges: ScoreEdge[];
   animations: AnimationMetadata[];
+  /** First analyzed image dimensions, or zero dimensions when no pair exists. */
+  analysisResolution: { width: number; height: number };
 }
 
 // ── Segment Types (Long Video Segmentation) ──
 
 export interface SegmentPlan {
   index: number;
-  startTime: number; // 논리적 시작 (초)
-  endTime: number; // 논리적 종료 (초)
-  duration: number; // 논리적 duration (초)
-  allocatedFrames: number; // 이 세그먼트에 할당된 프레임 수
-  effectiveFps: number; // 이 세그먼트의 실제 fps
-  overlapBefore: number; // 앞쪽 오버랩 프레임 수 (0 또는 1)
-  overlapAfter: number; // 뒤쪽 오버랩 프레임 수 (0 또는 1)
-  extractStartTime: number; // 실제 FFmpeg 추출 시작 시간 (오버랩 포함)
-  extractDuration: number; // 실제 FFmpeg 추출 duration (오버랩 포함)
+  startTime: number; // logical start (seconds)
+  endTime: number; // logical end (seconds)
+  duration: number; // logical duration (seconds)
+  /** FFmpeg output limit, including overlap slots; a single segment uses the full budget. */
+  allocatedFrames: number;
+  effectiveFps: number; // actual fps for this segment
+  overlapBefore: number; // number of leading overlap frames (0 or 1)
+  overlapAfter: number; // number of trailing overlap frames (0 or 1)
+  /** First extraction grid time in seconds, including overlap. */
+  extractStartTime: number;
+  extractDuration: number; // actual FFmpeg extraction duration (including overlap)
 }
 
 export interface SegmentResult {
@@ -163,4 +177,6 @@ export interface SegmentResult {
   frames: FrameNode[];
   edges: ScoreEdge[];
   animations: AnimationMetadata[];
+  /** Analysis coordinates retained through merging for output-only box scaling. */
+  analysisResolution: { width: number; height: number };
 }

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { SieveOptions } from '../../types/index.js';
+import type { ProcessContext, SieveOptions } from '../../types/index.js';
 
 const mockAnalyzeFrames = vi.fn();
 const mockExtractFrames = vi.fn();
@@ -15,36 +15,42 @@ const mockSetDebugMode = vi.fn();
 const mockShouldSegment = vi.fn();
 const mockRunSegmentedPipeline = vi.fn();
 
-vi.mock('../../core/analyzer.js', () => ({
+vi.mock('sharp', () => ({
+  default: vi.fn(() => ({
+    metadata: async () => ({ width: 101, height: 67 }),
+  })),
+}));
+
+vi.mock('../../core/analyzer/analyzer.js', () => ({
   analyzeFrames: mockAnalyzeFrames,
 }));
 
-vi.mock('../../core/extractor.js', () => ({
+vi.mock('../../core/extractor/extractor.js', () => ({
   extractFrames: mockExtractFrames,
 }));
 
-vi.mock('../../core/segmenter.js', () => ({
+vi.mock('../../core/segmenter/segmenter.js', () => ({
   shouldSegment: mockShouldSegment,
   runSegmentedPipeline: mockRunSegmentedPipeline,
 }));
 
-vi.mock('../../core/input-resolver.js', () => ({
+vi.mock('../../core/input-resolver/input-resolver.js', () => ({
   resolveOptions: mockResolveOptions,
   resolveInput: mockResolveInput,
 }));
 
-vi.mock('../../core/workspace.js', () => ({
+vi.mock('../../core/workspace/workspace.js', () => ({
   createWorkspace: mockCreateWorkspace,
   cleanupWorkspace: mockCleanupWorkspace,
   finalizeOutput: mockFinalizeOutput,
   readFramesAsBuffers: mockReadFramesAsBuffers,
 }));
 
-vi.mock('../../core/pruner.js', () => ({
+vi.mock('../../core/pruner/pruner.js', () => ({
   pruneByThresholdWithCap: mockPruneByThresholdWithCap,
 }));
 
-vi.mock('../../utils/logger.js', () => ({
+vi.mock('../../logging/logger.js', () => ({
   logger: { debug: vi.fn(), info: vi.fn(), error: vi.fn(), success: vi.fn() },
   setDebugMode: mockSetDebugMode,
   setJsonMode: vi.fn(),
@@ -88,8 +94,16 @@ function setupDefaultMocks(modeOverride?: 'file' | 'buffer' | 'frames') {
     frames: mode === 'frames' ? mockFrames : [],
     resolvedInputPath: '/input.mp4',
   });
-  mockExtractFrames.mockResolvedValue(mockFrames);
-  mockAnalyzeFrames.mockResolvedValue(mockEdges);
+  mockExtractFrames.mockImplementation(async (ctx: ProcessContext) => {
+    ctx.effectiveFps = 0.2;
+    ctx.sourceDurationSec = 10;
+    return mockFrames;
+  });
+  mockAnalyzeFrames.mockResolvedValue({
+    edges: mockEdges,
+    animations: [],
+    analysisResolution: { width: 50, height: 33 },
+  });
   mockPruneByThresholdWithCap.mockReturnValue(new Set([0, 1, 2]));
   mockFinalizeOutput.mockResolvedValue([
     '/out/scene_001.jpg',
@@ -109,14 +123,37 @@ describe('runPipeline', () => {
     vi.clearAllMocks();
   });
 
+  it('resets debug mode on every call, including omitted and explicit false', async () => {
+    setupDefaultMocks('file');
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
+    await runPipeline({ mode: 'file', inputPath: '/input.mp4', debug: true });
+    await runPipeline({ mode: 'file', inputPath: '/input.mp4' });
+    await runPipeline({ mode: 'file', inputPath: '/input.mp4', debug: false });
+    expect(mockSetDebugMode.mock.calls).toEqual([[true], [false], [false]]);
+  });
+
   it('file 모드: extractFrames가 호출된다', async () => {
     setupDefaultMocks('file');
-    const { runPipeline } = await import('../../core/orchestrator.js');
+    mockExtractFrames.mockImplementationOnce(async (ctx: ProcessContext) => {
+      ctx.effectiveFps = 0.2;
+      ctx.sourceDurationSec = 10;
+      return mockFrames;
+    });
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
 
     const options: SieveOptions = { mode: 'file', inputPath: '/input.mp4' };
-    await runPipeline(options);
+    const result = await runPipeline(options);
+    expect(result.video).toEqual({
+      originalDurationMs: 10000,
+      fps: 0.2,
+      resolution: { width: 101, height: 67 },
+    });
 
     expect(mockExtractFrames).toHaveBeenCalledTimes(1);
+    expect(mockAnalyzeFrames.mock.calls[0][0]).toMatchObject({
+      effectiveFps: 0.2,
+      sourceDurationSec: 10,
+    });
   });
 
   it('buffer 모드: readFramesAsBuffers가 호출되고 outputBuffers를 반환한다', async () => {
@@ -125,7 +162,7 @@ describe('runPipeline', () => {
       ...defaultResolvedOptions,
       mode: 'buffer',
     });
-    const { runPipeline } = await import('../../core/orchestrator.js');
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
 
     const options: SieveOptions = {
       mode: 'buffer',
@@ -136,6 +173,7 @@ describe('runPipeline', () => {
     expect(mockReadFramesAsBuffers).toHaveBeenCalledTimes(1);
     expect(result.outputBuffers).toBeDefined();
     expect(Array.isArray(result.outputBuffers)).toBe(true);
+    expect(result.video).toMatchObject({ originalDurationMs: 10000, fps: 0.2 });
   });
 
   it('frames 모드: extractFrames가 호출되지 않는다', async () => {
@@ -144,21 +182,30 @@ describe('runPipeline', () => {
       ...defaultResolvedOptions,
       mode: 'frames',
     });
-    const { runPipeline } = await import('../../core/orchestrator.js');
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
 
     const options: SieveOptions = {
       mode: 'frames',
       inputFrames: [Buffer.from('frame1'), Buffer.from('frame2')],
     };
-    await runPipeline(options);
+    const result = await runPipeline(options);
+    expect(result.video).toMatchObject({ originalDurationMs: 2000, fps: 1 });
+    expect(mockAnalyzeFrames.mock.calls[0][0].analysisResolution).toEqual({
+      width: 50,
+      height: 33,
+    });
 
     expect(mockExtractFrames).not.toHaveBeenCalled();
+    expect(mockAnalyzeFrames.mock.calls[0][0]).toMatchObject({
+      effectiveFps: 1,
+      frames: mockFrames,
+    });
   });
 
   it('에러 발생 시 cleanupWorkspace가 호출된다', async () => {
     setupDefaultMocks('file');
     mockExtractFrames.mockRejectedValue(new Error('FFmpeg 오류'));
-    const { runPipeline } = await import('../../core/orchestrator.js');
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
 
     const options: SieveOptions = { mode: 'file', inputPath: '/input.mp4' };
     await expect(runPipeline(options)).rejects.toThrow('FFmpeg 오류');
@@ -172,7 +219,7 @@ describe('runPipeline', () => {
       ...defaultResolvedOptions,
       debug: true,
     });
-    const { runPipeline } = await import('../../core/orchestrator.js');
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
 
     const options: SieveOptions = {
       mode: 'file',
@@ -186,7 +233,7 @@ describe('runPipeline', () => {
 
   it('SieveResult 구조를 올바르게 반환한다', async () => {
     setupDefaultMocks('file');
-    const { runPipeline } = await import('../../core/orchestrator.js');
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
 
     const options: SieveOptions = { mode: 'file', inputPath: '/input.mp4' };
     const result = await runPipeline(options);
@@ -203,7 +250,7 @@ describe('runPipeline', () => {
 
   it('기본 동작: pruneByThresholdWithCap이 호출된다', async () => {
     setupDefaultMocks('file');
-    const { runPipeline } = await import('../../core/orchestrator.js');
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
 
     const options: SieveOptions = { mode: 'file', inputPath: '/input.mp4' };
     await runPipeline(options);
@@ -223,7 +270,7 @@ describe('runPipeline', () => {
     };
     mockRunSegmentedPipeline.mockResolvedValue(mockResult);
 
-    const { runPipeline } = await import('../../core/orchestrator.js');
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
     const options: SieveOptions = { mode: 'file', inputPath: '/input.mp4' };
     const result = await runPipeline(options);
 

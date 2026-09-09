@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## scene-sieve
 
-Video/GIF 핵심 프레임 추출 및 가지치기 CLI 도구. 동영상에서 유의미한 N장의 장면을 자동 선별.
+Video/GIF key-frame extraction and pruning CLI. Automatically selects meaningful scenes from video.
 
 ## Commands
 
@@ -17,7 +17,7 @@ yarn test:integration   # integration tests (vitest.integration.config.ts)
 yarn test:e2e           # E2E tests (vitest.e2e.config.ts)
 yarn lint               # ESLint
 
-# 단일 테스트 실행
+# Run a single test
 yarn test:run src/__tests__/unit/pruner.test.ts
 yarn test:run -- -t "test name pattern"
 ```
@@ -25,65 +25,68 @@ yarn test:run -- -t "test name pattern"
 ## Architecture
 
 ```
-cli.ts → index.ts → core/orchestrator.ts → core/{input-resolver,workspace,extractor,analyzer,pruner}
-                                          → utils/{logger,paths,min-heap}, types/, constants.ts
+cli.ts → cli/index.ts → cli/commands/Sieve.tsx → core/index.ts
+index.ts → core/index.ts → core/orchestrator/index.ts
+                        → pipeline stage entry points
 ```
 
-### Pipeline (orchestrator.ts)
+The CLI executable stays at the source root so package-manifest resolution works in both source and bundled execution. Pipeline stages import sibling modules through their entry points. Internal helpers belong to the lowest common owning module: logging and option defaults belong to the source root; filesystem and metadata helpers are grouped by topic under core/utils to distinguish them from pipeline fractals; scoring and heap operations belong to the pruner.
 
-5단계 순차 파이프라인. `ProcessContext`가 전체 상태를 보유:
+### Pipeline (`core/orchestrator/orchestrator.ts`)
 
-1. **Init** — workspace 생성 (tmpdir), input 해석 (`input-resolver.ts`)
-2. **Extract** — FFmpeg로 프레임 추출 (I-frame 우선, 부족 시 FPS fallback; GIF은 항상 FPS)
-3. **Analyze** — 인접 프레임 쌍의 정보 이득 점수(G(t)) 산출 → `ScoreEdge[]` 그래프 생성
-4. **Prune** — G(t) 그래프 기반으로 유의미한 프레임만 선별 (pure function, I/O 없음)
-5. **Finalize** — staging dir → atomic rename (file mode) 또는 Buffer 반환 (buffer/frames mode)
+Five sequential stages. `ProcessContext` holds pipeline state:
 
-### 3가지 입력 모드 (Discriminated Union)
+1. **Init** — Creates a workspace (tmpdir) and resolves input (`core/input-resolver/input-resolver.ts`)
+2. **Extract** — Extracts frames on an FFmpeg FPS grid; file/buffer candidates obey the strict `maxFrames` cap. Effective FPS is `min(fps, maxFrames / duration)`, with no 0.5 FPS floor.
+3. **Analyze** — Computes information gain G(t) for adjacent frame pairs, producing a `ScoreEdge[]` graph
+4. **Prune** — Selects meaningful frames from the G(t) graph (pure functions, no I/O)
+5. **Finalize** — Deletes existing output before renaming staging (file mode), or returns Buffers (buffer/frames mode)
+
+### Three input modes (Discriminated Union)
 
 `SieveOptions = SieveOptionsBase & SieveInput` (types/index.ts)
 
-| Mode     | Input                      | Output            | FFmpeg             |
-| -------- | -------------------------- | ----------------- | ------------------ |
-| `file`   | 파일 경로                  | 디스크에 JPG 출력 | O                  |
-| `buffer` | `Buffer` (동영상)          | `Buffer[]` 반환   | O (temp file 경유) |
-| `frames` | `Buffer[]` (프레임 이미지) | `Buffer[]` 반환   | X (직접 분석)      |
+| Mode     | Input                 | Output          | FFmpeg          |
+| -------- | --------------------- | --------------- | --------------- |
+| `file`   | File path             | JPEGs on disk   | Yes             |
+| `buffer` | Video `Buffer`        | `Buffer[]`      | Via temp file   |
+| `frames` | Frame image `Buffer[]` | `Buffer[]`      | No              |
 
-### pruneMode 전략 (`input-resolver.ts`가 자동 결정)
+### pruneMode strategy (`core/input-resolver/input-resolver.ts`)
 
-| Condition        | pruneMode            | Algorithm                                          |
-| ---------------- | -------------------- | -------------------------------------------------- |
-| count만 지정     | `count`              | `pruneTo` — greedy merge, min-heap O(N log N)      |
-| threshold만 지정 | `threshold`          | `pruneByThreshold` — max-normalized 점수 필터 O(N) |
-| 둘 다 지정       | `threshold-with-cap` | threshold 필터 → subgraph 재구축 → pruneTo         |
+| Condition | pruneMode | Algorithm |
+| --------- | --------- | --------- |
+| All option combinations | `threshold-with-cap` | Apply the distribution-normalized threshold, rebuild the subgraph, then cap with `pruneTo` |
 
-### 비전 분석 파이프라인 (analyzer.ts)
+Omitted `count` and `threshold` use 20 and 0.5. The first and last candidates remain protected, including when `count = 1`.
 
-인접 프레임 쌍별로 4단계 처리:
+### Vision analysis pipeline (`core/analyzer/analyzer.ts`)
 
-1. **AKAZE Feature Diff** — 두 프레임 간 특징점 매칭 후 새로 등장/소실된 특징점(sNew/sLoss) 추출
-2. **DBSCAN Clustering** — sNew 점들을 공간 클러스터링, eps = alpha \* sqrt(W² + H²)
-3. **IoU Tracking** — 클러스터 bounding box의 시공간 추적, 반복 애니메이션 영역 감쇠
-4. **G(t) Scoring** — 클러스터 면적 비율 x 특징점 밀도, 애니메이션 가중치 차감
+Four stages for adjacent frame pairs:
+
+1. **AKAZE Feature Diff** — Caches preprocessing and features once per frame, reuses the detector, and matches previous to next features to obtain newly appeared points (sNew only)
+2. **DBSCAN Clustering** — Groups sNew points spatially, eps = alpha * sqrt(W² + H²)
+3. **IoU Tracking** — Tracks cluster bounding boxes over time and discounts repetitive animation regions
+4. **G(t) Scoring** — Combines cluster area ratio and feature density with animation discounting
 
 ## Key Patterns
 
-- **OpenCV WASM 로딩**: `createRequire`로 CJS 로드 (ESM dynamic import는 Vite 변환 시 hang). `.then` 프로퍼티를 삭제해야 thenable 무한 루프 방지.
-- **메모리**: analyzer는 `OPENCV_BATCH_SIZE`(10)만큼 배치 처리. 모든 OpenCV Mat은 `finally` 블록에서 `.delete()` 필수.
-- **Pruner**: 순수 함수. doubly-linked list + MinHeap 기반 greedy merge. 첫/마지막 프레임은 boundary protection으로 절대 제거 안 됨.
-- **Atomic output**: workspace.ts가 staging dir에 복사 후 `fs.rename()`으로 최종 경로에 원자적 이동.
-- **FFmpeg**: `ffmpeg-static` + `@ffprobe-installer/ffprobe`로 번들 바이너리 사용. 시스템 FFmpeg에 비의존.
-- **Debug mode**: `--debug`로 temp workspace 보존. 미지정 시 finally에서 항상 cleanup.
+- **OpenCV WASM loading**: Load CJS with `createRequire` (ESM dynamic import hangs under Vite transformation). Delete the `.then` property to prevent thenable recursion.
+- **Memory**: The analyzer processes `OPENCV_BATCH_SIZE` (10) frames per batch. Delete all owned OpenCV Mat/Vector handles in `finally`.
+- **Pruner**: Pure functions. Doubly linked list + MinHeap greedy merge. Boundary protection preserves first/last candidates.
+- **Output replacement**: `core/workspace/workspace.ts` writes to staging, deletes existing output, then calls `fs.rename()`. The delete-and-rename sequence is not an atomic replacement.
+- **FFmpeg**: Bundled binaries from `ffmpeg-static` and `@ffprobe-installer/ffprobe`; no system FFmpeg dependency.
+- **Debug mode**: `--debug` preserves the temp workspace; otherwise cleanup runs in `finally`.
 
 ## Test Configuration
 
-3개의 vitest config 파일로 분리. 모두 `pool: 'forks'` + `singleFork: true` (OpenCV WASM 때문).
+Three Vitest configs use `pool: 'forks'` + `singleFork: true` because of OpenCV WASM.
 
-| Config                         | Include Pattern                                      | Timeout |
-| ------------------------------ | ---------------------------------------------------- | ------- |
-| `vitest.config.ts`             | `src/__tests__/**/*.test.ts` (e2e, integration 제외) | 60s     |
-| `vitest.integration.config.ts` | `src/__tests__/integration/**/*.test.ts`             | 120s    |
-| `vitest.e2e.config.ts`         | `src/__tests__/e2e/**/*.test.ts`                     | 120s    |
+| Config | Include Pattern | Timeout |
+| ------ | --------------- | ------- |
+| `vitest.config.ts` | `src/__tests__/**/*.{test,spec}.ts` (excluding e2e/integration) | 60s |
+| `vitest.integration.config.ts` | `src/__tests__/integration/**/*.{test,spec}.ts` | 120s |
+| `vitest.e2e.config.ts` | `src/__tests__/e2e/**/*.{test,spec}.ts` | 120s |
 
 Unit test setup file: `src/__tests__/helpers/setup.ts`
 
@@ -92,5 +95,5 @@ Unit test setup file: `src/__tests__/helpers/setup.ts`
 - TypeScript 5.7, Node.js >=20, ESM
 - Build: rolldown (ESM `.mjs` + CJS `.cjs` dual), tsc declarations
 - Test: Vitest 3.2
-- CLI: Commander.js 12, ora, cli-progress
-- Media: fluent-ffmpeg, ffmpeg-static, sharp, @techstark/opencv-js
+- CLI: Commander.js 12, Ink, ink-spinner
+- Media: execa, ffmpeg-static, sharp, @techstark/opencv-js

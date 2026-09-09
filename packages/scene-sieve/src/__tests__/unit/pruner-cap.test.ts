@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   pruneByThreshold,
   pruneByThresholdWithCap,
-} from '../../core/pruner.js';
+} from '../../core/pruner/pruner.js';
 import type { FrameNode } from '../../types/index.js';
 
 function makeFrames(count: number): FrameNode[] {

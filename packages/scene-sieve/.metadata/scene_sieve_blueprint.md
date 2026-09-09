@@ -1,3 +1,4 @@
+설계 배경 문서이며 현재 구현은 `src/DETAIL.md`를 따릅니다.
 # **비디오 프레임 요약 CLI 시스템 블루프린트 (@lumy-pack/scene-sieve)**
 
 본 문서는 동영상(.mp4) 및 GIF 파일에서 유의미한 핵심 프레임을 추출하고 가지치기(Pruning)하여 ![][image1]장의 이미지를 도출하는 Node.js 도구의 아키텍처 설계도입니다. npx를 통한 즉각적인 CLI 실행 환경과 node\_modules를 통한 프로그래밍 방식(Programmatic API)의 통합을 동시에 지원하며, 관심사의 분리(SoC)와 단일 책임 원칙(SRP)을 엄격히 준수합니다.

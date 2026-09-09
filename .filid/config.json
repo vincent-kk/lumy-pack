@@ -7,6 +7,16 @@
       "ecmascript"
     ]
   },
+  "structure": {
+    "additionalAllowedPeers": [
+      {
+        "basename": "cli.ts",
+        "paths": [
+          "**/packages/scene-sieve/src"
+        ]
+      }
+    ]
+  },
   "rules": {
     "organ-no-intentmd": {
       "enabled": true,

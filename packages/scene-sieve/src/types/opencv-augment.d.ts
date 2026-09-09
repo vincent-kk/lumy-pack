@@ -3,10 +3,14 @@ declare module '@techstark/opencv-js' {
 
   export class Mat {
     constructor();
+    /** Allocate an image with the specified dimensions and OpenCV pixel type. */
+    constructor(rows: number, cols: number, type: number);
     rows: number;
     cols: number;
     data: Uint8Array;
     delete(): void;
+    /** Whether this Embind handle has been released. */
+    isDeleted(): boolean;
   }
 
   export class AKAZE {
@@ -60,9 +64,25 @@ declare module '@techstark/opencv-js' {
       distance: number;
     };
     delete(): void;
+    /** Whether this Embind handle has been released. */
+    isDeleted(): boolean;
+  }
+
+  /** Owns a contour collection; each get result must also be released. */
+  export class MatVector {
+    /** Number of contours available for indexed access. */
+    size(): number;
+    /** Return a caller-owned Mat handle for an existing contour index. */
+    get(index: number): Mat;
+    /** Release this collection's Embind handle. */
+    delete(): void;
+    /** Whether this Embind handle has been released. */
+    isDeleted(): boolean;
   }
 
   export const NORM_HAMMING: number;
+  /** Unsigned eight-bit grayscale image type. */
+  export const CV_8UC1: number;
 
   export function matFromImageData(imageData: {
     data: Uint8Array;

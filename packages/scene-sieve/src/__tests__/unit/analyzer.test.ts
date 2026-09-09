@@ -4,14 +4,128 @@
  * - computeInformationGain
  * - IoUTracker
  */
-import { beforeEach, describe, expect, it } from 'vitest';
+import { randomUUID } from 'node:crypto';
+
+import sharp from 'sharp';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   IoUTracker,
+  analyzeFrames,
   computeInformationGain,
   computeIoU,
-} from '../../core/analyzer.js';
+} from '../../core/analyzer/analyzer.js';
+import { resolveOptions } from '../../core/input-resolver/input-resolver.js';
+import {
+  cleanupWorkspace,
+  createWorkspace,
+  writeInputFrames,
+} from '../../core/workspace/workspace.js';
 import type { BoundingBox } from '../../types/index.js';
+import { logger } from '../../logging/logger.js';
+
+describe('analyzeFrames failures', () => {
+  it.each([
+    [12, 11, true],
+    [3, 1, false],
+    [2, 1, false],
+  ])(
+    'handles %s frames with %s failing pairs',
+    async (count, failures, rejects) => {
+      const workspacePath = await createWorkspace(randomUUID());
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+      let calls = 0;
+      vi.spyOn(IoUTracker.prototype, 'update').mockImplementation(() => {
+        if (calls++ < failures) throw new Error('injected pair failure');
+        return new Set<number>();
+      });
+      try {
+        const image = await sharp({
+          create: { width: 64, height: 64, channels: 3, background: 'white' },
+        })
+          .png()
+          .toBuffer();
+        const frames = await writeInputFrames(
+          Array.from({ length: count }, () => image),
+          workspacePath,
+        );
+        const result = analyzeFrames({
+          options: resolveOptions({
+            mode: 'frames',
+            inputFrames: [],
+            scale: 64,
+          }),
+          workspacePath,
+          frames,
+          graph: [],
+          status: 'ANALYZING',
+          emitProgress: () => {},
+        });
+        if (rejects)
+          await expect(result).rejects.toThrow('All 11 frame pairs failed');
+        else expect((await result).edges).toHaveLength(count - 1);
+        expect(warn).toHaveBeenCalledTimes(failures);
+        expect(warn).toHaveBeenCalledWith(
+          expect.stringContaining('injected pair failure'),
+        );
+      } finally {
+        await cleanupWorkspace(workspacePath);
+      }
+    },
+  );
+});
+
+describe('analyzeFrames metadata', () => {
+  it.each([0.2, 1, undefined])(
+    'uses effective FPS %s for tracker duration and preserves analysis coordinates',
+    async (effectiveFps) => {
+      const workspacePath = await createWorkspace(randomUUID());
+      const box = { x: 5, y: 10, width: 20, height: 30 };
+      const update = IoUTracker.prototype.update;
+      const spy = vi
+        .spyOn(IoUTracker.prototype, 'update')
+        .mockImplementation(function (this: IoUTracker, _boxes, index) {
+          return update.call(this, [box], index);
+        });
+      try {
+        const image = await sharp({
+          create: { width: 101, height: 67, channels: 3, background: 'white' },
+        })
+          .jpeg()
+          .toBuffer();
+        const frames = await writeInputFrames(
+          [image, image, image],
+          workspacePath,
+        );
+        const result = await analyzeFrames({
+          options: resolveOptions({
+            mode: 'frames',
+            inputFrames: [],
+            scale: 50,
+            fps: 5,
+            animationThreshold: 1,
+          }),
+          effectiveFps,
+          workspacePath,
+          frames,
+          graph: [],
+          status: 'ANALYZING',
+          emitProgress: () => {},
+        });
+        expect(spy).toHaveBeenCalledTimes(2);
+        expect(result.animations).toHaveLength(1);
+        expect(result.animations[0].durationMs).toBe(
+          2000 / (effectiveFps ?? 5),
+        );
+        expect(result.animations[0].boundingBox).toEqual(box);
+        expect(result.analysisResolution).toEqual({ width: 50, height: 33 });
+      } finally {
+        spy.mockRestore();
+        await cleanupWorkspace(workspacePath);
+      }
+    },
+  );
+});
 
 // ── computeIoU ────────────────────────────────────────────────────────────────
 
@@ -162,30 +276,27 @@ describe('IoUTracker', () => {
   });
 
   it('높은 IoU 박스 연속 update → 리전이 매칭됨', () => {
-    // IoU_THRESHOLD = 0.9 이므로 거의 동일한 박스를 사용
+    // Use nearly identical boxes because IoU_THRESHOLD = 0.9
     const box: BoundingBox = { x: 0, y: 0, width: 100, height: 100 };
     const slightlyDiff: BoundingBox = { x: 1, y: 1, width: 99, height: 99 };
     // IoU: intersection=[1,1] to [100,100] = 99*99=9801
     // union = 100*100 + 99*99 - 9801 = 10000 + 9801 - 9801 = 10000
-    // IoU = 9801/10000 = 0.9801 > 0.9 → 매칭됨
+    // IoU = 9801/10000 = 0.9801 > 0.9 → matched
 
-    // consecutiveCount 3까지 (ANIMATION_FRAME_THRESHOLD=5 미만)
+    // Reach consecutiveCount 3 (below ANIMATION_FRAME_THRESHOLD=5)
     tracker.update([box], 0);
     tracker.update([slightlyDiff], 1);
     const animIndices = tracker.update([box], 2);
-    expect(animIndices.size).toBe(0); // consecutiveCount=3, threshold=5 미달
+    expect(animIndices.size).toBe(0); // consecutiveCount=3, below threshold=5
   });
 
   it('ANIMATION_FRAME_THRESHOLD(5) 도달 시 animationIndices에 포함', () => {
     const box: BoundingBox = { x: 0, y: 0, width: 100, height: 100 };
-    // 5번 연속으로 같은 박스 update
-    // pairIndex 0: consecutiveCount=1 (첫 update는 push, count=1)
-    // pairIndex 1: match → consecutiveCount=2
-    // pairIndex 2: match → consecutiveCount=3
-    // pairIndex 3: match → consecutiveCount=4
-    // pairIndex 4: match → consecutiveCount=5 → animationIndices에 포함
+    // Update the same box five times: pairIndex 0 pushes it with consecutiveCount=1.
+    // Matches at pairIndex 1, 2, and 3 set consecutiveCount to 2, 3, and 4, respectively.
+    // The match at pairIndex 4 sets consecutiveCount=5, including it in animationIndices.
 
-    tracker.update([box], 0); // count=1 (신규 push)
+    tracker.update([box], 0); // count=1 (newly pushed)
     tracker.update([box], 1); // count=2
     tracker.update([box], 2); // count=3
     tracker.update([box], 3); // count=4
@@ -197,13 +308,9 @@ describe('IoUTracker', () => {
     const DECAY_LAMBDA = 0.95;
     const box: BoundingBox = { x: 0, y: 0, width: 100, height: 100 };
 
-    // 5번 연속 update → animation 리전 생성
-    // update 시마다 gap=1씩 적용되어 weight가 누적 감쇄됨
-    // pairIndex 0: 신규 push, weight=1.0, lastSeen=0
-    // pairIndex 1: gap=1, weight = 1.0 * 0.95^1
-    // pairIndex 2: gap=1, weight *= 0.95^1
-    // pairIndex 3: gap=1, weight *= 0.95^1
-    // pairIndex 4: gap=1, weight *= 0.95^1 → 총 weight = 0.95^4 (연속 4번 감쇄)
+    // Five consecutive updates create an animation region; pairIndex 0 pushes it with weight=1.0, lastSeen=0.
+    // At pairIndex 1, 2, 3, and 4, each update applies gap=1 and multiplies weight by 0.95^1.
+    // The four consecutive decays yield a cumulative weight of 0.95^4 at pairIndex 4.
     tracker.update([box], 0);
     tracker.update([box], 1);
     tracker.update([box], 2);
@@ -214,7 +321,7 @@ describe('IoUTracker', () => {
     tracker.update([box], 10);
 
     const weight = tracker.getAnimationWeight(0, [box]);
-    // 연속 4번 gap=1 감쇄(pairIndex 1~4) + gap=6 감쇄 = 0.95^10
+    // Four consecutive gap=1 decays (pairIndex 1~4) + gap=6 decay = 0.95^10
     expect(weight).toBeCloseTo(Math.pow(DECAY_LAMBDA, 10), 5);
   });
 
@@ -224,13 +331,13 @@ describe('IoUTracker', () => {
 
     tracker.update([box1], 0);
     const animIndices = tracker.update([box2], 1);
-    // box2는 box1과 IoU가 0이므로 새 리전으로 추가
+    // Add box2 as a new region because its IoU with box1 is 0
     expect(animIndices.size).toBe(0);
   });
 
   it('flushAndGetAnimations()가 지속된 애니메이션을 반환함', () => {
     const box: BoundingBox = { x: 10, y: 10, width: 100, height: 100 };
-    // 5번 연속 update (ANIMATION_FRAME_THRESHOLD=5)
+    // Five consecutive updates (ANIMATION_FRAME_THRESHOLD=5)
     for (let i = 0; i < 5; i++) {
       tracker.update([box], i);
     }
@@ -244,16 +351,16 @@ describe('IoUTracker', () => {
 
   it('weight가 임계값(0.01) 이하로 떨어질 때 애니메이션 수집', () => {
     const box: BoundingBox = { x: 10, y: 10, width: 100, height: 100 };
-    // 5번 연속 update
+    // Five consecutive updates
     for (let i = 0; i < 5; i++) {
       tracker.update([box], i);
     }
 
-    // 큰 gap(100)을 주어 weight를 급격히 감소시킴
+    // Use a large gap (100) to sharply reduce the weight
     // DECAY_LAMBDA=0.95, 0.95^100 < 0.01
     tracker.update([], 105);
 
-    // flush 전에 이미 수집되어 있어야 함 (단, 내부 배열에 쌓임)
+    // Must already be collected before flushing (stored in the internal array)
     const animations = tracker.flushAndGetAnimations();
     expect(animations).toHaveLength(1);
     expect(animations[0].endFrameId).toBe(4);

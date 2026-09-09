@@ -1,3 +1,4 @@
+설계 배경 문서이며 현재 구현은 `src/DETAIL.md`를 따릅니다.
 # scene-sieve Pipeline Architecture
 
 동영상/GIF에서 핵심 N장의 장면을 자동 선별하는 파이프라인 전체 구조.

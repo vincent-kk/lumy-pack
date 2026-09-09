@@ -6,7 +6,7 @@ import {
   deriveOutputPath,
   expandTilde,
   resolveAbsolute,
-} from '../../utils/paths.js';
+} from '../../core/utils/filesystem/paths.js';
 
 describe('deriveOutputPath', () => {
   it('appends _scenes to the basename without extension', () => {

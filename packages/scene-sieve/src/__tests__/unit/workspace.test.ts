@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import sharp from 'sharp';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { resolveOptions } from '../../core/input-resolver/input-resolver.js';
 import {
   cleanupWorkspace,
   createWorkspace,
@@ -13,9 +14,9 @@ import {
   readFramesAsBuffers,
   writeInputBuffer,
   writeInputFrames,
-} from '../../core/workspace.js';
+} from '../../core/workspace/workspace.js';
 import type { ProcessContext } from '../../types/index.js';
-import { fileExists } from '../../utils/paths.js';
+import { fileExists } from '../../core/utils/filesystem/paths.js';
 
 /** Create a tiny valid JPEG buffer for testing */
 async function createTestJpeg(): Promise<Buffer> {
@@ -58,6 +59,109 @@ describe('createWorkspace', () => {
 });
 
 describe('finalizeOutput', () => {
+  it.each([true, false])(
+    'uses actual dimensions and axis-specific clamped boxes (selected=%s)',
+    async (hasSelection) => {
+      const ws = await createWorkspace(randomUUID());
+      testWorkspaces.push(ws);
+      const outputPath = join(ws, 'final');
+      const image = await sharp({
+        create: { width: 101, height: 67, channels: 3, background: 'white' },
+      })
+        .jpeg()
+        .toBuffer();
+      const frames = await writeInputFrames(
+        hasSelection ? [await createTestJpeg(), image] : [image],
+        ws,
+      );
+      const animations = [
+        {
+          type: 'loading_spinner',
+          startFrameId: 0,
+          endFrameId: 1,
+          durationMs: 1234.5,
+          boundingBox: { x: 5, y: 20, width: 7, height: 9 },
+        },
+        {
+          type: 'loading_spinner',
+          startFrameId: 1,
+          endFrameId: 2,
+          durationMs: 2000,
+          boundingBox: { x: -2, y: -3, width: 80, height: 90 },
+        },
+        {
+          type: 'loading_spinner',
+          startFrameId: 2,
+          endFrameId: 3,
+          durationMs: 2000,
+          boundingBox: { x: 45, y: 30, width: 20, height: 20 },
+        },
+        {
+          type: 'loading_spinner',
+          startFrameId: 3,
+          endFrameId: 4,
+          durationMs: 2000,
+          boundingBox: { x: 60, y: 40, width: 5, height: 5 },
+        },
+      ];
+      const ctx: ProcessContext = {
+        options: resolveOptions({
+          mode: 'file',
+          inputPath: '/input.gif',
+          outputPath,
+        }),
+        effectiveFps: 0.2,
+        sourceDurationSec: 14.7,
+        analysisResolution: { width: 50, height: 33 },
+        workspacePath: ws,
+        frames,
+        graph: [],
+        animations,
+        status: 'FINALIZING',
+        emitProgress: () => {},
+      };
+      const originalAnimations = structuredClone(animations);
+      await finalizeOutput(ctx, hasSelection ? frames.slice(1) : []);
+      const metadata = JSON.parse(
+        await readFile(join(outputPath, '.metadata.json'), 'utf8'),
+      );
+      expect
+        .soft(metadata.video)
+        .toEqual({
+          originalDurationMs: 14700,
+          fps: 0.2,
+          resolution: { width: 101, height: 67 },
+        });
+      expect
+        .soft(
+          metadata.animations.map(
+            (animation: { boundingBox: unknown }) => animation.boundingBox,
+          ),
+        )
+        .toEqual([
+          { x: 10, y: 41, width: 14, height: 18 },
+          { x: 0, y: 0, width: 101, height: 67 },
+          { x: 91, y: 61, width: 10, height: 6 },
+          { x: 101, y: 67, width: 0, height: 0 },
+        ]);
+      expect(metadata.animations[0]).toMatchObject({
+        startFrameId: 1,
+        endFrameId: 2,
+        durationMs: 1235,
+      });
+      expect(ctx.animations).toEqual(originalAnimations);
+      if (hasSelection) {
+        const actual = await sharp(
+          join(outputPath, 'frame_0002.jpg'),
+        ).metadata();
+        expect(metadata.video.resolution).toEqual({
+          width: actual.width,
+          height: actual.height,
+        });
+      }
+    },
+  );
+
   it('copies frames to staging and renames to output path', async () => {
     const ws = await makeTempWorkspace();
     const framesDir = join(ws, 'frames');

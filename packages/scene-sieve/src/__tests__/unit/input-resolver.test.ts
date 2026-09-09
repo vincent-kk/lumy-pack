@@ -1,15 +1,26 @@
+import sharp from 'sharp';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { resolveInput, resolveOptions } from '../../core/input-resolver.js';
-import * as workspace from '../../core/workspace.js';
+import { resolveInput, resolveOptions } from '../../core/input-resolver/input-resolver.js';
+import * as workspace from '../../core/workspace/workspace.js';
+import { classifyError } from '../../cli/errors/classify-error.js';
 
-vi.mock('../../core/workspace.js', () => ({
+/** Create an encoded frame with the requested width for input validation. */
+async function image(width = 32): Promise<Buffer> {
+  return sharp({
+    create: { width, height: 32, channels: 3, background: 'white' },
+  })
+    .png()
+    .toBuffer();
+}
+
+vi.mock('../../core/workspace/workspace.js', () => ({
   writeInputBuffer: vi.fn(),
   writeInputFrames: vi.fn(),
 }));
 
-vi.mock('../../utils/paths.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../utils/paths.js')>();
+vi.mock('../../core/utils/filesystem/paths.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../core/utils/filesystem/paths.js')>();
   return {
     ...actual,
     deriveOutputPath: vi.fn().mockReturnValue('/output/scenes'),
@@ -17,6 +28,47 @@ vi.mock('../../utils/paths.js', async (importOriginal) => {
 });
 
 describe('resolveOptions', () => {
+  it.each([
+    ['threshold', NaN],
+    ['maxFrames', 1],
+    ['maxSegmentDuration', 0],
+    ['concurrency', 0],
+    ['fps', Infinity],
+    ['count', 1.5],
+    ['scale', 15],
+    ['quality', 101],
+    ['iouThreshold', -0.1],
+    ['animationThreshold', 0],
+  ])('rejects %s=%s as INVALID_INPUT', (name, value) => {
+    const resolve = () =>
+      resolveOptions({ mode: 'frames', inputFrames: [], [name]: value });
+    expect(resolve).toThrow(`${name} must be`);
+    try {
+      resolve();
+    } catch (error) {
+      expect((error as Error).message).toContain(`received: ${value}`);
+      expect(classifyError(error as Error)).toBe('INVALID_INPUT');
+    }
+  });
+
+  it('accepts inclusive limits and positive fractional rates', () => {
+    expect(() =>
+      resolveOptions({
+        mode: 'frames',
+        inputFrames: [],
+        count: 1,
+        threshold: 1,
+        fps: 0.5,
+        maxFrames: 2,
+        scale: 16,
+        quality: 1,
+        iouThreshold: 0,
+        animationThreshold: 1,
+        maxSegmentDuration: 0.5,
+        concurrency: 1,
+      }),
+    ).not.toThrow();
+  });
   it('file mode: 기본값 적용 (count=20, threshold=0.5, fps=5, scale=720, debug=false)', () => {
     const result = resolveOptions({ mode: 'file', inputPath: '/video.mp4' });
     expect(result.count).toBe(20);
@@ -28,7 +80,7 @@ describe('resolveOptions', () => {
   });
 
   it('file mode: outputPath 미지정 시 deriveOutputPath 호출', async () => {
-    const { deriveOutputPath } = await import('../../utils/paths.js');
+    const { deriveOutputPath } = await import('../../core/utils/filesystem/paths.js');
     resolveOptions({ mode: 'file', inputPath: '/video.mp4' });
     expect(deriveOutputPath).toHaveBeenCalledWith('/video.mp4');
   });
@@ -156,15 +208,15 @@ describe('resolveInput', () => {
   });
 
   it('buffer mode: writeInputBuffer 호출', async () => {
-    const { writeInputBuffer } = await import('../../core/workspace.js');
+    const { writeInputBuffer } = await import('../../core/workspace/workspace.js');
     const buf = Buffer.from('video-data');
     await resolveInput({ mode: 'buffer', inputBuffer: buf }, '/workspace');
     expect(writeInputBuffer).toHaveBeenCalledWith(buf, '/workspace');
   });
 
   it('frames mode: writeInputFrames 호출', async () => {
-    const { writeInputFrames } = await import('../../core/workspace.js');
-    const frames = [Buffer.from('frame1'), Buffer.from('frame2')];
+    const { writeInputFrames } = await import('../../core/workspace/workspace.js');
+    const frames = [await image(), await image()];
     await resolveInput({ mode: 'frames', inputFrames: frames }, '/workspace');
     expect(writeInputFrames).toHaveBeenCalledWith(frames, '/workspace');
   });
@@ -189,7 +241,7 @@ describe('resolveInput', () => {
 
   it('frames mode 반환 구조: frames 배열에 FrameNode 포함', async () => {
     const result = await resolveInput(
-      { mode: 'frames', inputFrames: [Buffer.from('f')] },
+      { mode: 'frames', inputFrames: [await image()] },
       '/ws',
     );
     expect(result.frames).toHaveLength(1);
@@ -202,9 +254,23 @@ describe('resolveInput', () => {
 
   it('frames mode: resolvedInputPath 없음 (undefined)', async () => {
     const result = await resolveInput(
-      { mode: 'frames', inputFrames: [Buffer.from('f')] },
+      { mode: 'frames', inputFrames: [await image()] },
       '/ws',
     );
     expect(result.resolvedInputPath).toBeUndefined();
+  });
+
+  it('rejects mismatched frame dimensions as INVALID_INPUT before writing', async () => {
+    vi.mocked(workspace.writeInputFrames).mockClear();
+    const result = resolveInput(
+      { mode: 'frames', inputFrames: [await image(), await image(33)] },
+      '/ws',
+    );
+    await expect(result).rejects.toThrow('inputFrames must be');
+    await result.catch((error: Error) => {
+      expect(error.message).toContain('received:');
+      expect(classifyError(error)).toBe('INVALID_INPUT');
+    });
+    expect(workspace.writeInputFrames).not.toHaveBeenCalled();
   });
 });

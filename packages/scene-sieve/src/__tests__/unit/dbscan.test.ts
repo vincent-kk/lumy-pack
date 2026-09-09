@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { dbscan } from '../../core/dbscan.js';
-import type { Point2D } from '../../core/dbscan.js';
+import { dbscan } from '../../core/analyzer/clustering/dbscan.js';
+import type { Point2D } from '../../core/analyzer/clustering/dbscan.js';
 
 describe('dbscan', () => {
   it('empty input — returns empty result', () => {

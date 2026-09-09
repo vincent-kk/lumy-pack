@@ -8,7 +8,7 @@ Automatically extract the most meaningful frames from video and GIF files using 
 
 ```
 Video/GIF ──▶ Extract (FFmpeg) ──▶ Analyze (OpenCV) ──▶ Prune ──▶ Output
-               I-frames / FPS       AKAZE + DBSCAN        MinHeap    JPG / Buffer
+               FPS grid             AKAZE + DBSCAN        MinHeap    JPG / Buffer
 ```
 
 ## Features
@@ -18,7 +18,7 @@ Video/GIF ──▶ Extract (FFmpeg) ──▶ Analyze (OpenCV) ──▶ Prune 
 - **Smart frame selection** — Identifies visually significant scene changes, not just evenly-spaced samples
 - **Computer vision pipeline** — AKAZE feature detection, DBSCAN clustering, IoU tracking, and information gain scoring
 - **Three input modes** — File path, video Buffer, or pre-extracted frame Buffers
-- **Flexible pruning** — Keep a fixed count, filter by threshold, or combine both
+- **Flexible pruning** — Filter by a distribution-normalized threshold, then apply a count cap
 - **Bundled FFmpeg** — No system-level FFmpeg installation required
 - **Dual output** — ESM and CommonJS compatible
 - **Progress callbacks** — Track extraction progress in real time
@@ -40,7 +40,7 @@ yarn add @lumy-pack/scene-sieve
 # Extract 20 key scenes (default)
 npx scene-sieve input.mp4
 
-# Keep exactly 8 scenes
+# Keep up to 8 scenes
 npx scene-sieve input.mp4 -n 8
 
 # Use threshold-based selection
@@ -84,9 +84,9 @@ scene-sieve <input> [options]
 | `-n, --count <number>`         | Max number of frames to keep                    | `20`                         |
 | `-t, --threshold <number>`     | Normalized score threshold (0, 1]               | `0.5`                        |
 | `-o, --output <path>`          | Output directory                                | Same directory as input      |
-| `--fps <number>`               | Max FPS for frame extraction                    | `5`                          |
-| `-mf, --max-frames <number>`   | Max frames to extract (auto-reduces FPS)        | `300`                        |
-| `-s, --scale <number>`         | Scale size for vision analysis (px)             | `720`                        |
+| `--fps <number>`               | Requested extraction FPS (positive decimals allowed)                    | `5`                          |
+| `-mf, --max-frames <number>`   | Strict candidate cap (auto-reduces FPS)        | `300`                        |
+| `-s, --scale <number>`         | Extraction height / analysis width (px)             | `720`                        |
 | `-q, --quality <number>`       | JPEG output quality (1–100)                     | `80`                         |
 | `-it, --iou-threshold <number>`| IoU threshold for animation tracking (0–1)      | `0.9`                        |
 | `-at, --anim-threshold <number>`| Min consecutive frames for animation            | `5`                          |
@@ -114,7 +114,7 @@ Not sure where to start? Here's how each parameter affects the output, based on 
 
 #### `--threshold` — Minimum score to keep a frame
 
-Higher values = stricter filtering = fewer frames.
+Higher values mean stricter filtering and fewer frames. Scores are normalized against the positive-score distribution within the video: min-max for up to 10 positive scores, otherwise a blend of median/MAD-based logistic scores and percentile ranks. `0.5` is neither an absolute change level nor half the maximum score.
 
 | Setting | Selected | Notes |
 |---------|----------|-------|
@@ -124,24 +124,27 @@ Higher values = stricter filtering = fewer frames.
 | `-t 0.7` | 19 | Starts filtering subtle changes |
 | `-t 0.9` | 12 | Only major scene transitions survive |
 
-> **Tip**: Use `-t` alone for "give me everything important". Combine with `-n` to set an upper bound (e.g., `-t 0.3 -n 10`).
+> **Tip**: Using `-t` alone still applies the default `count=20` cap. Adjust it with `-n` (e.g., `-t 0.3 -n 10`).
 
 #### `--fps` and `--max-frames` — Extraction density
 
 These control how many frames are pulled from the video before analysis. More frames = more precision but longer processing.
+
+File/buffer candidates obey the strict `maxFrames` cap (integer ≥ 2). Effective FPS is `min(fps, maxFrames / duration)`, with no 0.5 FPS floor. Positive decimals such as `--fps 0.5` are accepted. A one-hour video with a 300-frame budget is sampled at about 0.083 FPS (every 12 seconds). This cap does not apply to frames input.
+
+Timestamps describe the FFmpeg output grid `k / effectiveFps`, rather than the original source frame PTS. The FPS filter keeps its default rounding. When the budget binds, the last grid point is `duration - duration / maxFrames`, leaving no candidate in the remaining interval to the end.
 
 | Setting | Extracted | Selected | Time |
 |---------|-----------|----------|------|
 | `--fps 1` | 18 | 6 | ~5s |
 | `--fps 5` (default) | 90 | 20 | ~25s |
 | `--fps 10` | 180 | 20 | ~47s |
-| `-mf 50` | 47 | 13 | ~13s |
 
 > **Tip**: For quick previews, `--fps 1` is 5x faster. For frame-accurate analysis, `--fps 10` captures finer transitions.
 
 #### `--scale` — Analysis resolution
 
-Controls the resolution used for vision analysis (not output resolution). Lower = faster but less sensitive.
+File/buffer extraction scales height to `scale`, while analysis preprocessing scales width to `scale`. Final JPEGs retain extraction dimensions; frames input retains its input dimensions in the output. Lower values are faster but less sensitive.
 
 | Setting | Selected | Time | Output Size |
 |---------|----------|------|-------------|
@@ -283,18 +286,34 @@ interface SieveOptionsBase {
   count?: number; // Max frames to keep (default: 20)
   threshold?: number; // Score threshold in range (0, 1] (default: 0.5)
   outputPath?: string; // Output directory (file mode only)
-  fps?: number; // Extraction FPS (default: 5)
-  maxFrames?: number; // Max frames to extract (default: 300)
-  scale?: number; // Analysis scale in px (default: 720)
+  fps?: number; // Requested FPS, positive decimals allowed (default: 5)
+  maxFrames?: number; // Strict file/buffer candidate cap (default: 300)
+  scale?: number; // Extraction height / analysis width in px (default: 720)
   quality?: number; // JPEG quality 1-100 (default: 80)
   iouThreshold?: number; // IoU for animation tracking (default: 0.9)
   animationThreshold?: number; // Min frames for animation (default: 5)
+  maxSegmentDuration?: number; // Segment duration in seconds (default: 300)
+  concurrency?: number; // Parallel segment workers (default: 2)
   debug?: boolean; // Preserve temp workspace (default: false)
   onProgress?: (phase: ProgressPhase, percent: number) => void;
 }
 
 type SieveOptions = SieveOptionsBase & SieveInput;
 ```
+
+Supplied numeric options are validated before defaults; invalid values produce `INVALID_INPUT`. CLI numeric strings are checked in full, so values such as `5abc` are rejected. Both interactive and JSON CLI failures exit with code 1.
+
+| Option | Allowed range |
+| --- | --- |
+| `count`, `animationThreshold`, `concurrency` | Integer ≥ 1 |
+| `maxFrames` | Integer ≥ 2 |
+| `scale` | Integer ≥ 16 |
+| `quality` | Integer 1–100 |
+| `fps`, `maxSegmentDuration` | Finite positive number (decimals allowed) |
+| `threshold` | Finite (0, 1] |
+| `iouThreshold` | Finite [0, 1] |
+
+All images in frames input must share the same width and height. Empty arrays and single images are accepted.
 
 ### Result
 
@@ -313,13 +332,9 @@ interface SieveResult {
 
 ### Pruning Strategies
 
-The pruning strategy is automatically selected based on which options are provided:
+The pipeline always uses **threshold-with-cap**: filter by distribution-normalized score, then prune to the `count` cap. Omitted `threshold` and `count` default to `0.5` and `20`. The selected count may be lower depending on candidates and scores.
 
-| Options                    | Strategy               | Behavior                                                         |
-| -------------------------- | ---------------------- | ---------------------------------------------------------------- |
-| `count` only               | **count**              | Greedy merge — removes lowest-scored frames until `count` remain |
-| `threshold` only           | **threshold**          | Keeps frames with normalized score >= `threshold`                |
-| Both `count` + `threshold` | **threshold-with-cap** | Applies threshold filter first, then caps at `count`             |
+The first and last candidates are protected, so both remain when `count=1` and at least two candidates exist. Standalone count and threshold strategies exist as internal functions but are not selected by the CLI or `extractScenes`.
 
 ### Progress Tracking
 
@@ -339,12 +354,20 @@ const result = await extractScenes({
 
 When running in `file` mode, `scene-sieve` generates a `.metadata.json` file in the output directory.
 
+`SieveResult.video` and file metadata use the same values:
+
+- `originalDurationMs`: ffprobe source duration for file/buffer; the last candidate timestamp for frames input.
+- `fps`: effective extraction FPS, rather than the requested value. Frames input uses 1, also used by animation tracking.
+- `resolution`: actual output JPEG dimensions of the first selected frame, falling back to the first candidate or 0×0 when empty.
+- `frames[].timestampMs`: extraction-grid time in milliseconds; frames input uses one-second intervals.
+- `animations[].boundingBox`: output-image pixel coordinates, scaled independently on each axis from analysis coordinates, rounded to integers, and clamped to the output bounds. File frame IDs are 1-based; API animation IDs are 0-based.
+
 ```json
 {
   "video": {
     "originalDurationMs": 15000,
     "fps": 5,
-    "resolution": { "width": 720, "height": 405 }
+    "resolution": { "width": 1280, "height": 720 }
   },
   "frames": [
     {
@@ -373,16 +396,16 @@ When running in `file` mode, `scene-sieve` generates a `.metadata.json` file in 
 scene-sieve processes input through a 5-stage pipeline:
 
 1. **Init** — Creates a temporary workspace and resolves input mode
-2. **Extract** — Pulls frames via FFmpeg (I-frame priority, FPS fallback; skipped in `frames` mode)
+2. **Extract** — Pulls candidates on an FFmpeg FPS grid within the strict `maxFrames` cap (skipped in `frames` mode)
 3. **Analyze** — Computes an information gain score G(t) for each adjacent frame pair
-4. **Prune** — Selects frames based on G(t) scores using the chosen pruning strategy
-5. **Finalize** — Writes output files (atomic rename) or returns Buffers; cleans up workspace
+4. **Prune** — Selects frames from G(t) scores using threshold-with-cap
+5. **Finalize** — Deletes existing output before renaming staging, or returns Buffers; cleans up workspace
 
 ### Vision Analysis
 
 The analyzer scores each pair of adjacent frames through 4 stages:
 
-1. **AKAZE Feature Diff** — Detects and matches keypoints between frames; identifies newly appeared and disappeared features
+1. **AKAZE Feature Diff** — Reuses per-frame preprocessing/features and the detector to compute newly appeared points (sNew only)
 2. **DBSCAN Clustering** — Groups new feature points into spatial clusters
 3. **IoU Tracking** — Tracks cluster bounding boxes across time; identifies and records repeated animation regions (e.g. loading spinners)
 4. **G(t) Scoring** — Calculates information gain from cluster area ratio and feature density, discounting animated areas to focus on unique scene content
