@@ -12,4 +12,4 @@ export type {
   SieveResult,
 } from './types/index.js';
 
-export { runPipeline as extractScenes } from './core/orchestrator.js';
+export { runPipeline as extractScenes } from './core/index.js';

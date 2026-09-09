@@ -1,4 +1,5 @@
 export { runPipeline } from './orchestrator.js';
+export { runPipelineInWorker } from './run-in-worker.js';
 export {
   analyzeFrames,
   computeIoU,
@@ -25,6 +26,7 @@ export {
   createWorkspace,
   createSegmentWorkspace,
   cleanupWorkspace,
+  cleanupStaleWorkspaces,
   finalizeOutput,
   readFramesAsBuffers,
   writeInputBuffer,

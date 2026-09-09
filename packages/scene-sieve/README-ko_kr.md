@@ -8,7 +8,7 @@
 
 ```
 Video/GIF ──▶ Extract (FFmpeg) ──▶ Analyze (OpenCV) ──▶ Prune ──▶ Output
-               I-frames / FPS       AKAZE + DBSCAN        MinHeap    JPG / Buffer
+               FPS grid             AKAZE + DBSCAN        MinHeap    JPG / Buffer
 ```
 
 ## 기능
@@ -18,7 +18,7 @@ Video/GIF ──▶ Extract (FFmpeg) ──▶ Analyze (OpenCV) ──▶ Prune 
 - **스마트 프레임 선택** — 균등하게 분산된 샘플이 아닌 시각적으로 의미 있는 장면 변화를 식별합니다
 - **컴퓨터 비전 파이프라인** — AKAZE 특징 감지, DBSCAN 클러스터링, IoU 추적 및 정보 이득 스코어링
 - **세 가지 입력 모드** — 파일 경로, 비디오 Buffer, 또는 사전 추출된 프레임 Buffers
-- **유연한 정제(Pruning)** — 고정 개수 유지, 임계값으로 필터링, 또는 두 가지 조합
+- **유연한 정제(Pruning)** — 분포 정규화 임계값으로 필터링한 뒤 개수 상한 적용
 - **번들된 FFmpeg** — 시스템 레벨 FFmpeg 설치가 필요하지 않습니다
 - **듀얼 출력** — ESM 및 CommonJS 호환
 - **진행 상황 콜백** — 실시간으로 추출 진행 상황을 추적합니다
@@ -40,7 +40,7 @@ yarn add @lumy-pack/scene-sieve
 # 기본값인 20개의 주요 장면 추출
 npx scene-sieve input.mp4
 
-# 정확히 8개의 장면 유지
+# Keep up to 8 scenes
 npx scene-sieve input.mp4 -n 8
 
 # 임계값 기반 선택 사용
@@ -65,7 +65,7 @@ const result = await extractScenes({
 console.log(
   `${result.prunedFramesCount} scenes extracted in ${result.executionTimeMs}ms`,
 );
-// 출력:
+// Output:
 //   scenes/frame_0001.jpg
 //   scenes/frame_0002.jpg
 //   ...
@@ -84,9 +84,9 @@ scene-sieve <input> [options]
 | `-n, --count <number>`       | 유지할 최대 프레임 개수                        | `20`                        |
 | `-t, --threshold <number>`   | 정규화된 스코어 임계값 (0, 1]                  | `0.5`                       |
 | `-o, --output <path>`        | 출력 디렉토리                                  | 입력과 동일한 디렉토리      |
-| `--fps <number>`             | 프레임 추출용 최대 FPS                         | `5`                         |
-| `-mf, --max-frames <number>` | 추출할 최대 프레임 수 (자동 FPS 조절)          | `300`                       |
-| `-s, --scale <number>`       | 비전 분석용 스케일 크기 (px)                   | `720`                       |
+| `--fps <number>`             | 요청 추출 FPS (양의 실수 허용)                         | `5`                         |
+| `-mf, --max-frames <number>` | 엄격한 후보 수 상한 (FPS 자동 감소)          | `300`                       |
+| `-s, --scale <number>`       | 추출 높이 / 분석 너비 (px)                   | `720`                       |
 | `-q, --quality <number>`     | JPEG 출력 품질 (1–100)                         | `80`                        |
 | `-it, --iou-threshold <number>`| 애니메이션 추적용 IoU 임계값 (0–1)           | `0.9`                       |
 | `-at, --anim-threshold <number>`| 애니메이션 판정 최소 연속 프레임 수         | `5`                         |
@@ -114,7 +114,7 @@ scene-sieve <input> [options]
 
 #### `--threshold` — 프레임 유지 최소 점수
 
-값이 높을수록 = 엄격한 필터 = 적은 프레임.
+값이 높을수록 더 엄격하게 필터링하여 적은 프레임을 남깁니다. 점수는 영상 내 양의 점수 분포를 기준으로 정규화됩니다. 양의 점수가 10개 이하면 min-max, 그보다 많으면 중앙값·MAD 기반 로지스틱 점수와 백분위 순위를 결합합니다. `0.5`는 절대 변화량이나 최대 점수의 절반을 뜻하지 않습니다.
 
 | 설정 | 선택 프레임 | 비고 |
 |------|-----------|------|
@@ -124,24 +124,27 @@ scene-sieve <input> [options]
 | `-t 0.7` | 19 | 미세한 변화가 필터링되기 시작 |
 | `-t 0.9` | 12 | 주요 장면 전환만 남음 |
 
-> **팁**: `-t`만 단독 사용하면 "중요한 것 전부 보여줘" 모드. `-n`과 조합하면 상한선 설정 (예: `-t 0.3 -n 10`).
+> **팁**: `-t`만 지정해도 기본 `count=20` 상한이 적용됩니다. `-n`으로 상한을 조정하세요 (예: `-t 0.3 -n 10`).
 
 #### `--fps`와 `--max-frames` — 추출 밀도
 
 분석 전에 영상에서 몇 프레임을 뽑을지 제어합니다. 프레임이 많을수록 = 정밀하지만 처리 시간 증가.
+
+file/buffer 후보 수는 `maxFrames`(정수 ≥ 2)의 엄격한 상한을 따릅니다. 유효 FPS는 `min(fps, maxFrames / duration)`이며 0.5fps 하한이 없습니다. `--fps 0.5` 같은 양의 실수를 허용합니다. 1시간 영상을 300장 예산으로 처리하면 약 0.083fps(12초 간격)로 추출됩니다. frames 입력에는 이 상한을 적용하지 않습니다.
+
+타임스탬프는 소스 프레임의 원래 PTS가 아니라 FFmpeg 출력 격자 `k / effectiveFps`입니다. FPS 필터의 기본 반올림을 유지하며, 예산이 묶이면 마지막 격자점은 `duration - duration / maxFrames`이므로 그 뒤 영상 끝까지의 구간에는 후보가 없습니다.
 
 | 설정 | 추출 프레임 | 선택 프레임 | 시간 |
 |------|-----------|-----------|------|
 | `--fps 1` | 18 | 6 | ~5초 |
 | `--fps 5` (기본값) | 90 | 20 | ~25초 |
 | `--fps 10` | 180 | 20 | ~47초 |
-| `-mf 50` | 47 | 13 | ~13초 |
 
 > **팁**: 빠른 미리보기엔 `--fps 1`이 5배 빠릅니다. 프레임 단위 정밀 분석엔 `--fps 10`이 세밀한 전환을 포착합니다.
 
 #### `--scale` — 분석 해상도
 
-비전 분석에 사용되는 해상도를 제어합니다 (출력 해상도가 아님). 낮을수록 = 빠르지만 감지 민감도 저하.
+file/buffer 추출은 높이를 `scale`에 맞추고, 분석 전처리는 너비를 `scale`에 맞춥니다. 최종 JPEG는 추출 크기를 유지하며, frames 입력의 출력 크기는 입력 크기를 유지합니다. 낮을수록 빠르지만 감지 민감도가 낮아집니다.
 
 | 설정 | 선택 프레임 | 시간 | 출력 크기 |
 |------|-----------|------|----------|
@@ -255,7 +258,7 @@ const result = await extractScenes({
 });
 
 console.log(result.outputBuffers?.length); // 5
-// 각 버퍼는 JPEG 이미지입니다
+// Each buffer is a JPEG image
 ```
 
 #### Frames 모드
@@ -280,46 +283,58 @@ console.log(result.outputBuffers?.length); // 5
 
 ```typescript
 interface SieveOptionsBase {
-  count?: number; // 유지할 최대 프레임 개수 (기본값: 20)
-  threshold?: number; // 범위 (0, 1]에서의 스코어 임계값 (기본값: 0.5)
-  outputPath?: string; // 출력 디렉토리 (파일 모드만 해당)
-  fps?: number; // 추출 FPS (기본값: 5)
-  maxFrames?: number; // 추출할 최대 프레임 수 (기본값: 300)
-  scale?: number; // 분석용 스케일 (px) (기본값: 720)
-  quality?: number; // JPEG 품질 1-100 (기본값: 80)
-  iouThreshold?: number; // 애니메이션 추적용 IoU (기본값: 0.9)
-  animationThreshold?: number; // 애니메이션 판정 최소 프레임 (기본값: 5)
-  debug?: boolean; // 임시 작업 공간 유지 (기본값: false)
+  count?: number; // Max frames to keep (default: 20)
+  threshold?: number; // Score threshold in range (0, 1] (default: 0.5)
+  outputPath?: string; // Output directory (file mode only)
+  fps?: number; // Requested FPS, positive decimals allowed (default: 5)
+  maxFrames?: number; // Strict file/buffer candidate cap (default: 300)
+  scale?: number; // Extraction height / analysis width in px (default: 720)
+  quality?: number; // JPEG quality 1-100 (default: 80)
+  iouThreshold?: number; // IoU for animation tracking (default: 0.9)
+  animationThreshold?: number; // Min frames for animation (default: 5)
+  maxSegmentDuration?: number; // Segment duration in seconds (default: 300)
+  concurrency?: number; // Parallel segment workers (default: 2)
+  debug?: boolean; // Preserve temp workspace (default: false)
   onProgress?: (phase: ProgressPhase, percent: number) => void;
 }
 
 type SieveOptions = SieveOptionsBase & SieveInput;
 ```
 
+지정한 숫자 옵션은 기본값 적용 전에 검증하며, 위반 시 `INVALID_INPUT` 오류로 거부합니다. CLI 숫자 문자열 전체를 검사하므로 `5abc` 같은 값은 허용하지 않습니다. 일반·JSON CLI 실패 종료 코드는 1입니다.
+
+| 옵션 | 허용 범위 |
+| --- | --- |
+| `count`, `animationThreshold`, `concurrency` | 정수 ≥ 1 |
+| `maxFrames` | 정수 ≥ 2 |
+| `scale` | 정수 ≥ 16 |
+| `quality` | 정수 1–100 |
+| `fps`, `maxSegmentDuration` | 유한한 양수 (실수 허용) |
+| `threshold` | 유한 (0, 1] |
+| `iouThreshold` | 유한 [0, 1] |
+
+frames 입력은 모든 이미지의 너비·높이가 같아야 합니다. 빈 배열과 한 장 입력은 허용합니다.
+
 ### 결과
 
 ```typescript
 interface SieveResult {
   success: boolean;
-  originalFramesCount: number; // 추출/제공된 총 프레임 수
-  prunedFramesCount: number; // 주요 장면으로 선택된 프레임 수
-  outputFiles: string[]; // 파일 경로 (파일 모드)
-  outputBuffers?: Buffer[]; // JPEG 버퍼 (buffer/frames 모드)
-  animations?: AnimationMetadata[]; // 감지된 애니메이션 정보
-  video?: VideoMetadata; // 비디오 소스 메타데이터
+  originalFramesCount: number; // Total frames extracted/provided
+  prunedFramesCount: number; // Frames selected as key scenes
+  outputFiles: string[]; // File paths (file mode)
+  outputBuffers?: Buffer[]; // JPEG buffers (buffer/frames mode)
+  animations?: AnimationMetadata[]; // Detected animations
+  video?: VideoMetadata; // Video source metadata
   executionTimeMs: number;
 }
 ```
 
 ### 정제 전략
 
-정제 전략은 제공된 옵션을 기반으로 자동으로 선택됩니다:
+항상 **threshold-with-cap** 전략을 사용합니다. 분포 정규화 점수에 임계값 필터를 적용한 뒤 `count` 상한으로 정제합니다. 생략한 `threshold`는 `0.5`, `count`는 `20`입니다. 최종 개수는 후보와 점수에 따라 상한보다 적을 수 있습니다.
 
-| 옵션                       | 전략                    | 동작                                                   |
-| -------------------------- | ----------------------- | ------------------------------------------------------ |
-| `count`만                  | **count**               | 탐욕적 병합 — `count`개가 남을 때까지 최저 스코어 프레임 제거 |
-| `threshold`만              | **threshold**           | 정규화된 스코어 >= `threshold`인 프레임 유지           |
-| `count` + `threshold` 모두 | **threshold-with-cap**  | 먼저 임계값 필터 적용, 그 다음 `count`로 상한 설정      |
+첫/마지막 후보는 항상 보호되므로 후보가 2개 이상이면 `count=1`이어도 둘 다 남습니다. `count`와 `threshold` 단독 전략은 내부 함수로 존재하지만 CLI와 `extractScenes`에서 선택되지 않습니다.
 
 ### 진행 상황 추적
 
@@ -339,12 +354,20 @@ const result = await extractScenes({
 
 `file` 모드로 실행할 때, `scene-sieve`는 출력 디렉토리에 `.metadata.json` 파일을 생성합니다.
 
+`SieveResult.video`와 파일 metadata는 같은 값을 사용합니다:
+
+- `originalDurationMs`: file/buffer는 ffprobe 원본 길이, frames는 마지막 후보 타임스탬프입니다.
+- `fps`: 요청값이 아닌 유효 추출 FPS입니다. frames 모드는 1이며 애니메이션 추적도 이를 사용합니다.
+- `resolution`: 첫 선택 프레임의 실제 출력 JPEG 크기입니다. 선택이 없으면 첫 후보, 후보도 없으면 0×0입니다.
+- `frames[].timestampMs`: 추출 격자 시각의 밀리초 값이며, frames 입력은 1초 간격입니다.
+- `animations[].boundingBox`: 출력 이미지의 픽셀 좌표입니다. 분석 좌표에서 축별로 스케일하고 정수 반올림한 뒤 출력 경계로 제한합니다. 파일의 frame ID는 1-based, API animation ID는 0-based입니다.
+
 ```json
 {
   "video": {
     "originalDurationMs": 15000,
     "fps": 5,
-    "resolution": { "width": 720, "height": 405 }
+    "resolution": { "width": 1280, "height": 720 }
   },
   "frames": [
     {
@@ -373,16 +396,16 @@ const result = await extractScenes({
 scene-sieve는 입력을 5단계 파이프라인을 통해 처리합니다:
 
 1. **Init** — 임시 작업 공간을 생성하고 입력 모드를 해결합니다
-2. **Extract** — FFmpeg을 통해 프레임을 가져옵니다 (I-frame 우선, FPS fallback; `frames` 모드에서 건너뜀)
+2. **Extract** — FFmpeg FPS 격자에서 `maxFrames` 상한 내로 후보를 추출합니다 (`frames` 모드에서 건너뜀)
 3. **Analyze** — 각 인접 프레임 쌍에 대해 정보 이득 스코어 G(t)를 계산합니다
-4. **Prune** — 선택된 정제 전략을 사용하여 G(t) 스코어를 기반으로 프레임을 선택합니다
-5. **Finalize** — 출력 파일을 씁니다 (원자적 이름 바꾸기) 또는 Buffers를 반환합니다; 작업 공간을 정리합니다
+4. **Prune** — G(t) 스코어에 threshold-with-cap을 적용하여 프레임을 선택합니다
+5. **Finalize** — 기존 출력 디렉터리를 삭제한 뒤 staging을 rename하거나 Buffers를 반환하고 작업 공간을 정리합니다
 
 ### 비전 분석
 
 분석기는 4단계를 통해 인접한 프레임 쌍 각각에 스코어를 매깁니다:
 
-1. **AKAZE 특징 차이** — 프레임 간 키포인트를 감지 및 매칭합니다; 새로 나타나고 사라진 특징을 식별합니다
+1. **AKAZE 특징 차이** — 프레임 단위 전처리·특징점 캐시와 검출기를 재사용하여 새로 나타난 특징점(sNew)만 계산합니다
 2. **DBSCAN 클러스터링** — 새 특징 포인트를 공간 클러스터로 그룹화합니다
 3. **IoU 추적** — 클러스터 경계 상자를 시간에 따라 추적합니다; 반복된 애니메이션 영역(예: 로딩 스피너)을 식별하고 기록합니다
 4. **G(t) 스코어링** — 클러스터 면적 비율 및 특징 밀도로부터 정보 이득을 계산하며, 애니메이션 영역을 제외하여 고유한 장면에 집중합니다

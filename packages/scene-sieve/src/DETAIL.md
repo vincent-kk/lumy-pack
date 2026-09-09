@@ -9,8 +9,10 @@
 ### `extractScenes(options: SieveOptions): Promise<SieveResult>`
 
 - 3가지 입력 모드: file, buffer, frames
-- count/threshold 기반 가지치기 전략 자동 결정
+- 기본값을 적용한 count/threshold로 항상 `threshold-with-cap` 가지치기 수행
 - 결과: 선별된 프레임 경로 또는 Buffer 배열
+
+라이브러리 엔트리와 CLI는 `core/index.ts`의 명명 재수출을 통해 파이프라인에 접근한다. CLI용 `runPipelineInWorker`와 `cleanupStaleWorkspaces`는 core 경계에 공개하며 패키지 최상위 API에는 추가하지 않는다.
 
 ## Options
 
@@ -65,7 +67,7 @@ frames 입력은 sharp `metadata()`로 모든 버퍼의 너비·높이가 같은
 ## Acceptance Criteria
 
 - [ ] file/buffer/frames 3가지 모드 정상 동작
-- [ ] count/threshold/threshold-with-cap 가지치기 전략 정상 작동
+- [ ] 항상 threshold-with-cap을 사용하고 생략한 count/threshold에는 기본값 적용
 - [ ] 첫/마지막 프레임 항상 포함 (boundary protection)
 - [ ] 임시 workspace 정상 정리 (debug 모드 제외)
 

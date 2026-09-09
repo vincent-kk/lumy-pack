@@ -19,7 +19,7 @@ scene-sieve 라이브러리 엔트리포인트. extractScenes 함수와 타입�
 ## Always do
 
 - index.ts를 통해서만 외부 공개 API를 정의
-- core/ 모듈은 core/index.ts barrel을 통해 접근
+- core/ 모듈은 core/index.ts barrel을 통해 접근 (CLI의 Worker 실행·workspace 정리 포함)
 - 타입 변경 시 types/index.ts에서 관리
 - `--json` 모드 시 `@lumy-pack/shared`의 `respond`/`respondError`로 구조화된 JSON 출력
 - 에러 분류는 `errors.ts`의 `classifyError()` → `SieveErrorCode` 사용

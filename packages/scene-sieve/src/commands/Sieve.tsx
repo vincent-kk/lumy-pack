@@ -14,9 +14,11 @@ import {
   DEFAULT_QUALITY,
   DEFAULT_SCALE,
 } from '../constants.js';
-import { runPipeline } from '../core/orchestrator.js';
-import { runPipelineInWorker } from '../core/run-in-worker.js';
-import { cleanupStaleWorkspaces } from '../core/workspace.js';
+import {
+  runPipeline,
+  runPipelineInWorker,
+  cleanupStaleWorkspaces,
+} from '../core/index.js';
 import { classifyError, SieveErrorCode } from '../errors.js';
 import type { ProgressPhase, SieveResult } from '../types/index.js';
 import { SIEVE_COMMAND } from '../utils/command-registry.js';

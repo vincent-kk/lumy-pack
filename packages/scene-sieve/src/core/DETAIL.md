@@ -9,6 +9,7 @@ scene-sieve 핵심 파이프라인. 프레임 추출, 비전 분석, 가지치�
 ### orchestrator
 
 - `runPipeline(options: SieveOptions): Promise<SieveResult>` — 5단계 파이프라인
+- `runPipelineInWorker(options: SieveWorkerOptions, onProgress: (phase: ProgressPhase, percent: number) => void): Promise<SieveResult>` — CLI의 Worker 실행. `core/index.ts`에서 명명 재수출하며 라이브러리·CLI 소비자는 core 내부 파일을 직접 import하지 않는다.
 - 매 호출에서 `setDebugMode(options.debug ?? false)`로 debug 상태를 설정하여 이전 호출의 설정이 남지 않는다.
 - Worker는 결과 메시지 없이 종료되면 종료 코드 0·1을 포함해 reject한다. 결과나 오류로 이미 정착한 Promise는 후속 exit로 바뀌지 않는다.
 
@@ -83,20 +84,22 @@ export function computeNewPoints(cvLib: CvLib, prev: FrameFeatures, next: FrameF
 
 ### input-resolver
 
-- `resolveOptions(options: SieveOptions): ResolvedOptions`
+- `resolveOptions(options: SieveOptions): ResolvedOptions` — 기본값 적용 후 항상 `pruneMode: 'threshold-with-cap'`을 반환한다.
 - `validateOptions(options: SieveOptions): void`는 src 옵션 표의 유한성·정수·범위를 기본값 적용 전에 검사한다. core 평면 배치에서 export 하나만 제공하며 소비자는 `resolveOptions`이다.
 - 기존 threshold 검사도 이 검증으로 통합한다. 메시지 `<name> must be …, received: <value>`는 `classifyError`가 `INVALID_INPUT`으로 분류한다.
-- `resolveInput(options: SieveOptions, workspacePath: string)`은 `{ frames, resolvedInputPath? }`를 반환한다. frames 모드는 sharp `metadata()`로 모든 입력 크기를 비교한 후 저장하며 불일치는 같은 메시지 형식으로 거부한다.
+- `resolveInput(options: SieveOptions, workspacePath: string): Promise<{ frames: FrameNode[]; resolvedInputPath?: string }>` — frames 모드는 sharp `metadata()`로 모든 입력 크기를 비교한 후 저장하며 불일치는 같은 메시지 형식으로 거부한다.
 
 ### workspace
 
 - `createWorkspace(sessionId): Promise<string>`
 - `finalizeOutput(ctx, frames): Promise<string[]>`
 - `cleanupWorkspace(path): Promise<void>`
-- `readFramesAsBuffers(frames): Promise<Buffer[]>`
+- `cleanupStaleWorkspaces(): Promise<void>` — CLI 시작 시 오래된 workspace 정리에 사용하며 `core/index.ts`에서 명명 재수출한다.
+- `readFramesAsBuffers(frameNodes: FrameNode[], quality: number): Promise<Buffer[]>` — 지정한 품질의 JPEG 버퍼를 반환한다.
 - `buildVideoMetadata(ctx, selected, analysisResolution)`는 첫 선택 프레임(없으면 첫 후보)의 sharp metadata 크기, 유효 FPS, 원본 길이로 video를 만든다. JPEG 출력은 resize하지 않으므로 추출 이미지와 출력 JPEG의 크기가 같다. 후보가 없으면 0×0이다.
 - bbox 변환은 이 함수에서만 수행하며 축별 배율·정수 반올림·출력 범위 clamp를 적용한다. 입력 animations를 변경하지 않고 새 배열과 bbox를 반환한다. 0×0 분석 해상도는 animation이 없는 조기 반환 경로를 나타낸다.
 - `finalizeOutput`은 공용 결과를 사용하되 파일 metadata의 animation ID를 1-based로 변환하고 durationMs를 반올림한다. API 결과는 기존 0-based ID를 유지한다.
+- 파일 출력 교체는 기존 출력 디렉터리를 삭제한 뒤 staging 디렉터리를 rename한다. 삭제와 rename 전체가 원자적 교체를 보장하지 않는다.
 
 ## Acceptance Criteria
 
