@@ -132,7 +132,7 @@ describe('extractFrames', () => {
     const frames = await extractFrames(ctx);
 
     expect(frames.length).toBeGreaterThanOrEqual(0);
-    // ffprobe 호출 횟수 확인 (ffmpeg 호출 제외)
+    // Check the ffprobe call count (excluding ffmpeg calls)
     const ffprobeCalls = mockExeca.mock.calls.filter(
       (c) => c[0] === '/usr/bin/ffprobe',
     );

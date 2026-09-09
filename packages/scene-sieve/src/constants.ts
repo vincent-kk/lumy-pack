@@ -45,11 +45,11 @@ export const ANIMATION_FRAME_THRESHOLD = 5;
 // Vision Analysis — Feature Matching
 export const MATCH_DISTANCE_THRESHOLD = 0.25;
 
-// Vision Analysis — Pixel-Diff Fallback (AKAZE blind spot 보완)
-export const PIXELDIFF_GAUSSIAN_KERNEL = 3; // absdiff 노이즈 제거 블러 커널
-export const PIXELDIFF_BINARY_THRESHOLD = 30; // 그레이스케일 diff 이진화 임계값 (0-255)
-export const PIXELDIFF_CONTOUR_MIN_AREA = 100; // 최소 contour 면적 (px^2), 커서 깜빡임 필터
-export const PIXELDIFF_SAMPLE_SPACING = 8; // contour 내부 그리드 샘플링 간격 (px)
+// Vision Analysis — Pixel-Diff Fallback (compensates for AKAZE blind spots)
+export const PIXELDIFF_GAUSSIAN_KERNEL = 3; // blur kernel for absdiff noise removal
+export const PIXELDIFF_BINARY_THRESHOLD = 30; // grayscale diff binarization threshold (0-255)
+export const PIXELDIFF_CONTOUR_MIN_AREA = 100; // minimum contour area (px^2) to filter cursor blinking
+export const PIXELDIFF_SAMPLE_SPACING = 8; // grid sampling spacing inside contours (px)
 
 // Long Video Segmentation
 export const DEFAULT_MAX_SEGMENT_DURATION = 300; // 5 minutes

@@ -53,7 +53,7 @@ export async function finalizeOutput(
     });
   }
 
-  // .metadata.json 생성
+  // Create .metadata.json
   const metadata = {
     video: {
       originalDurationMs: Math.round(

@@ -104,9 +104,9 @@ interface CvMatVector {
 
 const OPENCV_INIT_TIMEOUT_MS = 30_000;
 
-// createRequire를 사용하여 Node CJS 로더로 직접 로드.
-// dynamic import()는 Vite 변환 파이프라인을 거치는데,
-// opencv-js(10MB+ Emscripten 모듈)를 변환하다 hang이 발생한다.
+// Load directly through the Node CJS loader using createRequire.
+// Dynamic import() goes through the Vite transformation pipeline,
+// which hangs while transforming opencv-js (a 10MB+ Emscripten module).
 const require = createRequire(import.meta.url);
 
 let cvReady: Promise<CvLib> | null = null;
@@ -116,9 +116,9 @@ async function ensureOpenCV(): Promise<CvLib> {
     cvReady = (async () => {
       const cvObj = require('@techstark/opencv-js') as CvLib;
 
-      // @techstark/opencv-js Module에는 .then() 메서드가 있어 thenable로 인식됨.
-      // Promise.resolve()나 resolve()에 전달하면 Promise 스펙이 .then()을 반복 호출하여
-      // 무한 루프가 발생하므로 제거한다.
+      // The @techstark/opencv-js Module has a .then() method, making it a thenable.
+      // Passing it to Promise.resolve() or resolve() repeatedly invokes .then()
+      // under the Promise specification, so remove it to prevent an infinite loop.
       delete (cvObj as Record<string, unknown>).then;
 
       if (cvObj.Mat) return cvObj;
@@ -247,7 +247,7 @@ export class IoUTracker {
       }
     }
 
-    // 애니메이션 데이터 수집 (소멸되는 영역 중 조건 만족하는 것)
+    // Collect animation data from expiring regions that meet the criteria
     for (let i = 0; i < this.regions.length; i++) {
       const region = this.regions[i];
       if (region.weight <= 0.01 && !matched.has(i)) {
@@ -267,7 +267,7 @@ export class IoUTracker {
     if (region.consecutiveCount >= this.animationThreshold) {
       const durationMs = (region.consecutiveCount / this.fps) * 1000;
       this.extractedAnimations.push({
-        type: 'loading_spinner', // 기본값으로 loading_spinner 사용
+        type: 'loading_spinner', // Use loading_spinner as the default
         boundingBox: region.box,
         startFrameId: region.firstSeen,
         endFrameId: region.lastSeen,
@@ -277,7 +277,7 @@ export class IoUTracker {
   }
 
   flushAndGetAnimations(): AnimationMetadata[] {
-    // 큐에 남아있는 모든 영역에 대해 애니메이션 수집 시도
+    // Try to collect animations from all regions remaining in the queue
     for (const region of this.regions) {
       this.collectAnimation(region);
     }

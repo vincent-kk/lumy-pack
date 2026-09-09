@@ -28,8 +28,8 @@ export interface SieveOptionsBase {
   animationThreshold?: number; // default: 5. Minimum consecutive frames to be considered an animation.
   debug?: boolean; // default: false
   onProgress?: (phase: ProgressPhase, percent: number) => void;
-  maxSegmentDuration?: number; // 초 단위, default: 300 (5분)
-  concurrency?: number; // 세그먼트 병렬 처리 수, default: 2
+  maxSegmentDuration?: number; // in seconds, default: 300 (5 minutes)
+  concurrency?: number; // number of segments processed in parallel, default: 2
 }
 
 // ── Public API Type ──
@@ -152,17 +152,17 @@ export interface AnalysisResult {
 
 export interface SegmentPlan {
   index: number;
-  startTime: number; // 논리적 시작 (초)
-  endTime: number; // 논리적 종료 (초)
-  duration: number; // 논리적 duration (초)
+  startTime: number; // logical start (seconds)
+  endTime: number; // logical end (seconds)
+  duration: number; // logical duration (seconds)
   /** FFmpeg output limit, including overlap slots; a single segment uses the full budget. */
   allocatedFrames: number;
-  effectiveFps: number; // 이 세그먼트의 실제 fps
-  overlapBefore: number; // 앞쪽 오버랩 프레임 수 (0 또는 1)
-  overlapAfter: number; // 뒤쪽 오버랩 프레임 수 (0 또는 1)
+  effectiveFps: number; // actual fps for this segment
+  overlapBefore: number; // number of leading overlap frames (0 or 1)
+  overlapAfter: number; // number of trailing overlap frames (0 or 1)
   /** First extraction grid time in seconds, including overlap. */
   extractStartTime: number;
-  extractDuration: number; // 실제 FFmpeg 추출 duration (오버랩 포함)
+  extractDuration: number; // actual FFmpeg extraction duration (including overlap)
 }
 
 export interface SegmentResult {
