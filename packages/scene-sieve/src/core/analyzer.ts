@@ -478,7 +478,11 @@ async function analyzeBatch(
   scale: number,
   tracker: IoUTracker,
   pairOffset: number,
-): Promise<{ edges: ScoreEdge[]; carry: FrameCarry | null }> {
+): Promise<{
+  edges: ScoreEdge[];
+  carry: FrameCarry | null;
+  analysisResolution: AnalysisResult['analysisResolution'];
+}> {
   const edges: ScoreEdge[] = [];
 
   let prev: FrameFeatures | null = carry?.features ?? null;
@@ -580,6 +584,7 @@ async function analyzeBatch(
 
     const result = {
       edges,
+      analysisResolution: { width: imageWidth, height: imageHeight },
       carry: prev
         ? {
             preprocessed: preprocessed[preprocessed.length - 1],
@@ -614,7 +619,12 @@ export async function analyzeFrames(
   ctx: ProcessContext,
 ): Promise<AnalysisResult> {
   const { frames } = ctx;
-  if (frames.length < 2) return { edges: [], animations: [] };
+  if (frames.length < 2)
+    return {
+      edges: [],
+      animations: [],
+      analysisResolution: { width: 0, height: 0 },
+    };
 
   logger.debug(
     `Analyzing ${frames.length} frames in batches of ${OPENCV_BATCH_SIZE}`,
@@ -623,7 +633,7 @@ export async function analyzeFrames(
   const cvLib = await ensureOpenCV();
   const edges: ScoreEdge[] = [];
   const tracker = new IoUTracker(
-    ctx.options.fps,
+    ctx.effectiveFps ?? ctx.options.fps,
     ctx.options.iouThreshold,
     ctx.options.animationThreshold,
   );
@@ -631,6 +641,7 @@ export async function analyzeFrames(
 
   let akaze: InstanceType<CvLib['AKAZE']> | null = null;
   let carry: FrameCarry | null = null;
+  let analysisResolution = { width: 0, height: 0 };
   try {
     akaze = new cvLib.AKAZE();
     for (let i = 0; i < frames.length - 1; i += OPENCV_BATCH_SIZE) {
@@ -648,6 +659,7 @@ export async function analyzeFrames(
         i,
       );
       carry = result.carry;
+      if (i === 0) analysisResolution = result.analysisResolution;
       edges.push(...result.edges);
 
       const progress = Math.min(
@@ -665,5 +677,5 @@ export async function analyzeFrames(
   logger.debug(
     `Computed ${edges.length} score edges and ${animations.length} animations`,
   );
-  return { edges, animations };
+  return { edges, animations, analysisResolution };
 }

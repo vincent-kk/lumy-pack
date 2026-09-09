@@ -10,6 +10,7 @@ import type {
 import { logger, setDebugMode } from '../utils/logger.js';
 
 import { analyzeFrames } from './analyzer.js';
+import { buildVideoMetadata } from './build-video-metadata.js';
 import { extractFrames } from './extractor.js';
 import { resolveInput, resolveOptions } from './input-resolver.js';
 import { pruneByThresholdWithCap } from './pruner.js';
@@ -87,9 +88,10 @@ export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
 
     // 3. Analyze frame similarity
     ctx.status = 'ANALYZING';
-    const { edges, animations } = await analyzeFrames(ctx);
+    const { edges, animations, analysisResolution } = await analyzeFrames(ctx);
     ctx.graph = edges;
     ctx.animations = animations;
+    ctx.analysisResolution = analysisResolution;
 
     // 4. Prune: threshold + count cap
     ctx.status = 'PRUNING';
@@ -129,21 +131,18 @@ export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
       `Extracted ${prunedFrames.length} scenes from ${ctx.frames.length} frames`,
     );
 
+    const metadata = await buildVideoMetadata(
+      ctx,
+      prunedFrames,
+      analysisResolution,
+    );
     return {
       success: true,
       originalFramesCount: ctx.frames.length,
       prunedFramesCount: prunedFrames.length,
       outputFiles,
       outputBuffers,
-      animations: ctx.animations,
-      video: {
-        originalDurationMs: (ctx.frames.length / ctx.options.fps) * 1000,
-        fps: ctx.options.fps,
-        resolution: {
-          width: ctx.options.scale,
-          height: Math.round((ctx.options.scale * 9) / 16),
-        },
-      },
+      ...metadata,
       executionTimeMs: Date.now() - startTime,
     };
   } catch (error) {

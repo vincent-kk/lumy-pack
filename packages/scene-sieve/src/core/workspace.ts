@@ -13,6 +13,8 @@ import {
 import type { FrameNode, ProcessContext } from '../types/index.js';
 import { ensureDir } from '../utils/paths.js';
 
+import { buildVideoMetadata } from './build-video-metadata.js';
+
 export async function createWorkspace(sessionId: string): Promise<string> {
   const workspacePath = getTempWorkspaceDir(sessionId);
   await ensureDir(join(workspacePath, 'frames'));
@@ -53,22 +55,15 @@ export async function finalizeOutput(
     });
   }
 
-  // Create .metadata.json
+  const { video, animations } = await buildVideoMetadata(
+    ctx,
+    selectedFrames,
+    ctx.analysisResolution,
+  );
   const metadata = {
-    video: {
-      originalDurationMs: Math.round(
-        (ctx.frames.length > 0
-          ? ctx.frames[ctx.frames.length - 1].timestamp
-          : 0) * 1000,
-      ),
-      fps: ctx.options.fps,
-      resolution: {
-        width: ctx.options.scale,
-        height: Math.round((ctx.options.scale * 9) / 16),
-      },
-    },
+    video,
     frames: framesMetadata,
-    animations: map(ctx.animations || [], (anim) => ({
+    animations: map(animations, (anim) => ({
       ...anim,
       startFrameId: anim.startFrameId + 1,
       endFrameId: anim.endFrameId + 1,

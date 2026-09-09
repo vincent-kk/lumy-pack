@@ -48,7 +48,13 @@ function makeSegmentResult(
   edges: ScoreEdge[] = [],
   animations: AnimationMetadata[] = [],
 ): SegmentResult {
-  return { segment: plan, frames, edges, animations };
+  return {
+    segment: plan,
+    frames,
+    edges,
+    animations,
+    analysisResolution: { width: 320, height: 240 },
+  };
 }
 
 // ── mergeSegmentFrames ──
@@ -66,7 +72,9 @@ describe('mergeSegmentFrames', () => {
         })),
       ),
     );
-    const { frames } = mergeSegmentFrames(results);
+    results[1].analysisResolution = { width: 640, height: 480 };
+    const { frames, analysisResolution } = mergeSegmentFrames(results);
+    expect(analysisResolution).toEqual({ width: 320, height: 240 });
     expect(frames).toHaveLength(7);
     frames.forEach((frame, index) =>
       expect(frame.timestamp).toBeCloseTo(index / 0.7, 10),
@@ -80,6 +88,7 @@ describe('mergeSegmentFrames', () => {
     expect(result.frames).toEqual([]);
     expect(result.edges).toEqual([]);
     expect(result.animations).toEqual([]);
+    expect(result.analysisResolution).toEqual({ width: 0, height: 0 });
   });
 
   it('single segment: timestamps adjusted by extractStartTime and IDs remapped to 0-based sequential', () => {

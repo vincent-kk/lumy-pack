@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 
+import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { extractScenes } from '../../index.js';
@@ -31,12 +32,13 @@ async function hasFfmpeg(): Promise<boolean> {
 async function createTestVideo(
   outputPath: string,
   duration = 2,
+  size = '320x240',
 ): Promise<void> {
   const { default: ffmpegStatic } = await import('ffmpeg-static');
   if (!ffmpegStatic) throw new Error('ffmpeg-static not available');
 
   await execAsync(
-    `"${ffmpegStatic}" -y -f lavfi -i "testsrc=size=320x240:rate=5" -t ${duration} "${outputPath}"`,
+    `"${ffmpegStatic}" -y -f lavfi -i "testsrc=size=${size}:rate=5" -t ${duration} "${outputPath}"`,
   );
 }
 
@@ -59,6 +61,64 @@ afterAll(async () => {
 });
 
 describe('extractScenes E2E pipeline', () => {
+  it.each([300, 1])(
+    'records portrait JPEG dimensions with segment duration %s',
+    async (maxSegmentDuration) => {
+      const inputPath = join(testDir, `portrait-${maxSegmentDuration}.mp4`);
+      const outputPath = join(testDir, `portrait-${maxSegmentDuration}-output`);
+      await createTestVideo(inputPath, 2, '240x320');
+      const result = await extractScenes({
+        mode: 'file',
+        inputPath,
+        outputPath,
+        scale: 320,
+        fps: 5,
+        maxFrames: 4,
+        maxSegmentDuration,
+      });
+      const metadata = JSON.parse(
+        await readFile(join(outputPath, '.metadata.json'), 'utf8'),
+      );
+      const actual = await sharp(
+        result.outputFiles.find((path) => path.endsWith('.jpg'))!,
+      ).metadata();
+      expect(metadata.video).toEqual({
+        originalDurationMs: 2000,
+        fps: 2,
+        resolution: { width: actual.width, height: actual.height },
+      });
+      expect(result.video).toEqual(metadata.video);
+      expect(actual.width).toBe(240);
+      expect(actual.height).toBe(320);
+    },
+    TIMEOUT,
+  );
+
+  it.each([0, 1])(
+    'creates metadata for %i frames without throwing',
+    async (count) => {
+      const image = await sharp({
+        create: { width: 101, height: 67, channels: 3, background: 'white' },
+      })
+        .jpeg()
+        .toBuffer();
+      const result = await extractScenes({
+        mode: 'frames',
+        inputFrames: Array.from({ length: count }, () => image),
+      });
+      expect(result.success).toBe(true);
+      expect(result.outputBuffers).toHaveLength(count);
+      expect(result.video).toEqual({
+        originalDurationMs: 0,
+        fps: 1,
+        resolution: count
+          ? { width: 101, height: 67 }
+          : { width: 0, height: 0 },
+      });
+      expect(result.animations).toEqual([]);
+    },
+  );
+
   it.each([2, 7])(
     'strictly caps a ten-second video at %i candidates',
     async (maxFrames) => {

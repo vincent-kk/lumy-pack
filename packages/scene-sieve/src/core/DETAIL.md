@@ -47,7 +47,7 @@ export function computeNewPoints(cvLib: CvLib, prev: FrameFeatures, next: FrameF
 
 - `DMatchVectorVector.get()`·`MatVector.get()`으로 얻은 핸들도 호출자가 해제한다. `KeyPointVector.get()`·`DMatchVector.get()`은 값 객체라 해제 대상이 아니다.
 - AKAZE 및 픽셀 차이 분석의 네이티브 객체는 `try` 안에서 할당하고 `finally`에서 해제하여, 할당 중 예외에도 이미 생성된 객체를 정리한다.
-- `analyzeFrames(ctx: ProcessContext): Promise<ScoreEdge[]>` — 프레임 쌍 분석
+- `analyzeFrames(ctx: ProcessContext): Promise<AnalysisResult>` — 기존 edges·분석 좌표계 animations와 첫 분석 프레임의 `analysisResolution`을 반환한다. 0·1프레임은 분석 없이 빈 결과와 0×0 해상도를 반환한다. tracker는 `ctx.effectiveFps ?? ctx.options.fps`를 사용한다.
 - `computeIoU(a: BoundingBox, b: BoundingBox): number` — IoU 계산
 - `computeInformationGain(...)` — 정보 이득 점수 산출
 
@@ -76,6 +76,7 @@ export function computeNewPoints(cvLib: CvLib, prev: FrameFeatures, next: FrameF
 - 병합은 로컬 timestamp에 `extractStartTime`을 한 번만 더하고 겹치는 시각에서는 앞 세그먼트 프레임을 유지한다. seek 후 동일 슬롯의 픽셀이 달라질 수 있으므로 픽셀 동일성을 요구하지 않는다.
 - 중복 프레임의 `(segmentIndex, localId)`는 생존 프레임의 globalId로 별칭된다. 별칭 후 `source === target`인 edge는 버리고 같은 쌍의 edge는 높은 점수를 유지한다. animation은 별칭 후 `startFrameId === endFrameId`이면 버리고, 같은 `(startFrameId, endFrameId)` 쌍은 먼저 온 항목 하나만 남기며 `durationMs`는 세그먼트 tracker 값을 유지한다. 세그먼트마다 tracker가 새로 시작하므로 경계를 가로지르는 반복 영역은 두 animation으로 나뉠 수 있다(알려진 한계).
 - 세그먼트 분석 컨텍스트에는 해당 `effectiveFps`, 최종 출력 컨텍스트에는 전역 `effectiveFps`와 원본 `sourceDurationSec`을 보관한다.
+- `processSegment`는 분석 해상도를 결과에 추가하고, `mergeSegmentFrames`는 첫 세그먼트의 해상도를 그대로 전달한다. 빈 병합은 0×0이다. 최종 video와 출력 좌표계 animations는 `buildVideoMetadata`로 생성한다.
 
 ### input-resolver
 
@@ -88,6 +89,9 @@ export function computeNewPoints(cvLib: CvLib, prev: FrameFeatures, next: FrameF
 - `finalizeOutput(ctx, frames): Promise<string[]>`
 - `cleanupWorkspace(path): Promise<void>`
 - `readFramesAsBuffers(frames): Promise<Buffer[]>`
+- `buildVideoMetadata(ctx, selected, analysisResolution)`는 첫 선택 프레임(없으면 첫 후보)의 sharp metadata 크기, 유효 FPS, 원본 길이로 video를 만든다. JPEG 출력은 resize하지 않으므로 추출 이미지와 출력 JPEG의 크기가 같다. 후보가 없으면 0×0이다.
+- bbox 변환은 이 함수에서만 수행하며 축별 배율·정수 반올림·출력 범위 clamp를 적용한다. 입력 animations를 변경하지 않고 새 배열과 bbox를 반환한다. 0×0 분석 해상도는 animation이 없는 조기 반환 경로를 나타낸다.
+- `finalizeOutput`은 공용 결과를 사용하되 파일 metadata의 animation ID를 1-based로 변환하고 durationMs를 반올림한다. API 결과는 기존 0-based ID를 유지한다.
 
 ## Acceptance Criteria
 
@@ -105,4 +109,4 @@ export function computeNewPoints(cvLib: CvLib, prev: FrameFeatures, next: FrameF
 
 ## Last Updated
 
-2026-09-09
+2026-09-10

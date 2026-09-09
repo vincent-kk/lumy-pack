@@ -80,8 +80,11 @@ export interface AnimationMetadata {
 }
 
 export interface VideoMetadata {
+  /** Source duration from ffprobe, or the final candidate timestamp in frames mode. */
   originalDurationMs: number;
+  /** Effective sampling frequency; frames mode uses one frame per second. */
   fps: number;
+  /** Actual output JPEG dimensions; zero when no candidate exists. */
   resolution: {
     width: number;
     height: number;
@@ -134,6 +137,8 @@ export interface ProcessContext {
   effectiveFps?: number;
   /** Original video duration reported by ffprobe, in seconds. */
   sourceDurationSec?: number;
+  /** Dimensions of analysis-space boxes; absent or zero if no pair was analyzed. */
+  analysisResolution?: { width: number; height: number };
   workspacePath: string;
   frames: FrameNode[];
   graph: ScoreEdge[];
@@ -146,6 +151,8 @@ export interface ProcessContext {
 export interface AnalysisResult {
   edges: ScoreEdge[];
   animations: AnimationMetadata[];
+  /** First analyzed image dimensions, or zero dimensions when no pair exists. */
+  analysisResolution: { width: number; height: number };
 }
 
 // ── Segment Types (Long Video Segmentation) ──
@@ -170,4 +177,6 @@ export interface SegmentResult {
   frames: FrameNode[];
   edges: ScoreEdge[];
   animations: AnimationMetadata[];
+  /** Analysis coordinates retained through merging for output-only box scaling. */
+  analysisResolution: { width: number; height: number };
 }

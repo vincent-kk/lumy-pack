@@ -9,6 +9,7 @@ scene-sieve 핵심 비즈니스 로직. 5단계 파이프라인으로 프레임 
 | `orchestrator.ts` | 5단계 파이프라인 오케스트레이터 |
 | `input-resolver.ts` | 입력 모드/옵션 해석, pruneMode 결정 |
 | `workspace.ts` | 임시 디렉토리 관리, 원자적 출력 |
+| `build-video-metadata.ts` | 실제 길이·FPS·JPEG 크기와 출력 좌표계 bbox를 공용 생성 |
 | `extractor.ts` | FFmpeg 프레임 추출 (I-frame + FPS fallback) |
 | `analyzer.ts` | OpenCV AKAZE, DBSCAN, IoU, G(t) 스코어링 |
 | `frame-features.ts` | `FrameFeatures` 타입과 `computeFrameFeatures` — 호출자 소유 특징점·descriptor 생성 |

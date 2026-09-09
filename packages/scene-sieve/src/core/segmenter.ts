@@ -18,6 +18,7 @@ import { concurrencyLimit } from '../utils/concurrency.js';
 import { logger } from '../utils/logger.js';
 
 import { analyzeFrames } from './analyzer.js';
+import { buildVideoMetadata } from './build-video-metadata.js';
 import { extractFramesForRange, getVideoMetadata } from './extractor.js';
 import { resolveInput } from './input-resolver.js';
 import { pruneByThresholdWithCap } from './pruner.js';
@@ -318,9 +319,15 @@ export function mergeSegmentFrames(segmentResults: SegmentResult[]): {
   frames: FrameNode[];
   edges: ScoreEdge[];
   animations: AnimationMetadata[];
+  analysisResolution: SegmentResult['analysisResolution'];
 } {
   if (segmentResults.length === 0) {
-    return { frames: [], edges: [], animations: [] };
+    return {
+      frames: [],
+      edges: [],
+      animations: [],
+      analysisResolution: { width: 0, height: 0 },
+    };
   }
 
   const effectiveFps = segmentResults[0].segment.effectiveFps;
@@ -331,7 +338,12 @@ export function mergeSegmentFrames(segmentResults: SegmentResult[]): {
   const edges = remapEdges(segmentResults, globalIdMap);
   const animations = remapAnimations(segmentResults, globalIdMap);
 
-  return { frames, edges, animations };
+  return {
+    frames,
+    edges,
+    animations,
+    analysisResolution: segmentResults[0].analysisResolution,
+  };
 }
 
 // ── Segment Processing ──
@@ -382,7 +394,13 @@ export async function processSegment(
   );
 
   if (frames.length < 2) {
-    return { segment, frames, edges: [], animations: [] };
+    return {
+      segment,
+      frames,
+      edges: [],
+      animations: [],
+      analysisResolution: { width: 0, height: 0 },
+    };
   }
 
   const ctx = buildSegmentContext(
@@ -393,9 +411,9 @@ export async function processSegment(
     onProgress,
   );
 
-  const { edges, animations } = await analyzeFrames(ctx);
+  const { edges, animations, analysisResolution } = await analyzeFrames(ctx);
 
-  return { segment, frames, edges, animations };
+  return { segment, frames, edges, animations, analysisResolution };
 }
 
 // ── Segmented Pipeline Orchestrator ──
@@ -489,7 +507,8 @@ export async function runSegmentedPipeline(
     options.onProgress?.('ANALYZING', 100);
 
     // 6. Merge segment results
-    const { frames, edges, animations } = mergeSegmentFrames(results);
+    const { frames, edges, animations, analysisResolution } =
+      mergeSegmentFrames(results);
     logger.debug(
       `Merged: ${frames.length} frames, ${edges.length} edges, ${animations.length} animations`,
     );
@@ -512,6 +531,7 @@ export async function runSegmentedPipeline(
       options: resolvedOptions,
       effectiveFps: segments[0]?.effectiveFps,
       sourceDurationSec: totalDuration,
+      analysisResolution,
       workspacePath: mainWorkspace,
       frames,
       graph: edges,
@@ -541,21 +561,18 @@ export async function runSegmentedPipeline(
       `Segmented pipeline: ${prunedFrames.length} scenes from ${frames.length} frames (${segments.length} segments)`,
     );
 
+    const outputMetadata = await buildVideoMetadata(
+      ctx,
+      prunedFrames,
+      analysisResolution,
+    );
     return {
       success: true,
       originalFramesCount: frames.length,
       prunedFramesCount: prunedFrames.length,
       outputFiles,
       outputBuffers,
-      animations,
-      video: {
-        originalDurationMs: totalDuration * 1000,
-        fps: resolvedOptions.fps,
-        resolution: {
-          width: resolvedOptions.scale,
-          height: Math.round((resolvedOptions.scale * 9) / 16),
-        },
-      },
+      ...outputMetadata,
       executionTimeMs: Date.now() - pipelineStart,
     };
   } catch (error) {

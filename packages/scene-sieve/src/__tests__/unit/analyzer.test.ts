@@ -4,14 +4,76 @@
  * - computeInformationGain
  * - IoUTracker
  */
-import { beforeEach, describe, expect, it } from 'vitest';
+import { randomUUID } from 'node:crypto';
+
+import sharp from 'sharp';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   IoUTracker,
+  analyzeFrames,
   computeInformationGain,
   computeIoU,
 } from '../../core/analyzer.js';
+import { resolveOptions } from '../../core/input-resolver.js';
+import {
+  cleanupWorkspace,
+  createWorkspace,
+  writeInputFrames,
+} from '../../core/workspace.js';
 import type { BoundingBox } from '../../types/index.js';
+
+describe('analyzeFrames metadata', () => {
+  it.each([0.2, 1, undefined])(
+    'uses effective FPS %s for tracker duration and preserves analysis coordinates',
+    async (effectiveFps) => {
+      const workspacePath = await createWorkspace(randomUUID());
+      const box = { x: 5, y: 10, width: 20, height: 30 };
+      const update = IoUTracker.prototype.update;
+      const spy = vi
+        .spyOn(IoUTracker.prototype, 'update')
+        .mockImplementation(function (this: IoUTracker, _boxes, index) {
+          return update.call(this, [box], index);
+        });
+      try {
+        const image = await sharp({
+          create: { width: 101, height: 67, channels: 3, background: 'white' },
+        })
+          .jpeg()
+          .toBuffer();
+        const frames = await writeInputFrames(
+          [image, image, image],
+          workspacePath,
+        );
+        const result = await analyzeFrames({
+          options: resolveOptions({
+            mode: 'frames',
+            inputFrames: [],
+            scale: 50,
+            fps: 5,
+            animationThreshold: 1,
+          }),
+          effectiveFps,
+          workspacePath,
+          frames,
+          graph: [],
+          status: 'ANALYZING',
+          emitProgress: () => {},
+        });
+        expect(spy).toHaveBeenCalledTimes(2);
+        expect(result.animations).toHaveLength(1);
+        expect(result.animations[0].durationMs).toBe(
+          2000 / (effectiveFps ?? 5),
+        );
+        expect(result.animations[0].boundingBox).toEqual(box);
+        expect(result.analysisResolution).toEqual({ width: 50, height: 33 });
+      } finally {
+        spy.mockRestore();
+        await cleanupWorkspace(workspacePath);
+      }
+    },
+  );
+});
 
 // ── computeIoU ────────────────────────────────────────────────────────────────
 

@@ -15,6 +15,12 @@ const mockSetDebugMode = vi.fn();
 const mockShouldSegment = vi.fn();
 const mockRunSegmentedPipeline = vi.fn();
 
+vi.mock('sharp', () => ({
+  default: vi.fn(() => ({
+    metadata: async () => ({ width: 101, height: 67 }),
+  })),
+}));
+
 vi.mock('../../core/analyzer.js', () => ({
   analyzeFrames: mockAnalyzeFrames,
 }));
@@ -88,8 +94,16 @@ function setupDefaultMocks(modeOverride?: 'file' | 'buffer' | 'frames') {
     frames: mode === 'frames' ? mockFrames : [],
     resolvedInputPath: '/input.mp4',
   });
-  mockExtractFrames.mockResolvedValue(mockFrames);
-  mockAnalyzeFrames.mockResolvedValue(mockEdges);
+  mockExtractFrames.mockImplementation(async (ctx: ProcessContext) => {
+    ctx.effectiveFps = 0.2;
+    ctx.sourceDurationSec = 10;
+    return mockFrames;
+  });
+  mockAnalyzeFrames.mockResolvedValue({
+    edges: mockEdges,
+    animations: [],
+    analysisResolution: { width: 50, height: 33 },
+  });
   mockPruneByThresholdWithCap.mockReturnValue(new Set([0, 1, 2]));
   mockFinalizeOutput.mockResolvedValue([
     '/out/scene_001.jpg',
@@ -119,7 +133,12 @@ describe('runPipeline', () => {
     const { runPipeline } = await import('../../core/orchestrator.js');
 
     const options: SieveOptions = { mode: 'file', inputPath: '/input.mp4' };
-    await runPipeline(options);
+    const result = await runPipeline(options);
+    expect(result.video).toEqual({
+      originalDurationMs: 10000,
+      fps: 0.2,
+      resolution: { width: 101, height: 67 },
+    });
 
     expect(mockExtractFrames).toHaveBeenCalledTimes(1);
     expect(mockAnalyzeFrames.mock.calls[0][0]).toMatchObject({
@@ -145,6 +164,7 @@ describe('runPipeline', () => {
     expect(mockReadFramesAsBuffers).toHaveBeenCalledTimes(1);
     expect(result.outputBuffers).toBeDefined();
     expect(Array.isArray(result.outputBuffers)).toBe(true);
+    expect(result.video).toMatchObject({ originalDurationMs: 10000, fps: 0.2 });
   });
 
   it('frames 모드: extractFrames가 호출되지 않는다', async () => {
@@ -159,7 +179,12 @@ describe('runPipeline', () => {
       mode: 'frames',
       inputFrames: [Buffer.from('frame1'), Buffer.from('frame2')],
     };
-    await runPipeline(options);
+    const result = await runPipeline(options);
+    expect(result.video).toMatchObject({ originalDurationMs: 2000, fps: 1 });
+    expect(mockAnalyzeFrames.mock.calls[0][0].analysisResolution).toEqual({
+      width: 50,
+      height: 33,
+    });
 
     expect(mockExtractFrames).not.toHaveBeenCalled();
     expect(mockAnalyzeFrames.mock.calls[0][0]).toMatchObject({
