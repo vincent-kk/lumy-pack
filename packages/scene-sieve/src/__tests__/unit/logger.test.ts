@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { logger, setDebugMode, setJsonMode } from '../../utils/logger.js';
+import { logger, setDebugMode, setJsonMode } from '../../logging/logger.js';
 
 describe('logger', () => {
   const stderrWrite = vi.fn().mockReturnValue(true);

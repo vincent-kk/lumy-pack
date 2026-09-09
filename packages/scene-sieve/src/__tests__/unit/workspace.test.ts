@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import sharp from 'sharp';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { resolveOptions } from '../../core/input-resolver.js';
+import { resolveOptions } from '../../core/input-resolver/input-resolver.js';
 import {
   cleanupWorkspace,
   createWorkspace,
@@ -14,9 +14,9 @@ import {
   readFramesAsBuffers,
   writeInputBuffer,
   writeInputFrames,
-} from '../../core/workspace.js';
+} from '../../core/workspace/workspace.js';
 import type { ProcessContext } from '../../types/index.js';
-import { fileExists } from '../../utils/paths.js';
+import { fileExists } from '../../core/utils/filesystem/paths.js';
 
 /** Create a tiny valid JPEG buffer for testing */
 async function createTestJpeg(): Promise<Buffer> {

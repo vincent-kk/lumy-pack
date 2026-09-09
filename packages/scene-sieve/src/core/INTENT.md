@@ -1,37 +1,40 @@
 # core
 
-scene-sieve 핵심 비즈니스 로직. 5단계 파이프라인으로 프레임 추출, 분석, 가지치기 수행.
+## Purpose
 
-## Modules
+scene-sieve 파이프라인의 집합 경계. 단계별 자식 프랙탈(입력 해석, 추출, 분석, 가지치기, workspace, 세그먼트, 오케스트레이션)을 하나의 진입점 아래 묶고, 프랙탈을 가로지르는 불변식을 소유한다.
 
-| File | Role |
-|------|------|
-| `orchestrator.ts` | 5단계 파이프라인 오케스트레이터 |
-| `input-resolver.ts` | 입력 모드/옵션 해석, 항상 threshold-with-cap 적용 |
-| `validate-options.ts` | Validate supplied numeric options before defaults are applied |
-| `workspace.ts` | 임시 디렉토리 관리, 기존 출력 삭제 후 staging rename |
-| `build-video-metadata.ts` | 실제 길이·FPS·JPEG 크기와 출력 좌표계 bbox를 공용 생성 |
-| `extractor.ts` | FFmpeg FPS 격자 추출, maxFrames 엄격 상한 (FPS 하한 없음) |
-| `analyzer.ts` | OpenCV AKAZE, DBSCAN, IoU, G(t) 스코어링 |
-| `frame-features.ts` | `FrameFeatures` 타입과 `computeFrameFeatures` — 호출자 소유 특징점·descriptor 생성 |
-| `feature-diff.ts` | `computeNewPoints` — 이전→다음 프레임의 미매칭 특징점 좌표 계산 |
-| `dbscan.ts` | 공간 클러스터링 알고리즘 |
-| `pruner.ts` | 순수함수 기반 프레임 가지치기 (min-heap) |
+## Structure
+
+- `orchestrator/`는 `runPipeline`뿐 아니라 Worker 스레드 실행(`runPipelineInWorker`, Worker 스크립트)도 소유한다. 실행 전략은 "파이프라인을 어떻게 돌리는가"라는 같은 계약의 일부이기 때문이다.
+
+## Conventions
+
+- 파이프라인은 Init → Extract → Analyze → Prune → Finalize 다섯 단계를 이 순서로 실행한다. 세그먼트 경로도 세그먼트마다 같은 순서를 따른다.
+- Stage fractals import sibling entry points. Internal filesystem and metadata helpers are grouped by topic under `utils/` to distinguish them from pipeline fractals; core retains ownership. Core children import these helpers and workspace constants through concrete files.
+- `index.ts`는 자식 entry를 이름으로 재수출한다. 새 심볼은 자식 entry에 먼저 오르고, 밖에서 쓰일 때만 여기에 오른다.
+
+## Boundaries
+
+- `ProcessContext`는 오케스트레이터(세그먼트 경로 포함)만 생성하고 채운다. 단계 함수는 받은 컨텍스트의 지정 필드만 기록한다.
+- OpenCV 네이티브 핸들은 만든 함수가 `finally`에서 해제한다. 핸들을 반환하면 해제 책임을 문서에 적는다.
+- 가지치기는 순수 함수다. I/O와 module state는 허용하지 않는다.
+- 첫/마지막 후보의 boundary protection은 모든 경로에서 유지한다.
 
 ## Always do
 
-- OpenCV Mat 객체는 finally 블록에서 반드시 .delete()
-- pruner 함수는 순수함수로 유지 (I/O 없음)
-- 첫/마지막 프레임 boundary protection 보장
+- 프랙탈을 가로지르는 계약(예산·격자, 메타데이터 좌표계)은 이 `DETAIL.md`에 두고, 한 단계에 갇힌 계약은 그 자식의 DETAIL에 둔다.
+- 자식 entry의 export를 넓히기 전에 그 자식의 DETAIL을 고친다.
 
 ## Ask first
 
-- 파이프라인 단계 추가/변경
-- OpenCV WASM 로딩 방식 변경
-- G(t) 스코어링 공식 수정
+- 파이프라인 단계 추가·순서 변경.
+- OpenCV WASM 로딩 방식 변경.
+- G(t) 스코어링 공식 수정.
+- 자식 프랙탈 추가·병합.
 
 ## Never do
 
-- analyzer.ts에서 직접 파일 I/O 수행
-- pruner에 side effect 추가
-- orchestrator 외부에서 ProcessContext 직접 조작
+- 자식 프랙탈의 내부 파일을 형제나 집합 entry에서 import하기.
+- 오케스트레이터 밖에서 `ProcessContext`를 만들거나 재구성하기.
+- 분석 코드에서 파일 I/O, 가지치기 코드에서 side effect.

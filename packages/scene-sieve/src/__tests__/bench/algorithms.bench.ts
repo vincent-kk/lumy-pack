@@ -10,10 +10,8 @@
  *   cd /Users/Vincent/Workspace/lumy-pack/packages/scene-sieve
  *   npx tsx src/__tests__/bench/algorithms.bench.ts
  */
-import { computeInformationGain, computeIoU } from '../../core/analyzer.js';
-import { dbscan } from '../../core/dbscan.js';
-import type { Point2D } from '../../core/dbscan.js';
-import { pruneTo } from '../../core/pruner.js';
+import { computeInformationGain, computeIoU, dbscan, pruneTo } from '../../core/index.js';
+import type { Point2D } from '../../core/index.js';
 import type { BoundingBox, FrameNode, ScoreEdge } from '../../types/index.js';
 
 // ── Utilities ─────────────────────────────────────────────────────────────────

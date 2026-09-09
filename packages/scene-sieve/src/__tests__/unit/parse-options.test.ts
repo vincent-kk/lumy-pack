@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parsePipelineOptions } from '../../utils/parse-options.js';
+import { parsePipelineOptions } from '../../cli/options/parse-options.js';
 
 describe('parsePipelineOptions', () => {
   it.each([

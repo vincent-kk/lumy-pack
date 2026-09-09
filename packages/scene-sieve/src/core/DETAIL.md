@@ -2,118 +2,75 @@
 
 ## Requirements
 
-scene-sieve 핵심 파이프라인. 프레임 추출, 비전 분석, 가지치기를 수행.
+프레임 추출, 비전 분석, 가지치기를 한 파이프라인으로 묶는다. 단계 프랙탈이 각자 계약을 갖더라도 예산·격자, 메타데이터 좌표계, 자원 해제, 진입점 규칙은 core가 하나로 보장한다.
 
 ## API Contracts
 
-### orchestrator
+### Entry
 
-- `runPipeline(options: SieveOptions): Promise<SieveResult>` — 5단계 파이프라인
-- `runPipelineInWorker(options: SieveWorkerOptions, onProgress: (phase: ProgressPhase, percent: number) => void): Promise<SieveResult>` — CLI의 Worker 실행. `core/index.ts`에서 명명 재수출하며 라이브러리·CLI 소비자는 core 내부 파일을 직접 import하지 않는다.
-- 매 호출에서 `setDebugMode(options.debug ?? false)`로 debug 상태를 설정하여 이전 호출의 설정이 남지 않는다.
-- Worker는 결과 메시지 없이 종료되면 종료 코드 0·1을 포함해 reject한다. 결과나 오류로 이미 정착한 Promise는 후속 exit로 바뀌지 않는다.
+- `core/index.ts`는 자식 프랙탈 entry(`orchestrator`, `analyzer`, `extractor`, `pruner`, `input-resolver`, `segmenter`, `workspace`)의 심볼을 이름으로 재수출한다. 와일드카드 재수출은 쓰지 않는다.
+- 라이브러리·CLI·벤치 같은 core 밖의 소비자는 집합 entry만 import한다. 검증 파일은 예외로 concrete 파일을 직접 import한다.
+- 형제 프랙탈끼리는 상대 entry(`../<name>/index.js`)만 import한다. `core/index.ts`를 거쳐 형제를 import하지 않는다.
 
-### analyzer
+### 파이프라인 순서
 
-- 쌍 분석 예외는 `logger.warn`으로 노출하고 점수 0의 edge와 실패 수를 기록한다. 전체 쌍이 2개 이상이고 모두 실패하면 분석 오류를 던진다. 일부 실패 또는 단 한 쌍의 실패는 경고와 기존 fallback 결과를 유지한다. 실패 수는 배치 전체에서 합산하며 점수가 0이라는 이유만으로 실패로 세지 않는다.
-- 정상 분석에서 각 프레임의 sharp 전처리와 AKAZE 검출은 한 번만 실행한다. 검출기는 분석 호출당 하나이며 `analyzeFrames`의 `finally`에서 마지막 carry의 특징점과 함께 해제한다.
-- 배치는 이전 배치의 마지막 `{ preprocessed, features }`를 carry로 받아 재사용한다. DBSCAN과 점수 계산의 이미지 크기는 배치 첫 프레임(carry)의 크기를 따른다.
-- 특징점 쌍 처리 후 이전 핸들을 해제하고 다음 특징점을 carry로 넘긴다. 예외 경로에서도 이전·다음 특징점과 부분 할당된 핸들을 정리한다.
-- 매칭은 양쪽 descriptor rows가 양수일 때만 이전→다음 방향으로 수행한다. `BFMatcher(NORM_HAMMING, false)`, `knnMatch(k=2)`, 엄격한 ratio 비교(`best < MATCH_DISTANCE_THRESHOLD * second`)를 유지한다. 새 점만 계산하며 DBSCAN 클러스터가 없으면 캐시된 전처리 바이트로 픽셀 fallback을 수행한다.
-- 두 특징점 파일은 기존 core 평면 배치 관행을 따르며 패키지 barrel에 재수출하지 않는다. `CvLib`는 OpenCV 모듈 타입, `PreprocessedFrame`은 `preprocessFrame` 반환 형태(`data: Uint8Array`, `width`, `height`)의 로컬 타입이다.
+- Init(workspace 생성, 입력 해석) → Extract → Analyze → Prune → Finalize를 순차 실행한다. 진행 콜백의 phase는 이 순서로만 전진한다.
+- 긴 입력은 오케스트레이터가 세그먼트 경로로 위임하며, 세그먼트마다 같은 순서를 반복하고 병합 후 Finalize한다.
 
-```ts
-/** 한 프레임의 AKAZE 특징점과 descriptor. delete()는 두 핸들을 해제하며 멱등이다. */
-export interface FrameFeatures {
-  readonly width: number;
-  readonly height: number;
-  readonly keypoints: KeyPointVector;
-  readonly descriptors: Mat; // rows === keypoints.size()
-  delete(): void;
-}
-/**
- * 한 프레임의 특징점을 생성한다.
- * @param cvLib 초기화된 OpenCV 런타임.
- * @param akaze 호출자가 소유·해제하는 검출기.
- * @param frame 크기에 맞는 전처리 grayscale 바이트.
- * @returns 호출자가 delete()해야 하는 핸들 묶음.
- */
-export function computeFrameFeatures(cvLib: CvLib, akaze: AKAZE, frame: PreprocessedFrame): FrameFeatures;
-/**
- * prev→next 방향 BFMatcher(NORM_HAMMING, crossCheck=false) knnMatch(k=2), ratio 0.25.
- * @param cvLib 초기화된 OpenCV 런타임.
- * @param prev 호출자가 소유하는 이전 프레임 특징점.
- * @param next 호출자가 소유하는 다음 프레임 특징점.
- * @returns next의 미매칭 특징점 좌표. 입력 핸들은 해제하지 않는다.
- */
-export function computeNewPoints(cvLib: CvLib, prev: FrameFeatures, next: FrameFeatures): Point2D[];
-```
+### Internal utility placement
 
-- `DMatchVectorVector.get()`·`MatVector.get()`으로 얻은 핸들도 호출자가 해제한다. `KeyPointVector.get()`·`DMatchVector.get()`은 값 객체라 해제 대상이 아니다.
-- AKAZE 및 픽셀 차이 분석의 네이티브 객체는 `try` 안에서 할당하고 `finally`에서 해제하여, 할당 중 예외에도 이미 생성된 객체를 정리한다.
-- `analyzeFrames(ctx: ProcessContext): Promise<AnalysisResult>` — 기존 edges·분석 좌표계 animations와 첫 분석 프레임의 `analysisResolution`을 반환한다. 0·1프레임은 분석 없이 빈 결과와 0×0 해상도를 반환한다. tracker는 `ctx.effectiveFps ?? ctx.options.fps`를 사용한다.
-- `computeIoU(a: BoundingBox, b: BoundingBox): number` — IoU 계산
-- `computeInformationGain(...)` — 정보 이득 점수 산출
+- `utils/` groups internal support so it is visually distinct from pipeline fractals. Filesystem and metadata helpers retain topic subdirectories and remain owned by core; consumers within core import their concrete files. This grouping adds no public entry point.
 
-### pruner
+### `buildVideoMetadata(ctx, selected, analysisResolution)` (organ `utils/metadata/`)
 
-- `pruneTo(graph, frames, targetCount): Set<number>` — greedy merge
-- `pruneByThreshold(graph, threshold): Set<number>` — 임계값 필터
-- `pruneByThresholdWithCap(graph, frames, threshold, cap): Set<number>`
+- 첫 선택 프레임(없으면 첫 후보)의 sharp metadata 크기, `ctx.effectiveFps`, `ctx.sourceDurationSec`으로 `video`를 만든다. JPEG 출력은 resize하지 않으므로 추출 이미지와 출력 JPEG의 크기가 같다. 후보가 없으면 0×0이다.
+- bbox 변환은 이 함수에서만 수행한다. 축별 배율 `sx = outputWidth / analysisWidth`, `sy = outputHeight / analysisHeight`를 적용해 정수 반올림하고 출력 범위로 clamp한다. 입력 animations를 변경하지 않고 새 배열과 bbox를 반환한다.
+- 0×0 분석 해상도는 animation이 없는 조기 반환 경로를 나타내며 변환을 건너뛴다.
+- 세 소비자(orchestrator, segmenter, workspace)가 이 함수를 쓰므로 organ의 주소는 core다. API 결과는 0-based animation ID를 유지하고, 파일 metadata 변환(1-based, durationMs 반올림)은 workspace가 맡는다.
 
-### dbscan
+### 프레임 예산과 격자 (extractor ↔ segmenter)
 
-- `dbscan(points, width, height, alpha?, minPts?): DBSCANResult`
+- file/buffer 후보 수는 `Math.max(2, maxFrames)` 이하다. `effectiveFps = min(fps, maxFrames / duration)`에 FPS 하한을 두지 않는다.
+- timestamp는 출력 PTS 격자의 `k / effectiveFps`다. 세그먼트는 로컬 격자로 추출하고 병합 시 `extractStartTime`을 한 번만 더해 전역 격자로 복원한다.
+- 세그먼트의 소유 슬롯 수는 양수이고 overlap을 뺀 합은 전체 예산 이하다.
 
-### extractor
+### 자원과 순수성
 
-- `extractFrames(ctx: ProcessContext): Promise<FrameNode[]>`는 배열 반환을 유지하고, 호출자가 준 컨텍스트에 `effectiveFps`와 `sourceDurationSec`을 기록한다. frames 모드는 입력 프레임을 그대로 반환하며 `effectiveFps = 1`이다.
-- file/buffer 후보 수는 `Math.max(2, maxFrames)` 이하이다. `effectiveFps = min(fps, maxFrames / duration)`에 FPS 하한을 두지 않고 `-frames:v`로 개수를 제한한다. 길이가 없는 입력도 개수 제한을 적용한다.
-- 필터는 `fps=<effectiveFps>,scale=-1:<scale>`와 기본 반올림을 유지한다. timestamp는 출력 PTS 격자의 로컬 `index / effectiveFps`이며 소스 프레임의 PTS와는 다를 수 있다. 예산이 묶이면 마지막 격자점은 `duration - duration / maxFrames`이다.
-- `extractFramesForRange`의 마지막 선택 인자 `frameLimit`은 FFmpeg 상한이다. 기존 6인자 호출은 범위 길이와 FPS로 상한을 계산한다.
-
-### segmenter
-
-- 논리 구간 `[startTime, endTime)`의 전역 격자점 `k / effectiveFps`를 소유하며, 격자점이 없는 구간은 제외한다. 반환 인덱스는 빈 구간 제외 후 연속적이다.
-- 내부 경계 양쪽에 이웃 격자점 한 개씩을 overlap으로 포함한다. `allocatedFrames`는 overlap을 포함한 `-frames:v` 값이고, overlap을 뺀 합은 전체 예산 이하이다. 단일 세그먼트의 상한은 전체 `maxFrames`이다.
-- `extractStartTime`은 첫 추출 격자점이다. 추출 종료는 마지막 슬롯을 출력할 수 있도록 한 격자 간격까지 확장하되 원본 길이를 넘지 않는다. 마지막 세그먼트 추출은 원본 끝까지 이어진다.
-- 병합은 로컬 timestamp에 `extractStartTime`을 한 번만 더하고 겹치는 시각에서는 앞 세그먼트 프레임을 유지한다. seek 후 동일 슬롯의 픽셀이 달라질 수 있으므로 픽셀 동일성을 요구하지 않는다.
-- 중복 프레임의 `(segmentIndex, localId)`는 생존 프레임의 globalId로 별칭된다. 별칭 후 `source === target`인 edge는 버리고 같은 쌍의 edge는 높은 점수를 유지한다. animation은 별칭 후 `startFrameId === endFrameId`이면 버리고, 같은 `(startFrameId, endFrameId)` 쌍은 먼저 온 항목 하나만 남기며 `durationMs`는 세그먼트 tracker 값을 유지한다. 세그먼트마다 tracker가 새로 시작하므로 경계를 가로지르는 반복 영역은 두 animation으로 나뉠 수 있다(알려진 한계).
-- 세그먼트 분석 컨텍스트에는 해당 `effectiveFps`, 최종 출력 컨텍스트에는 전역 `effectiveFps`와 원본 `sourceDurationSec`을 보관한다.
-- `processSegment`는 분석 해상도를 결과에 추가하고, `mergeSegmentFrames`는 첫 세그먼트의 해상도를 그대로 전달한다. 빈 병합은 0×0이다. 최종 video와 출력 좌표계 animations는 `buildVideoMetadata`로 생성한다.
-
-### input-resolver
-
-- `resolveOptions(options: SieveOptions): ResolvedOptions` — 기본값 적용 후 항상 `pruneMode: 'threshold-with-cap'`을 반환한다.
-- `validateOptions(options: SieveOptions): void`는 src 옵션 표의 유한성·정수·범위를 기본값 적용 전에 검사한다. core 평면 배치에서 export 하나만 제공하며 소비자는 `resolveOptions`이다.
-- 기존 threshold 검사도 이 검증으로 통합한다. 메시지 `<name> must be …, received: <value>`는 `classifyError`가 `INVALID_INPUT`으로 분류한다.
-- `resolveInput(options: SieveOptions, workspacePath: string): Promise<{ frames: FrameNode[]; resolvedInputPath?: string }>` — frames 모드는 sharp `metadata()`로 모든 입력 크기를 비교한 후 저장하며 불일치는 같은 메시지 형식으로 거부한다.
-
-### workspace
-
-- `createWorkspace(sessionId): Promise<string>`
-- `finalizeOutput(ctx, frames): Promise<string[]>`
-- `cleanupWorkspace(path): Promise<void>`
-- `cleanupStaleWorkspaces(): Promise<void>` — CLI 시작 시 오래된 workspace 정리에 사용하며 `core/index.ts`에서 명명 재수출한다.
-- `readFramesAsBuffers(frameNodes: FrameNode[], quality: number): Promise<Buffer[]>` — 지정한 품질의 JPEG 버퍼를 반환한다.
-- `buildVideoMetadata(ctx, selected, analysisResolution)`는 첫 선택 프레임(없으면 첫 후보)의 sharp metadata 크기, 유효 FPS, 원본 길이로 video를 만든다. JPEG 출력은 resize하지 않으므로 추출 이미지와 출력 JPEG의 크기가 같다. 후보가 없으면 0×0이다.
-- bbox 변환은 이 함수에서만 수행하며 축별 배율·정수 반올림·출력 범위 clamp를 적용한다. 입력 animations를 변경하지 않고 새 배열과 bbox를 반환한다. 0×0 분석 해상도는 animation이 없는 조기 반환 경로를 나타낸다.
-- `finalizeOutput`은 공용 결과를 사용하되 파일 metadata의 animation ID를 1-based로 변환하고 durationMs를 반올림한다. API 결과는 기존 0-based ID를 유지한다.
-- 파일 출력 교체는 기존 출력 디렉터리를 삭제한 뒤 staging 디렉터리를 rename한다. 삭제와 rename 전체가 원자적 교체를 보장하지 않는다.
+- OpenCV Mat/Vector 핸들은 `try` 안에서 할당하고 `finally`에서 해제한다. 할당 도중 예외가 나도 이미 만든 핸들을 정리한다.
+- pruner 함수는 입력만으로 결과를 만든다. 파일, 로거, module state를 건드리지 않는다.
 
 ## Acceptance Criteria
 
-- [ ] 5단계 파이프라인 순차 실행 보장
-- [ ] OpenCV Mat 리소스 누수 없음
-- [ ] pruner 순수함수 보장 (I/O 없음)
-- [ ] 첫/마지막 프레임 boundary protection
+### pipeline-order — 다섯 단계 순차 실행
 
-### frame-budget-grid
+- [ ] 진행 콜백의 phase는 INIT, EXTRACTING, ANALYZING, PRUNING, FINALIZING 순서로만 도착한다.
+- [ ] 세그먼트 경로의 최종 결과는 일반 경로와 같은 `SieveResult` 형태다.
 
-- file/buffer 후보는 예산 이하이고 frames 입력은 개수 제한을 받지 않는다.
-- 세그먼트의 소유 슬롯 수는 양수이며 overlap 제외 총합은 예산 이하이다.
-- 추출 timestamp는 로컬 격자이고 병합 결과는 전역 격자와 일치한다.
-- 예산이 묶이지 않는 기본 옵션의 추출 프레임과 분석 결과는 유지한다.
+### frame-budget-grid — 프레임 예산과 격자
+
+- [ ] file/buffer 후보는 예산 이하이고 frames 입력은 개수 제한을 받지 않는다.
+- [ ] 세그먼트의 소유 슬롯 수는 양수이며 overlap 제외 총합은 예산 이하다.
+- [ ] 추출 timestamp는 로컬 격자이고 병합 결과는 전역 격자와 일치한다.
+- [ ] 예산이 묶이지 않는 기본 옵션의 추출 프레임과 분석 결과는 유지된다.
+
+### metadata-transform — 출력 좌표계
+
+- [ ] API와 파일 metadata의 animation bbox는 모두 출력 픽셀 좌표이며 `buildVideoMetadata` 한 곳에서 변환된다.
+- [ ] 0·1프레임 결과에서도 metadata 생성이 성공하고 해상도는 0×0이다.
+
+### resource-safety — 핸들 해제와 순수성
+
+- [ ] 분석 한 번에 생성한 OpenCV 핸들은 예외 경로를 포함해 모두 해제된다.
+- [ ] pruner 함수는 같은 입력에 같은 출력을 내고 I/O를 하지 않는다.
+
+### entry-boundary — 진입점 규칙
+
+- [ ] core 밖 소스에서 `core/<child>/…` concrete 파일을 import하는 곳이 없다(검증 파일 제외).
+- [ ] `core/index.ts`의 공개 심볼 집합은 자식 entry 심볼의 부분집합이다.
+
+## History
+
+- 2026-09-10 — 평면이던 core를 단계별 자식 프랙탈로 나누고 상수·유틸을 소비자의 최하위 공통 프랙탈로 옮겼다. 소비자가 없던 `MIN_IFRAME_COUNT`, `NORMALIZATION_MIN_PERCENTILE`, `NORMALIZATION_MAX_PERCENTILE`는 배치할 주소가 없어 삭제했다.
 
 ## Last Updated
 

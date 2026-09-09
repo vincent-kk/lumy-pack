@@ -14,15 +14,15 @@ import {
   analyzeFrames,
   computeInformationGain,
   computeIoU,
-} from '../../core/analyzer.js';
-import { resolveOptions } from '../../core/input-resolver.js';
+} from '../../core/analyzer/analyzer.js';
+import { resolveOptions } from '../../core/input-resolver/input-resolver.js';
 import {
   cleanupWorkspace,
   createWorkspace,
   writeInputFrames,
-} from '../../core/workspace.js';
+} from '../../core/workspace/workspace.js';
 import type { BoundingBox } from '../../types/index.js';
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../logging/logger.js';
 
 describe('analyzeFrames failures', () => {
   it.each([

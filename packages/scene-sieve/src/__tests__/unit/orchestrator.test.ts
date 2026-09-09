@@ -21,36 +21,36 @@ vi.mock('sharp', () => ({
   })),
 }));
 
-vi.mock('../../core/analyzer.js', () => ({
+vi.mock('../../core/analyzer/analyzer.js', () => ({
   analyzeFrames: mockAnalyzeFrames,
 }));
 
-vi.mock('../../core/extractor.js', () => ({
+vi.mock('../../core/extractor/extractor.js', () => ({
   extractFrames: mockExtractFrames,
 }));
 
-vi.mock('../../core/segmenter.js', () => ({
+vi.mock('../../core/segmenter/segmenter.js', () => ({
   shouldSegment: mockShouldSegment,
   runSegmentedPipeline: mockRunSegmentedPipeline,
 }));
 
-vi.mock('../../core/input-resolver.js', () => ({
+vi.mock('../../core/input-resolver/input-resolver.js', () => ({
   resolveOptions: mockResolveOptions,
   resolveInput: mockResolveInput,
 }));
 
-vi.mock('../../core/workspace.js', () => ({
+vi.mock('../../core/workspace/workspace.js', () => ({
   createWorkspace: mockCreateWorkspace,
   cleanupWorkspace: mockCleanupWorkspace,
   finalizeOutput: mockFinalizeOutput,
   readFramesAsBuffers: mockReadFramesAsBuffers,
 }));
 
-vi.mock('../../core/pruner.js', () => ({
+vi.mock('../../core/pruner/pruner.js', () => ({
   pruneByThresholdWithCap: mockPruneByThresholdWithCap,
 }));
 
-vi.mock('../../utils/logger.js', () => ({
+vi.mock('../../logging/logger.js', () => ({
   logger: { debug: vi.fn(), info: vi.fn(), error: vi.fn(), success: vi.fn() },
   setDebugMode: mockSetDebugMode,
   setJsonMode: vi.fn(),
@@ -125,7 +125,7 @@ describe('runPipeline', () => {
 
   it('resets debug mode on every call, including omitted and explicit false', async () => {
     setupDefaultMocks('file');
-    const { runPipeline } = await import('../../core/orchestrator.js');
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
     await runPipeline({ mode: 'file', inputPath: '/input.mp4', debug: true });
     await runPipeline({ mode: 'file', inputPath: '/input.mp4' });
     await runPipeline({ mode: 'file', inputPath: '/input.mp4', debug: false });
@@ -139,7 +139,7 @@ describe('runPipeline', () => {
       ctx.sourceDurationSec = 10;
       return mockFrames;
     });
-    const { runPipeline } = await import('../../core/orchestrator.js');
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
 
     const options: SieveOptions = { mode: 'file', inputPath: '/input.mp4' };
     const result = await runPipeline(options);
@@ -162,7 +162,7 @@ describe('runPipeline', () => {
       ...defaultResolvedOptions,
       mode: 'buffer',
     });
-    const { runPipeline } = await import('../../core/orchestrator.js');
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
 
     const options: SieveOptions = {
       mode: 'buffer',
@@ -182,7 +182,7 @@ describe('runPipeline', () => {
       ...defaultResolvedOptions,
       mode: 'frames',
     });
-    const { runPipeline } = await import('../../core/orchestrator.js');
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
 
     const options: SieveOptions = {
       mode: 'frames',
@@ -205,7 +205,7 @@ describe('runPipeline', () => {
   it('에러 발생 시 cleanupWorkspace가 호출된다', async () => {
     setupDefaultMocks('file');
     mockExtractFrames.mockRejectedValue(new Error('FFmpeg 오류'));
-    const { runPipeline } = await import('../../core/orchestrator.js');
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
 
     const options: SieveOptions = { mode: 'file', inputPath: '/input.mp4' };
     await expect(runPipeline(options)).rejects.toThrow('FFmpeg 오류');
@@ -219,7 +219,7 @@ describe('runPipeline', () => {
       ...defaultResolvedOptions,
       debug: true,
     });
-    const { runPipeline } = await import('../../core/orchestrator.js');
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
 
     const options: SieveOptions = {
       mode: 'file',
@@ -233,7 +233,7 @@ describe('runPipeline', () => {
 
   it('SieveResult 구조를 올바르게 반환한다', async () => {
     setupDefaultMocks('file');
-    const { runPipeline } = await import('../../core/orchestrator.js');
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
 
     const options: SieveOptions = { mode: 'file', inputPath: '/input.mp4' };
     const result = await runPipeline(options);
@@ -250,7 +250,7 @@ describe('runPipeline', () => {
 
   it('기본 동작: pruneByThresholdWithCap이 호출된다', async () => {
     setupDefaultMocks('file');
-    const { runPipeline } = await import('../../core/orchestrator.js');
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
 
     const options: SieveOptions = { mode: 'file', inputPath: '/input.mp4' };
     await runPipeline(options);
@@ -270,7 +270,7 @@ describe('runPipeline', () => {
     };
     mockRunSegmentedPipeline.mockResolvedValue(mockResult);
 
-    const { runPipeline } = await import('../../core/orchestrator.js');
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
     const options: SieveOptions = { mode: 'file', inputPath: '/input.mp4' };
     const result = await runPipeline(options);
 

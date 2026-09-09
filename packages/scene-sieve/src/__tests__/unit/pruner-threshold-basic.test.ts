@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { pruneByThreshold } from '../../core/pruner.js';
+import { pruneByThreshold } from '../../core/pruner/pruner.js';
 import type { FrameNode, ScoreEdge } from '../../types/index.js';
 
 function makeFrames(count: number): FrameNode[] {

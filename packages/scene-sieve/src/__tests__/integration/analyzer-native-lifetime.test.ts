@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { analyzeFrames } from '../../core/analyzer.js';
+import { analyzeFrames } from '../../core/analyzer/analyzer.js';
 import type { ProcessContext } from '../../types/index.js';
 import { createCheckerboardPixels } from '../helpers/checkerboard-pixels.js';
 

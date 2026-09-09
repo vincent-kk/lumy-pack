@@ -1,9 +1,9 @@
 import sharp from 'sharp';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { resolveInput, resolveOptions } from '../../core/input-resolver.js';
-import * as workspace from '../../core/workspace.js';
-import { classifyError } from '../../errors.js';
+import { resolveInput, resolveOptions } from '../../core/input-resolver/input-resolver.js';
+import * as workspace from '../../core/workspace/workspace.js';
+import { classifyError } from '../../cli/errors/classify-error.js';
 
 /** Create an encoded frame with the requested width for input validation. */
 async function image(width = 32): Promise<Buffer> {
@@ -14,13 +14,13 @@ async function image(width = 32): Promise<Buffer> {
     .toBuffer();
 }
 
-vi.mock('../../core/workspace.js', () => ({
+vi.mock('../../core/workspace/workspace.js', () => ({
   writeInputBuffer: vi.fn(),
   writeInputFrames: vi.fn(),
 }));
 
-vi.mock('../../utils/paths.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../utils/paths.js')>();
+vi.mock('../../core/utils/filesystem/paths.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../core/utils/filesystem/paths.js')>();
   return {
     ...actual,
     deriveOutputPath: vi.fn().mockReturnValue('/output/scenes'),
@@ -80,7 +80,7 @@ describe('resolveOptions', () => {
   });
 
   it('file mode: outputPath 미지정 시 deriveOutputPath 호출', async () => {
-    const { deriveOutputPath } = await import('../../utils/paths.js');
+    const { deriveOutputPath } = await import('../../core/utils/filesystem/paths.js');
     resolveOptions({ mode: 'file', inputPath: '/video.mp4' });
     expect(deriveOutputPath).toHaveBeenCalledWith('/video.mp4');
   });
@@ -208,14 +208,14 @@ describe('resolveInput', () => {
   });
 
   it('buffer mode: writeInputBuffer 호출', async () => {
-    const { writeInputBuffer } = await import('../../core/workspace.js');
+    const { writeInputBuffer } = await import('../../core/workspace/workspace.js');
     const buf = Buffer.from('video-data');
     await resolveInput({ mode: 'buffer', inputBuffer: buf }, '/workspace');
     expect(writeInputBuffer).toHaveBeenCalledWith(buf, '/workspace');
   });
 
   it('frames mode: writeInputFrames 호출', async () => {
-    const { writeInputFrames } = await import('../../core/workspace.js');
+    const { writeInputFrames } = await import('../../core/workspace/workspace.js');
     const frames = [await image(), await image()];
     await resolveInput({ mode: 'frames', inputFrames: frames }, '/workspace');
     expect(writeInputFrames).toHaveBeenCalledWith(frames, '/workspace');

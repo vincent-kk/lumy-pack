@@ -25,16 +25,18 @@ yarn test:run -- -t "test name pattern"
 ## Architecture
 
 ```
-cli.ts → index.ts / commands/Sieve.tsx → core/index.ts → core/orchestrator.ts
-                                                    → core/{input-resolver,workspace,extractor,analyzer,pruner}
-                                                    → utils/{logger,paths,min-heap}, types/, constants.ts
+cli.ts → cli/index.ts → cli/commands/Sieve.tsx → core/index.ts
+index.ts → core/index.ts → core/orchestrator/index.ts
+                        → pipeline stage entry points
 ```
 
-### Pipeline (orchestrator.ts)
+The CLI executable stays at the source root so package-manifest resolution works in both source and bundled execution. Pipeline stages import sibling modules through their entry points. Internal helpers belong to the lowest common owning module: logging and option defaults belong to the source root; filesystem and metadata helpers are grouped by topic under core/utils to distinguish them from pipeline fractals; scoring and heap operations belong to the pruner.
+
+### Pipeline (`core/orchestrator/orchestrator.ts`)
 
 Five sequential stages. `ProcessContext` holds pipeline state:
 
-1. **Init** — Creates a workspace (tmpdir) and resolves input (`input-resolver.ts`)
+1. **Init** — Creates a workspace (tmpdir) and resolves input (`core/input-resolver/input-resolver.ts`)
 2. **Extract** — Extracts frames on an FFmpeg FPS grid; file/buffer candidates obey the strict `maxFrames` cap. Effective FPS is `min(fps, maxFrames / duration)`, with no 0.5 FPS floor.
 3. **Analyze** — Computes information gain G(t) for adjacent frame pairs, producing a `ScoreEdge[]` graph
 4. **Prune** — Selects meaningful frames from the G(t) graph (pure functions, no I/O)
@@ -50,7 +52,7 @@ Five sequential stages. `ProcessContext` holds pipeline state:
 | `buffer` | Video `Buffer`        | `Buffer[]`      | Via temp file   |
 | `frames` | Frame image `Buffer[]` | `Buffer[]`      | No              |
 
-### pruneMode strategy (`input-resolver.ts`)
+### pruneMode strategy (`core/input-resolver/input-resolver.ts`)
 
 | Condition | pruneMode | Algorithm |
 | --------- | --------- | --------- |
@@ -58,7 +60,7 @@ Five sequential stages. `ProcessContext` holds pipeline state:
 
 Omitted `count` and `threshold` use 20 and 0.5. The first and last candidates remain protected, including when `count = 1`.
 
-### Vision analysis pipeline (analyzer.ts)
+### Vision analysis pipeline (`core/analyzer/analyzer.ts`)
 
 Four stages for adjacent frame pairs:
 
@@ -72,7 +74,7 @@ Four stages for adjacent frame pairs:
 - **OpenCV WASM loading**: Load CJS with `createRequire` (ESM dynamic import hangs under Vite transformation). Delete the `.then` property to prevent thenable recursion.
 - **Memory**: The analyzer processes `OPENCV_BATCH_SIZE` (10) frames per batch. Delete all owned OpenCV Mat/Vector handles in `finally`.
 - **Pruner**: Pure functions. Doubly linked list + MinHeap greedy merge. Boundary protection preserves first/last candidates.
-- **Output replacement**: workspace.ts writes to staging, deletes existing output, then calls `fs.rename()`. The delete-and-rename sequence is not an atomic replacement.
+- **Output replacement**: `core/workspace/workspace.ts` writes to staging, deletes existing output, then calls `fs.rename()`. The delete-and-rename sequence is not an atomic replacement.
 - **FFmpeg**: Bundled binaries from `ffmpeg-static` and `@ffprobe-installer/ffprobe`; no system FFmpeg dependency.
 - **Debug mode**: `--debug` preserves the temp workspace; otherwise cleanup runs in `finally`.
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { computeSegmentPlan } from '../../core/segmenter.js';
+import { computeSegmentPlan } from '../../core/segmenter/segmenter.js';
 
 // ── computeSegmentPlan ──
 

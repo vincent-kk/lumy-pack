@@ -14,7 +14,7 @@ import {
   vi,
 } from 'vitest';
 
-import { analyzeFrames, preprocessFrame } from '../../core/analyzer.js';
+import { analyzeFrames, preprocessFrame } from '../../core/analyzer/analyzer.js';
 import type { ProcessContext } from '../../types/index.js';
 import { createCheckerboardPixels } from '../helpers/checkerboard-pixels.js';
 
@@ -96,7 +96,7 @@ describe('analyzer AKAZE frame cache', () => {
 
   it('produces identical keypoints and descriptors with reused and separate detectors', async () => {
     const { computeFrameFeatures } =
-      await import('../../core/frame-features.js');
+      await import('../../core/analyzer/features/frame-features.js');
     const frame = await preprocessFrame(ctx.frames[0].extractPath, 320);
     const first = new cv.AKAZE();
     const second = new cv.AKAZE();
@@ -131,8 +131,8 @@ describe('analyzer AKAZE frame cache', () => {
 
   it('returns no new points for flat frames and runs the pixel fallback', async () => {
     const { computeFrameFeatures } =
-      await import('../../core/frame-features.js');
-    const { computeNewPoints } = await import('../../core/feature-diff.js');
+      await import('../../core/analyzer/features/frame-features.js');
+    const { computeNewPoints } = await import('../../core/analyzer/features/feature-diff.js');
     const detector = new cv.AKAZE();
     const features: ReturnType<typeof computeFrameFeatures>[] = [];
     try {

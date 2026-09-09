@@ -3,14 +3,14 @@ import { Worker } from 'node:worker_threads';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { runPipelineInWorker } from '../../core/run-in-worker.js';
+import { runPipelineInWorker } from '../../core/orchestrator/worker/run-in-worker.js';
 
 vi.mock('node:url', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:url')>();
   return {
     ...actual,
     fileURLToPath: (url: string | URL) =>
-      String(url).includes('/core/run-in-worker.ts')
+      String(url).includes('/core/orchestrator/worker/run-in-worker.ts')
         ? '/bundle/run-in-worker.mjs'
         : actual.fileURLToPath(url),
   };

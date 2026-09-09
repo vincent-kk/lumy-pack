@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { SieveErrorCode, classifyError } from '../../errors.js';
+import { SieveErrorCode, classifyError } from '../../cli/errors/classify-error.js';
 
 describe('SieveErrorCode', () => {
   it('has correct string values', () => {

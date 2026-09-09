@@ -15,8 +15,8 @@ export default defineConfig([
     inline: ['@lumy-pack/shared'],
     shebang: 'banner',
   }),
-  // Spawned as a worker thread by core/pipeline.ts — not a user-facing binary.
+  // Spawned as a worker thread by core/orchestrator/worker/run-in-worker.ts — not a user-facing binary.
   nodeBundle({
-    input: { 'pipeline-worker': 'src/core/pipeline-worker.ts' },
+    input: { 'pipeline-worker': 'src/core/orchestrator/worker/pipeline-worker.ts' },
   }),
 ]);

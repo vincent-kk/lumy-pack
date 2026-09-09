@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { shouldSegment } from '../../core/segmenter.js';
+import { shouldSegment } from '../../core/segmenter/segmenter.js';
 import type { ResolvedOptions, SieveOptions } from '../../types/index.js';
 
 // ── Helpers ──

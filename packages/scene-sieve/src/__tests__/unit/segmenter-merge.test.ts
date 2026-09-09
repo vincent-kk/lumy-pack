@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   computeSegmentPlan,
   mergeSegmentFrames,
-} from '../../core/segmenter.js';
+} from '../../core/segmenter/segmenter.js';
 import type {
   AnimationMetadata,
   FrameNode,

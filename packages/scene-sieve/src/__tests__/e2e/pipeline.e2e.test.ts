@@ -9,7 +9,7 @@ import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { extractScenes } from '../../index.js';
-import { fileExists } from '../../utils/paths.js';
+import { fileExists } from '../../core/utils/filesystem/paths.js';
 
 const execAsync = promisify(exec);
 

@@ -14,12 +14,12 @@ vi.mock('@ffprobe-installer/ffprobe', () => ({ path: '/usr/bin/ffprobe' }));
 const mockFileExists = vi.fn();
 const mockEnsureDir = vi.fn();
 
-vi.mock('../../utils/paths.js', () => ({
+vi.mock('../../core/utils/filesystem/paths.js', () => ({
   fileExists: mockFileExists,
   ensureDir: mockEnsureDir,
 }));
 
-vi.mock('../../utils/logger.js', () => ({
+vi.mock('../../logging/logger.js', () => ({
   logger: { debug: vi.fn(), info: vi.fn(), error: vi.fn(), success: vi.fn() },
 }));
 
@@ -66,7 +66,7 @@ describe('extractFrames', () => {
   });
 
   it('inputPath 미제공 시 에러를 throw한다', async () => {
-    const { extractFrames } = await import('../../core/extractor.js');
+    const { extractFrames } = await import('../../core/extractor/extractor.js');
     const ctx = makeCtx({ inputPath: undefined });
     await expect(extractFrames(ctx)).rejects.toThrow(
       'inputPath is required for frame extraction',
@@ -74,7 +74,7 @@ describe('extractFrames', () => {
   });
 
   it('파일이 존재하지 않으면 에러를 throw한다', async () => {
-    const { extractFrames } = await import('../../core/extractor.js');
+    const { extractFrames } = await import('../../core/extractor/extractor.js');
     mockFileExists.mockResolvedValue(false);
 
     const ctx = makeCtx({ inputPath: '/tmp/nonexistent.mp4' });
@@ -84,7 +84,7 @@ describe('extractFrames', () => {
   });
 
   it('ffprobe가 메타데이터를 읽지 못하면 에러를 throw한다', async () => {
-    const { extractFrames } = await import('../../core/extractor.js');
+    const { extractFrames } = await import('../../core/extractor/extractor.js');
     mockFileExists.mockResolvedValue(true);
     mockExeca.mockRejectedValue(new Error('ffprobe failed'));
 
@@ -95,7 +95,7 @@ describe('extractFrames', () => {
   });
 
   it('비디오 스트림이 없는 파일이면 에러를 throw한다', async () => {
-    const { extractFrames } = await import('../../core/extractor.js');
+    const { extractFrames } = await import('../../core/extractor/extractor.js');
     mockFileExists.mockResolvedValue(true);
     mockExeca.mockResolvedValue({
       stdout: JSON.stringify({
@@ -111,7 +111,7 @@ describe('extractFrames', () => {
   });
 
   it('확장자가 .png여도 실제 내용이 GIF면 통과하며 ffprobe는 한 번만 호출된다', async () => {
-    const { extractFrames } = await import('../../core/extractor.js');
+    const { extractFrames } = await import('../../core/extractor/extractor.js');
     mockFileExists.mockResolvedValue(true);
 
     const { readdir } = await import('node:fs/promises');
@@ -140,7 +140,7 @@ describe('extractFrames', () => {
   });
 
   it('항상 FPS 모드로 프레임을 추출한다', async () => {
-    const { extractFrames } = await import('../../core/extractor.js');
+    const { extractFrames } = await import('../../core/extractor/extractor.js');
     mockFileExists.mockResolvedValue(true);
 
     const { readdir } = await import('node:fs/promises');
@@ -166,7 +166,7 @@ describe('extractFrames', () => {
   });
 
   it('긴 영상은 maxFrames에 맞춰 FPS를 자동 감소한다', async () => {
-    const { extractFrames } = await import('../../core/extractor.js');
+    const { extractFrames } = await import('../../core/extractor/extractor.js');
     mockFileExists.mockResolvedValue(true);
 
     const { readdir } = await import('node:fs/promises');
@@ -209,7 +209,7 @@ describe('extractFrames', () => {
   });
 
   it('range extraction uses local grid timestamps and the explicit frame limit', async () => {
-    const { extractFramesForRange } = await import('../../core/extractor.js');
+    const { extractFramesForRange } = await import('../../core/extractor/extractor.js');
     const { readdir } = await import('node:fs/promises');
     vi.mocked(readdir).mockResolvedValue([
       'frame_000001.jpg',
@@ -244,7 +244,7 @@ describe('extractFrames', () => {
   });
 
   it('preserves the six-argument range call with a derived frame limit', async () => {
-    const { extractFramesForRange } = await import('../../core/extractor.js');
+    const { extractFramesForRange } = await import('../../core/extractor/extractor.js');
     const { readdir } = await import('node:fs/promises');
     vi.mocked(readdir).mockResolvedValue([]);
     await extractFramesForRange(
@@ -262,7 +262,7 @@ describe('extractFrames', () => {
   });
 
   it('frames mode preserves all input candidates regardless of maxFrames', async () => {
-    const { extractFrames } = await import('../../core/extractor.js');
+    const { extractFrames } = await import('../../core/extractor/extractor.js');
     const ctx = makeCtx({
       mode: 'frames',
       inputPath: undefined,

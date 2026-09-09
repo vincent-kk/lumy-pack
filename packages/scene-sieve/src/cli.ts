@@ -3,9 +3,11 @@ import { createRequire } from 'node:module';
 import { respond, respondError } from '@lumy-pack/shared';
 import { Command } from 'commander';
 
-import { registerSieveCommand } from './commands/Sieve.js';
-import { SieveErrorCode } from './errors.js';
-import { SIEVE_COMMAND } from './utils/command-registry.js';
+import {
+  registerSieveCommand,
+  SIEVE_COMMAND,
+  SieveErrorCode,
+} from './cli/index.js';
 
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json') as { version: string };
