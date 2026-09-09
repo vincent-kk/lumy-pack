@@ -9,9 +9,12 @@ scene-sieve 핵심 파이프라인. 프레임 추출, 비전 분석, 가지치�
 ### orchestrator
 
 - `runPipeline(options: SieveOptions): Promise<SieveResult>` — 5단계 파이프라인
+- 매 호출에서 `setDebugMode(options.debug ?? false)`로 debug 상태를 설정하여 이전 호출의 설정이 남지 않는다.
+- Worker는 결과 메시지 없이 종료되면 종료 코드 0·1을 포함해 reject한다. 결과나 오류로 이미 정착한 Promise는 후속 exit로 바뀌지 않는다.
 
 ### analyzer
 
+- 쌍 분석 예외는 `logger.warn`으로 노출하고 점수 0의 edge와 실패 수를 기록한다. 전체 쌍이 2개 이상이고 모두 실패하면 분석 오류를 던진다. 일부 실패 또는 단 한 쌍의 실패는 경고와 기존 fallback 결과를 유지한다. 실패 수는 배치 전체에서 합산하며 점수가 0이라는 이유만으로 실패로 세지 않는다.
 - 정상 분석에서 각 프레임의 sharp 전처리와 AKAZE 검출은 한 번만 실행한다. 검출기는 분석 호출당 하나이며 `analyzeFrames`의 `finally`에서 마지막 carry의 특징점과 함께 해제한다.
 - 배치는 이전 배치의 마지막 `{ preprocessed, features }`를 carry로 받아 재사용한다. DBSCAN과 점수 계산의 이미지 크기는 배치 첫 프레임(carry)의 크기를 따른다.
 - 특징점 쌍 처리 후 이전 핸들을 해제하고 다음 특징점을 carry로 넘긴다. 예외 경로에서도 이전·다음 특징점과 부분 할당된 핸들을 정리한다.
@@ -81,7 +84,9 @@ export function computeNewPoints(cvLib: CvLib, prev: FrameFeatures, next: FrameF
 ### input-resolver
 
 - `resolveOptions(options: SieveOptions): ResolvedOptions`
-- `resolveInput(ctx: ProcessContext): Promise<FrameNode[]>`
+- `validateOptions(options: SieveOptions): void`는 src 옵션 표의 유한성·정수·범위를 기본값 적용 전에 검사한다. core 평면 배치에서 export 하나만 제공하며 소비자는 `resolveOptions`이다.
+- 기존 threshold 검사도 이 검증으로 통합한다. 메시지 `<name> must be …, received: <value>`는 `classifyError`가 `INVALID_INPUT`으로 분류한다.
+- `resolveInput(options: SieveOptions, workspacePath: string)`은 `{ frames, resolvedInputPath? }`를 반환한다. frames 모드는 sharp `metadata()`로 모든 입력 크기를 비교한 후 저장하며 불일치는 같은 메시지 형식으로 거부한다.
 
 ### workspace
 

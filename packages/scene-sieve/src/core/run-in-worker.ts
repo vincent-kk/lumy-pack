@@ -18,6 +18,10 @@ export type SieveWorkerOptions = Omit<SieveOptionsBase, 'onProgress'> &
  *
  * - Production (bundled .mjs): Worker thread — spinner never freezes
  * - Dev mode (tsx .ts): Main thread — simpler, spinner may stutter during CPU work
+ * @param options - Serializable input and pipeline settings for this run.
+ * @param onProgress - Receives worker progress updates.
+ * @returns The pipeline result; settlement is unchanged by later exit events.
+ * @throws Rejects worker errors or any worker exit before a result is received.
  */
 export async function runPipelineInWorker(
   options: SieveWorkerOptions,
@@ -61,9 +65,7 @@ export async function runPipelineInWorker(
     worker.on('error', reject);
 
     worker.on('exit', (code) => {
-      if (code !== 0 && code !== 1) {
-        reject(new Error(`Worker exited with code ${code}`));
-      }
+      reject(new Error(`Worker exited with code ${code} without a result`));
     });
   });
 }

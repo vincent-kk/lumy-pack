@@ -468,7 +468,7 @@ interface FrameCarry {
  * @param scale - Maximum preprocessing width.
  * @param tracker - Stateful animation tracker shared across batches.
  * @param pairOffset - Global position of this batch's first pair.
- * @returns Scores and ownership of the final frame's features, if detection succeeded.
+ * @returns Scores, pair failure count, and ownership of the final frame's features.
  */
 async function analyzeBatch(
   cvLib: CvLib,
@@ -480,10 +480,12 @@ async function analyzeBatch(
   pairOffset: number,
 ): Promise<{
   edges: ScoreEdge[];
+  failures: number;
   carry: FrameCarry | null;
   analysisResolution: AnalysisResult['analysisResolution'];
 }> {
   const edges: ScoreEdge[] = [];
+  let failures = 0;
 
   let prev: FrameFeatures | null = carry?.features ?? null;
   let next: FrameFeatures | null = null;
@@ -569,7 +571,8 @@ async function analyzeBatch(
           score,
         });
       } catch (err) {
-        logger.debug(`Frame pair analysis failed: ${String(err)}`);
+        logger.warn(`Frame pair analysis failed: ${String(err)}`);
+        failures++;
         edges.push({
           sourceId: frames[i]!.id,
           targetId: frames[i + 1]!.id,
@@ -584,6 +587,7 @@ async function analyzeBatch(
 
     const result = {
       edges,
+      failures,
       analysisResolution: { width: imageWidth, height: imageHeight },
       carry: prev
         ? {
@@ -613,7 +617,7 @@ async function analyzeBatch(
  * 4. G(t) Information Gain Scoring
  * @param ctx - Frames, analysis options, and the progress callback for this run.
  * @returns Adjacent scores and tracked animations in analysis coordinates.
- * @throws Propagates initialization, preprocessing, or progress errors after cleanup.
+ * @throws Propagates runtime errors and rejects total failure of two or more pairs after cleanup.
  */
 export async function analyzeFrames(
   ctx: ProcessContext,
@@ -642,6 +646,7 @@ export async function analyzeFrames(
   let akaze: InstanceType<CvLib['AKAZE']> | null = null;
   let carry: FrameCarry | null = null;
   let analysisResolution = { width: 0, height: 0 };
+  let failures = 0;
   try {
     akaze = new cvLib.AKAZE();
     for (let i = 0; i < frames.length - 1; i += OPENCV_BATCH_SIZE) {
@@ -659,6 +664,7 @@ export async function analyzeFrames(
         i,
       );
       carry = result.carry;
+      failures += result.failures;
       if (i === 0) analysisResolution = result.analysisResolution;
       edges.push(...result.edges);
 
@@ -671,6 +677,11 @@ export async function analyzeFrames(
   } finally {
     carry?.features.delete();
     akaze?.delete();
+  }
+
+  const pairs = frames.length - 1;
+  if (pairs >= 2 && failures === pairs) {
+    throw new Error(`All ${pairs} frame pairs failed analysis`);
   }
 
   const animations = tracker.flushAndGetAnimations();

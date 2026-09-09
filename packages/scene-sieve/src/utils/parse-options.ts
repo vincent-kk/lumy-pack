@@ -34,34 +34,55 @@ export interface RawCliOptions {
   debug?: boolean;
 }
 
+/**
+ * Parse one complete decimal string without truncating fractional values.
+ * @param value - Decimal CLI argument, optionally using an exponent.
+ * @param integer - Whether the result must be an integer.
+ * @returns The finite parsed number, or NaN for invalid input.
+ */
+function parseNumberStrict(value: string, integer = false): number {
+  if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(value)) return NaN;
+  const number = Number(value);
+  return Number.isFinite(number) && (!integer || Number.isInteger(number))
+    ? number
+    : NaN;
+}
+
+/**
+ * Convert CLI strings to pipeline values for subsequent range validation.
+ * @param opts - Commander options with raw numeric strings.
+ * @returns Typed settings, preserving invalid numeric input as NaN.
+ */
 export function parsePipelineOptions(
   opts: RawCliOptions,
 ): ParsedPipelineOptions {
   return {
     ...(opts.threshold !== undefined
-      ? { threshold: parseFloat(opts.threshold) }
+      ? { threshold: parseNumberStrict(opts.threshold) }
       : {}),
-    ...(opts.count !== undefined ? { count: parseInt(opts.count, 10) } : {}),
+    ...(opts.count !== undefined
+      ? { count: parseNumberStrict(opts.count, true) }
+      : {}),
     outputPath: opts.output,
-    fps: parseInt(opts.fps, 10),
-    maxFrames: parseInt(opts.maxFrames, 10),
-    scale: parseInt(opts.scale, 10),
-    quality: parseInt(opts.quality, 10),
+    fps: parseNumberStrict(opts.fps),
+    maxFrames: parseNumberStrict(opts.maxFrames, true),
+    scale: parseNumberStrict(opts.scale, true),
+    quality: parseNumberStrict(opts.quality, true),
     iouThreshold:
       opts.iouThreshold !== undefined
-        ? parseFloat(opts.iouThreshold)
+        ? parseNumberStrict(opts.iouThreshold)
         : undefined,
     animationThreshold:
       opts.animThreshold !== undefined
-        ? parseInt(opts.animThreshold, 10)
+        ? parseNumberStrict(opts.animThreshold, true)
         : undefined,
     maxSegmentDuration:
       opts.maxSegmentDuration !== undefined
-        ? parseInt(opts.maxSegmentDuration, 10)
+        ? parseNumberStrict(opts.maxSegmentDuration)
         : undefined,
     concurrency:
       opts.concurrency !== undefined
-        ? parseInt(opts.concurrency, 10)
+        ? parseNumberStrict(opts.concurrency, true)
         : undefined,
     debug: opts.debug ?? false,
   };

@@ -280,8 +280,9 @@ export const SieveView: React.FC<SieveViewProps> = (props) => {
           }
           return next;
         });
-        setError(err instanceof Error ? err.message : String(err));
-        setTimeout(() => exit(), 100);
+        const failure = err instanceof Error ? err : new Error(String(err));
+        setError(failure.message);
+        setTimeout(() => exit(failure), 100);
       }
     })();
   }, []);

@@ -22,6 +22,58 @@ import {
   writeInputFrames,
 } from '../../core/workspace.js';
 import type { BoundingBox } from '../../types/index.js';
+import { logger } from '../../utils/logger.js';
+
+describe('analyzeFrames failures', () => {
+  it.each([
+    [12, 11, true],
+    [3, 1, false],
+    [2, 1, false],
+  ])(
+    'handles %s frames with %s failing pairs',
+    async (count, failures, rejects) => {
+      const workspacePath = await createWorkspace(randomUUID());
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+      let calls = 0;
+      vi.spyOn(IoUTracker.prototype, 'update').mockImplementation(() => {
+        if (calls++ < failures) throw new Error('injected pair failure');
+        return new Set<number>();
+      });
+      try {
+        const image = await sharp({
+          create: { width: 64, height: 64, channels: 3, background: 'white' },
+        })
+          .png()
+          .toBuffer();
+        const frames = await writeInputFrames(
+          Array.from({ length: count }, () => image),
+          workspacePath,
+        );
+        const result = analyzeFrames({
+          options: resolveOptions({
+            mode: 'frames',
+            inputFrames: [],
+            scale: 64,
+          }),
+          workspacePath,
+          frames,
+          graph: [],
+          status: 'ANALYZING',
+          emitProgress: () => {},
+        });
+        if (rejects)
+          await expect(result).rejects.toThrow('All 11 frame pairs failed');
+        else expect((await result).edges).toHaveLength(count - 1);
+        expect(warn).toHaveBeenCalledTimes(failures);
+        expect(warn).toHaveBeenCalledWith(
+          expect.stringContaining('injected pair failure'),
+        );
+      } finally {
+        await cleanupWorkspace(workspacePath);
+      }
+    },
+  );
+});
 
 describe('analyzeFrames metadata', () => {
   it.each([0.2, 1, undefined])(

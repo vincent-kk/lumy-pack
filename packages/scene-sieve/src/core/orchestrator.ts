@@ -23,8 +23,7 @@ import {
 } from './workspace.js';
 
 export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
-  const debug = options.debug ?? false;
-  if (debug) setDebugMode(true);
+  setDebugMode(options.debug ?? false);
 
   const resolvedOptions = resolveOptions(options);
 

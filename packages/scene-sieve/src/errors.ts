@@ -10,9 +10,16 @@ export const SieveErrorCode = {
 export type SieveErrorCode =
   (typeof SieveErrorCode)[keyof typeof SieveErrorCode];
 
+/**
+ * Classify pipeline errors for structured CLI responses.
+ * @param error - Failure with a diagnostic message and optional filesystem code.
+ * @returns The existing error code matching the failure.
+ */
 export function classifyError(error: Error): SieveErrorCode {
   const msg = error.message.toLowerCase();
-  if (
+  if (msg.includes('must be')) {
+    return SieveErrorCode.INVALID_INPUT;
+  } else if (
     (error as NodeJS.ErrnoException).code === 'ENOENT' ||
     msg.includes('not found')
   ) {

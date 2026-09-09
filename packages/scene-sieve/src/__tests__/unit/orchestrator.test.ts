@@ -123,6 +123,15 @@ describe('runPipeline', () => {
     vi.clearAllMocks();
   });
 
+  it('resets debug mode on every call, including omitted and explicit false', async () => {
+    setupDefaultMocks('file');
+    const { runPipeline } = await import('../../core/orchestrator.js');
+    await runPipeline({ mode: 'file', inputPath: '/input.mp4', debug: true });
+    await runPipeline({ mode: 'file', inputPath: '/input.mp4' });
+    await runPipeline({ mode: 'file', inputPath: '/input.mp4', debug: false });
+    expect(mockSetDebugMode.mock.calls).toEqual([[true], [false], [false]]);
+  });
+
   it('file 모드: extractFrames가 호출된다', async () => {
     setupDefaultMocks('file');
     mockExtractFrames.mockImplementationOnce(async (ctx: ProcessContext) => {
