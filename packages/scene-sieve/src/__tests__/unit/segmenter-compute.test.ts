@@ -1,25 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { computeSegmentPlan } from '../../core/segmenter.js';
-import type { SegmentPlan } from '../../types/index.js';
-
-// ── Helpers ──
-
-function makeSegmentPlan(overrides: Partial<SegmentPlan> = {}): SegmentPlan {
-  return {
-    index: 0,
-    startTime: 0,
-    endTime: 300,
-    duration: 300,
-    allocatedFrames: 150,
-    effectiveFps: 0.5,
-    overlapBefore: 0,
-    overlapAfter: 0,
-    extractStartTime: 0,
-    extractDuration: 300,
-    ...overrides,
-  };
-}
 
 // ── computeSegmentPlan ──
 
@@ -93,11 +74,9 @@ describe('computeSegmentPlan', () => {
     expect(fpsList.every((fps) => fps === fpsList[0])).toBe(true);
   });
 
-  it('effectiveFps min clamped to 0.5 for very long video with low maxFrames', () => {
-    // totalDuration=10000s, maxFrames=10, fps=5
-    // unclamped = 10/10000 = 0.001 → clamped to 0.5
+  it('effectiveFps has no lower bound for long videos', () => {
     const plans = computeSegmentPlan(10000, 300, 10, 5);
-    expect(plans.every((p) => p.effectiveFps === 0.5)).toBe(true);
+    expect(plans.every((p) => p.effectiveFps === 0.001)).toBe(true);
   });
 
   it('effectiveFps capped by fps parameter when fps < maxFrames/totalDuration', () => {
@@ -107,45 +86,75 @@ describe('computeSegmentPlan', () => {
     expect(plans[0].effectiveFps).toBe(5);
   });
 
-  it('allocatedFrames sum <= maxFrames after post-validation', () => {
-    // Use values that cause over-allocation before adjustment
+  it('owned grid slots fit the budget and every allocation is positive', () => {
     const plans = computeSegmentPlan(900, 300, 100, 5);
-    const total = plans.reduce((sum, p) => sum + p.allocatedFrames, 0);
+    const total = plans.reduce(
+      (sum, p) => sum + p.allocatedFrames - p.overlapBefore - p.overlapAfter,
+      0,
+    );
     expect(total).toBeLessThanOrEqual(100);
+    expect(plans.every((p) => p.allocatedFrames >= 1)).toBe(true);
   });
 
-  it('extractStartTime accounts for overlapBefore (shifted back by 1/effectiveFps)', () => {
-    const plans = computeSegmentPlan(600, 300, 600, 5);
+  it('extractStartTime aligns to the global grid including the preceding overlap slot', () => {
+    const plans = computeSegmentPlan(10, 4, 7, 5);
     const effectiveFps = plans[0].effectiveFps;
     const overlapTime = 1 / effectiveFps;
 
-    // First segment: no overlap before, extractStartTime = 0
     expect(plans[0].extractStartTime).toBe(0);
 
-    // Second segment: overlapBefore=1, extractStartTime = startTime - overlapTime
-    const expected = Math.max(0, plans[1].startTime - overlapTime);
+    const expected = 2 * overlapTime;
     expect(plans[1].extractStartTime).toBeCloseTo(expected, 10);
+    for (const plan of plans) {
+      const slot = plan.extractStartTime * effectiveFps;
+      expect(slot).toBeCloseTo(Math.round(slot), 10);
+    }
   });
 
   it('extractDuration includes overlap extension on both sides', () => {
-    const plans = computeSegmentPlan(600, 300, 600, 5);
+    const plans = computeSegmentPlan(10, 4, 7, 5);
     const effectiveFps = plans[0].effectiveFps;
     const overlapTime = 1 / effectiveFps;
 
-    // First segment has overlapAfter=1 → extractDuration > duration
     expect(plans[0].extractDuration).toBeGreaterThan(plans[0].duration);
-    expect(plans[0].extractDuration).toBeCloseTo(
-      plans[0].duration + overlapTime,
-      10,
-    );
+    expect(plans[0].extractDuration).toBeCloseTo(4 * overlapTime, 10);
 
-    // Last segment has overlapBefore=1 → extractDuration > duration
-    expect(plans[1].extractDuration).toBeGreaterThan(plans[1].duration);
+    const last = plans[plans.length - 1];
+    expect(last.extractStartTime + last.extractDuration).toBeCloseTo(10, 10);
+    expect(last.endTime).toBe(10);
   });
 
-  it('single-segment: allocatedFrames = ceil(effectiveFps * duration), capped by maxFrames', () => {
-    const plans = computeSegmentPlan(60, 300, 300, 5);
-    const expected = Math.min(Math.ceil(plans[0].effectiveFps * 60), 300);
-    expect(plans[0].allocatedFrames).toBe(expected);
+  it('single-segment: frame limit is the whole budget even when fps wins', () => {
+    const plans = computeSegmentPlan(60, 300, 600, 5);
+    expect(plans[0].allocatedFrames).toBe(600);
+  });
+
+  it('one hour with 300 frames never assigns a negative final budget', () => {
+    const plans = computeSegmentPlan(3600, 300, 300, 5);
+    expect(plans[plans.length - 1].allocatedFrames).toBeGreaterThan(0);
+    expect(plans.map((p) => p.allocatedFrames)).toEqual([
+      26, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 26,
+    ]);
+  });
+
+  it('omits empty logical segments when the grid interval exceeds their length', () => {
+    const plans = computeSegmentPlan(3600, 300, 10, 5);
+    expect(plans).toHaveLength(10);
+    expect(plans.map((p) => p.index)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    for (const plan of plans) {
+      expect(
+        plan.allocatedFrames - plan.overlapBefore - plan.overlapAfter,
+      ).toBe(1);
+      const firstOwned =
+        plan.extractStartTime + plan.overlapBefore / plan.effectiveFps;
+      expect(firstOwned).toBeGreaterThanOrEqual(plan.startTime);
+      expect(firstOwned).toBeLessThan(plan.endTime);
+    }
+  });
+
+  it('defends a budget below two before option validation', () => {
+    const [plan] = computeSegmentPlan(10, 300, 1, 5);
+    expect(plan.effectiveFps).toBe(0.2);
+    expect(plan.allocatedFrames).toBe(2);
   });
 });

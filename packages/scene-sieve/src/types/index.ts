@@ -20,7 +20,8 @@ export interface SieveOptionsBase {
   threshold?: number; // default: 0.5. G(t) score threshold. Keeps frames with score >= threshold, capped by count.
   outputPath?: string; // default: derived from inputPath (file mode only)
   fps?: number; // default: 5
-  maxFrames?: number; // default: 300. Caps extracted frames; FPS is auto-reduced for long videos.
+  /** Strict file/buffer candidate frame limit (default: 300); ignored in frames mode. */
+  maxFrames?: number;
   scale?: number; // default: 720
   quality?: number; // JPEG output quality 1-100 (default: 80)
   iouThreshold?: number; // default: 0.9. IoU threshold for animation tracking.
@@ -129,6 +130,10 @@ export interface DBSCANResult {
 
 export interface ProcessContext {
   options: ResolvedOptions;
+  /** Actual extraction grid frequency; frames mode uses one-second intervals. */
+  effectiveFps?: number;
+  /** Original video duration reported by ffprobe, in seconds. */
+  sourceDurationSec?: number;
   workspacePath: string;
   frames: FrameNode[];
   graph: ScoreEdge[];
@@ -150,11 +155,13 @@ export interface SegmentPlan {
   startTime: number; // 논리적 시작 (초)
   endTime: number; // 논리적 종료 (초)
   duration: number; // 논리적 duration (초)
-  allocatedFrames: number; // 이 세그먼트에 할당된 프레임 수
+  /** FFmpeg output limit, including overlap slots; a single segment uses the full budget. */
+  allocatedFrames: number;
   effectiveFps: number; // 이 세그먼트의 실제 fps
   overlapBefore: number; // 앞쪽 오버랩 프레임 수 (0 또는 1)
   overlapAfter: number; // 뒤쪽 오버랩 프레임 수 (0 또는 1)
-  extractStartTime: number; // 실제 FFmpeg 추출 시작 시간 (오버랩 포함)
+  /** First extraction grid time in seconds, including overlap. */
+  extractStartTime: number;
   extractDuration: number; // 실제 FFmpeg 추출 duration (오버랩 포함)
 }
 

@@ -50,12 +50,12 @@ export function shouldSegment(
 }
 
 /**
- * Compute segment boundaries with overlap, frame allocation, and effectiveFps.
- * Pure function — no I/O.
- *
- * - effectiveFps is uniform across all segments
- * - Overlap: 1 frame at each internal boundary
- * - allocatedFrames total <= maxFrames (last segment adjusted if needed)
+ * Partition the global extraction grid into nonempty logical segments.
+ * @param totalDuration Positive source duration in seconds.
+ * @param maxSegmentDuration Positive logical segment width in seconds.
+ * @param maxFrames Candidate budget, defensively raised to at least two.
+ * @param fps Positive requested sampling frequency.
+ * @returns Contiguous plan indices with grid-aligned seeks and overlap-inclusive limits.
  */
 export function computeSegmentPlan(
   totalDuration: number,
@@ -63,9 +63,9 @@ export function computeSegmentPlan(
   maxFrames: number,
   fps: number,
 ): SegmentPlan[] {
-  const effectiveFps = Math.max(0.5, Math.min(fps, maxFrames / totalDuration));
+  const frameLimit = Math.max(2, maxFrames);
+  const effectiveFps = Math.min(fps, frameLimit / totalDuration);
 
-  // Single segment for short videos
   if (totalDuration <= maxSegmentDuration) {
     return [
       {
@@ -73,10 +73,7 @@ export function computeSegmentPlan(
         startTime: 0,
         endTime: totalDuration,
         duration: totalDuration,
-        allocatedFrames: Math.min(
-          Math.ceil(effectiveFps * totalDuration),
-          maxFrames,
-        ),
+        allocatedFrames: frameLimit,
         effectiveFps,
         overlapBefore: 0,
         overlapAfter: 0,
@@ -86,49 +83,47 @@ export function computeSegmentPlan(
     ];
   }
 
-  const segmentCount = Math.ceil(totalDuration / maxSegmentDuration);
-  const overlapTime = 1 / effectiveFps;
   const segments: SegmentPlan[] = [];
 
-  for (let i = 0; i < segmentCount; i++) {
-    const startTime = i * maxSegmentDuration;
-    const endTime = Math.min((i + 1) * maxSegmentDuration, totalDuration);
-    const duration = endTime - startTime;
+  for (let slot = 0; slot < frameLimit; slot++) {
+    const timestamp = slot / effectiveFps;
+    if (timestamp >= totalDuration) break;
+    const startTime =
+      Math.floor(timestamp / maxSegmentDuration) * maxSegmentDuration;
+    const previous = segments[segments.length - 1];
+    if (previous?.startTime === startTime) {
+      previous.allocatedFrames++;
+      continue;
+    }
 
-    const overlapBefore = i > 0 ? 1 : 0;
-    const overlapAfter = i < segmentCount - 1 ? 1 : 0;
-
-    const extractStartTime = Math.max(
-      0,
-      startTime - overlapBefore * overlapTime,
-    );
-    const extractEndTime = Math.min(
-      totalDuration,
-      endTime + overlapAfter * overlapTime,
-    );
-    const extractDuration = extractEndTime - extractStartTime;
-
+    const endTime = Math.min(startTime + maxSegmentDuration, totalDuration);
     segments.push({
-      index: i,
+      index: segments.length,
       startTime,
       endTime,
-      duration,
-      allocatedFrames: Math.ceil(effectiveFps * duration),
+      duration: endTime - startTime,
+      allocatedFrames: 1,
       effectiveFps,
-      overlapBefore,
-      overlapAfter,
-      extractStartTime,
-      extractDuration,
+      overlapBefore: 0,
+      overlapAfter: 0,
+      extractStartTime: timestamp,
+      extractDuration: 0,
     });
   }
 
-  // Post-validation: ensure total allocatedFrames <= maxFrames
-  const totalAllocated = segments.reduce(
-    (sum, s) => sum + s.allocatedFrames,
-    0,
-  );
-  if (totalAllocated > maxFrames) {
-    segments[segments.length - 1].allocatedFrames -= totalAllocated - maxFrames;
+  let firstSlot = 0;
+  for (const segment of segments) {
+    const nextSlot = firstSlot + segment.allocatedFrames;
+    segment.overlapBefore = segment.index > 0 ? 1 : 0;
+    segment.overlapAfter = segment.index < segments.length - 1 ? 1 : 0;
+    segment.extractStartTime =
+      (firstSlot - segment.overlapBefore) / effectiveFps;
+    const extractEndTime = segment.overlapAfter
+      ? Math.min(totalDuration, (nextSlot + 1) / effectiveFps)
+      : totalDuration;
+    segment.extractDuration = extractEndTime - segment.extractStartTime;
+    segment.allocatedFrames += segment.overlapBefore + segment.overlapAfter;
+    firstSlot = nextSlot;
   }
 
   return segments;
@@ -334,6 +329,7 @@ function buildSegmentContext(
       maxFrames: segment.allocatedFrames,
     },
     workspacePath: segmentWorkspacePath,
+    effectiveFps: segment.effectiveFps,
     frames,
     graph: [],
     status: 'ANALYZING',
@@ -361,6 +357,7 @@ export async function processSegment(
     resolvedOptions.scale,
     segment.extractStartTime,
     segment.extractDuration,
+    segment.allocatedFrames,
   );
 
   if (frames.length < 2) {
@@ -492,6 +489,8 @@ export async function runSegmentedPipeline(
 
     const ctx: ProcessContext = {
       options: resolvedOptions,
+      effectiveFps: segments[0]?.effectiveFps,
+      sourceDurationSec: totalDuration,
       workspacePath: mainWorkspace,
       frames,
       graph: edges,

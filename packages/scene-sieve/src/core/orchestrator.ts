@@ -68,6 +68,7 @@ export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
     if (resolvedOptions.mode === 'frames') {
       // 'frames' mode: buffers already written as FrameNodes
       ctx.frames = resolvedFrames;
+      ctx.effectiveFps = 1;
     } else {
       // 'file' or 'buffer' mode: extract frames via FFmpeg
       const extractCtx: ProcessContext = {
@@ -78,6 +79,8 @@ export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
         },
       };
       ctx.frames = await extractFrames(extractCtx);
+      ctx.effectiveFps = extractCtx.effectiveFps;
+      ctx.sourceDurationSec = extractCtx.sourceDurationSec;
     }
 
     ctx.emitProgress(100);

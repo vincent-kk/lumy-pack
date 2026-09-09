@@ -1,6 +1,6 @@
 import { exec } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { mkdir, rm } from 'node:fs/promises';
+import { mkdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
@@ -27,13 +27,16 @@ async function hasFfmpeg(): Promise<boolean> {
   }
 }
 
-async function createTestVideo(outputPath: string): Promise<void> {
+/** Generate a testsrc video at the requested path and duration in seconds. */
+async function createTestVideo(
+  outputPath: string,
+  duration = 2,
+): Promise<void> {
   const { default: ffmpegStatic } = await import('ffmpeg-static');
   if (!ffmpegStatic) throw new Error('ffmpeg-static not available');
 
-  // Generate a 2-second test pattern video at 320x240, 5fps
   await execAsync(
-    `"${ffmpegStatic}" -y -f lavfi -i "testsrc=size=320x240:rate=5" -t 2 "${outputPath}"`,
+    `"${ffmpegStatic}" -y -f lavfi -i "testsrc=size=320x240:rate=5" -t ${duration} "${outputPath}"`,
   );
 }
 
@@ -56,6 +59,36 @@ afterAll(async () => {
 });
 
 describe('extractScenes E2E pipeline', () => {
+  it.each([2, 7])(
+    'strictly caps a ten-second video at %i candidates',
+    async (maxFrames) => {
+      const inputPath = join(testDir, `budget-${maxFrames}.mp4`);
+      const outputPath = join(testDir, `budget-${maxFrames}-output`);
+      await createTestVideo(inputPath, 10);
+      const result = await extractScenes({
+        mode: 'file',
+        inputPath,
+        outputPath,
+        maxFrames,
+        count: maxFrames,
+        threshold: 0.001,
+        fps: 5,
+        scale: 320,
+      });
+      expect(result.originalFramesCount).toBe(maxFrames);
+      const metadata = JSON.parse(
+        await readFile(join(outputPath, '.metadata.json'), 'utf8'),
+      );
+      expect(
+        Math.abs(
+          metadata.frames[metadata.frames.length - 1].timestampMs / 1000 -
+            (10 * (maxFrames - 1)) / maxFrames,
+        ),
+      ).toBeLessThan(0.05);
+    },
+    TIMEOUT,
+  );
+
   it(
     'processes a test video and returns scene files',
     async () => {

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { SieveOptions } from '../../types/index.js';
+import type { ProcessContext, SieveOptions } from '../../types/index.js';
 
 const mockAnalyzeFrames = vi.fn();
 const mockExtractFrames = vi.fn();
@@ -111,12 +111,21 @@ describe('runPipeline', () => {
 
   it('file 모드: extractFrames가 호출된다', async () => {
     setupDefaultMocks('file');
+    mockExtractFrames.mockImplementationOnce(async (ctx: ProcessContext) => {
+      ctx.effectiveFps = 0.2;
+      ctx.sourceDurationSec = 10;
+      return mockFrames;
+    });
     const { runPipeline } = await import('../../core/orchestrator.js');
 
     const options: SieveOptions = { mode: 'file', inputPath: '/input.mp4' };
     await runPipeline(options);
 
     expect(mockExtractFrames).toHaveBeenCalledTimes(1);
+    expect(mockAnalyzeFrames.mock.calls[0][0]).toMatchObject({
+      effectiveFps: 0.2,
+      sourceDurationSec: 10,
+    });
   });
 
   it('buffer 모드: readFramesAsBuffers가 호출되고 outputBuffers를 반환한다', async () => {
@@ -153,6 +162,10 @@ describe('runPipeline', () => {
     await runPipeline(options);
 
     expect(mockExtractFrames).not.toHaveBeenCalled();
+    expect(mockAnalyzeFrames.mock.calls[0][0]).toMatchObject({
+      effectiveFps: 1,
+      frames: mockFrames,
+    });
   });
 
   it('에러 발생 시 cleanupWorkspace가 호출된다', async () => {

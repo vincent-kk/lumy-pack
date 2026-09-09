@@ -23,10 +23,16 @@ export interface FFprobeMetadata {
 
 /**
  * Extract frames from video/GIF using FFmpeg.
- * Always uses FPS-based extraction. For long videos, FPS is automatically
- * reduced to stay within maxFrames budget.
+ * @param ctx Pipeline context; records effectiveFps and sourceDurationSec for video input.
+ * @returns Extracted candidates, or the unchanged input array in frames mode.
+ * @throws When the input is missing, metadata has no video stream, or FFmpeg fails.
  */
 export async function extractFrames(ctx: ProcessContext): Promise<FrameNode[]> {
+  if (ctx.options.mode === 'frames') {
+    ctx.effectiveFps = 1;
+    return ctx.frames;
+  }
+
   const framesDir = join(ctx.workspacePath, 'frames');
   const { inputPath, fps, maxFrames, scale } = ctx.options;
 
@@ -66,25 +72,26 @@ export async function extractFrames(ctx: ProcessContext): Promise<FrameNode[]> {
   );
   await ensureDir(framesDir);
 
-  // Calculate effective FPS: cap by maxFrames / duration
+  const frameLimit = Math.max(2, maxFrames);
   let effectiveFps = fps;
 
   if (duration > 0) {
-    const fpsCap = maxFrames / duration;
+    const fpsCap = frameLimit / duration;
     effectiveFps = Math.min(fps, fpsCap);
-    // Ensure at least 0.5fps (1 frame per 2 seconds)
-    effectiveFps = Math.max(0.5, effectiveFps);
     logger.debug(
       `FPS: ${fps} → effective: ${effectiveFps.toFixed(2)} (maxFrames: ${maxFrames})`,
     );
   }
+
+  ctx.effectiveFps = effectiveFps;
+  ctx.sourceDurationSec = duration;
 
   const frames = await extractByFps(
     inputPath,
     framesDir,
     effectiveFps,
     scale,
-    duration,
+    frameLimit,
   );
 
   ctx.emitProgress(100);
@@ -92,12 +99,21 @@ export async function extractFrames(ctx: ProcessContext): Promise<FrameNode[]> {
   return frames;
 }
 
+/**
+ * Write scaled JPEG candidates through the bundled FFmpeg runtime.
+ * @param inputPath Readable video input.
+ * @param outputDir Existing frame directory.
+ * @param fps Positive effective sampling frequency.
+ * @param scale Output image height.
+ * @param frameLimit Maximum number of output frames.
+ * @returns Candidates with local output-grid timestamps; rejects on extraction failure.
+ */
 async function extractByFps(
   inputPath: string,
   outputDir: string,
   fps: number,
   scale: number,
-  duration: number,
+  frameLimit: number,
 ): Promise<FrameNode[]> {
   const outputPattern = join(outputDir, FRAME_FILENAME_PATTERN);
 
@@ -108,10 +124,12 @@ async function extractByFps(
     `fps=${fps},scale=-1:${scale}`,
     '-q:v',
     '2',
+    '-frames:v',
+    String(frameLimit),
     outputPattern,
   ]);
 
-  return buildFrameList(outputDir, duration);
+  return buildFrameList(outputDir, fps);
 }
 
 export async function getVideoMetadata(
@@ -129,9 +147,15 @@ export async function getVideoMetadata(
   return JSON.parse(stdout) as FFprobeMetadata;
 }
 
+/**
+ * Read sorted JPEG paths and attach local output-grid times.
+ * @param framesDir Extracted frame directory; filesystem errors propagate.
+ * @param effectiveFps Positive frequency used by the fps filter.
+ * @returns Zero-based candidates without a segment seek offset.
+ */
 async function buildFrameList(
   framesDir: string,
-  duration: number,
+  effectiveFps: number,
 ): Promise<FrameNode[]> {
   const files = await readdir(framesDir);
   const jpgFiles = filter(files, (f) => f.endsWith('.jpg')).sort();
@@ -142,10 +166,7 @@ async function buildFrameList(
 
   return map(jpgFiles, (file, index) => ({
     id: index,
-    timestamp:
-      duration > 0 && jpgFiles.length > 1
-        ? (duration * index) / (jpgFiles.length - 1)
-        : index,
+    timestamp: index / effectiveFps,
     extractPath: join(framesDir, file),
   }));
 }
@@ -160,6 +181,7 @@ async function buildFrameList(
  * @param scale - Height scale for vision analysis
  * @param startTime - Start time in seconds
  * @param duration - Duration in seconds to extract
+ * @param frameLimit - Positive output limit; defaults to the range's grid capacity
  * @returns Array of FrameNode with segment-local timestamps (starting from 0)
  */
 export async function extractFramesForRange(
@@ -169,6 +191,7 @@ export async function extractFramesForRange(
   scale: number,
   startTime: number,
   duration: number,
+  frameLimit: number = Math.ceil(duration * fps),
 ): Promise<FrameNode[]> {
   const outputPattern = join(outputDir, FRAME_FILENAME_PATTERN);
 
@@ -183,8 +206,10 @@ export async function extractFramesForRange(
     `fps=${fps},scale=-1:${scale}`,
     '-q:v',
     '2',
+    '-frames:v',
+    String(frameLimit),
     outputPattern,
   ]);
 
-  return buildFrameList(outputDir, duration);
+  return buildFrameList(outputDir, fps);
 }

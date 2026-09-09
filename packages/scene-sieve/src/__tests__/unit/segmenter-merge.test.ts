@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { mergeSegmentFrames } from '../../core/segmenter.js';
+import {
+  computeSegmentPlan,
+  mergeSegmentFrames,
+} from '../../core/segmenter.js';
 import type {
   AnimationMetadata,
   FrameNode,
@@ -51,6 +54,27 @@ function makeSegmentResult(
 // ── mergeSegmentFrames ──
 
 describe('mergeSegmentFrames', () => {
+  it('two grid-aligned segments merge into the single global grid without double offsets', () => {
+    const plans = computeSegmentPlan(10, 5, 7, 5);
+    const results = plans.map((plan) =>
+      makeSegmentResult(
+        plan,
+        Array.from({ length: plan.allocatedFrames }, (_, id) => ({
+          id,
+          timestamp: id / plan.effectiveFps,
+          extractPath: `/tmp/seg${plan.index}_${id}.jpg`,
+        })),
+      ),
+    );
+    const { frames } = mergeSegmentFrames(results);
+    expect(frames).toHaveLength(7);
+    frames.forEach((frame, index) =>
+      expect(frame.timestamp).toBeCloseTo(index / 0.7, 10),
+    );
+    expect(frames[3].extractPath).toBe('/tmp/seg0_3.jpg');
+    expect(frames[4].extractPath).toBe('/tmp/seg0_4.jpg');
+  });
+
   it('empty input → returns empty arrays', () => {
     const result = mergeSegmentFrames([]);
     expect(result.frames).toEqual([]);

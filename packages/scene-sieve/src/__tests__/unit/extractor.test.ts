@@ -177,10 +177,9 @@ describe('extractFrames', () => {
       'frame_000003.jpg',
     ] as unknown as Awaited<ReturnType<typeof readdir>>);
 
-    // 300s video, fps=5, maxFrames=300 → effectiveFps = min(5, 300/300) = 1
     mockExeca.mockResolvedValue({
       stdout: JSON.stringify({
-        format: { format_name: 'mp4', duration: '300' },
+        format: { format_name: 'mp4', duration: '3600' },
         streams: [{ codec_type: 'video' }],
       }),
       stderr: '',
@@ -200,6 +199,83 @@ describe('extractFrames', () => {
     );
     expect(ffmpegCall).toBeDefined();
     const vfArg = ffmpegCall![1].find((a: string) => a.startsWith('fps='));
-    expect(vfArg).toBe('fps=1,scale=-1:720');
+    expect(vfArg).toBe(`fps=${300 / 3600},scale=-1:720`);
+    expect(frames.map((frame) => frame.timestamp)).toEqual([0, 12, 24]);
+    expect(ffmpegCall![1].slice(-3, -1)).toEqual(['-frames:v', '300']);
+    expect(ctx).toMatchObject({
+      effectiveFps: 300 / 3600,
+      sourceDurationSec: 3600,
+    });
+  });
+
+  it('range extraction uses local grid timestamps and the explicit frame limit', async () => {
+    const { extractFramesForRange } = await import('../../core/extractor.js');
+    const { readdir } = await import('node:fs/promises');
+    vi.mocked(readdir).mockResolvedValue([
+      'frame_000001.jpg',
+      'frame_000002.jpg',
+      'frame_000003.jpg',
+    ] as unknown as Awaited<ReturnType<typeof readdir>>);
+    const frames = await extractFramesForRange(
+      '/tmp/test.mp4',
+      '/tmp/range',
+      0.5,
+      720,
+      4,
+      6.5,
+      3,
+    );
+    expect(frames.map((frame) => frame.timestamp)).toEqual([0, 2, 4]);
+    expect(mockExeca).toHaveBeenCalledWith('/usr/bin/ffmpeg', [
+      '-ss',
+      '4',
+      '-i',
+      '/tmp/test.mp4',
+      '-t',
+      '6.5',
+      '-vf',
+      'fps=0.5,scale=-1:720',
+      '-q:v',
+      '2',
+      '-frames:v',
+      '3',
+      '/tmp/range/frame_%06d.jpg',
+    ]);
+  });
+
+  it('preserves the six-argument range call with a derived frame limit', async () => {
+    const { extractFramesForRange } = await import('../../core/extractor.js');
+    const { readdir } = await import('node:fs/promises');
+    vi.mocked(readdir).mockResolvedValue([]);
+    await extractFramesForRange(
+      '/tmp/test.mp4',
+      '/tmp/range',
+      0.5,
+      720,
+      4,
+      6.5,
+    );
+    expect(mockExeca.mock.calls[0][1].slice(-3, -1)).toEqual([
+      '-frames:v',
+      '4',
+    ]);
+  });
+
+  it('frames mode preserves all input candidates regardless of maxFrames', async () => {
+    const { extractFrames } = await import('../../core/extractor.js');
+    const ctx = makeCtx({
+      mode: 'frames',
+      inputPath: undefined,
+      maxFrames: 2,
+      fps: 5,
+    });
+    ctx.frames = [0, 1, 2].map((id) => ({
+      id,
+      timestamp: id,
+      extractPath: `/tmp/${id}.jpg`,
+    }));
+    expect(await extractFrames(ctx)).toBe(ctx.frames);
+    expect(ctx).toMatchObject({ effectiveFps: 1 });
+    expect(mockExeca).not.toHaveBeenCalled();
   });
 });
