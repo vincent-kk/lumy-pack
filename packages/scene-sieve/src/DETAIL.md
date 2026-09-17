@@ -4,6 +4,8 @@
 
 동영상/GIF에서 유의미한 핵심 프레임을 자동 선별하는 라이브러리와 그 CLI. 세 입력 모드(file, buffer, frames)를 하나의 옵션 계약으로 받고, 결과 메타데이터의 좌표계와 시간 단위를 일관되게 보고한다.
 
+런타임은 Node.js 20.19 이상인 20.x 또는 22.12 이상을 지원한다. CLI의 기존 다중 문자 축약 옵션(`-mf`, `-it`, `-at`)은 유지한다.
+
 ## API Contracts
 
 ### `extractScenes(options: SieveOptions): Promise<SieveResult>`

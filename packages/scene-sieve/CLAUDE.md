@@ -92,8 +92,8 @@ Unit test setup file: `src/__tests__/helpers/setup.ts`
 
 ## Tech Stack
 
-- TypeScript 5.7, Node.js >=20, ESM
+- TypeScript 5.7, Node.js ^20.19.0 or >=22.12.0, ESM
 - Build: rolldown (ESM `.mjs` + CJS `.cjs` dual), tsc declarations
 - Test: Vitest 3.2
-- CLI: Commander.js 12, Ink, ink-spinner
+- CLI: Commander.js 12 (preserves multi-character short flags), Ink 6, React 19, ink-spinner
 - Media: execa, ffmpeg-static, sharp, @techstark/opencv-js

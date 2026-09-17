@@ -477,7 +477,7 @@ Frames with higher G(t) scores represent greater visual change and are preserved
 
 ## Requirements
 
-- **Node.js** >= 20
+- **Node.js** 20.19+ (20.x) or >= 22.12
 - **FFmpeg**: Bundled via `ffmpeg-static` — no system installation needed
 - **OpenCV**: Bundled as WASM via `@techstark/opencv-js` — no native build needed
 - **sharp**: Requires native binaries. Pre-built binaries are automatically downloaded for most platforms. See the [sharp installation guide](https://sharp.pixelplumbing.com/install) if you encounter build issues.
