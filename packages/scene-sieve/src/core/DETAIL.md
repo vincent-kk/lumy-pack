@@ -37,6 +37,14 @@
 - `buildEdgeMetadata`는 graph 순서와 1-based ID를 유지하고 점수를 6자리, 비애니메이션·애니메이션 합집합 비율을 각각 4자리로 반올림한다. change가 없으면 비율은 0이다.
 - `buildSieveMetadata`는 순수 조립 함수다. 키 순서는 metadataVersion, tool, video, frames, animations, sheet, edges이며 선택적 키는 해당할 때만 생성한다(undefined 대입 금지). video에 후보 수·선택 수와 source를 채우고 fileName은 file 모드 basename만, 다른 모드는 null이다. 입력 객체와 배열을 변경하지 않는다.
 
+### 시트 organ `utils/sheet/`
+
+- `sampleTileFrames`는 선택 수가 maxTiles 이하면 그대로 반환하고, 초과하면 `round(i × (n − 1) / (maxTiles − 1))` 인덱스를 사용한다. 첫·끝을 포함하고 중복 없이 단조 증가하며 sampled로 축약 여부를 표시한다.
+- `formatTileLabel`은 1-based frameId와 밀리초를 `#<id> mm:ss.s`로 만든다. 분은 최소 두 자리, 초는 두 자리, 소수 한 자리는 내림한다.
+- `buildTileLabelSvg`는 타일 크기의 SVG에 좌상단 검은 반투명 배지와 흰 sans-serif 글자를 그린다. fontSize는 max(8, round(tileHeight × 0.07)), padX·padY는 각각 글자 크기의 0.4·0.2를 반올림한다. 배지 폭은 타일 폭과 ceil(문자 수 × fontSize × 0.6) + 2 × padX 중 작은 값, 높이는 fontSize + 2 × padY다. 글자 베이스라인은 padY + round(fontSize × 0.8)이다.
+- `renderContactSheet`는 비어 있지 않은 선택과 양수 해상도를 받는다. 타일 높이는 max(1, round(tileWidth × height / width)), 유효 열 수는 min(columns, 타일 수)다. 흰 배경과 타일 간격·외곽 여백은 4px이고 행 우선·마지막 행 왼쪽 정렬이다. 각 이미지는 fit fill로 타일 크기를 맞추고 선택적으로 라벨을 합성한다.
+- JPEG는 입력 quality와 mozjpeg를 사용하며 파일명은 sheet.jpg다. 반환 메타는 유효 열 수·타일 크기·1-based frameIds·sampled를 포함한다. 같은 기계·같은 sharp·폰트에서 동일 입력의 바이트 결정성을 보장하고 플랫폼 간 동일성은 요구하지 않는다.
+
 ### 프레임 예산과 격자 (extractor ↔ segmenter)
 
 - file/buffer 후보 수는 `Math.max(2, maxFrames)` 이하다. `effectiveFps = min(fps, maxFrames / duration)`에 FPS 하한을 두지 않는다.
