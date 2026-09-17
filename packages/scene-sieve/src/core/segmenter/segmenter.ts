@@ -253,17 +253,17 @@ function remapEdges(
       if (existingIdx !== undefined) {
         if (edges[existingIdx].score < edge.score) {
           edges[existingIdx] = {
+            ...edge,
             sourceId: newSourceId,
             targetId: newTargetId,
-            score: edge.score,
           };
         }
       } else {
         edgeMap.set(edgeKey, edges.length);
         edges.push({
+          ...edge,
           sourceId: newSourceId,
           targetId: newTargetId,
-          score: edge.score,
         });
       }
     }

@@ -545,6 +545,10 @@ async function analyzeBatch(
         }
 
         const animationIndices = tracker.update(clusters, pairIndex);
+        const change = {
+          regions: filter(clusters, (_, ci) => !animationIndices.has(ci)),
+          animatedRegions: filter(clusters, (_, ci) => animationIndices.has(ci)),
+        };
         const animationWeights = map(clusters, (_, ci) =>
           animationIndices.has(ci)
             ? tracker.getAnimationWeight(ci, clusters)
@@ -567,6 +571,7 @@ async function analyzeBatch(
           sourceId: frames[i]!.id,
           targetId: frames[i + 1]!.id,
           score,
+          change,
         });
       } catch (err) {
         logger.warn(`Frame pair analysis failed: ${String(err)}`);

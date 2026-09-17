@@ -28,7 +28,7 @@ frames 입력과 file 모드의 GIF를 제외한 입력을 받아, 원본 길이
 
 - 로컬 timestamp에 `extractStartTime`을 한 번만 더해 전역 timestamp를 만든다.
 - 같은 전역 슬롯의 중복 프레임은 앞 세그먼트 프레임을 유지한다. 중복 프레임의 `(segmentIndex, localId)`는 생존 프레임의 globalId로 별칭된다.
-- edge: 별칭 후 `source === target`이면 버리고, 같은 `(source, target)` 쌍은 높은 점수를 유지한다.
+- edge: 별칭 후 `source === target`이면 버리고, 같은 `(source, target)` 쌍은 높은 점수 간선의 change를 포함한 나머지 필드를 보존한다. ID만 전역 ID로 바꾼다.
 - animation: 별칭 후 `startFrameId === endFrameId`이면 버리고, 같은 `(startFrameId, endFrameId)` 쌍은 먼저 온 항목 하나만 남긴다. `durationMs`는 세그먼트 tracker 값을 유지한다. 경계를 가로지르는 반복 영역은 두 animation으로 나뉠 수 있다(알려진 한계).
 - `analysisResolution`은 첫 세그먼트의 값을 그대로 전달한다. 빈 병합은 0×0이다.
 
@@ -59,4 +59,4 @@ frames 입력과 file 모드의 GIF를 제외한 입력을 받아, 원본 길이
 
 ## Last Updated
 
-2026-09-10
+2026-09-18

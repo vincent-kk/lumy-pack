@@ -15,6 +15,7 @@
 - animation tracker는 `ctx.effectiveFps ?? ctx.options.fps`, `ctx.options.iouThreshold`, `ctx.options.animationThreshold`를 쓰며 배치를 가로질러 상태를 유지한다.
 - 쌍 분석 예외는 `logger.warn`으로 노출하고 점수 0의 edge를 기록하며 실패 수를 배치 전체에서 합산한다. 점수가 0이라는 이유만으로 실패로 세지 않는다. 전체 쌍이 2개 이상이고 모두 실패하면 `All <n> frame pairs failed analysis` 오류를 던진다. 일부 실패나 단 한 쌍의 실패는 경고와 fallback 결과를 유지한다.
 - 배치마다 `ctx.emitProgress`로 진행률을 알린다.
+- 성공한 쌍의 `ScoreEdge.change`는 분석 좌표의 클러스터를 DBSCAN 순서로 보존한다. `animationIndices.has(i)`인 클러스터는 animatedRegions, 나머지는 regions에 담는다. 이는 G(t) 감쇠 대상과 같은 집합이며 실패 쌍에는 change가 없다.
 
 ### `computeIoU(a: BoundingBox, b: BoundingBox): number`
 
@@ -114,4 +115,4 @@ export function computeNewPoints(cvLib: CvLib, prev: FrameFeatures, next: FrameF
 
 ## Last Updated
 
-2026-09-10
+2026-09-18
