@@ -17,6 +17,8 @@ import {
 } from '../../core/workspace/workspace.js';
 import type { ProcessContext } from '../../types/index.js';
 import { fileExists } from '../../core/utils/filesystem/paths.js';
+import { buildSieveMetadata } from '../../core/utils/metadata/build-sieve-metadata.js';
+import { buildVideoMetadata } from '../../core/utils/metadata/build-video-metadata.js';
 
 /** Create a tiny valid JPEG buffer for testing */
 async function createTestJpeg(): Promise<Buffer> {
@@ -59,6 +61,11 @@ describe('createWorkspace', () => {
 });
 
 describe('finalizeOutput', () => {
+  it('rejects a metadata length mismatch before writing or replacing output', async () => {
+    const ctx: ProcessContext = { options: resolveOptions({ mode: 'frames', inputFrames: [] }), workspacePath: '', frames: [], graph: [], status: 'FINALIZING', emitProgress: () => {} };
+    const document = buildSieveMetadata({ ctx, selected: [], ...await buildVideoMetadata(ctx, [], undefined), version: 'test' });
+    await expect(finalizeOutput(ctx, [{ id: 0, timestamp: 0, extractPath: 'missing.jpg' }], document)).rejects.toThrow('metadata frame count');
+  });
   it.each([true, false])(
     'uses actual dimensions and axis-specific clamped boxes (selected=%s)',
     async (hasSelection) => {
@@ -121,7 +128,9 @@ describe('finalizeOutput', () => {
         emitProgress: () => {},
       };
       const originalAnimations = structuredClone(animations);
-      await finalizeOutput(ctx, hasSelection ? frames.slice(1) : []);
+      const selected = hasSelection ? frames.slice(1) : [];
+      const document = buildSieveMetadata({ ctx, selected, ...await buildVideoMetadata(ctx, selected, ctx.analysisResolution), version: 'test' });
+      await finalizeOutput(ctx, selected, document);
       const metadata = JSON.parse(
         await readFile(join(outputPath, '.metadata.json'), 'utf8'),
       );
@@ -131,6 +140,9 @@ describe('finalizeOutput', () => {
           originalDurationMs: 14700,
           fps: 0.2,
           resolution: { width: 101, height: 67 },
+          candidatesCount: frames.length,
+          selectedCount: hasSelection ? 1 : 0,
+          source: { fileName: 'input.gif', mode: 'file' },
         });
       expect
         .soft(
@@ -180,6 +192,8 @@ describe('finalizeOutput', () => {
         count: 5,
         threshold: 0.5,
         pruneMode: 'threshold-with-cap',
+        sheet: null,
+        includeEdges: false,
         outputPath,
         fps: 5,
         maxFrames: 300,
@@ -199,13 +213,21 @@ describe('finalizeOutput', () => {
     };
 
     const selectedFrames = [{ id: 0, timestamp: 0, extractPath: framePath }];
-    const outputFiles = await finalizeOutput(ctx, selectedFrames);
+    ctx.frames = selectedFrames;
+    const document = buildSieveMetadata({ ctx, selected: selectedFrames, ...await buildVideoMetadata(ctx, selectedFrames, ctx.analysisResolution), version: 'test' });
+    document.frames[0].fileName = 'chosen-frame.jpg';
+    document.sheet = { fileName: 'sheet.jpg', columns: 1, tileWidth: 4, tileHeight: 4, frameIds: [1], sampled: false };
+    const sheetBuffer = await createTestJpeg();
+    await mkdir(outputPath);
+    await writeFile(join(outputPath, 'obsolete.txt'), 'obsolete');
+    const outputFiles = await finalizeOutput(ctx, selectedFrames, document, sheetBuffer);
 
-    expect(outputFiles).toHaveLength(2); // 1 scene image + 1 .metadata.json
-    expect(outputFiles[0]).toContain('frame_0001.jpg');
-    expect(outputFiles[1]).toContain('.metadata.json');
+    expect(outputFiles).toEqual(['chosen-frame.jpg', 'sheet.jpg', '.metadata.json'].map((name) => join(outputPath, name)));
     expect(await fileExists(outputFiles[0])).toBe(true);
     expect(await fileExists(outputFiles[1])).toBe(true);
+    expect(await readFile(outputFiles[1])).toEqual(sheetBuffer);
+    expect(await readFile(outputFiles[2], 'utf8')).toBe(JSON.stringify(document, null, 2));
+    expect(await fileExists(join(outputPath, 'obsolete.txt'))).toBe(false);
   });
 
   it('uses larger padding when total frames exceed 9999', async () => {
@@ -225,6 +247,8 @@ describe('finalizeOutput', () => {
         count: 5,
         threshold: 0.5,
         pruneMode: 'threshold-with-cap',
+        sheet: null,
+        includeEdges: false,
         outputPath,
         fps: 5,
         maxFrames: 300,
@@ -251,7 +275,8 @@ describe('finalizeOutput', () => {
     const selectedFrames = [
       { id: 999, timestamp: 200, extractPath: framePath },
     ];
-    const outputFiles = await finalizeOutput(ctx, selectedFrames);
+    const document = buildSieveMetadata({ ctx, selected: selectedFrames, ...await buildVideoMetadata(ctx, selectedFrames, ctx.analysisResolution), version: 'test' });
+    const outputFiles = await finalizeOutput(ctx, selectedFrames, document);
 
     // Should use 5 digits because 12345 has 5 digits
     expect(outputFiles[0]).toContain('frame_01000.jpg');

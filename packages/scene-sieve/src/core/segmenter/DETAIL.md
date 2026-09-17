@@ -28,14 +28,14 @@ frames 입력과 file 모드의 GIF를 제외한 입력을 받아, 원본 길이
 
 - 로컬 timestamp에 `extractStartTime`을 한 번만 더해 전역 timestamp를 만든다.
 - 같은 전역 슬롯의 중복 프레임은 앞 세그먼트 프레임을 유지한다. 중복 프레임의 `(segmentIndex, localId)`는 생존 프레임의 globalId로 별칭된다.
-- edge: 별칭 후 `source === target`이면 버리고, 같은 `(source, target)` 쌍은 높은 점수를 유지한다.
+- edge: 별칭 후 `source === target`이면 버리고, 같은 `(source, target)` 쌍은 높은 점수 간선의 change를 포함한 나머지 필드를 보존한다. ID만 전역 ID로 바꾼다.
 - animation: 별칭 후 `startFrameId === endFrameId`이면 버리고, 같은 `(startFrameId, endFrameId)` 쌍은 먼저 온 항목 하나만 남긴다. `durationMs`는 세그먼트 tracker 값을 유지한다. 경계를 가로지르는 반복 영역은 두 animation으로 나뉠 수 있다(알려진 한계).
 - `analysisResolution`은 첫 세그먼트의 값을 그대로 전달한다. 빈 병합은 0×0이다.
 
 ### `runSegmentedPipeline(options: SieveOptions, resolvedOptions: ResolvedOptions): Promise<SieveResult>`
 
 - `computeSegmentPlan`으로 계획을 만들고 `scheduling/concurrency.ts`의 `concurrencyLimit(resolvedOptions.concurrency)`로 `processSegment`를 병렬 실행한다.
-- 병합 결과에 최종 가지치기를 적용하고, 최종 출력 컨텍스트에는 전역 `effectiveFps`와 원본 `sourceDurationSec`을 둔다. `video`와 출력 좌표계 `animations`는 `buildVideoMetadata`(core organ `utils/metadata/`, 계약은 `core/DETAIL.md`)로 만든다.
+- 병합 결과에 최종 가지치기를 적용하고, 최종 출력 컨텍스트에는 전역 `effectiveFps`와 원본 `sourceDurationSec`을 둔다. Finalize는 일반 경로와 같은 `finalizeSelection`(core의 output organ)에 위임한다. 반환 video·frames·sheet는 문서와 같고 API animations는 0-based를 유지한다. sheetBuffer는 buffer/frames 모드에만 있으며 시트가 없으면 두 시트 키를 모두 생략한다.
 - 세그먼트 workspace 정리는 orchestrator와 같은 debug 규칙을 따른다.
 
 ## Acceptance Criteria
@@ -59,4 +59,4 @@ frames 입력과 file 모드의 GIF를 제외한 입력을 받아, 원본 길이
 
 ## Last Updated
 
-2026-09-10
+2026-09-18

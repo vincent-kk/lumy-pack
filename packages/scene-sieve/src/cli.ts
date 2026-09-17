@@ -1,5 +1,3 @@
-import { createRequire } from 'node:module';
-
 import { respond, respondError } from '@lumy-pack/shared';
 import { Command } from 'commander';
 
@@ -9,8 +7,7 @@ import {
   SieveErrorCode,
 } from './cli/index.js';
 
-const require = createRequire(import.meta.url);
-const { version } = require('../package.json') as { version: string };
+import { PACKAGE_VERSION as version } from './constants/package-version.js';
 
 const program = new Command();
 

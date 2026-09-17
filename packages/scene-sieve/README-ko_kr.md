@@ -14,7 +14,7 @@ Video/GIF ──▶ Extract (FFmpeg) ──▶ Analyze (OpenCV) ──▶ Prune 
 ## 기능
 
 - **애니메이션 추적** — 로딩 스피너나 기타 반복되는 애니메이션을 감지하고 기록합니다
-- **풍부한 메타데이터** — 장면 타임스탬프 및 애니메이션 상세 정보를 포함한 `.metadata.json`을 생성합니다
+- **변화 신호와 컨택트 시트** — 메타데이터 v2의 영역·점수·유지 시간과 선택적 `sheet.jpg`를 제공합니다
 - **스마트 프레임 선택** — 균등하게 분산된 샘플이 아닌 시각적으로 의미 있는 장면 변화를 식별합니다
 - **컴퓨터 비전 파이프라인** — AKAZE 특징 감지, DBSCAN 클러스터링, IoU 추적 및 정보 이득 스코어링
 - **세 가지 입력 모드** — 파일 경로, 비디오 Buffer, 또는 사전 추출된 프레임 Buffers
@@ -91,6 +91,8 @@ scene-sieve <input> [options]
 | `-it, --iou-threshold <number>`| 애니메이션 추적용 IoU 임계값 (0–1)           | `0.9`                       |
 | `-at, --anim-threshold <number>`| 애니메이션 판정 최소 연속 프레임 수         | `5`                         |
 | `--debug`                    | 검사용 임시 작업 공간 유지                     | `false`                     |
+| `--sheet` | 선택 프레임 컨택트 시트 생성 | `false` |
+| `--include-edges` | 후보 간선 진단을 메타데이터에 포함 | `false` |
 
 ### 지원 형식
 
@@ -294,6 +296,8 @@ interface SieveOptionsBase {
   animationThreshold?: number; // Min frames for animation (default: 5)
   maxSegmentDuration?: number; // Segment duration in seconds (default: 300)
   concurrency?: number; // Parallel segment workers (default: 2)
+  sheet?: boolean | SheetOptions; // Contact sheet (default: false)
+  includeEdges?: boolean; // Candidate edge diagnostics (default: false)
   debug?: boolean; // Preserve temp workspace (default: false)
   onProgress?: (phase: ProgressPhase, percent: number) => void;
 }
@@ -312,6 +316,8 @@ type SieveOptions = SieveOptionsBase & SieveInput;
 | `fps`, `maxSegmentDuration` | 유한한 양수 (실수 허용) |
 | `threshold` | 유한 (0, 1] |
 | `iouThreshold` | 유한 [0, 1] |
+| `sheet` | boolean 또는 `SheetOptions`: columns 정수 ≥ 1, tileWidth 정수 ≥ 16, maxTiles 정수 ≥ 2, label boolean. 기본 false; 활성 기본값 4·320·40·true |
+| `includeEdges` | boolean, 기본 false |
 
 frames 입력은 모든 이미지의 너비·높이가 같아야 합니다. 빈 배열과 한 장 입력은 허용합니다.
 
@@ -326,9 +332,14 @@ interface SieveResult {
   outputBuffers?: Buffer[]; // JPEG buffers (buffer/frames mode)
   animations?: AnimationMetadata[]; // Detected animations
   video?: VideoMetadata; // Video source metadata
+  frames?: FrameMetadata[]; // Same one-based frames as the metadata document
+  sheet?: SheetMetadata; // Present only when a sheet was rendered
+  sheetBuffer?: Buffer; // JPEG sheet in buffer/frames modes only
   executionTimeMs: number;
 }
 ```
+
+`frames[i]`는 `outputBuffers[i]`와 짝지어지며 fileName은 메모리 모드에서도 파일 모드와 같은 이름입니다. API frames[].frameId는 1-based이고 API animations[].startFrameId·endFrameId는 기존대로 0-based입니다. 파일 문서의 animation ID는 1-based입니다.
 
 ### 정제 전략
 
@@ -352,40 +363,92 @@ const result = await extractScenes({
 
 ## 출력 메타데이터
 
-`file` 모드로 실행할 때, `scene-sieve`는 출력 디렉토리에 `.metadata.json` 파일을 생성합니다.
+file 모드는 선택 JPEG 옆에 v2 `.metadata.json`을 씁니다. 기존 필드의 의미는 유지하며 `metadataVersion`이 없으면 v1로 해석합니다. 패키지는 `SieveMetadata`, `FrameMetadata`, `FrameChange`, `EdgeMetadata`, `EdgeChange`, `ToolMetadata`, `ToolParams`, `SheetMetadata`, `SheetOptions`, `VideoMetadata`, `AnimationMetadata` 타입을 공개합니다.
 
-`SieveResult.video`와 파일 metadata는 같은 값을 사용합니다:
+`tool.name`과 `tool.version`은 실행 중인 패키지를 식별합니다. `tool.params`는 아래 순서의 아홉 필드만 담습니다. params의 fps는 요청값, video의 fps는 유효값입니다. 선택 프레임 캐시는 입력 식별값·도구 버전·params를 기준으로 만듭니다. 전체 출력 번들을 캐시한다면 params에서 빠진 sheet 설정과 includeEdges도 키에 포함해야 합니다.
+
+`SieveResult.video`와 문서는 다음 값을 공유합니다.
 
 - `originalDurationMs`: file/buffer는 ffprobe 원본 길이, frames는 마지막 후보 타임스탬프입니다.
-- `fps`: 요청값이 아닌 유효 추출 FPS입니다. frames 모드는 1이며 애니메이션 추적도 이를 사용합니다.
+- `fps`: 유효 추출 FPS이며 frames 입력과 애니메이션 tracker는 1을 사용합니다.
 - `resolution`: 첫 선택 프레임의 실제 출력 JPEG 크기입니다. 선택이 없으면 첫 후보, 후보도 없으면 0×0입니다.
-- `frames[].timestampMs`: 추출 격자 시각의 밀리초 값이며, frames 입력은 1초 간격입니다.
-- `animations[].boundingBox`: 출력 이미지의 픽셀 좌표입니다. 분석 좌표에서 축별로 스케일하고 정수 반올림한 뒤 출력 경계로 제한합니다. 파일의 frame ID는 1-based, API animation ID는 0-based입니다.
+- `candidatesCount`·`selectedCount`: 가지치기 전·후 프레임 수입니다.
+- `source`: 입력 모드와 basename만 담습니다. buffer/frames 입력의 fileName은 null입니다.
+
+`frames[]`에는 1-based step·후보 frameId, 결정적인 fileName, 정수 반올림 timestampMs와 holdsMs가 있습니다. holdsMs는 다음 선택 프레임까지, 마지막 프레임은 원본 끝까지의 밀리초 차이를 0 이상으로 제한한 값입니다. frames 입력의 후보 간격은 1초입니다.
+
+첫 프레임은 `change: null`입니다. 나머지는 직전 선택부터 현재 선택까지 존재하는 모든 인접 후보 간선을 집계합니다.
+
+| 필드 | 의미 |
+| --- | --- |
+| `fromFrameId` | 직전 선택 후보의 1-based ID |
+| `skippedCandidates` | 두 선택 사이에서 제거된 후보 수 |
+| `peakScore`·`sumScore` | 가지치기 정규화 전 원시 G(t)의 최댓값·합 |
+| `areaRatio` | 전체 비애니메이션 클러스터 bbox의 실제 합집합 면적 / 분석 이미지 면적, [0,1] 제한 |
+| `regions` | 출력 픽셀 정수 좌표의 중복 없는 상위 5개 bbox. 면적 내림차순, 동률 y·x·width 오름차순 |
+
+면적은 출력 좌표 반올림 전에 분석 좌표에서 계산합니다. 면적 비율은 절대 bbox 면적 비율이며 특징점 밀도인 G(t), 영상 내 분포에 의존하는 정규화 점수와 구별됩니다. 겹치는 면적은 한 번만 셉니다. regions는 animations[].boundingBox와 같은 축별 환산·정수 반올림·출력 범위 제한을 사용합니다.
+
+애니메이션 제외 기준은 `animationIndices`입니다. 해당 쌍에서 tracker가 애니메이션으로 판정해 G(t)를 감쇠한 클러스터만 제외합니다. 반복을 인식하기 전 관측은 change 영역에 남을 수 있으며 최종 animations 목록에 따른 소급 제거는 하지 않습니다. 실패 쌍은 fallback 점수만 기여하고 상자는 없습니다.
+
+`includeEdges: true`(CLI `--include-edges`)이면 후보 그래프 순서의 edges[]를 덧붙입니다. 필드는 sourceFrameId·targetFrameId(1-based), 원시 score, areaRatio, animatedAreaRatio이며 기본값에서는 키 자체가 없습니다.
+
+`sheet: true` 또는 CLI `--sheet`는 sheet.jpg를 만듭니다. API 기본 설정은 `{ columns: 4, tileWidth: 320, maxTiles: 40, label: true }`이고 부분 객체로 각 값을 덮어쓸 수 있습니다. 타일은 출력 종횡비를 유지하며 흰 배경에 간격·여백 4px로 배치합니다. 라벨은 소수 첫째 자리에서 내림한 `#<frameId> mm:ss.s`입니다. maxTiles를 넘으면 첫·끝 선택을 포함해 균등 샘플링합니다. sheet 메타는 유효 열 수, 타일 크기, 1-based frameIds, sampled를 기록합니다. 파일 반환 순서는 선택 JPEG들, 선택적 sheet.jpg, .metadata.json입니다. buffer/frames 모드는 sheetBuffer를 반환합니다. 비활성 또는 빈 선택에서는 sheet·sheetBuffer 키 자체를 생성하지 않습니다.
+
+문서 키 순서는 고정이며 면적 비율은 소수 4자리, 원시 점수는 6자리로 반올림합니다. JSON은 후행 0을 보존하지 않습니다. 입력 바이트·basename·도구 버전·params·출력 옵션이 같으면 concurrency·출력 디렉터리·실행 시간과 무관하게 문서 바이트가 같습니다. 시트 JPEG 바이트 동일성은 같은 기계·sharp 버전·폰트 환경에서만 보장합니다.
+
+다음 전체 예시는 4초 FFmpeg `testsrc=size=320x240:rate=5` MP4를 아래 명령으로 실행한 실제 결과입니다.
+
+```bash
+scene-sieve test_input.mp4 --fps 5 -mf 12 -n 2 -t 0.001 -s 320 --sheet
+```
+
+minor changeset 릴리스 전 실행 버전인 0.2.0이 기록되어 있습니다.
 
 ```json
 {
+  "metadataVersion": 2,
+  "tool": {
+    "name": "@lumy-pack/scene-sieve",
+    "version": "0.2.0",
+    "params": {
+      "fps": 5, "count": 2, "threshold": 0.001, "scale": 320, "quality": 80,
+      "maxFrames": 12, "iouThreshold": 0.9, "animationThreshold": 5,
+      "maxSegmentDuration": 300
+    }
+  },
   "video": {
-    "originalDurationMs": 15000,
-    "fps": 5,
-    "resolution": { "width": 1280, "height": 720 }
+    "originalDurationMs": 4000, "fps": 3,
+    "resolution": { "width": 427, "height": 320 },
+    "candidatesCount": 12, "selectedCount": 2,
+    "source": { "fileName": "test_input.mp4", "mode": "file" }
   },
   "frames": [
     {
-      "step": 1,
-      "fileName": "frame_0001.jpg",
-      "frameId": 1,
-      "timestampMs": 0
+      "step": 1, "fileName": "frame_0001.jpg", "frameId": 1,
+      "timestampMs": 0, "holdsMs": 3667, "change": null
+    },
+    {
+      "step": 2, "fileName": "frame_0012.jpg", "frameId": 12,
+      "timestampMs": 3667, "holdsMs": 333,
+      "change": {
+        "fromFrameId": 1, "skippedCandidates": 10,
+        "peakScore": 0.000833, "sumScore": 0.006784, "areaRatio": 0.1186,
+        "regions": [
+          { "x": 340, "y": 124, "width": 32, "height": 69 },
+          { "x": 32, "y": 240, "width": 64, "height": 32 },
+          { "x": 64, "y": 240, "width": 64, "height": 32 },
+          { "x": 113, "y": 240, "width": 64, "height": 32 },
+          { "x": 145, "y": 240, "width": 64, "height": 32 }
+        ]
+      }
     }
   ],
-  "animations": [
-    {
-      "type": "loading_spinner",
-      "boundingBox": { "x": 100, "y": 200, "width": 50, "height": 50 },
-      "startFrameId": 12,
-      "endFrameId": 25,
-      "durationMs": 2600
-    }
-  ]
+  "animations": [],
+  "sheet": {
+    "fileName": "sheet.jpg", "columns": 2, "tileWidth": 320, "tileHeight": 240,
+    "frameIds": [1, 12], "sampled": false
+  }
 }
 ```
 

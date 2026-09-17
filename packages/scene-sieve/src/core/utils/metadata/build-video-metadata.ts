@@ -1,3 +1,5 @@
+import { basename } from 'node:path';
+
 import sharp from 'sharp';
 
 import type {
@@ -6,6 +8,8 @@ import type {
   ProcessContext,
   VideoMetadata,
 } from '../../../types/index.js';
+
+import { scaleBoundingBox } from './scale-bounding-box.js';
 
 /**
  * Read output dimensions and build consistent video and animation metadata.
@@ -45,23 +49,17 @@ export async function buildVideoMetadata(
           ? 1
           : (ctx.effectiveFps ?? ctx.options.fps),
       resolution: { width, height },
+      candidatesCount: ctx.frames.length,
+      selectedCount: selected.length,
+      source: {
+        fileName: ctx.options.mode === 'file' && ctx.options.inputPath
+          ? basename(ctx.options.inputPath) : null,
+        mode: ctx.options.mode,
+      },
     },
-    animations: (ctx.animations ?? []).map((animation) => {
-      const box = animation.boundingBox;
-      const x = Math.max(0, Math.min(width, Math.round(box.x * sx)));
-      const y = Math.max(0, Math.min(height, Math.round(box.y * sy)));
-      return {
-        ...animation,
-        boundingBox: {
-          x,
-          y,
-          width: Math.max(0, Math.min(width - x, Math.round(box.width * sx))),
-          height: Math.max(
-            0,
-            Math.min(height - y, Math.round(box.height * sy)),
-          ),
-        },
-      };
-    }),
+    animations: (ctx.animations ?? []).map((animation) => ({
+      ...animation,
+      boundingBox: scaleBoundingBox(animation.boundingBox, sx, sy, width, height),
+    })),
   };
 }

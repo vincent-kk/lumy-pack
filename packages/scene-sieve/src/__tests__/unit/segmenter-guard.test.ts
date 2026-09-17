@@ -13,6 +13,8 @@ function makeResolvedOptions(
     count: 20,
     threshold: 0.5,
     pruneMode: 'threshold-with-cap',
+    sheet: null,
+    includeEdges: false,
     outputPath: '/tmp/out',
     fps: 5,
     maxFrames: 300,

@@ -25,6 +25,7 @@ Turn a local video or animated GIF into a small, timestamped set of frames, then
    - Otherwise create a task-scoped temporary directory outside the source-media directory.
 5. Run the returned `command` with `-o "<output-dir>"`. Keep `--json` enabled and parse the structured result before inspecting files.
 6. On success, inspect the image paths in `data.outputFiles` in timestamp order. Read `.metadata.json` when timestamps or UI-state transitions matter. Gaps in frame numbering are expected after pruning.
+   When an overview of the entire video is needed, add `--sheet` to generate `sheet.jpg` and inspect it first.
 7. Answer the user's question from the visual evidence. Mention timestamps when useful; do not narrate every frame unless requested.
 
 ## Failure and stopping rules

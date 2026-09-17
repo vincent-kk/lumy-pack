@@ -60,6 +60,22 @@ function makeSegmentResult(
 // ── mergeSegmentFrames ──
 
 describe('mergeSegmentFrames', () => {
+  it('preserves the cluster partition when remapping nonsequential local IDs', () => {
+    const change = { regions: [{ x: 3, y: 4, width: 10, height: 20 }], animatedRegions: [] };
+    const frames = makeFrames(2).map((frame, index) => ({ ...frame, id: index + 10 }));
+    const result = makeSegmentResult(makeSegmentPlan(), frames, [{ sourceId: 10, targetId: 11, score: 0.4, change }]);
+    expect(mergeSegmentFrames([result]).edges).toEqual([{ sourceId: 0, targetId: 1, score: 0.4, change }]);
+  });
+
+  it('keeps the higher-scoring duplicate edge partition', () => {
+    const low = { regions: [], animatedRegions: [{ x: 0, y: 0, width: 5, height: 5 }] };
+    const high = { regions: [{ x: 8, y: 9, width: 15, height: 15 }], animatedRegions: [] };
+    const results = [low, high, low].map((change, index) => makeSegmentResult(
+      makeSegmentPlan({ index, effectiveFps: 1 }), makeFrames(2, index),
+      [{ sourceId: 0, targetId: 1, score: index === 1 ? 0.9 : 0.3, change }],
+    ));
+    expect(mergeSegmentFrames(results).edges).toEqual([{ sourceId: 0, targetId: 1, score: 0.9, change: high }]);
+  });
   it('two grid-aligned segments merge into the single global grid without double offsets', () => {
     const plans = computeSegmentPlan(10, 5, 7, 5);
     const results = plans.map((plan) =>

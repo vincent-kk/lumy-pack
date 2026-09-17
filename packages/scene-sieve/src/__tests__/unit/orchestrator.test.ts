@@ -14,6 +14,9 @@ const mockPruneByThresholdWithCap = vi.fn();
 const mockSetDebugMode = vi.fn();
 const mockShouldSegment = vi.fn();
 const mockRunSegmentedPipeline = vi.fn();
+const mockRenderContactSheet = vi.fn();
+
+vi.mock('../../core/utils/sheet/render-contact-sheet.js', () => ({ renderContactSheet: mockRenderContactSheet }));
 
 vi.mock('sharp', () => ({
   default: vi.fn(() => ({
@@ -62,6 +65,8 @@ const defaultResolvedOptions = {
   count: 20,
   threshold: 0.5,
   pruneMode: 'threshold-with-cap' as const,
+  sheet: null,
+  includeEdges: false,
   outputPath: '/out',
   fps: 5,
   maxFrames: 300,
@@ -119,6 +124,32 @@ function setupDefaultMocks(modeOverride?: 'file' | 'buffer' | 'frames') {
 }
 
 describe('runPipeline', () => {
+  it('passes one v2 document to file output and shares its frame array with the API', async () => {
+    setupDefaultMocks();
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
+    const result = await runPipeline({ mode: 'file', inputPath: '/input.mp4' });
+    const document = mockFinalizeOutput.mock.calls[0][2];
+    expect(document).toMatchObject({ metadataVersion: 2 });
+    expect(result.frames).toBe(document.frames);
+    expect(result.frames).toHaveLength(3);
+    expect('sheet' in result).toBe(false);
+    expect('sheetBuffer' in result).toBe(false);
+  });
+
+  it('returns a separate contact sheet buffer in buffer mode', async () => {
+    setupDefaultMocks('buffer');
+    const sheet = { columns: 4, tileWidth: 320, maxTiles: 40, label: true };
+    mockResolveOptions.mockReturnValue({ ...defaultResolvedOptions, mode: 'buffer', sheet });
+    const buffer = Buffer.from([0xff, 0xd8, 0xff, 0xd9]);
+    const metadata = { fileName: 'sheet.jpg', columns: 3, tileWidth: 320, tileHeight: 212, frameIds: [1, 2, 3], sampled: false };
+    mockRenderContactSheet.mockResolvedValue({ buffer, metadata });
+    const { runPipeline } = await import('../../core/orchestrator/orchestrator.js');
+    const result = await runPipeline({ mode: 'buffer', inputBuffer: Buffer.from('video'), sheet: true });
+    expect(result.sheetBuffer).toBe(buffer);
+    expect(result.sheet).toBe(metadata);
+    expect(result.frames).toHaveLength(result.outputBuffers!.length);
+    expect(mockRenderContactSheet).toHaveBeenCalledWith({ selected: mockFrames, resolution: { width: 101, height: 67 }, options: sheet, quality: 80 });
+  });
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -147,6 +178,9 @@ describe('runPipeline', () => {
       originalDurationMs: 10000,
       fps: 0.2,
       resolution: { width: 101, height: 67 },
+      candidatesCount: 3,
+      selectedCount: 3,
+      source: { fileName: 'input.mp4', mode: 'file' },
     });
 
     expect(mockExtractFrames).toHaveBeenCalledTimes(1);

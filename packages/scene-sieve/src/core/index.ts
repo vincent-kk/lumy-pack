@@ -1,4 +1,17 @@
 export { runPipeline, runPipelineInWorker } from './orchestrator/index.js';
+export type {
+  AnimationMetadata,
+  VideoMetadata,
+  FrameMetadata,
+  FrameChange,
+  ToolMetadata,
+  ToolParams,
+  SheetMetadata,
+  SheetOptions,
+  SieveMetadata,
+  EdgeMetadata,
+  EdgeChange,
+} from '../types/index.js';
 export {
   analyzeFrames,
   computeIoU,

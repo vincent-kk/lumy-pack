@@ -12,7 +12,8 @@
 - `resolveOptions(options)` 뒤 `shouldSegment(resolvedOptions, options)`가 참이면 `runSegmentedPipeline`으로 위임하고 그 결과를 그대로 반환한다.
 - 그렇지 않으면 `ProcessContext`를 만들고 상태를 `INIT → EXTRACTING → ANALYZING → PRUNING → FINALIZING → SUCCESS` 순으로 전이한다. 예외가 나면 `FAILED`로 바꾸고 다시 던진다.
 - 각 단계 진입·진행 시 `options.onProgress(ctx.status, percent)`를 호출한다. `INIT` 이전이나 종료 상태에서는 호출하지 않는다.
-- 단계 구현은 형제 프랙탈의 entry에서 가져온다: `resolveInput`/`resolveOptions`(input-resolver), `extractFrames`(extractor), `analyzeFrames`(analyzer), `pruneByThresholdWithCap`(pruner), `createWorkspace`/`finalizeOutput`/`readFramesAsBuffers`/`cleanupWorkspace`(workspace). 최종 `video`와 출력 좌표계 `animations`는 core organ `utils/metadata/build-video-metadata.ts`의 `buildVideoMetadata`로 만든다(계약은 `core/DETAIL.md`).
+- 단계 구현은 형제 프랙탈의 entry에서 가져온다. Finalize는 core organ `utils/output/finalize-selection.ts`의 `finalizeSelection`에 위임해 메타데이터 읽기·시트 렌더·문서 조립·모드별 출력을 한 번만 수행한다.
+- 결과의 video·frames는 조립된 문서와 같고 animations는 기존 0-based 출력 좌표 배열이다. 시트가 없으면 sheet·sheetBuffer 키 자체를 생성하지 않으며 sheetBuffer는 buffer/frames 모드에만 존재한다.
 - `finally`에서 `resolvedOptions.debug`가 거짓이면 `cleanupWorkspace(ctx.workspacePath)`를 실행하고, 참이면 경로를 debug 로그로 남기고 보존한다.
 - file/buffer 경로에서 extractor는 전달받은 `extractCtx`에 `effectiveFps`와 `sourceDurationSec`을 기록하고, orchestrator가 이를 원본 `ctx`로 복사한다. frames 경로의 `ctx.effectiveFps`는 orchestrator가 1로 설정한다. analyzer는 `analysisResolution`을 반환하며 orchestrator가 `ctx.analysisResolution`에 저장한다.
 
@@ -52,4 +53,4 @@
 
 ## Last Updated
 
-2026-09-10
+2026-09-18

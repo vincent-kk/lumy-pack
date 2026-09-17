@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import sharp from 'sharp';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import {
   ANIMATION_FRAME_THRESHOLD,
@@ -14,7 +14,7 @@ import {
   DEFAULT_SCALE,
   IOU_THRESHOLD,
 } from '../../constants/pipeline-defaults.js';
-import { analyzeFrames } from '../../core/analyzer/analyzer.js';
+import { analyzeFrames, IoUTracker } from '../../core/analyzer/analyzer.js';
 import type { FrameNode, ProcessContext } from '../../types/index.js';
 
 // Integration test: uses real sharp + OpenCV WASM
@@ -62,6 +62,8 @@ afterAll(async () => {
   await rm(testDir, { recursive: true, force: true });
 });
 
+afterEach(() => vi.restoreAllMocks());
+
 describe('analyzeFrames integration', () => {
   it(
     'returns ScoreEdge[] with correct sourceId/targetId pairs',
@@ -72,6 +74,8 @@ describe('analyzeFrames integration', () => {
           count: 5,
           threshold: 0.5,
           pruneMode: 'threshold-with-cap',
+          sheet: null,
+          includeEdges: false,
           outputPath: testDir,
           fps: DEFAULT_FPS,
           maxFrames: DEFAULT_MAX_FRAMES,
@@ -90,7 +94,8 @@ describe('analyzeFrames integration', () => {
         emitProgress: () => {},
       };
 
-      const { edges, animations } = await analyzeFrames(ctx);
+      const tracker = vi.spyOn(IoUTracker.prototype, 'update');
+      const { edges, animations, analysisResolution } = await analyzeFrames(ctx);
 
       // Should produce N-1 edges for N frames
       expect(edges).toHaveLength(frameNodes.length - 1);
@@ -99,6 +104,19 @@ describe('analyzeFrames integration', () => {
       for (let i = 0; i < edges.length; i++) {
         expect(edges[i].sourceId).toBe(i);
         expect(edges[i].targetId).toBe(i + 1);
+        const change = edges[i].change;
+        expect(change).toBeDefined();
+        const clusters = tracker.mock.calls[i][0];
+        const animated: Set<number> = tracker.mock.results[i].value;
+        expect(change!.regions).toEqual(clusters.filter((_, index) => !animated.has(index)));
+        expect(change!.animatedRegions).toEqual(clusters.filter((_, index) => animated.has(index)));
+        expect(change!.regions.length + change!.animatedRegions.length).toBe(clusters.length);
+        for (const box of [...change!.regions, ...change!.animatedRegions]) {
+          expect(box.x).toBeGreaterThanOrEqual(0);
+          expect(box.y).toBeGreaterThanOrEqual(0);
+          expect(box.x + box.width).toBeLessThanOrEqual(analysisResolution.width);
+          expect(box.y + box.height).toBeLessThanOrEqual(analysisResolution.height);
+        }
       }
     },
     TIMEOUT,
@@ -113,6 +131,8 @@ describe('analyzeFrames integration', () => {
           count: 5,
           threshold: 0.5,
           pruneMode: 'threshold-with-cap',
+          sheet: null,
+          includeEdges: false,
           outputPath: testDir,
           fps: 5,
           maxFrames: 300,

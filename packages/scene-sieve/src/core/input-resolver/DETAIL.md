@@ -11,6 +11,7 @@
 - 먼저 `validateOptions(options)`를 호출한다.
 - 생략된 옵션에는 `../../constants/pipeline-defaults.ts`의 기본값을 적용한다. 값과 규칙은 `../../DETAIL.md`의 Options 표를 따른다(`count` 20, `threshold` 0.5 등).
 - `pruneMode`는 항상 `'threshold-with-cap'`이다.
+- `sheet` 생략·false는 null, true는 기본 설정, 객체는 누락한 하위 필드의 기본값을 채운다. `includeEdges` 생략은 false다.
 - `outputPath`가 없으면 file 모드에서 입력 경로로부터 유도한다(`deriveOutputPath`).
 
 ### `validateOptions(options: SieveOptions): void` (`validation/validate-options.ts`)
@@ -18,6 +19,7 @@
 - 지정한 숫자 옵션만 검사하며 기본값 적용 전에 실행된다. 검사 표: `count` 정수 ≥ 1, `threshold` 유한 (0, 1], `fps` 유한 > 0, `maxFrames` 정수 ≥ 2, `scale` 정수 ≥ 16, `quality` 정수 1–100, `iouThreshold` 유한 [0, 1], `animationThreshold` 정수 ≥ 1, `maxSegmentDuration` 유한 > 0, `concurrency` 정수 ≥ 1.
 - 위반 시 `Error('<name> must be <requirement>, received: <value>')`를 던진다. 이 메시지는 CLI의 `classifyError`가 `INVALID_INPUT`으로 분류한다.
 - `NaN`은 유한하지 않으므로 거부된다. CLI는 정수 옵션의 소수나 숫자 뒤 쓰레기 문자를 `NaN`으로 넘겨 이 검증에 맡긴다.
+- sheet는 boolean 또는 배열이 아닌 객체여야 한다. 배열과 null은 기본값 적용 전에 거부한다. 객체의 columns·tileWidth·maxTiles는 각각 정수 ≥ 1·16·2, label은 boolean이어야 한다. 오류 이름은 `sheet.columns`처럼 하위 필드까지 포함한다.
 - 이 파일은 export 하나(`validateOptions`)만 가지며 소비자는 `resolveOptions`뿐이다.
 
 ### `resolveInput(options: SieveOptions, workspacePath: string): Promise<{ frames: FrameNode[]; resolvedInputPath?: string }>`
@@ -42,4 +44,4 @@
 
 ## Last Updated
 
-2026-09-10
+2026-09-18

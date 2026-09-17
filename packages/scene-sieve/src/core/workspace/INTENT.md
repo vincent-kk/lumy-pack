@@ -8,12 +8,12 @@
 
 - 경로 규칙(접두사·임시 루트·프레임 파일 패턴·확장자)과 디렉터리 helper는 core가 소유한 organ(workspace-layout 상수, filesystem)에서 가져온다. extractor도 같은 것을 쓰므로 이 프랙탈 안에 두지 않는다.
 - 출력 JPEG는 resize하지 않는다. 추출 이미지 크기가 곧 출력 크기다.
-- 최종 `video`·`animations` 메타데이터는 core가 소유한 `buildVideoMetadata`로 만들고, 파일 모드는 그 결과에 파일 전용 변환(1-based ID, `durationMs` 반올림)만 더한다.
+- 최종 문서와 선택적 시트는 core의 finalizeSelection이 만들어 전달한다. workspace는 JPEG 인코딩과 문서·시트 저장만 수행한다.
 
 ## Boundaries
 
 - 공개 계약은 workspace 생명주기 함수, 입력 저장 함수, `finalizeOutput`, `readFramesAsBuffers`다. 소비자는 orchestrator·segmenter·input-resolver와 `core/index.ts`(CLI 시작 시 `cleanupStaleWorkspaces`)다.
-- 어떤 프레임을 남길지는 pruner가, 프레임 메타데이터의 좌표 변환은 `buildVideoMetadata`가 결정한다. 여기서는 그 결과를 쓰기만 한다.
+- 어떤 프레임을 남길지는 pruner가, 메타데이터 좌표·ID·파일명은 core의 메타데이터 organ이 결정한다. 여기서는 전달된 결과를 쓰기만 한다.
 
 ## Always do
 

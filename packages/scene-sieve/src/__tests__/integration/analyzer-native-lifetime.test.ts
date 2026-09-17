@@ -33,6 +33,8 @@ beforeAll(async () => {
       count: 6,
       threshold: 0.5,
       pruneMode: 'threshold-with-cap',
+      sheet: null,
+      includeEdges: false,
       outputPath: testDir,
       fps: 5,
       maxFrames: 300,

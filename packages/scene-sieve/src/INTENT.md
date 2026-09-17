@@ -6,7 +6,7 @@ scene-sieve 패키지 루트. 라이브러리 공개 API(`extractScenes`)와 CLI
 
 ## Structure
 
-- `cli.ts`는 실행 파일 entry이고 같은 이름의 디렉터리는 CLI 모듈 경계다. 실행 파일이 루트에 남는 이유: `createRequire`로 패키지 manifest를 읽는 상대 경로가 소스와 dist 양쪽에서 성립해야 하고 `dev` 스크립트가 이 위치를 가리킨다. filid 설정에 허용 peer로 선언되어 있다.
+- `cli.ts`는 실행 파일 entry이고 같은 이름의 디렉터리는 CLI 모듈 경계다. 실행 파일이 루트에 남는 이유는 빌드 entry와 `dev` 스크립트가 이 위치를 가리키기 때문이다. filid 설정에 허용 peer로 선언되어 있다.
 
 ## Conventions
 

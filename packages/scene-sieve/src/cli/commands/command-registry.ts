@@ -38,6 +38,16 @@ export const SIEVE_COMMAND: CommandInfo = {
   ],
   options: [
     {
+      flag: '--sheet',
+      description: 'Generate a contact sheet of selected frames',
+      type: 'boolean',
+    },
+    {
+      flag: '--include-edges',
+      description: 'Include candidate edge diagnostics in metadata',
+      type: 'boolean',
+    },
+    {
       flag: '-n, --count <number>',
       description: 'Max number of frames to keep (default: 20)',
       type: 'number',

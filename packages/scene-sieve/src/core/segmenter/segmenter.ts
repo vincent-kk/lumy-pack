@@ -18,7 +18,7 @@ import { concurrencyLimit } from './scheduling/concurrency.js';
 import { logger } from '../../logging/logger.js';
 
 import { analyzeFrames } from '../analyzer/index.js';
-import { buildVideoMetadata } from '../utils/metadata/build-video-metadata.js';
+import { finalizeSelection } from '../utils/output/finalize-selection.js';
 import { extractFramesForRange, getVideoMetadata } from '../extractor/index.js';
 import { resolveInput } from '../input-resolver/index.js';
 import { pruneByThresholdWithCap } from '../pruner/index.js';
@@ -26,8 +26,6 @@ import {
   cleanupWorkspace,
   createSegmentWorkspace,
   createWorkspace,
-  finalizeOutput,
-  readFramesAsBuffers,
 } from '../workspace/index.js';
 
 // ── Pure Functions ──
@@ -253,17 +251,17 @@ function remapEdges(
       if (existingIdx !== undefined) {
         if (edges[existingIdx].score < edge.score) {
           edges[existingIdx] = {
+            ...edge,
             sourceId: newSourceId,
             targetId: newTargetId,
-            score: edge.score,
           };
         }
       } else {
         edgeMap.set(edgeKey, edges.length);
         edges.push({
+          ...edge,
           sourceId: newSourceId,
           targetId: newTargetId,
-          score: edge.score,
         });
       }
     }
@@ -540,20 +538,7 @@ export async function runSegmentedPipeline(
       emitProgress: (percent) => options.onProgress?.('FINALIZING', percent),
     };
 
-    let outputFiles: string[] = [];
-    let outputBuffers: Buffer[] | undefined;
-
-    if (
-      resolvedOptions.mode === 'buffer' ||
-      resolvedOptions.mode === 'frames'
-    ) {
-      outputBuffers = await readFramesAsBuffers(
-        prunedFrames,
-        resolvedOptions.quality,
-      );
-    } else {
-      outputFiles = await finalizeOutput(ctx, prunedFrames);
-    }
+    const finalized = await finalizeSelection(ctx, prunedFrames);
 
     options.onProgress?.('FINALIZING', 100);
 
@@ -561,18 +546,17 @@ export async function runSegmentedPipeline(
       `Segmented pipeline: ${prunedFrames.length} scenes from ${frames.length} frames (${segments.length} segments)`,
     );
 
-    const outputMetadata = await buildVideoMetadata(
-      ctx,
-      prunedFrames,
-      analysisResolution,
-    );
     return {
       success: true,
       originalFramesCount: frames.length,
       prunedFramesCount: prunedFrames.length,
-      outputFiles,
-      outputBuffers,
-      ...outputMetadata,
+      outputFiles: finalized.outputFiles,
+      outputBuffers: finalized.outputBuffers,
+      video: finalized.document.video,
+      animations: finalized.animations,
+      frames: finalized.document.frames,
+      ...(finalized.document.sheet ? { sheet: finalized.document.sheet } : {}),
+      ...(finalized.sheetBuffer ? { sheetBuffer: finalized.sheetBuffer } : {}),
       executionTimeMs: Date.now() - pipelineStart,
     };
   } catch (error) {

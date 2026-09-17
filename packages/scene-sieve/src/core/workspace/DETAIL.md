@@ -21,11 +21,11 @@
 ### 출력
 
 - `readFramesAsBuffers(frameNodes: FrameNode[], quality: number): Promise<Buffer[]>` — 각 `extractPath`를 지정한 품질의 JPEG(mozjpeg)로 인코딩해 순서대로 돌려준다. buffer·frames 모드의 반환값이다.
-- `finalizeOutput(ctx: ProcessContext, frames: FrameNode[]): Promise<string[]>` — 파일 모드 출력.
+- `finalizeOutput(ctx: ProcessContext, frames: FrameNode[], document: SieveMetadata, sheetBuffer?: Buffer): Promise<string[]>` — 조립된 문서와 선택적 시트를 받는 파일 모드 출력. 문서 프레임 수와 선택 수가 다르면 쓰기 전에 오류를 던진다.
   - `ctx.options.quality`로 각 프레임을 staging 디렉터리에 JPEG로 쓴다. resize하지 않으므로 추출 이미지와 출력 JPEG의 크기가 같다.
-  - `.metadata.json`을 함께 쓴다. `video`와 출력 좌표계 `animations`는 `buildVideoMetadata(ctx, frames, analysisResolution)`(core organ `utils/metadata/`, 계약은 `core/DETAIL.md`)의 결과를 쓰되, 파일 전용으로 프레임·animation ID를 1-based로 바꾸고 `timestampMs`·`durationMs`를 정수로 반올림한다. API 결과의 0-based ID는 바꾸지 않는다.
+  - 이름은 `document.frames[i].fileName`을 그대로 쓰고 메타데이터를 생성하거나 변환하지 않는다. `.metadata.json`에는 `JSON.stringify(document, null, 2)`를 쓰고 sheetBuffer가 있으면 `sheet.jpg`로 저장한다.
   - 기존 출력 디렉터리를 `rm -rf`한 뒤 staging을 `rename`한다. 삭제와 rename 전체는 원자적 교체가 아니다.
-  - 반환 배열은 최종 출력 디렉터리 안의 JPEG 경로를 선택 순서대로 담고, 마지막에 `.metadata.json` 경로를 포함한다.
+  - 반환 순서는 선택 JPEG 경로들, sheet.jpg(있을 때), .metadata.json(항상 마지막)이다.
 
 ## Acceptance Criteria
 
@@ -48,4 +48,4 @@
 
 ## Last Updated
 
-2026-09-10
+2026-09-18
