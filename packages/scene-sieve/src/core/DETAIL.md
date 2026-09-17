@@ -8,10 +8,10 @@
 
 ### Entry
 
-- `core/index.ts`는 자식 프랙탈 entry(`orchestrator`, `analyzer`, `extractor`, `pruner`, `input-resolver`, `segmenter`, `workspace`)의 심볼을 이름으로 재수출한다. 와일드카드 재수출은 쓰지 않는다.
+- `index.ts`는 자식 프랙탈 entry(`orchestrator`, `analyzer`, `extractor`, `pruner`, `input-resolver`, `segmenter`, `workspace`)의 심볼을 이름으로 재수출한다. 와일드카드 재수출은 쓰지 않는다.
 - 공개 메타데이터·시트 타입은 소스 루트의 타입 organ에서 이름으로 재수출해 라이브러리와 CLI가 같은 계약을 참조한다.
 - 라이브러리·CLI·벤치 같은 core 밖의 소비자는 집합 entry만 import한다. 검증 파일은 예외로 concrete 파일을 직접 import한다.
-- 형제 프랙탈끼리는 상대 entry(`../<name>/index.js`)만 import한다. `core/index.ts`를 거쳐 형제를 import하지 않는다.
+- 형제 프랙탈끼리는 상대 entry(`../<name>/index.js`)만 import한다. 이 모듈의 집합 진입점 `index.ts`를 거쳐 형제를 import하지 않는다.
 
 ### 파이프라인 순서
 
@@ -90,7 +90,7 @@
 ### entry-boundary — 진입점 규칙
 
 - [ ] core 밖 소스에서 `core/<child>/…` concrete 파일을 import하는 곳이 없다(검증 파일 제외).
-- [ ] `core/index.ts`의 런타임 공개 심볼 집합은 자식 entry 심볼의 부분집합이며 타입은 소스 루트의 공유 계약만 재수출한다.
+- [ ] `index.ts`의 런타임 공개 심볼 집합은 자식 entry 심볼의 부분집합이며 타입은 소스 루트의 공유 계약만 재수출한다.
 
 ## History
 
