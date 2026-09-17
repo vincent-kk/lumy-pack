@@ -29,7 +29,7 @@
 - `buildVideoMetadata`만 sharp 읽기를 수행한다. `scaleBoundingBox`는 축별 배율을 적용해 원점과 크기를 각각 정수 반올림하고, 원점을 출력 범위로, 크기를 변환 원점부터 출력 끝까지로 clamp한다. 입력 animations는 변경하지 않는다.
 - 0×0 분석 해상도는 animation이 없는 조기 반환 경로를 나타내며 변환을 건너뛴다.
 - 최종 소비자는 `utils/output/finalize-selection.ts`이며 일반·세그먼트 경로가 공유하므로 소유자는 core다. API animations는 0-based를 유지하고 `buildSieveMetadata`가 문서용 1-based ID와 정수 durationMs로 변환한다.
-- `change/union-area.ts`의 `unionArea`는 고유 x·y 경계를 정렬해 덮인 셀의 면적을 합한다. 빈 입력과 폭·높이가 양수가 아닌 상자는 면적 0이다.
+- `unionArea`는 x축 스위프와 압축된 y축 구간의 피복 길이를 사용해 전체 사각형 합집합의 면적을 계산한다. n개 상자에 시간 O(n log n), 추가 공간 O(n)을 사용하며 영역을 샘플링하거나 잘라내지 않는다. 빈 입력과 폭·높이가 양수가 아닌 상자는 면적 0이다.
 - `selectRegions`는 출력 좌표가 완전히 같은 상자를 중복 제거하고 면적 내림차순, y·x·width 오름차순으로 정렬해 최대 5개를 남긴다. 면적 0은 제외한다.
 - `buildFrameChange`는 구간의 원시 G(t) 최댓값·합을 소수 6자리로 반올림한다. `animationIndices` 밖 클러스터만 면적·영역에 기여하며 change 없는 간선도 점수에는 기여한다. 면적은 분석 좌표에서 전체 bbox의 실제 합집합을 계산하고 이미지 면적으로 나눠 [0,1] clamp 후 소수 4자리로 반올림한다. 분석 해상도가 0이면 면적 0·빈 영역이다.
 - `buildFrameMetadata`는 후보 순서의 인접 쌍을 graph의 ID 조회로 모아 선택 구간을 집계하고 누락 간선은 건너뛴다. 첫 change는 null이며 fromFrameId는 직전 선택의 1-based ID, skippedCandidates는 사이 후보 수다. 이름은 후보 수 자릿수(최소 4자리)의 `frame_<id+1>.jpg`이고 timestampMs는 정수 반올림한다. holdsMs는 다음 선택 timestampMs까지, 마지막은 원본 길이까지의 차이를 0 이상으로 제한한다.
@@ -49,7 +49,7 @@
 
 - `finalizeSelection(ctx, selected)`은 컨텍스트를 변경하지 않고 buildVideoMetadata를 한 번 호출한다. sheet 설정이 있고 선택이 비어 있지 않으며 출력 가로·세로가 양수일 때 시트를 렌더한다. 이어 buildSieveMetadata로 문서를 조립한다.
 - file 모드는 workspace entry의 finalizeOutput에 문서와 시트 바이트를 전달하고, buffer/frames 모드는 readFramesAsBuffers를 호출한다. 반환값은 outputFiles·선택적 outputBuffers·document·0-based animations이며 sheetBuffer는 메모리 모드에서 시트를 렌더했을 때만 키를 생성한다.
-- 런타임 버전은 소스 루트의 PACKAGE_VERSION을 사용한다. source와 dist에서 manifest 상대 경로를 동일하게 풀기 위한 위치다.
+- 런타임 버전은 공통 조상 src의 constants organ이 제공하는 PACKAGE_VERSION을 사용한다. 이 내부 상수는 CLI와 metadata가 같은 설치 패키지 버전을 보고하도록 manifest를 실행 시 읽는다.
 - 문서는 실행 시간·임시 경로를 포함하지 않는다. 동일 입력·출처 basename·선택 파라미터·sheet/includeEdges 설정이면 .metadata.json 바이트가 같으며 concurrency는 결과에 영향을 주지 않는다. 시트 바이트 동일성은 같은 기계·sharp·폰트 범위다.
 
 ### 프레임 예산과 격자 (extractor ↔ segmenter)

@@ -7,7 +7,7 @@ import {
   SieveErrorCode,
 } from './cli/index.js';
 
-import { PACKAGE_VERSION as version } from './package-version.js';
+import { PACKAGE_VERSION as version } from './constants/package-version.js';
 
 const program = new Command();
 

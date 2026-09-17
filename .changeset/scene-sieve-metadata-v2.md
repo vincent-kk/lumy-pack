@@ -9,3 +9,5 @@ Add optional contact sheets through `sheet` / `--sheet` and candidate edge diagn
 The exported `ResolvedOptions` type gains required `sheet` and `includeEdges` members, and `VideoMetadata` gains required `candidatesCount`, `selectedCount` and `source` members, so TypeScript consumers constructing these literals must supply them.
 
 Keep frame selection, existing video semantics and zero-based API animation IDs unchanged. Metadata documents use deterministic key ordering and numeric rounding; document frame and animation IDs remain one-based.
+
+Compute rectangle union areas with an O(n log n) sweep to keep metadata generation scalable when many regions accumulate between selected frames, and reject arrays passed as sheet options.

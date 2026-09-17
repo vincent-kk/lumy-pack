@@ -35,8 +35,9 @@ export function validateOptions(options: SieveOptions): void {
 
   const sheet = options.sheet;
   if (sheet === undefined || typeof sheet === 'boolean') return;
-  if (sheet === null || typeof sheet !== 'object') {
-    throw new Error(`sheet must be a boolean or an object, received: ${sheet}`);
+  if (sheet === null || typeof sheet !== 'object' || Array.isArray(sheet)) {
+    const received = Array.isArray(sheet) ? 'array' : String(sheet);
+    throw new Error(`sheet must be a boolean or an object, received: ${received}`);
   }
   const sheetRules = [['columns', 1], ['tileWidth', 16], ['maxTiles', 2]] as const;
   for (const [name, min] of sheetRules) {

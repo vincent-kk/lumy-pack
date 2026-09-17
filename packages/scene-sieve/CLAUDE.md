@@ -30,7 +30,7 @@ index.ts → core/index.ts → core/orchestrator/index.ts
                         → pipeline stage entry points
 ```
 
-The CLI executable stays at the source root so package-manifest resolution works in both source and bundled execution. Pipeline stages import sibling modules through their entry points. Internal helpers belong to the lowest common owning module: logging and option defaults belong to the source root; filesystem and metadata helpers are grouped by topic under core/utils to distinguish them from pipeline fractals; scoring and heap operations belong to the pruner.
+The CLI executable stays at the source root because the build entry and development script address it there. The shared runtime version lives in the root constants organ and resolves the manifest in both source and bundled execution. Pipeline stages import sibling modules through their entry points. Internal helpers belong to the lowest common owning module: logging and option defaults belong to the source root; filesystem and metadata helpers are grouped by topic under core/utils to distinguish them from pipeline fractals; scoring and heap operations belong to the pruner.
 
 ### Pipeline (`core/orchestrator/orchestrator.ts`)
 

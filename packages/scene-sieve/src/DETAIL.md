@@ -46,6 +46,7 @@
 
 ### Metadata consistency
 
+- 런타임 버전 상수는 CLI와 core의 최하위 공통 소유자인 src의 constants organ에 둔다. 소스 모듈에서는 두 단계 위, 번들에서는 한 단계 위의 package manifest를 읽으며 빌드 시 버전을 고정하지 않는다.
 - v2 문서는 `metadataVersion: 2`와 도구 버전·아홉 선택 파라미터를 기록한다. `VideoMetadata`는 후보 수·선택 수와 입력 basename·모드를 포함한다.
 - `SieveResult.frames`는 파일 문서와 같은 1-based 프레임 메타데이터이며 `holdsMs`와 직전 선택 프레임부터의 `change`를 담는다. 선택적 `sheet`는 시트 배치이며 `sheetBuffer`는 buffer/frames 모드의 JPEG다.
 - `sheet: true`는 columns 4, tileWidth 320, maxTiles 40, label true로 해석한다. 객체는 생략한 하위 필드만 기본값을 받고 false·생략은 비활성화한다.

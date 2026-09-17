@@ -1,4 +1,4 @@
-import { PACKAGE_VERSION } from '../../../package-version.js';
+import { PACKAGE_VERSION } from '../../../constants/package-version.js';
 import type { AnimationMetadata, FrameNode, ProcessContext, SieveMetadata } from '../../../types/index.js';
 import { finalizeOutput, readFramesAsBuffers } from '../../workspace/index.js';
 

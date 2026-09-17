@@ -10,7 +10,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { extractScenes } from '../../index.js';
 import { fileExists } from '../../core/utils/filesystem/paths.js';
-import { PACKAGE_VERSION } from '../../package-version.js';
+import { PACKAGE_VERSION } from '../../constants/package-version.js';
 import type { SieveMetadata } from '../../types/index.js';
 
 const execAsync = promisify(exec);
