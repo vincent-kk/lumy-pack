@@ -22,13 +22,20 @@
 
 - `utils/` groups internal support so it is visually distinct from pipeline fractals. Filesystem and metadata helpers retain topic subdirectories and remain owned by core; consumers within core import their concrete files. This grouping adds no public entry point.
 
-### `buildVideoMetadata(ctx, selected, analysisResolution)` (organ `utils/metadata/`)
+### 메타데이터 organ `utils/metadata/`
 
 - 첫 선택 프레임(없으면 첫 후보)의 sharp metadata 크기, `ctx.effectiveFps`, `ctx.sourceDurationSec`으로 `video`를 만든다. JPEG 출력은 resize하지 않으므로 추출 이미지와 출력 JPEG의 크기가 같다. 후보가 없으면 0×0이다.
 - video에는 후보 수·선택 수와 입력 출처를 포함한다. file 출처는 basename만 기록하며 buffer/frames 출처의 fileName은 null이다.
-- bbox 변환은 이 함수에서만 수행한다. 축별 배율 `sx = outputWidth / analysisWidth`, `sy = outputHeight / analysisHeight`를 적용해 정수 반올림하고 출력 범위로 clamp한다. 입력 animations를 변경하지 않고 새 배열과 bbox를 반환한다.
+- `buildVideoMetadata`만 sharp 읽기를 수행한다. `scaleBoundingBox`는 축별 배율을 적용해 원점과 크기를 각각 정수 반올림하고, 원점을 출력 범위로, 크기를 변환 원점부터 출력 끝까지로 clamp한다. 입력 animations는 변경하지 않는다.
 - 0×0 분석 해상도는 animation이 없는 조기 반환 경로를 나타내며 변환을 건너뛴다.
-- 세 소비자(orchestrator, segmenter, workspace)가 이 함수를 쓰므로 organ의 주소는 core다. API 결과는 0-based animation ID를 유지하고, 파일 metadata 변환(1-based, durationMs 반올림)은 workspace가 맡는다.
+- 최종 소비자는 `utils/output/finalize-selection.ts`이며 일반·세그먼트 경로가 공유하므로 소유자는 core다. API animations는 0-based를 유지하고 `buildSieveMetadata`가 문서용 1-based ID와 정수 durationMs로 변환한다.
+- `change/union-area.ts`의 `unionArea`는 고유 x·y 경계를 정렬해 덮인 셀의 면적을 합한다. 빈 입력과 폭·높이가 양수가 아닌 상자는 면적 0이다.
+- `selectRegions`는 출력 좌표가 완전히 같은 상자를 중복 제거하고 면적 내림차순, y·x·width 오름차순으로 정렬해 최대 5개를 남긴다. 면적 0은 제외한다.
+- `buildFrameChange`는 구간의 원시 G(t) 최댓값·합을 소수 6자리로 반올림한다. `animationIndices` 밖 클러스터만 면적·영역에 기여하며 change 없는 간선도 점수에는 기여한다. 면적은 분석 좌표에서 전체 bbox의 실제 합집합을 계산하고 이미지 면적으로 나눠 [0,1] clamp 후 소수 4자리로 반올림한다. 분석 해상도가 0이면 면적 0·빈 영역이다.
+- `buildFrameMetadata`는 후보 순서의 인접 쌍을 graph의 ID 조회로 모아 선택 구간을 집계하고 누락 간선은 건너뛴다. 첫 change는 null이며 fromFrameId는 직전 선택의 1-based ID, skippedCandidates는 사이 후보 수다. 이름은 후보 수 자릿수(최소 4자리)의 `frame_<id+1>.jpg`이고 timestampMs는 정수 반올림한다. holdsMs는 다음 선택 timestampMs까지, 마지막은 원본 길이까지의 차이를 0 이상으로 제한한다.
+- `buildToolMetadata`는 fps, count, threshold, scale, quality, maxFrames, iouThreshold, animationThreshold, maxSegmentDuration 아홉 params를 순서대로 담는다. fps는 요청값이며 concurrency·경로·debug·sheet·includeEdges는 제외한다.
+- `buildEdgeMetadata`는 graph 순서와 1-based ID를 유지하고 점수를 6자리, 비애니메이션·애니메이션 합집합 비율을 각각 4자리로 반올림한다. change가 없으면 비율은 0이다.
+- `buildSieveMetadata`는 순수 조립 함수다. 키 순서는 metadataVersion, tool, video, frames, animations, sheet, edges이며 선택적 키는 해당할 때만 생성한다(undefined 대입 금지). video에 후보 수·선택 수와 source를 채우고 fileName은 file 모드 basename만, 다른 모드는 null이다. 입력 객체와 배열을 변경하지 않는다.
 
 ### 프레임 예산과 격자 (extractor ↔ segmenter)
 
@@ -57,7 +64,7 @@
 
 ### metadata-transform — 출력 좌표계
 
-- [ ] API와 파일 metadata의 animation bbox는 모두 출력 픽셀 좌표이며 `buildVideoMetadata` 한 곳에서 변환된다.
+- [ ] API와 파일 metadata의 bbox는 모두 출력 픽셀 좌표이며 `scaleBoundingBox` 한 곳에서 변환된다.
 - [ ] 0·1프레임 결과에서도 metadata 생성이 성공한다. 후보가 없으면 `video.resolution`은 0×0, 후보가 하나면 실제 이미지 크기다. 분석을 생략한 두 경우의 `analysisResolution`은 모두 0×0이다.
 
 ### resource-safety — 핸들 해제와 순수성

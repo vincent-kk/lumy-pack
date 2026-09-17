@@ -86,6 +86,9 @@ describe('extractScenes E2E pipeline', () => {
         originalDurationMs: 2000,
         fps: 2,
         resolution: { width: actual.width, height: actual.height },
+        candidatesCount: result.originalFramesCount,
+        selectedCount: result.prunedFramesCount,
+        source: { fileName: `portrait-${maxSegmentDuration}.mp4`, mode: 'file' },
       });
       expect(result.video).toEqual(metadata.video);
       expect(actual.width).toBe(240);
@@ -114,6 +117,9 @@ describe('extractScenes E2E pipeline', () => {
         resolution: count
           ? { width: 101, height: 67 }
           : { width: 0, height: 0 },
+        candidatesCount: count,
+        selectedCount: count,
+        source: { fileName: null, mode: 'frames' },
       });
       expect(result.animations).toEqual([]);
     },
