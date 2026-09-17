@@ -40,7 +40,7 @@ Five sequential stages. `ProcessContext` holds pipeline state:
 2. **Extract** — Extracts frames on an FFmpeg FPS grid; file/buffer candidates obey the strict `maxFrames` cap. Effective FPS is `min(fps, maxFrames / duration)`, with no 0.5 FPS floor.
 3. **Analyze** — Computes information gain G(t) for adjacent frame pairs, producing a `ScoreEdge[]` graph
 4. **Prune** — Selects meaningful frames from the G(t) graph (pure functions, no I/O)
-5. **Finalize** — Deletes existing output before renaming staging (file mode), or returns Buffers (buffer/frames mode)
+5. **Finalize** — `core/utils/output/finalize-selection.ts` builds metadata v2 and the optional contact sheet, then delegates delete-before-rename file output or returns Buffers for buffer/frames mode.
 
 ### Three input modes (Discriminated Union)
 

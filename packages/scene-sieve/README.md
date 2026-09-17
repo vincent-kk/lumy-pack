@@ -14,7 +14,7 @@ Video/GIF ──▶ Extract (FFmpeg) ──▶ Analyze (OpenCV) ──▶ Prune 
 ## Features
 
 - **Animation Tracking** — Detects and records loading spinners or other repetitive animations
-- **Rich Metadata** — Generates `.metadata.json` with scene timestamps and animation details
+- **Change signals and contact sheets** — Metadata v2 records regions, raw scores and holds, with an optional `sheet.jpg` overview
 - **Smart frame selection** — Identifies visually significant scene changes, not just evenly-spaced samples
 - **Computer vision pipeline** — AKAZE feature detection, DBSCAN clustering, IoU tracking, and information gain scoring
 - **Three input modes** — File path, video Buffer, or pre-extracted frame Buffers
@@ -91,6 +91,8 @@ scene-sieve <input> [options]
 | `-it, --iou-threshold <number>`| IoU threshold for animation tracking (0–1)      | `0.9`                        |
 | `-at, --anim-threshold <number>`| Min consecutive frames for animation            | `5`                          |
 | `--debug`                      | Preserve temp workspace for inspection          | `false`                      |
+| `--sheet` | Generate a selected-frame contact sheet | `false` |
+| `--include-edges` | Include candidate edge diagnostics in metadata | `false` |
 
 ### Supported Formats
 
@@ -294,6 +296,8 @@ interface SieveOptionsBase {
   animationThreshold?: number; // Min frames for animation (default: 5)
   maxSegmentDuration?: number; // Segment duration in seconds (default: 300)
   concurrency?: number; // Parallel segment workers (default: 2)
+  sheet?: boolean | SheetOptions; // Contact sheet (default: false)
+  includeEdges?: boolean; // Candidate edge diagnostics (default: false)
   debug?: boolean; // Preserve temp workspace (default: false)
   onProgress?: (phase: ProgressPhase, percent: number) => void;
 }
@@ -312,6 +316,8 @@ Supplied numeric options are validated before defaults; invalid values produce `
 | `fps`, `maxSegmentDuration` | Finite positive number (decimals allowed) |
 | `threshold` | Finite (0, 1] |
 | `iouThreshold` | Finite [0, 1] |
+| `sheet` | Boolean or `SheetOptions`: columns integer ≥ 1, tileWidth integer ≥ 16, maxTiles integer ≥ 2, label boolean. Default false; enabled defaults 4, 320, 40, true |
+| `includeEdges` | Boolean, default false |
 
 All images in frames input must share the same width and height. Empty arrays and single images are accepted.
 
@@ -326,9 +332,14 @@ interface SieveResult {
   outputBuffers?: Buffer[]; // JPEG buffers (buffer/frames mode)
   animations?: AnimationMetadata[]; // Detected animations
   video?: VideoMetadata; // Video source metadata
+  frames?: FrameMetadata[]; // Same one-based frames as the metadata document
+  sheet?: SheetMetadata; // Present only when a sheet was rendered
+  sheetBuffer?: Buffer; // JPEG sheet in buffer/frames modes only
   executionTimeMs: number;
 }
 ```
+
+`frames[i]` pairs with `outputBuffers[i]`; fileName remains the same deterministic file-mode label for in-memory output. API frames[].frameId is one-based, while API animations[].startFrameId and endFrameId remain zero-based. Document animation IDs are one-based.
 
 ### Pruning Strategies
 
@@ -352,40 +363,92 @@ const result = await extractScenes({
 
 ## Output Metadata
 
-When running in `file` mode, `scene-sieve` generates a `.metadata.json` file in the output directory.
+File mode writes a v2 `.metadata.json` beside the selected JPEGs. Existing fields retain their meaning; treat a document without `metadataVersion` as v1. The package exports `SieveMetadata`, `FrameMetadata`, `FrameChange`, `EdgeMetadata`, `EdgeChange`, `ToolMetadata`, `ToolParams`, `SheetMetadata`, `SheetOptions`, `VideoMetadata` and `AnimationMetadata`.
 
-`SieveResult.video` and file metadata use the same values:
+`tool.name` and `tool.version` identify the runtime package. `tool.params` contains exactly nine fields in the order shown below. Its `fps` is the requested value; `video.fps` is the effective value. Cache selected frames using input identity, tool version and these params. Include sheet settings and `includeEdges` when caching complete output bundles, because those output options are excluded from params.
 
-- `originalDurationMs`: ffprobe source duration for file/buffer; the last candidate timestamp for frames input.
-- `fps`: effective extraction FPS, rather than the requested value. Frames input uses 1, also used by animation tracking.
-- `resolution`: actual output JPEG dimensions of the first selected frame, falling back to the first candidate or 0×0 when empty.
-- `frames[].timestampMs`: extraction-grid time in milliseconds; frames input uses one-second intervals.
-- `animations[].boundingBox`: output-image pixel coordinates, scaled independently on each axis from analysis coordinates, rounded to integers, and clamped to the output bounds. File frame IDs are 1-based; API animation IDs are 0-based.
+`SieveResult.video` and the document share these values:
+
+- `originalDurationMs`: ffprobe duration for file/buffer, or the last candidate timestamp for frames input.
+- `fps`: effective sampling frequency; frames input and its animation tracker use 1.
+- `resolution`: actual output JPEG size of the first selection, falling back to the first candidate or 0×0.
+- `candidatesCount` and `selectedCount`: counts before and after pruning.
+- `source`: input mode and basename only; `fileName` is null for buffer/frames input.
+
+Each `frames[]` entry has a one-based step and candidate ID, a deterministic `fileName`, rounded `timestampMs`, and `holdsMs`: time until the next selected frame, or until the source end for the last frame, clamped to zero. Frames input uses one-second candidate intervals.
+
+The first frame has `change: null`. Later entries aggregate every available adjacent candidate edge from the previous selection to this one:
+
+| Field | Meaning |
+| --- | --- |
+| `fromFrameId` | Previous selected candidate ID, one-based |
+| `skippedCandidates` | Pruned candidates between the selections |
+| `peakScore`, `sumScore` | Maximum and sum of raw G(t), before pruning normalization |
+| `areaRatio` | Exact union area of all non-animation cluster boxes divided by analysis image area, clamped to [0,1] |
+| `regions` | Up to five distinct largest boxes in integer output pixels, sorted by area descending, then y, x and width ascending |
+
+Area is computed in analysis coordinates before output rounding. It is an absolute box-area fraction, distinct from both feature-density G(t) and video-relative normalized pruning scores. Overlapping boxes contribute only once. Region boxes use the same axis-specific scaling, rounding and clamping as `animations[].boundingBox`.
+
+Animation exclusion follows `animationIndices`: exactly the clusters the tracker classified as animation and discounted in G(t) for that pair. Earlier observations can remain in change regions before the tracker recognizes repetition; there is no retrospective removal based on the final animation list. Failed pairs contribute their fallback score without boxes.
+
+`includeEdges: true` (CLI `--include-edges`) appends `edges[]` in candidate graph order with `sourceFrameId`, `targetFrameId` (one-based), raw `score`, `areaRatio` and `animatedAreaRatio`. The key is absent by default.
+
+Use `sheet: true` or CLI `--sheet` for `sheet.jpg`. API defaults are `{ columns: 4, tileWidth: 320, maxTiles: 40, label: true }`; partial objects override individual fields. Tiles preserve the output aspect ratio with a white background and 4px gaps/margins. Labels read `#<frameId> mm:ss.s` with tenths truncated. Excess tiles are sampled uniformly, always including the first and last selection. `sheet` records the effective columns, tile dimensions, one-based tile `frameIds` and `sampled`. File output order is frame JPEGs, optional sheet, then metadata. Buffer/frames mode returns `sheetBuffer`; absent or empty sheets create neither `sheet` nor `sheetBuffer` keys.
+
+Metadata keys have a fixed order. Area ratios round to four decimals; raw scores round to six. Trailing zeroes are not preserved by JSON. Identical input bytes, basename, tool version, params and output options produce identical metadata bytes regardless of concurrency, output directory or execution time. Sheet JPEG determinism is limited to the same machine, sharp version and font environment.
+
+The following complete example was generated from a four-second FFmpeg `testsrc=size=320x240:rate=5` MP4 using:
+
+```bash
+scene-sieve test_input.mp4 --fps 5 -mf 12 -n 2 -t 0.001 -s 320 --sheet
+```
+
+The runtime version is 0.2.0 before the minor changeset is released; these values come from an actual run.
 
 ```json
 {
+  "metadataVersion": 2,
+  "tool": {
+    "name": "@lumy-pack/scene-sieve",
+    "version": "0.2.0",
+    "params": {
+      "fps": 5, "count": 2, "threshold": 0.001, "scale": 320, "quality": 80,
+      "maxFrames": 12, "iouThreshold": 0.9, "animationThreshold": 5,
+      "maxSegmentDuration": 300
+    }
+  },
   "video": {
-    "originalDurationMs": 15000,
-    "fps": 5,
-    "resolution": { "width": 1280, "height": 720 }
+    "originalDurationMs": 4000, "fps": 3,
+    "resolution": { "width": 427, "height": 320 },
+    "candidatesCount": 12, "selectedCount": 2,
+    "source": { "fileName": "test_input.mp4", "mode": "file" }
   },
   "frames": [
     {
-      "step": 1,
-      "fileName": "frame_0001.jpg",
-      "frameId": 1,
-      "timestampMs": 0
+      "step": 1, "fileName": "frame_0001.jpg", "frameId": 1,
+      "timestampMs": 0, "holdsMs": 3667, "change": null
+    },
+    {
+      "step": 2, "fileName": "frame_0012.jpg", "frameId": 12,
+      "timestampMs": 3667, "holdsMs": 333,
+      "change": {
+        "fromFrameId": 1, "skippedCandidates": 10,
+        "peakScore": 0.000833, "sumScore": 0.006784, "areaRatio": 0.1186,
+        "regions": [
+          { "x": 340, "y": 124, "width": 32, "height": 69 },
+          { "x": 32, "y": 240, "width": 64, "height": 32 },
+          { "x": 64, "y": 240, "width": 64, "height": 32 },
+          { "x": 113, "y": 240, "width": 64, "height": 32 },
+          { "x": 145, "y": 240, "width": 64, "height": 32 }
+        ]
+      }
     }
   ],
-  "animations": [
-    {
-      "type": "loading_spinner",
-      "boundingBox": { "x": 100, "y": 200, "width": 50, "height": 50 },
-      "startFrameId": 12,
-      "endFrameId": 25,
-      "durationMs": 2600
-    }
-  ]
+  "animations": [],
+  "sheet": {
+    "fileName": "sheet.jpg", "columns": 2, "tileWidth": 320, "tileHeight": 240,
+    "frameIds": [1, 12], "sampled": false
+  }
 }
 ```
 
