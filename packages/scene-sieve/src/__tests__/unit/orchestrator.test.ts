@@ -62,6 +62,8 @@ const defaultResolvedOptions = {
   count: 20,
   threshold: 0.5,
   pruneMode: 'threshold-with-cap' as const,
+  sheet: null,
+  includeEdges: false,
   outputPath: '/out',
   fps: 5,
   maxFrames: 300,
@@ -147,6 +149,9 @@ describe('runPipeline', () => {
       originalDurationMs: 10000,
       fps: 0.2,
       resolution: { width: 101, height: 67 },
+      candidatesCount: 3,
+      selectedCount: 3,
+      source: { fileName: 'input.mp4', mode: 'file' },
     });
 
     expect(mockExtractFrames).toHaveBeenCalledTimes(1);

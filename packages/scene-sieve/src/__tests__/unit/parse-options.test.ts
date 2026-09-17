@@ -3,6 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { parsePipelineOptions } from '../../cli/options/parse-options.js';
 
 describe('parsePipelineOptions', () => {
+  it('passes sheet and includeEdges flags without supplying omitted flags', () => {
+    const defaults = { fps: '5', maxFrames: '300', scale: '720', quality: '80' };
+    const supplied = parsePipelineOptions({ ...defaults, sheet: true, includeEdges: true });
+    expect(supplied.sheet).toBe(true);
+    expect(supplied.includeEdges).toBe(true);
+    const omitted = parsePipelineOptions(defaults);
+    expect(omitted.sheet).toBeUndefined();
+    expect(omitted.includeEdges).toBeUndefined();
+  });
   it.each([
     ['fps', '0.5', 0.5],
     ['count', '1.5', NaN],

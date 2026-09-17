@@ -27,6 +27,8 @@
 | `animationThreshold` | 5 | 애니메이션 판정 연속 프레임 수 | 정수 ≥ 1 |
 | `maxSegmentDuration` | 300초 | 논리 세그먼트 길이 | 유한 > 0 |
 | `concurrency` | 2 | 세그먼트 병렬 처리 수 | 정수 ≥ 1 |
+| `sheet` | false | 컨택트 시트 생성; true 또는 세부 설정 | columns 정수 ≥ 1, tileWidth 정수 ≥ 16, maxTiles 정수 ≥ 2, label boolean |
+| `includeEdges` | false | 후보 간선 메타데이터 포함 | boolean |
 | `outputPath` | 입력 경로에서 유도 | file 출력 디렉터리 | 별도 숫자 검증 없음 |
 | `debug` | false | 임시 workspace 보존 | 별도 숫자 검증 없음 |
 | `onProgress` | 없음 | 단계별 진행률 콜백 | 별도 숫자 검증 없음 |
@@ -44,6 +46,9 @@
 
 ### Metadata consistency
 
+- v2 문서는 `metadataVersion: 2`와 도구 버전·아홉 선택 파라미터를 기록한다. `VideoMetadata`는 후보 수·선택 수와 입력 basename·모드를 포함한다.
+- `SieveResult.frames`는 파일 문서와 같은 1-based 프레임 메타데이터이며 `holdsMs`와 직전 선택 프레임부터의 `change`를 담는다. 선택적 `sheet`는 시트 배치이며 `sheetBuffer`는 buffer/frames 모드의 JPEG다.
+- `sheet: true`는 columns 4, tileWidth 320, maxTiles 40, label true로 해석한다. 객체는 생략한 하위 필드만 기본값을 받고 false·생략은 비활성화한다.
 - `video.originalDurationMs`는 file/buffer에서 ffprobe 길이(`sourceDurationSec`)를 밀리초로 기록하고, frames에서는 마지막 후보 timestamp를 사용한다.
 - `video.fps`는 `effectiveFps`이며 frames 모드는 1이다. animation tracker도 같은 FPS를 사용한다.
 - `video.resolution`은 첫 선택 프레임(없으면 첫 후보)의 실제 출력 JPEG 크기다. 후보도 없으면 `{ width: 0, height: 0 }`이다.
@@ -79,4 +84,4 @@
 
 ## Last Updated
 
-2026-09-10
+2026-09-18

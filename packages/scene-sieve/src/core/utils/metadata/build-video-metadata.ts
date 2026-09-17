@@ -1,3 +1,5 @@
+import { basename } from 'node:path';
+
 import sharp from 'sharp';
 
 import type {
@@ -45,6 +47,13 @@ export async function buildVideoMetadata(
           ? 1
           : (ctx.effectiveFps ?? ctx.options.fps),
       resolution: { width, height },
+      candidatesCount: ctx.frames.length,
+      selectedCount: selected.length,
+      source: {
+        fileName: ctx.options.mode === 'file' && ctx.options.inputPath
+          ? basename(ctx.options.inputPath) : null,
+        mode: ctx.options.mode,
+      },
     },
     animations: (ctx.animations ?? []).map((animation) => {
       const box = animation.boundingBox;

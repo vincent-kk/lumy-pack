@@ -32,4 +32,21 @@ export function validateOptions(options: SieveOptions): void {
       throw new Error(`${name} must be ${requirement}, received: ${value}`);
     }
   }
+
+  const sheet = options.sheet;
+  if (sheet === undefined || typeof sheet === 'boolean') return;
+  if (sheet === null || typeof sheet !== 'object') {
+    throw new Error(`sheet must be a boolean or an object, received: ${sheet}`);
+  }
+  const sheetRules = [['columns', 1], ['tileWidth', 16], ['maxTiles', 2]] as const;
+  for (const [name, min] of sheetRules) {
+    const value = sheet[name];
+    if (value === undefined) continue;
+    if (!Number.isInteger(value) || value < min) {
+      throw new Error(`sheet.${name} must be an integer >= ${min}, received: ${value}`);
+    }
+  }
+  if (sheet.label !== undefined && typeof sheet.label !== 'boolean') {
+    throw new Error(`sheet.label must be a boolean, received: ${sheet.label}`);
+  }
 }

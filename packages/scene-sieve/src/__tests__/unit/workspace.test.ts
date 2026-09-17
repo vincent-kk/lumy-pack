@@ -131,6 +131,9 @@ describe('finalizeOutput', () => {
           originalDurationMs: 14700,
           fps: 0.2,
           resolution: { width: 101, height: 67 },
+          candidatesCount: frames.length,
+          selectedCount: hasSelection ? 1 : 0,
+          source: { fileName: 'input.gif', mode: 'file' },
         });
       expect
         .soft(
@@ -180,6 +183,8 @@ describe('finalizeOutput', () => {
         count: 5,
         threshold: 0.5,
         pruneMode: 'threshold-with-cap',
+        sheet: null,
+        includeEdges: false,
         outputPath,
         fps: 5,
         maxFrames: 300,
@@ -225,6 +230,8 @@ describe('finalizeOutput', () => {
         count: 5,
         threshold: 0.5,
         pruneMode: 'threshold-with-cap',
+        sheet: null,
+        includeEdges: false,
         outputPath,
         fps: 5,
         maxFrames: 300,

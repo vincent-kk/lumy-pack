@@ -20,7 +20,7 @@ import {
   cleanupStaleWorkspaces,
 } from '../../core/index.js';
 import { classifyError, SieveErrorCode } from '../errors/classify-error.js';
-import type { ProgressPhase, SieveResult } from '../../types/index.js';
+import type { ProgressPhase, SieveResult, SheetOptions } from '../../types/index.js';
 import { SIEVE_COMMAND } from './command-registry.js';
 import { setJsonMode } from '../../logging/logger.js';
 import { parsePipelineOptions } from '../options/parse-options.js';
@@ -61,6 +61,10 @@ export interface SieveViewProps {
   maxSegmentDuration?: number;
   concurrency?: number;
   debug: boolean;
+  /** Contact sheet settings forwarded to the pipeline. */
+  sheet?: boolean | SheetOptions;
+  /** Whether to include candidate edge diagnostics. */
+  includeEdges?: boolean;
 }
 
 export function registerSieveCommand(program: Command, version: string): void {
@@ -107,6 +111,8 @@ export function registerSieveCommand(program: Command, version: string): void {
       cmd.options!.find((o) => o.flag.includes('--concurrency'))!.description,
     )
     .option('--debug', cmd.options!.find((o) => o.flag.includes('--debug'))!.description)
+    .option('--sheet', cmd.options!.find((o) => o.flag === '--sheet')!.description)
+    .option('--include-edges', cmd.options!.find((o) => o.flag === '--include-edges')!.description)
     .option('--json', cmd.options!.find((o) => o.flag.includes('--json'))!.description)
     .option('--describe', cmd.options!.find((o) => o.flag.includes('--describe'))!.description)
     .action(async (input: string, opts: RawCliOptions & { json?: boolean }) => {
@@ -138,6 +144,8 @@ export function registerSieveCommand(program: Command, version: string): void {
             outputFiles: result.outputFiles,
             animations: result.animations ?? [],
             video: result.video ?? null,
+            frames: result.frames ?? [],
+            sheet: result.sheet ?? null,
           };
           respond('extract', data, startTime, version);
         } catch (error) {
@@ -200,6 +208,8 @@ export const SieveView: React.FC<SieveViewProps> = (props) => {
             maxSegmentDuration: props.maxSegmentDuration,
             concurrency: props.concurrency,
             debug: props.debug,
+            ...(props.sheet !== undefined ? { sheet: props.sheet } : {}),
+            includeEdges: props.includeEdges,
           },
           (phase: ProgressPhase, percent: number) => {
             const phaseIdx = phaseKeyToIndex(phase);

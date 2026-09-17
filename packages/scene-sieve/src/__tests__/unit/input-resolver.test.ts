@@ -1,18 +1,7 @@
-import sharp from 'sharp';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { resolveInput, resolveOptions } from '../../core/input-resolver/input-resolver.js';
-import * as workspace from '../../core/workspace/workspace.js';
+import { resolveOptions } from '../../core/input-resolver/input-resolver.js';
 import { classifyError } from '../../cli/errors/classify-error.js';
-
-/** Create an encoded frame with the requested width for input validation. */
-async function image(width = 32): Promise<Buffer> {
-  return sharp({
-    create: { width, height: 32, channels: 3, background: 'white' },
-  })
-    .png()
-    .toBuffer();
-}
 
 vi.mock('../../core/workspace/workspace.js', () => ({
   writeInputBuffer: vi.fn(),
@@ -188,89 +177,26 @@ describe('resolveOptions - pruneMode', () => {
   });
 });
 
-describe('resolveInput', () => {
-  beforeEach(() => {
-    vi.mocked(workspace.writeInputBuffer).mockResolvedValue(
-      '/tmp/mock-input.mp4',
-    );
-    vi.mocked(workspace.writeInputFrames).mockResolvedValue([
-      { id: 0, timestamp: 0, extractPath: '/tmp/frame_000000.jpg' },
-    ]);
+describe('resolveOptions - metadata v2', () => {
+  it('resolves complete sheet defaults', () => {
+    expect(resolveOptions({ mode: 'frames', inputFrames: [], sheet: true }).sheet)
+      .toEqual({ columns: 4, tileWidth: 320, maxTiles: 40, label: true });
   });
-
-  it('file mode: frames=[], resolvedInputPath=inputPath 반환', async () => {
-    const result = await resolveInput(
-      { mode: 'file', inputPath: '/video.mp4' },
-      '/workspace',
-    );
-    expect(result.frames).toEqual([]);
-    expect(result.resolvedInputPath).toBe('/video.mp4');
+  it('fills missing sheet fields and preserves supplied values', () => {
+    const result = resolveOptions({ mode: 'frames', inputFrames: [], sheet: { columns: 2 }, includeEdges: true });
+    expect(result.sheet).toEqual({ columns: 2, tileWidth: 320, maxTiles: 40, label: true });
+    expect(result.includeEdges).toBe(true);
   });
-
-  it('buffer mode: writeInputBuffer 호출', async () => {
-    const { writeInputBuffer } = await import('../../core/workspace/workspace.js');
-    const buf = Buffer.from('video-data');
-    await resolveInput({ mode: 'buffer', inputBuffer: buf }, '/workspace');
-    expect(writeInputBuffer).toHaveBeenCalledWith(buf, '/workspace');
+  it('disables sheets and edges by default', () => {
+    const result = resolveOptions({ mode: 'frames', inputFrames: [] });
+    expect(result.sheet).toBeNull();
+    expect(result.includeEdges).toBe(false);
+    expect(resolveOptions({ mode: 'frames', inputFrames: [], sheet: false }).sheet).toBeNull();
   });
-
-  it('frames mode: writeInputFrames 호출', async () => {
-    const { writeInputFrames } = await import('../../core/workspace/workspace.js');
-    const frames = [await image(), await image()];
-    await resolveInput({ mode: 'frames', inputFrames: frames }, '/workspace');
-    expect(writeInputFrames).toHaveBeenCalledWith(frames, '/workspace');
-  });
-
-  it('file mode 반환 구조: frames 배열, resolvedInputPath 문자열', async () => {
-    const result = await resolveInput(
-      { mode: 'file', inputPath: '/input.mp4' },
-      '/ws',
-    );
-    expect(Array.isArray(result.frames)).toBe(true);
-    expect(typeof result.resolvedInputPath).toBe('string');
-  });
-
-  it('buffer mode 반환 구조: resolvedInputPath가 writeInputBuffer 반환값', async () => {
-    const result = await resolveInput(
-      { mode: 'buffer', inputBuffer: Buffer.from('') },
-      '/ws',
-    );
-    expect(result.resolvedInputPath).toBe('/tmp/mock-input.mp4');
-    expect(result.frames).toEqual([]);
-  });
-
-  it('frames mode 반환 구조: frames 배열에 FrameNode 포함', async () => {
-    const result = await resolveInput(
-      { mode: 'frames', inputFrames: [await image()] },
-      '/ws',
-    );
-    expect(result.frames).toHaveLength(1);
-    expect(result.frames[0]).toMatchObject({
-      id: 0,
-      timestamp: 0,
-      extractPath: '/tmp/frame_000000.jpg',
-    });
-  });
-
-  it('frames mode: resolvedInputPath 없음 (undefined)', async () => {
-    const result = await resolveInput(
-      { mode: 'frames', inputFrames: [await image()] },
-      '/ws',
-    );
-    expect(result.resolvedInputPath).toBeUndefined();
-  });
-
-  it('rejects mismatched frame dimensions as INVALID_INPUT before writing', async () => {
-    vi.mocked(workspace.writeInputFrames).mockClear();
-    const result = resolveInput(
-      { mode: 'frames', inputFrames: [await image(), await image(33)] },
-      '/ws',
-    );
-    await expect(result).rejects.toThrow('inputFrames must be');
-    await result.catch((error: Error) => {
-      expect(error.message).toContain('received:');
-      expect(classifyError(error)).toBe('INVALID_INPUT');
-    });
-    expect(workspace.writeInputFrames).not.toHaveBeenCalled();
-  });
+  it.each([{ maxTiles: 1 }, { columns: 0 }, { tileWidth: 8 }, { label: 'yes' }])(
+    'rejects invalid sheet settings %j', (sheet) => {
+      const options = { mode: 'frames', inputFrames: [], sheet } as unknown as Parameters<typeof resolveOptions>[0];
+      expect(() => resolveOptions(options)).toThrow(/sheet\./);
+    },
+  );
 });

@@ -11,6 +11,10 @@ import {
   DEFAULT_QUALITY,
   DEFAULT_SCALE,
   DEFAULT_SEGMENT_CONCURRENCY,
+  DEFAULT_SHEET_COLUMNS,
+  DEFAULT_SHEET_TILE_WIDTH,
+  DEFAULT_SHEET_MAX_TILES,
+  DEFAULT_SHEET_LABEL,
   DEFAULT_THRESHOLD,
   IOU_THRESHOLD,
 } from '../../constants/pipeline-defaults.js';
@@ -45,6 +49,7 @@ export function resolveOptions(options: SieveOptions): ResolvedOptions {
   const threshold = options.threshold ?? DEFAULT_THRESHOLD;
 
   const pruneMode: ResolvedOptions['pruneMode'] = 'threshold-with-cap';
+  const sheet = typeof options.sheet === 'object' ? options.sheet : {};
 
   return {
     mode,
@@ -63,6 +68,13 @@ export function resolveOptions(options: SieveOptions): ResolvedOptions {
     maxSegmentDuration:
       options.maxSegmentDuration ?? DEFAULT_MAX_SEGMENT_DURATION,
     concurrency: options.concurrency ?? DEFAULT_SEGMENT_CONCURRENCY,
+    sheet: options.sheet ? {
+      columns: sheet.columns ?? DEFAULT_SHEET_COLUMNS,
+      tileWidth: sheet.tileWidth ?? DEFAULT_SHEET_TILE_WIDTH,
+      maxTiles: sheet.maxTiles ?? DEFAULT_SHEET_MAX_TILES,
+      label: sheet.label ?? DEFAULT_SHEET_LABEL,
+    } : null,
+    includeEdges: options.includeEdges ?? false,
   };
 }
 

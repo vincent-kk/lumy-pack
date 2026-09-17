@@ -17,6 +17,8 @@ export type ParsedPipelineOptions = Pick<
     | 'animationThreshold'
     | 'maxSegmentDuration'
     | 'concurrency'
+    | 'sheet'
+    | 'includeEdges'
   >;
 
 export interface RawCliOptions {
@@ -32,6 +34,10 @@ export interface RawCliOptions {
   maxSegmentDuration?: string;
   concurrency?: string;
   debug?: boolean;
+  /** Request a contact sheet with default settings. */
+  sheet?: boolean;
+  /** Request candidate edge diagnostics. */
+  includeEdges?: boolean;
 }
 
 /**
@@ -85,5 +91,7 @@ export function parsePipelineOptions(
         ? parseNumberStrict(opts.concurrency, true)
         : undefined,
     debug: opts.debug ?? false,
+    ...(opts.sheet !== undefined ? { sheet: opts.sheet } : {}),
+    ...(opts.includeEdges !== undefined ? { includeEdges: opts.includeEdges } : {}),
   };
 }
