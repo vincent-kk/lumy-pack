@@ -10,7 +10,7 @@ import type {
 import { logger, setDebugMode } from '../../logging/logger.js';
 
 import { analyzeFrames } from '../analyzer/index.js';
-import { buildVideoMetadata } from '../utils/metadata/build-video-metadata.js';
+import { finalizeSelection } from '../utils/output/finalize-selection.js';
 import { extractFrames } from '../extractor/index.js';
 import { resolveInput, resolveOptions } from '../input-resolver/index.js';
 import { pruneByThresholdWithCap } from '../pruner/index.js';
@@ -18,10 +18,14 @@ import { runSegmentedPipeline, shouldSegment } from '../segmenter/index.js';
 import {
   cleanupWorkspace,
   createWorkspace,
-  finalizeOutput,
-  readFramesAsBuffers,
 } from '../workspace/index.js';
 
+/**
+ * Run the five pipeline stages, delegating segmented inputs to the segmenter.
+ * @param options - Mode-specific input and optional pipeline settings.
+ * @returns Selected outputs with v2 frame metadata and zero-based API animations.
+ * @throws Propagates stage failures after cleaning the workspace unless debug is enabled.
+ */
 export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
   setDebugMode(options.debug ?? false);
 
@@ -106,42 +110,25 @@ export async function runPipeline(options: SieveOptions): Promise<SieveResult> {
     // 5. Finalize output
     ctx.status = 'FINALIZING';
 
-    let outputFiles: string[] = [];
-    let outputBuffers: Buffer[] | undefined;
-
-    if (
-      resolvedOptions.mode === 'buffer' ||
-      resolvedOptions.mode === 'frames'
-    ) {
-      // Return buffers instead of writing to disk
-      outputBuffers = await readFramesAsBuffers(
-        prunedFrames,
-        resolvedOptions.quality,
-      );
-      ctx.emitProgress(100);
-    } else {
-      // 'file' mode: write to output directory
-      outputFiles = await finalizeOutput(ctx, prunedFrames);
-      ctx.emitProgress(100);
-    }
+    const finalized = await finalizeSelection(ctx, prunedFrames);
+    ctx.emitProgress(100);
 
     ctx.status = 'SUCCESS';
     logger.success(
       `Extracted ${prunedFrames.length} scenes from ${ctx.frames.length} frames`,
     );
 
-    const metadata = await buildVideoMetadata(
-      ctx,
-      prunedFrames,
-      analysisResolution,
-    );
     return {
       success: true,
       originalFramesCount: ctx.frames.length,
       prunedFramesCount: prunedFrames.length,
-      outputFiles,
-      outputBuffers,
-      ...metadata,
+      outputFiles: finalized.outputFiles,
+      outputBuffers: finalized.outputBuffers,
+      video: finalized.document.video,
+      animations: finalized.animations,
+      frames: finalized.document.frames,
+      ...(finalized.document.sheet ? { sheet: finalized.document.sheet } : {}),
+      ...(finalized.sheetBuffer ? { sheetBuffer: finalized.sheetBuffer } : {}),
       executionTimeMs: Date.now() - startTime,
     };
   } catch (error) {

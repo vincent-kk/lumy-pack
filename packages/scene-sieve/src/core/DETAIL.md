@@ -45,6 +45,13 @@
 - `renderContactSheet`는 비어 있지 않은 선택과 양수 해상도를 받는다. 타일 높이는 max(1, round(tileWidth × height / width)), 유효 열 수는 min(columns, 타일 수)다. 흰 배경과 타일 간격·외곽 여백은 4px이고 행 우선·마지막 행 왼쪽 정렬이다. 각 이미지는 fit fill로 타일 크기를 맞추고 선택적으로 라벨을 합성한다.
 - JPEG는 입력 quality와 mozjpeg를 사용하며 파일명은 sheet.jpg다. 반환 메타는 유효 열 수·타일 크기·1-based frameIds·sampled를 포함한다. 같은 기계·같은 sharp·폰트에서 동일 입력의 바이트 결정성을 보장하고 플랫폼 간 동일성은 요구하지 않는다.
 
+### 출력 organ `utils/output/`
+
+- `finalizeSelection(ctx, selected)`은 컨텍스트를 변경하지 않고 buildVideoMetadata를 한 번 호출한다. sheet 설정이 있고 선택이 비어 있지 않으며 출력 가로·세로가 양수일 때 시트를 렌더한다. 이어 buildSieveMetadata로 문서를 조립한다.
+- file 모드는 workspace entry의 finalizeOutput에 문서와 시트 바이트를 전달하고, buffer/frames 모드는 readFramesAsBuffers를 호출한다. 반환값은 outputFiles·선택적 outputBuffers·document·0-based animations이며 sheetBuffer는 메모리 모드에서 시트를 렌더했을 때만 키를 생성한다.
+- 런타임 버전은 소스 루트의 PACKAGE_VERSION을 사용한다. source와 dist에서 manifest 상대 경로를 동일하게 풀기 위한 위치다.
+- 문서는 실행 시간·임시 경로를 포함하지 않는다. 동일 입력·출처 basename·선택 파라미터·sheet/includeEdges 설정이면 .metadata.json 바이트가 같으며 concurrency는 결과에 영향을 주지 않는다. 시트 바이트 동일성은 같은 기계·sharp·폰트 범위다.
+
 ### 프레임 예산과 격자 (extractor ↔ segmenter)
 
 - file/buffer 후보 수는 `Math.max(2, maxFrames)` 이하다. `effectiveFps = min(fps, maxFrames / duration)`에 FPS 하한을 두지 않는다.

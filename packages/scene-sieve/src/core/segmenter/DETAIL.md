@@ -35,7 +35,7 @@ frames 입력과 file 모드의 GIF를 제외한 입력을 받아, 원본 길이
 ### `runSegmentedPipeline(options: SieveOptions, resolvedOptions: ResolvedOptions): Promise<SieveResult>`
 
 - `computeSegmentPlan`으로 계획을 만들고 `scheduling/concurrency.ts`의 `concurrencyLimit(resolvedOptions.concurrency)`로 `processSegment`를 병렬 실행한다.
-- 병합 결과에 최종 가지치기를 적용하고, 최종 출력 컨텍스트에는 전역 `effectiveFps`와 원본 `sourceDurationSec`을 둔다. `video`와 출력 좌표계 `animations`는 `buildVideoMetadata`(core organ `utils/metadata/`, 계약은 `core/DETAIL.md`)로 만든다.
+- 병합 결과에 최종 가지치기를 적용하고, 최종 출력 컨텍스트에는 전역 `effectiveFps`와 원본 `sourceDurationSec`을 둔다. Finalize는 일반 경로와 같은 `finalizeSelection`(core의 output organ)에 위임한다. 반환 video·frames·sheet는 문서와 같고 API animations는 0-based를 유지한다. sheetBuffer는 buffer/frames 모드에만 있으며 시트가 없으면 두 시트 키를 모두 생략한다.
 - 세그먼트 workspace 정리는 orchestrator와 같은 debug 규칙을 따른다.
 
 ## Acceptance Criteria

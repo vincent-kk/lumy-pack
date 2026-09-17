@@ -55,6 +55,8 @@
 - `AnalysisResult.analysisResolution`과 `SegmentResult.analysisResolution`은 분석 좌표계 크기를 전달한다. 일반 경로는 `ProcessContext.analysisResolution?`에 보관하며, 분석하지 않은 0·1프레임 결과는 0×0을 사용한다.
 - 반환값과 파일 metadata의 animation bbox는 출력 픽셀 좌표다. 분석 결과는 그대로 두고 출력 단계에서만 `sx = outputWidth / analysisWidth`, `sy = outputHeight / analysisHeight`를 적용해 정수 반올림하고 출력 범위로 clamp한다. 크기는 변환한 원점에서 출력 끝까지로 제한한다.
 - API 결과의 animation ID는 0-based, 파일 metadata의 프레임 ID는 1-based 계약을 유지한다.
+- `SieveResult.frames`는 `.metadata.json`의 frames와 같은 배열이며 buffer/frames 모드에서도 outputBuffers와 순서대로 짝지어진다. 시트가 없으면 sheet·sheetBuffer 키 자체가 없고 file 모드는 sheetBuffer를 반환하지 않는다.
+- `metadataVersion: 2` 문서는 고정 키 순서와 반올림을 사용한다. 동일 입력·출처 basename·params·sheet/includeEdges 설정이면 `.metadata.json` 바이트가 같으며 concurrency·outputPath·debug·실행 시간은 문서 바이트에 영향을 주지 않는다.
 
 ## Acceptance Criteria
 

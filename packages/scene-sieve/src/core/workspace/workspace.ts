@@ -10,10 +10,9 @@ import {
   WORKSPACE_PREFIX,
   getTempWorkspaceDir,
 } from '../constants/workspace-layout.js';
-import type { FrameNode, ProcessContext } from '../../types/index.js';
+import type { FrameNode, ProcessContext, SieveMetadata } from '../../types/index.js';
+import { METADATA_FILE_NAME, SHEET_FILE_NAME } from '../../constants/pipeline-defaults.js';
 import { ensureDir } from '../utils/filesystem/paths.js';
-
-import { buildVideoMetadata } from '../utils/metadata/build-video-metadata.js';
 
 export async function createWorkspace(sessionId: string): Promise<string> {
   const workspacePath = getTempWorkspaceDir(sessionId);
@@ -22,23 +21,33 @@ export async function createWorkspace(sessionId: string): Promise<string> {
   return workspacePath;
 }
 
+/**
+ * Write selected JPEGs and the supplied document before replacing the output directory.
+ * @param ctx - Workspace, quality and destination settings.
+ * @param selectedFrames - Frames paired by position with document.frames.
+ * @param document - Complete metadata, including the output file names.
+ * @param sheetBuffer - Optional JPEG contact sheet bytes to persist unchanged.
+ * @returns Selected JPEG paths, optional sheet path and finally the metadata path.
+ * @throws Rejects mismatched frame counts and propagates image or filesystem errors.
+ */
 export async function finalizeOutput(
   ctx: ProcessContext,
   selectedFrames: FrameNode[],
+  document: SieveMetadata,
+  sheetBuffer?: Buffer,
 ): Promise<string[]> {
+  if (document.frames.length !== selectedFrames.length) {
+    throw new Error('metadata frame count must match selected frame count');
+  }
   const stagingDir = join(ctx.workspacePath, 'output');
   const outputPath = ctx.options.outputPath;
   const quality = ctx.options.quality;
 
   const outputFiles: string[] = [];
-  const framesMetadata = [];
-
-  const totalFramesCount = ctx.frames.length;
-  const padding = Math.max(4, String(totalFramesCount).length);
 
   for (let i = 0; i < selectedFrames.length; i++) {
     const frame = selectedFrames[i];
-    const fileName = `frame_${String(frame.id + 1).padStart(padding, '0')}.jpg`;
+    const fileName = document.frames[i].fileName;
     const destPath = join(stagingDir, fileName);
 
     await sharp(frame.extractPath)
@@ -46,34 +55,16 @@ export async function finalizeOutput(
       .toFile(destPath);
 
     outputFiles.push(join(outputPath, fileName));
-
-    framesMetadata.push({
-      step: i + 1,
-      fileName,
-      frameId: frame.id + 1,
-      timestampMs: Math.round(frame.timestamp * 1000),
-    });
   }
 
-  const { video, animations } = await buildVideoMetadata(
-    ctx,
-    selectedFrames,
-    ctx.analysisResolution,
-  );
-  const metadata = {
-    video,
-    frames: framesMetadata,
-    animations: map(animations, (anim) => ({
-      ...anim,
-      startFrameId: anim.startFrameId + 1,
-      endFrameId: anim.endFrameId + 1,
-      durationMs: Math.round(anim.durationMs),
-    })),
-  };
+  if (sheetBuffer) {
+    await writeFile(join(stagingDir, SHEET_FILE_NAME), sheetBuffer);
+    outputFiles.push(join(outputPath, SHEET_FILE_NAME));
+  }
 
-  const metadataPath = join(stagingDir, '.metadata.json');
-  await writeFile(metadataPath, JSON.stringify(metadata, null, 2));
-  outputFiles.push(join(outputPath, '.metadata.json'));
+  const metadataPath = join(stagingDir, METADATA_FILE_NAME);
+  await writeFile(metadataPath, JSON.stringify(document, null, 2));
+  outputFiles.push(join(outputPath, METADATA_FILE_NAME));
 
   await ensureDir(join(outputPath, '..'));
   await rm(outputPath, { recursive: true, force: true });

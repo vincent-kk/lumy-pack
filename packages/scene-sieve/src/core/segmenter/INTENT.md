@@ -10,7 +10,7 @@
 - 내부 경계마다 이웃 격자점 한 개를 overlap으로 포함하고, 병합에서 overlap 중복을 별칭(alias)으로 접는다.
 - 세그먼트별 추출·분석·가지치기·저장은 형제 프랙탈(extractor, analyzer, pruner, workspace, input-resolver)의 entry만 사용한다.
 - 병렬도는 scheduling organ의 `concurrencyLimit`으로 제한한다. 이 organ은 segmenter만 소비하므로 여기에 둔다.
-- 최종 `video`와 출력 좌표계 `animations`는 core가 소유한 `buildVideoMetadata`로 만든다(계약은 core의 DETAIL).
+- 최종 메타데이터·시트·모드별 출력은 core가 소유한 `finalizeSelection`으로 만든다(계약은 core의 DETAIL).
 
 ## Boundaries
 
