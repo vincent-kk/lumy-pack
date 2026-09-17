@@ -1,5 +1,3 @@
-import { basename } from 'node:path';
-
 import { map } from '@winglet/common-utils';
 
 import { METADATA_VERSION } from '../../../constants/pipeline-defaults.js';
@@ -27,18 +25,7 @@ export function buildSieveMetadata(input: {
   return {
     metadataVersion: METADATA_VERSION,
     tool: buildToolMetadata(ctx.options, version),
-    video: {
-      originalDurationMs: video.originalDurationMs,
-      fps: video.fps,
-      resolution: video.resolution,
-      candidatesCount: ctx.frames.length,
-      selectedCount: selected.length,
-      source: {
-        fileName: ctx.options.mode === 'file' && ctx.options.inputPath
-          ? basename(ctx.options.inputPath) : null,
-        mode: ctx.options.mode,
-      },
-    },
+    video,
     frames: buildFrameMetadata({
       frames: ctx.frames, graph: ctx.graph, selected,
       originalDurationMs: video.originalDurationMs, analysisResolution,

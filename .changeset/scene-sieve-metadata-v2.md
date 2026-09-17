@@ -6,4 +6,6 @@ Add metadata v2 with per-selection change signals, raw information-gain aggregat
 
 Add optional contact sheets through `sheet` / `--sheet` and candidate edge diagnostics through `includeEdges` / `--include-edges`. Expose frame metadata, sheet layout and in-memory sheet JPEGs across the file, buffer and frames APIs, along with named metadata type exports.
 
+The exported `ResolvedOptions` type gains required `sheet` and `includeEdges` members, and `VideoMetadata` gains required `candidatesCount`, `selectedCount` and `source` members, so TypeScript consumers constructing these literals must supply them.
+
 Keep frame selection, existing video semantics and zero-based API animation IDs unchanged. Metadata documents use deterministic key ordering and numeric rounding; document frame and animation IDs remain one-based.

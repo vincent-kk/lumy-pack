@@ -25,7 +25,7 @@
 ### 메타데이터 organ `utils/metadata/`
 
 - 첫 선택 프레임(없으면 첫 후보)의 sharp metadata 크기, `ctx.effectiveFps`, `ctx.sourceDurationSec`으로 `video`를 만든다. JPEG 출력은 resize하지 않으므로 추출 이미지와 출력 JPEG의 크기가 같다. 후보가 없으면 0×0이다.
-- video에는 후보 수·선택 수와 입력 출처를 포함한다. file 출처는 basename만 기록하며 buffer/frames 출처의 fileName은 null이다.
+- `buildVideoMetadata`는 video의 후보 수·선택 수와 source를 채운다. file 출처는 basename만 기록하며 buffer/frames 출처의 fileName은 null이다.
 - `buildVideoMetadata`만 sharp 읽기를 수행한다. `scaleBoundingBox`는 축별 배율을 적용해 원점과 크기를 각각 정수 반올림하고, 원점을 출력 범위로, 크기를 변환 원점부터 출력 끝까지로 clamp한다. 입력 animations는 변경하지 않는다.
 - 0×0 분석 해상도는 animation이 없는 조기 반환 경로를 나타내며 변환을 건너뛴다.
 - 최종 소비자는 `utils/output/finalize-selection.ts`이며 일반·세그먼트 경로가 공유하므로 소유자는 core다. API animations는 0-based를 유지하고 `buildSieveMetadata`가 문서용 1-based ID와 정수 durationMs로 변환한다.
@@ -35,7 +35,7 @@
 - `buildFrameMetadata`는 후보 순서의 인접 쌍을 graph의 ID 조회로 모아 선택 구간을 집계하고 누락 간선은 건너뛴다. 첫 change는 null이며 fromFrameId는 직전 선택의 1-based ID, skippedCandidates는 사이 후보 수다. 이름은 후보 수 자릿수(최소 4자리)의 `frame_<id+1>.jpg`이고 timestampMs는 정수 반올림한다. holdsMs는 다음 선택 timestampMs까지, 마지막은 원본 길이까지의 차이를 0 이상으로 제한한다.
 - `buildToolMetadata`는 fps, count, threshold, scale, quality, maxFrames, iouThreshold, animationThreshold, maxSegmentDuration 아홉 params를 순서대로 담는다. fps는 요청값이며 concurrency·경로·debug·sheet·includeEdges는 제외한다.
 - `buildEdgeMetadata`는 graph 순서와 1-based ID를 유지하고 점수를 6자리, 비애니메이션·애니메이션 합집합 비율을 각각 4자리로 반올림한다. change가 없으면 비율은 0이다.
-- `buildSieveMetadata`는 순수 조립 함수다. 키 순서는 metadataVersion, tool, video, frames, animations, sheet, edges이며 선택적 키는 해당할 때만 생성한다(undefined 대입 금지). video에 후보 수·선택 수와 source를 채우고 fileName은 file 모드 basename만, 다른 모드는 null이다. 입력 객체와 배열을 변경하지 않는다.
+- `buildSieveMetadata`는 순수 조립 함수다. 키 순서는 metadataVersion, tool, video, frames, animations, sheet, edges이며 선택적 키는 해당할 때만 생성한다(undefined 대입 금지). `buildVideoMetadata`가 후보 수·선택 수와 source를 채운 video를 그대로 전달한다. 입력 객체와 배열을 변경하지 않는다.
 
 ### 시트 organ `utils/sheet/`
 
